@@ -6,6 +6,18 @@ use std::collections::HashMap;
 /// A function pointer stored in the registry, castable to the appropriate signature.
 pub type WinApiFunc = unsafe extern "C" fn();
 
+/// Type-erase a function pointer to `WinApiFunc` for registry storage.
+///
+/// The PE code calls through the IAT with the correct Windows x64 calling
+/// convention, so the true signature is recovered at call-site.
+macro_rules! as_win_api {
+    ($f:expr) => {
+        // SAFETY: all function pointers are pointer-sized. The PE caller
+        // will invoke through the IAT with the matching argument layout.
+        unsafe { core::mem::transmute::<*const (), WinApiFunc>($f as *const ()) }
+    };
+}
+
 /// Holds the function lookup tables for all reimplemented DLLs.
 ///
 /// DLL names are normalized to lowercase. Function names are stored as-is
@@ -148,13 +160,69 @@ impl DllRegistry {
             self.get_or_create_module(dll);
         }
 
-        // As functions are implemented in the sub-crate modules, register
-        // them here. Example (once kernel32::console is implemented):
-        //
-        //   self.register_func("kernel32.dll", "GetStdHandle",
-        //       kernel32::console::GetStdHandle as WinApiFunc);
-        //
-        // For now, everything resolves to stubs.
+        // ----- ntdll.dll -----
+        self.register_func(
+            "ntdll.dll",
+            "NtWriteFile",
+            as_win_api!(crate::ntdll::file::NtWriteFile),
+        );
+        self.register_func(
+            "ntdll.dll",
+            "NtTerminateProcess",
+            as_win_api!(crate::ntdll::process::NtTerminateProcess),
+        );
+        self.register_func(
+            "ntdll.dll",
+            "RtlInitUnicodeString",
+            as_win_api!(crate::ntdll::rtl::RtlInitUnicodeString),
+        );
+
+        // ----- kernel32.dll -----
+        self.register_func(
+            "kernel32.dll",
+            "GetStdHandle",
+            as_win_api!(crate::kernel32::console::GetStdHandle),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "WriteConsoleA",
+            as_win_api!(crate::kernel32::console::WriteConsoleA),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "WriteConsoleW",
+            as_win_api!(crate::kernel32::console::WriteConsoleW),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "WriteFile",
+            as_win_api!(crate::kernel32::file::WriteFile),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "ExitProcess",
+            as_win_api!(crate::kernel32::process::ExitProcess),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "GetCommandLineA",
+            as_win_api!(crate::kernel32::process::GetCommandLineA),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "GetCommandLineW",
+            as_win_api!(crate::kernel32::process::GetCommandLineW),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "GetModuleHandleA",
+            as_win_api!(crate::kernel32::process::GetModuleHandleA),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "GetModuleHandleW",
+            as_win_api!(crate::kernel32::process::GetModuleHandleW),
+        );
     }
 }
 
@@ -241,5 +309,29 @@ mod tests {
             reg.resolve_by_name("test.dll", "Missing"),
             LookupResult::Stub(_)
         ));
+    }
+
+    #[test]
+    fn phase1_step4_functions_resolve_as_found() {
+        let reg = DllRegistry::new();
+
+        // ntdll
+        assert!(matches!(reg.resolve_by_name("ntdll.dll", "NtWriteFile"), LookupResult::Found(_)));
+        assert!(matches!(reg.resolve_by_name("ntdll.dll", "NtTerminateProcess"), LookupResult::Found(_)));
+        assert!(matches!(reg.resolve_by_name("ntdll.dll", "RtlInitUnicodeString"), LookupResult::Found(_)));
+
+        // kernel32
+        assert!(matches!(reg.resolve_by_name("kernel32.dll", "GetStdHandle"), LookupResult::Found(_)));
+        assert!(matches!(reg.resolve_by_name("kernel32.dll", "WriteConsoleA"), LookupResult::Found(_)));
+        assert!(matches!(reg.resolve_by_name("kernel32.dll", "WriteConsoleW"), LookupResult::Found(_)));
+        assert!(matches!(reg.resolve_by_name("kernel32.dll", "WriteFile"), LookupResult::Found(_)));
+        assert!(matches!(reg.resolve_by_name("kernel32.dll", "ExitProcess"), LookupResult::Found(_)));
+        assert!(matches!(reg.resolve_by_name("kernel32.dll", "GetCommandLineA"), LookupResult::Found(_)));
+        assert!(matches!(reg.resolve_by_name("kernel32.dll", "GetCommandLineW"), LookupResult::Found(_)));
+        assert!(matches!(reg.resolve_by_name("kernel32.dll", "GetModuleHandleA"), LookupResult::Found(_)));
+        assert!(matches!(reg.resolve_by_name("kernel32.dll", "GetModuleHandleW"), LookupResult::Found(_)));
+
+        // Unimplemented functions still return Stub
+        assert!(matches!(reg.resolve_by_name("kernel32.dll", "CreateFileA"), LookupResult::Stub(_)));
     }
 }
