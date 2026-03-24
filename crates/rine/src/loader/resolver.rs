@@ -5,7 +5,7 @@ use std::ptr;
 
 use goblin::pe::PE;
 use goblin::pe::import::SyntheticImportLookupTableEntry;
-use rine_dlls::registry::{DllRegistry, LookupResult};
+use rine_dlls::{DllRegistry, LookupResult};
 use rine_types::memory::{RelativeVirtualAddress, VirtualAddress};
 use thiserror::Error;
 use tracing::{debug, info, warn};

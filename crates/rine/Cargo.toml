@@ -8,6 +8,13 @@ description = "Windows PE executable loader for Linux"
 [dependencies]
 rine-dlls = { workspace = true }
 rine-types = { workspace = true }
+rine64-kernel32 = { workspace = true }
+rine64-msvcrt = { workspace = true }
+rine64-ntdll = { workspace = true }
+rine64-advapi32 = { workspace = true }
+rine64-gdi32 = { workspace = true }
+rine64-user32 = { workspace = true }
+rine64-ws2_32 = { workspace = true }
 goblin = { workspace = true }
 nix = { workspace = true }
 libc = { workspace = true }

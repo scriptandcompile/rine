@@ -269,6 +269,13 @@ dependencies = [
  "nix",
  "rine-dlls",
  "rine-types",
+ "rine64-advapi32",
+ "rine64-gdi32",
+ "rine64-kernel32",
+ "rine64-msvcrt",
+ "rine64-ntdll",
+ "rine64-user32",
+ "rine64-ws2_32",
  "serde",
  "thiserror",
  "toml",
@@ -289,10 +296,6 @@ dependencies = [
 name = "rine-dlls"
 version = "0.1.0"
 dependencies = [
- "bitflags",
- "libc",
- "nix",
- "rine-types",
  "tracing",
 ]
 
@@ -301,6 +304,66 @@ name = "rine-types"
 version = "0.1.0"
 dependencies = [
  "bitflags",
+]
+
+[[package]]
+name = "rine64-advapi32"
+version = "0.1.0"
+dependencies = [
+ "rine-dlls",
+]
+
+[[package]]
+name = "rine64-gdi32"
+version = "0.1.0"
+dependencies = [
+ "rine-dlls",
+]
+
+[[package]]
+name = "rine64-kernel32"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "nix",
+ "rine-dlls",
+ "rine-types",
+ "tracing",
+]
+
+[[package]]
+name = "rine64-msvcrt"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "rine-dlls",
+ "rine-types",
+ "tracing",
+]
+
+[[package]]
+name = "rine64-ntdll"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "nix",
+ "rine-dlls",
+ "rine-types",
+ "tracing",
+]
+
+[[package]]
+name = "rine64-user32"
+version = "0.1.0"
+dependencies = [
+ "rine-dlls",
+]
+
+[[package]]
+name = "rine64-ws2_32"
+version = "0.1.0"
+dependencies = [
+ "rine-dlls",
 ]
 
 [[package]]

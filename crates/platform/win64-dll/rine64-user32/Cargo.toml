@@ -1,0 +1,9 @@
+[package]
+name = "rine64-user32"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "user32.dll implementation for rine"
+
+[dependencies]
+rine-dlls = { workspace = true }

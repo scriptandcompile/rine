@@ -9,8 +9,16 @@ mod subsys;
 use std::process::ExitCode;
 
 use clap::Parser;
-use rine_dlls::registry::DllRegistry;
+use rine_dlls::DllRegistry;
 use tracing::{error, info};
+
+use rine64_advapi32::Advapi32Plugin;
+use rine64_gdi32::Gdi32Plugin;
+use rine64_kernel32::Kernel32Plugin;
+use rine64_msvcrt::{CrtForwarderPlugin, MsvcrtPlugin};
+use rine64_ntdll::NtdllPlugin;
+use rine64_user32::User32Plugin;
+use rine64_ws2_32::Ws2_32Plugin;
 
 use crate::cli::Cli;
 use crate::loader::memory::LoadedImage;
@@ -52,7 +60,16 @@ fn run(cli: &Cli) -> Result<std::convert::Infallible, RunError> {
     );
 
     // 3. Resolve imports (write function pointers into the IAT).
-    let registry = DllRegistry::new();
+    let registry = DllRegistry::from_plugins(&[
+        &Kernel32Plugin,
+        &MsvcrtPlugin,
+        &CrtForwarderPlugin,
+        &NtdllPlugin,
+        &Advapi32Plugin,
+        &Gdi32Plugin,
+        &User32Plugin,
+        &Ws2_32Plugin,
+    ]);
     let report = resolver::resolve_imports(&image, &parsed.pe, &registry)?;
     info!(
         resolved = report.total_resolved,

@@ -1,0 +1,12 @@
+[package]
+name = "rine64-msvcrt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "msvcrt.dll implementation for rine"
+
+[dependencies]
+rine-dlls = { workspace = true }
+rine-types = { workspace = true }
+libc = { workspace = true }
+tracing = { workspace = true }
