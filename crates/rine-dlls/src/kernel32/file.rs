@@ -1,7 +1,7 @@
 //! kernel32 file I/O: WriteFile (minimal, targeting stdout/stderr for Phase 1).
 
 use rine_types::errors::{self, WinBool};
-use rine_types::handles::{handle_to_fd, Handle};
+use rine_types::handles::{Handle, handle_to_fd};
 
 /// WriteFile — write data to a file or I/O device.
 ///
@@ -13,10 +13,10 @@ use rine_types::handles::{handle_to_fd, Handle};
 /// `bytes_written` may be null; if non-null must be writable.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WriteFile(
-    file: isize,                  // HANDLE
-    buffer: *const u8,            // LPCVOID
-    bytes_to_write: u32,          // DWORD
-    bytes_written: *mut u32,      // LPDWORD (out, optional)
+    file: isize,                         // HANDLE
+    buffer: *const u8,                   // LPCVOID
+    bytes_to_write: u32,                 // DWORD
+    bytes_written: *mut u32,             // LPDWORD (out, optional)
     _overlapped: *mut core::ffi::c_void, // LPOVERLAPPED (ignored)
 ) -> WinBool {
     let handle = Handle::from_raw(file);

@@ -1,9 +1,7 @@
 //! kernel32 console I/O: GetStdHandle, WriteConsoleA, WriteConsoleW.
 
 use rine_types::errors::{self, WinBool};
-use rine_types::handles::{
-    fd_to_handle, handle_to_fd, std_handle_to_fd, INVALID_HANDLE_VALUE,
-};
+use rine_types::handles::{INVALID_HANDLE_VALUE, fd_to_handle, handle_to_fd, std_handle_to_fd};
 
 /// GetStdHandle — return a HANDLE for stdin, stdout, or stderr.
 ///
@@ -30,10 +28,10 @@ pub unsafe extern "C" fn GetStdHandle(nstd_handle: u32) -> isize {
 /// `chars_written` may be null; if non-null it must be a writable `*mut u32`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn WriteConsoleA(
-    console_output: isize,       // HANDLE
-    buffer: *const u8,           // const VOID*
-    chars_to_write: u32,         // DWORD (number of bytes)
-    chars_written: *mut u32,     // LPDWORD (out, optional)
+    console_output: isize,               // HANDLE
+    buffer: *const u8,                   // const VOID*
+    chars_to_write: u32,                 // DWORD (number of bytes)
+    chars_written: *mut u32,             // LPDWORD (out, optional)
     _reserved: *const core::ffi::c_void, // must be NULL
 ) -> WinBool {
     let handle = rine_types::handles::Handle::from_raw(console_output);

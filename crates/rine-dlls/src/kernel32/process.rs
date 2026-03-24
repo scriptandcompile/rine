@@ -82,7 +82,10 @@ pub unsafe extern "C" fn GetModuleHandleA(module_name: *const u8) -> usize {
     }
 
     let name = unsafe { std::ffi::CStr::from_ptr(module_name.cast()) };
-    tracing::warn!(?name, "GetModuleHandleA: non-NULL module_name not yet supported");
+    tracing::warn!(
+        ?name,
+        "GetModuleHandleA: non-NULL module_name not yet supported"
+    );
     0
 }
 
@@ -106,6 +109,9 @@ pub unsafe extern "C" fn GetModuleHandleW(module_name: *const u16) -> usize {
     }
     let wide_slice = unsafe { core::slice::from_raw_parts(module_name, len) };
     let name = String::from_utf16_lossy(wide_slice);
-    tracing::warn!(name, "GetModuleHandleW: non-NULL module_name not yet supported");
+    tracing::warn!(
+        name,
+        "GetModuleHandleW: non-NULL module_name not yet supported"
+    );
     0
 }
