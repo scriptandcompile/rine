@@ -9,7 +9,7 @@ use rine_types::strings::UnicodeString;
 /// `source` must either be null or point to a valid null-terminated `u16` array.
 /// `dest` must be a valid, writable pointer to a `UNICODE_STRING`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtlInitUnicodeString(dest: *mut UnicodeString, source: *const u16) {
+pub unsafe extern "win64" fn RtlInitUnicodeString(dest: *mut UnicodeString, source: *const u16) {
     if dest.is_null() {
         return;
     }

@@ -14,7 +14,7 @@ use rine_types::structs::IoStatusBlock;
 /// All pointer parameters must be valid for their documented sizes.
 /// `buffer` must point to at least `length` readable bytes.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn NtWriteFile(
+pub unsafe extern "win64" fn NtWriteFile(
     file_handle: isize,  // HANDLE
     _event: isize,       // HANDLE (ignored)
     _apc_routine: usize, // PIO_APC_ROUTINE (ignored)

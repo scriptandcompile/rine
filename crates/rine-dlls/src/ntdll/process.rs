@@ -10,7 +10,7 @@ use rine_types::errors::NtStatus;
 /// # Safety
 /// Calling this function terminates the process; it does not return.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn NtTerminateProcess(
+pub unsafe extern "win64" fn NtTerminateProcess(
     process_handle: isize, // HANDLE — NULL or current-process pseudo-handle
     exit_status: u32,      // NTSTATUS
 ) -> u32 {
