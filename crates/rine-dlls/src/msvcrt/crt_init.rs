@@ -64,7 +64,7 @@ fn cached_main_args() -> &'static MainArgs {
 ///
 /// # Safety
 /// All pointer arguments must be valid for writes or null.
-pub unsafe extern "C" fn __getmainargs(
+pub unsafe extern "win64" fn __getmainargs(
     p_argc: *mut i32,
     p_argv: *mut *mut *mut i8,
     p_envp: *mut *mut *mut i8,
@@ -96,9 +96,9 @@ pub unsafe extern "C" fn __getmainargs(
 /// # Safety
 /// `start` and `end` must delimit a valid array of function pointers
 /// (or null entries).
-pub unsafe extern "C" fn _initterm(
-    start: *const Option<unsafe extern "C" fn()>,
-    end: *const Option<unsafe extern "C" fn()>,
+pub unsafe extern "win64" fn _initterm(
+    start: *const Option<unsafe extern "win64" fn()>,
+    end: *const Option<unsafe extern "win64" fn()>,
 ) {
     tracing::trace!("msvcrt::_initterm");
     if start.is_null() || end.is_null() || start >= end {
@@ -119,9 +119,9 @@ pub unsafe extern "C" fn _initterm(
 ///
 /// # Safety
 /// Same as `_initterm`.
-pub unsafe extern "C" fn _initterm_e(
-    start: *const Option<unsafe extern "C" fn() -> i32>,
-    end: *const Option<unsafe extern "C" fn() -> i32>,
+pub unsafe extern "win64" fn _initterm_e(
+    start: *const Option<unsafe extern "win64" fn() -> i32>,
+    end: *const Option<unsafe extern "win64" fn() -> i32>,
 ) -> i32 {
     tracing::trace!("msvcrt::_initterm_e");
     if start.is_null() || end.is_null() || start >= end {
@@ -177,11 +177,11 @@ mod tests {
         use std::sync::atomic::{AtomicU32, Ordering};
         static COUNTER: AtomicU32 = AtomicU32::new(0);
 
-        unsafe extern "C" fn inc() {
+        unsafe extern "win64" fn inc() {
             COUNTER.fetch_add(1, Ordering::Relaxed);
         }
 
-        let table: [Option<unsafe extern "C" fn()>; 3] = [Some(inc), None, Some(inc)];
+        let table: [Option<unsafe extern "win64" fn()>; 3] = [Some(inc), None, Some(inc)];
 
         COUNTER.store(0, Ordering::Relaxed);
         unsafe {
@@ -203,20 +203,20 @@ mod tests {
         use std::sync::atomic::{AtomicU32, Ordering};
         static COUNTER: AtomicU32 = AtomicU32::new(0);
 
-        unsafe extern "C" fn ok() -> i32 {
+        unsafe extern "win64" fn ok() -> i32 {
             COUNTER.fetch_add(1, Ordering::Relaxed);
             0
         }
-        unsafe extern "C" fn fail() -> i32 {
+        unsafe extern "win64" fn fail() -> i32 {
             COUNTER.fetch_add(1, Ordering::Relaxed);
             42
         }
-        unsafe extern "C" fn unreachable_init() -> i32 {
+        unsafe extern "win64" fn unreachable_init() -> i32 {
             COUNTER.fetch_add(100, Ordering::Relaxed);
             0
         }
 
-        let table: [Option<unsafe extern "C" fn() -> i32>; 3] =
+        let table: [Option<unsafe extern "win64" fn() -> i32>; 3] =
             [Some(ok), Some(fail), Some(unreachable_init)];
 
         COUNTER.store(0, Ordering::Relaxed);
@@ -228,11 +228,11 @@ mod tests {
 
     #[test]
     fn initterm_e_returns_zero_on_success() {
-        unsafe extern "C" fn ok() -> i32 {
+        unsafe extern "win64" fn ok() -> i32 {
             0
         }
 
-        let table: [Option<unsafe extern "C" fn() -> i32>; 2] = [Some(ok), Some(ok)];
+        let table: [Option<unsafe extern "win64" fn() -> i32>; 2] = [Some(ok), Some(ok)];
 
         let result = unsafe { _initterm_e(table.as_ptr(), table.as_ptr().add(table.len())) };
         assert_eq!(result, 0);

@@ -4,7 +4,7 @@
 ///
 /// # Safety
 /// Does not return.
-pub unsafe extern "C" fn exit(code: core::ffi::c_int) {
+pub unsafe extern "win64" fn exit(code: core::ffi::c_int) {
     tracing::debug!(code, "msvcrt::exit");
     std::process::exit(code);
 }
@@ -16,7 +16,7 @@ pub unsafe extern "C" fn exit(code: core::ffi::c_int) {
 ///
 /// # Safety
 /// No pointer arguments.
-pub unsafe extern "C" fn _cexit() {
+pub unsafe extern "win64" fn _cexit() {
     tracing::trace!("msvcrt::_cexit");
     // Flush all open C stdio streams.
     unsafe { libc::fflush(core::ptr::null_mut()) };
