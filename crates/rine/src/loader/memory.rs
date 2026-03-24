@@ -1,6 +1,7 @@
 use std::ptr;
 use std::ptr::NonNull;
 
+use goblin::pe::PE;
 use goblin::pe::relocation;
 use goblin::pe::section_table;
 use nix::sys::mman;
@@ -72,7 +73,11 @@ impl LoadedImage {
     }
 
     /// Load a parsed PE into memory: allocate virtual address space, copy sections,
-    /// apply relocations, and set memory protections.
+    /// and apply relocations. Memory remains writable so that import resolution
+    /// can patch the IAT before protections are finalized.
+    ///
+    /// Call [`LoadedImage::protect`] after import resolution to set each section's
+    /// final memory permissions.
     pub fn load(parsed: &ParsedPe) -> Result<Self, LoaderError> {
         let pe = &parsed.pe;
 
@@ -130,14 +135,23 @@ impl LoadedImage {
             apply_relocations(actual_base, pe, relocation_delta, image_size)?;
         }
 
-        // Set correct memory protections per section.
-        set_section_protections(actual_base, &pe.sections, image_size)?;
+        // NOTE: Memory protections are NOT set here. The image remains
+        // read-write so that import resolution can write to the IAT.
+        // Call `protect()` after resolving imports.
 
         Ok(LoadedImage {
             base: actual_base,
             size: image_size,
             relocation_delta,
         })
+    }
+
+    /// Set the final memory protections on each PE section.
+    ///
+    /// Must be called after import resolution has patched the IAT, since
+    /// the IAT typically lives in a read-only section (`.rdata` / `.idata`).
+    pub fn protect(&self, pe: &PE) -> Result<(), LoaderError> {
+        set_section_protections(self.base, &pe.sections, self.size)
     }
 }
 
