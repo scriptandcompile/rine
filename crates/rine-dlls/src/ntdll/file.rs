@@ -1,7 +1,7 @@
 //! ntdll file I/O: NtWriteFile (minimal — enough for stdout/stderr via kernel32).
 
 use rine_types::errors::NtStatus;
-use rine_types::handles::{handle_to_fd, Handle};
+use rine_types::handles::{Handle, handle_to_fd};
 use rine_types::structs::IoStatusBlock;
 
 /// NtWriteFile — write data to a file/pipe/device identified by a HANDLE.
@@ -15,10 +15,10 @@ use rine_types::structs::IoStatusBlock;
 /// `buffer` must point to at least `length` readable bytes.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn NtWriteFile(
-    file_handle: isize,       // HANDLE
-    _event: isize,            // HANDLE (ignored)
-    _apc_routine: usize,      // PIO_APC_ROUTINE (ignored)
-    _apc_context: usize,      // PVOID (ignored)
+    file_handle: isize,  // HANDLE
+    _event: isize,       // HANDLE (ignored)
+    _apc_routine: usize, // PIO_APC_ROUTINE (ignored)
+    _apc_context: usize, // PVOID (ignored)
     io_status_block: *mut IoStatusBlock,
     buffer: *const u8,
     length: u32,
