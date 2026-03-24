@@ -20,6 +20,7 @@ use thiserror::Error;
 // Errors
 // ---------------------------------------------------------------------------
 
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum PathError {
     #[error("empty path")]
@@ -45,6 +46,7 @@ pub enum PathError {
 /// Configurable drive mappings and path-translation options.
 ///
 /// Built from the per-app configuration (Phase 3) or sensible defaults.
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct PathTranslator {
     /// Map from uppercase drive letter → Linux directory.
@@ -62,6 +64,7 @@ pub struct PathTranslator {
     pub case_insensitive: bool,
 }
 
+#[allow(dead_code)]
 impl PathTranslator {
     // -- constructors -------------------------------------------------------
 
@@ -180,6 +183,7 @@ impl PathTranslator {
 // ---------------------------------------------------------------------------
 
 /// Strip `\\?\`, `\\.\`, `//?/`, `//./` prefixes.
+#[allow(dead_code)]
 fn strip_path_prefix(path: &str) -> &str {
     // After backslash normalization these appear as `//?/` or `//./`.
     for prefix in &["//?/", "//./"] {
@@ -191,6 +195,7 @@ fn strip_path_prefix(path: &str) -> &str {
 }
 
 /// Parse `X:/rest` or `X:rest` — returns `(drive_letter, remainder)`.
+#[allow(dead_code)]
 fn parse_drive_prefix(path: &str) -> Option<(char, &str)> {
     let bytes = path.as_bytes();
     if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
@@ -206,17 +211,15 @@ fn parse_drive_prefix(path: &str) -> Option<(char, &str)> {
 
 /// Join a linux root with the remaining Windows-style path, cleaning up
 /// `.` and `..` components (purely lexical — no I/O).
+#[allow(dead_code)]
 fn join_and_clean(root: &Path, relative: &str) -> PathBuf {
     let mut result = root.to_path_buf();
 
     for component in Path::new(relative).components() {
         match component {
             Component::CurDir => {} // skip `.`
-            Component::ParentDir => {
-                // Don't escape above the drive root.
-                if result.starts_with(root) && result != root {
-                    result.pop();
-                }
+            Component::ParentDir if result.starts_with(root) && result != root => {
+                result.pop();
             }
             Component::Normal(seg) => result.push(seg),
             // RootDir, Prefix — shouldn't appear in the relative remainder.
@@ -230,6 +233,7 @@ fn join_and_clean(root: &Path, relative: &str) -> PathBuf {
 /// Walk `path` from the root, resolving each component case-insensitively
 /// by scanning the directory listing. If a component can't be found, the
 /// remaining tail is appended in its original casing.
+#[allow(dead_code)]
 fn resolve_case_insensitive(path: &Path) -> PathBuf {
     let mut resolved = PathBuf::new();
     let mut components = path.components().peekable();
@@ -267,6 +271,7 @@ fn resolve_case_insensitive(path: &Path) -> PathBuf {
 
 /// Scan `dir` for an entry whose name matches `name` case-insensitively.
 /// Returns the real filename on match, or `None`.
+#[allow(dead_code)]
 fn find_case_match(dir: &Path, name: &str) -> Option<String> {
     let lower = name.to_ascii_lowercase();
     let entries = std::fs::read_dir(dir).ok()?;

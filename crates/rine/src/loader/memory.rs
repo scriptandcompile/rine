@@ -44,6 +44,7 @@ pub struct LoadedImage {
     size: usize,
     /// The delta between the actual load address and the PE's preferred image base.
     /// Used for applying relocations.
+    #[allow(dead_code)]
     relocation_delta: i64,
 }
 
@@ -68,6 +69,7 @@ impl LoadedImage {
     }
 
     /// Returns the address of a given RVA within the loaded image.
+    #[allow(dead_code)]
     pub fn rva_to_va(&self, rva: RelativeVirtualAddress) -> VirtualAddress {
         self.base.offset(rva)
     }

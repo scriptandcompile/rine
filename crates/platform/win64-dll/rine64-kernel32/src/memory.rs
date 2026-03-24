@@ -1,4 +1,3 @@
-#![allow(non_snake_case)]
 //! kernel32 memory functions: VirtualProtect, VirtualQuery (minimal Phase 1).
 
 use rine_types::errors::{self, WinBool};
@@ -7,6 +6,7 @@ use rine_types::errors::{self, WinBool};
 ///
 /// Minimal stub: translates to mprotect. `old_protect` is written with
 /// the new value (callers typically just need this out-param to not crash).
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn VirtualProtect(
     address: *mut u8,
     size: usize,
@@ -29,6 +29,7 @@ pub unsafe extern "win64" fn VirtualProtect(
 /// VirtualQuery — query information about a virtual memory region.
 ///
 /// Stub: returns 0 (failure). Full implementation in Phase 2.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn VirtualQuery(
     _address: *const u8,
     _buffer: *mut u8,

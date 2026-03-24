@@ -19,6 +19,7 @@ use rine_types::structs::IoStatusBlock;
 ///
 /// # Safety
 /// All pointer parameters must be valid.
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn NtCreateFile(
     file_handle: *mut isize,  // PHANDLE (out)
     desired_access: u32,      // ACCESS_MASK
@@ -107,6 +108,7 @@ pub unsafe extern "win64" fn NtCreateFile(
 ///
 /// # Safety
 /// `buffer` must be writable for at least `length` bytes.
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn NtReadFile(
     file_handle: isize,
     _event: isize,
@@ -162,6 +164,7 @@ pub unsafe extern "win64" fn NtReadFile(
 ///
 /// # Safety
 /// `buffer` must point to at least `length` readable bytes.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn NtWriteFile(
     file_handle: isize,
@@ -205,6 +208,7 @@ pub unsafe extern "win64" fn NtWriteFile(
 // ---------------------------------------------------------------------------
 
 /// NtClose — close an NT handle.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn NtClose(object_handle: isize) -> u32 {
     let handle = Handle::from_raw(object_handle);
 
@@ -238,6 +242,7 @@ const FILE_POSITION_INFORMATION: u32 = 14;
 /// Currently supports:
 ///  - `FileStandardInformation` (class 5): returns file size, link count, etc.
 ///  - other classes: returns NOT_IMPLEMENTED
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn NtQueryInformationFile(
     file_handle: isize,
     io_status_block: *mut IoStatusBlock,
@@ -263,7 +268,7 @@ pub unsafe extern "win64" fn NtQueryInformationFile(
                 return NtStatus::INVALID_PARAMETER.0;
             }
 
-            let info = file_information as *mut u8;
+            let info = file_information;
             let size = stat.st_size as u64;
             let alloc_size = stat.st_blocks as u64 * 512;
             let is_dir: u8 = if (stat.st_mode & libc::S_IFDIR) != 0 {

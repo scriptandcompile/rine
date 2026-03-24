@@ -27,7 +27,7 @@ pub enum EntryError {
 /// This function does not return — it either transfers control to the PE
 /// (which calls `ExitProcess`) or terminates with the entry point's return code.
 pub fn execute(image: &LoadedImage, parsed: &ParsedPe) -> Result<Infallible, EntryError> {
-    let entry_rva = parsed.pe.entry as u32;
+    let entry_rva = parsed.pe.entry;
     if entry_rva == 0 {
         return Err(EntryError::NoEntryPoint);
     }

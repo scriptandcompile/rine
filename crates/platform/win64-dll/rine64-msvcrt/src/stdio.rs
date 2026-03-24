@@ -18,6 +18,7 @@ unsafe extern "C" {
 /// PE code calls this with Windows x64 convention (format in rcx, variadic
 /// args in rdx/r8/r9/stack). The thunk translates to SysV x86_64 convention
 /// and tail-calls libc's printf. Supports up to ~10 total arguments.
+#[allow(clippy::missing_safety_doc)]
 #[unsafe(naked)]
 pub unsafe extern "C" fn printf() -> c_int {
     // SAFETY: naked function — all arguments are forwarded without
@@ -63,6 +64,7 @@ pub unsafe extern "win64" fn puts(s: *const c_char) -> c_int {
 ///
 /// Translates the Windows CRT FILE* to a Linux fd by reading the marker
 /// stored by `__iob_func`, then calls `libc::write`.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn fwrite(
     ptr: *const u8,
     size: usize,
@@ -94,6 +96,7 @@ unsafe extern "C" {
 /// Minimal stub: writes the format string to the fd without substitution.
 /// Full variadic win64 → SysV ABI translation for fprintf requires runtime
 /// format string parsing, which is deferred to a later phase.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn fprintf(
     stream: *mut u8, // FILE*
     format: *const c_char,
@@ -113,6 +116,7 @@ pub unsafe extern "win64" fn fprintf(
 /// Stub: just writes the format string without substitution. Full va_list
 /// translation between win64 and SysV ABIs is not feasible without runtime
 /// format string parsing.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn vfprintf(
     stream: *mut u8,
     format: *const c_char,

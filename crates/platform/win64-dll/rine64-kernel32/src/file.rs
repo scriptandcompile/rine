@@ -17,6 +17,7 @@ use rine_types::handles::{
 ///
 /// # Safety
 /// `file_name` must be a valid null-terminated ANSI string.
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn CreateFileA(
     file_name: *const u8,
     desired_access: u32,
@@ -40,6 +41,7 @@ pub unsafe extern "win64" fn CreateFileA(
 ///
 /// # Safety
 /// `file_name` must be a valid null-terminated UTF-16LE string.
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn CreateFileW(
     file_name: *const u16,
     desired_access: u32,
@@ -130,6 +132,7 @@ fn create_file_impl(win_path: &str, desired_access: u32, creation_disposition: u
 ///
 /// # Safety
 /// `buffer` must be writable for at least `bytes_to_read` bytes.
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn ReadFile(
     file: isize,
     buffer: *mut u8,
@@ -161,6 +164,7 @@ pub unsafe extern "win64" fn ReadFile(
 ///
 /// # Safety
 /// `buffer` must point to at least `bytes_to_write` readable bytes.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn WriteFile(
     file: isize,
@@ -190,6 +194,7 @@ pub unsafe extern "win64" fn WriteFile(
 // ---------------------------------------------------------------------------
 
 /// CloseHandle — close an open handle (file, find-data, etc.).
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
     let handle = Handle::from_raw(object);
 
@@ -222,6 +227,7 @@ pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
 ///
 /// Returns the low 32 bits. If `file_size_high` is non-null, the high
 /// 32 bits are written there.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn GetFileSize(file: isize, file_size_high: *mut u32) -> u32 {
     let handle = Handle::from_raw(file);
     let Some(fd) = handle_to_fd(handle) else {
@@ -245,6 +251,7 @@ pub unsafe extern "win64" fn GetFileSize(file: isize, file_size_high: *mut u32) 
 // ---------------------------------------------------------------------------
 
 /// SetFilePointer — move the file pointer.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn SetFilePointer(
     file: isize,
     distance_to_move: i32,           // low 32 bits
@@ -289,6 +296,7 @@ pub unsafe extern "win64" fn SetFilePointer(
 ///
 /// # Safety
 /// `find_data` must point to a writable `WIN32_FIND_DATAA`.
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn FindFirstFileA(
     file_name: *const u8,
     find_data: *mut Win32FindDataA,
@@ -319,6 +327,7 @@ pub unsafe extern "win64" fn FindFirstFileA(
 ///
 /// # Safety
 /// `find_data` must point to a writable `WIN32_FIND_DATAW`.
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn FindFirstFileW(
     file_name: *const u16,
     find_data: *mut Win32FindDataW,
@@ -355,6 +364,7 @@ pub unsafe extern "win64" fn FindFirstFileW(
 // ---------------------------------------------------------------------------
 
 /// FindNextFileA — continue a directory search (ANSI).
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn FindNextFileA(
     find_file: isize,
     find_data: *mut Win32FindDataA,
@@ -381,6 +391,7 @@ pub unsafe extern "win64" fn FindNextFileA(
 }
 
 /// FindNextFileW — continue a directory search (wide).
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn FindNextFileW(
     find_file: isize,
     find_data: *mut Win32FindDataW,
@@ -411,6 +422,7 @@ pub unsafe extern "win64" fn FindNextFileW(
 // ---------------------------------------------------------------------------
 
 /// FindClose — close a search handle opened by FindFirstFile.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn FindClose(find_file: isize) -> WinBool {
     unsafe { CloseHandle(find_file) }
 }

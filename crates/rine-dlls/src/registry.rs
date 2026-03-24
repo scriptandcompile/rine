@@ -104,10 +104,10 @@ impl DllRegistry {
     /// Look up a function by DLL name and function name.
     pub fn resolve_by_name(&self, dll: &str, name: &str) -> LookupResult {
         let key = normalize_dll_name(dll);
-        if let Some(module) = self.dlls.get(key.as_str()) {
-            if let Some(&func) = module.by_name.get(name) {
-                return LookupResult::Found(func);
-            }
+        if let Some(module) = self.dlls.get(key.as_str())
+            && let Some(&func) = module.by_name.get(name)
+        {
+            return LookupResult::Found(func);
         }
         LookupResult::Stub(stub_function)
     }
@@ -115,10 +115,10 @@ impl DllRegistry {
     /// Look up a function by DLL name and ordinal number.
     pub fn resolve_by_ordinal(&self, dll: &str, ordinal: u16) -> LookupResult {
         let key = normalize_dll_name(dll);
-        if let Some(module) = self.dlls.get(key.as_str()) {
-            if let Some(&func) = module.by_ordinal.get(&ordinal) {
-                return LookupResult::Found(func);
-            }
+        if let Some(module) = self.dlls.get(key.as_str())
+            && let Some(&func) = module.by_ordinal.get(&ordinal)
+        {
+            return LookupResult::Found(func);
         }
         LookupResult::Stub(stub_function)
     }

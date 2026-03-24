@@ -1,4 +1,3 @@
-#![allow(non_snake_case)]
 //! kernel32 threading: CreateThread, TLS, Wait*, GetCurrentThread, Sleep.
 
 use std::alloc::{Layout, alloc_zeroed};
@@ -85,6 +84,7 @@ static NEXT_THREAD_ID: AtomicU32 = AtomicU32::new(1000);
 ///     LPDWORD                lpThreadId             // stack [rsp+0x30]
 /// );
 /// ```
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn CreateThread(
     _security_attrs: usize,
     _stack_size: usize,
@@ -154,6 +154,7 @@ pub unsafe extern "win64" fn CreateThread(
 // ── TLS ──────────────────────────────────────────────────────────
 
 /// TlsAlloc — allocate a TLS index.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn TlsAlloc() -> u32 {
     match threading::tls_alloc() {
         Some(idx) => {
@@ -168,6 +169,7 @@ pub unsafe extern "win64" fn TlsAlloc() -> u32 {
 }
 
 /// TlsFree — release a TLS index.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn TlsFree(tls_index: u32) -> WinBool {
     if threading::tls_free(tls_index) {
         TRUE
@@ -177,11 +179,13 @@ pub unsafe extern "win64" fn TlsFree(tls_index: u32) -> WinBool {
 }
 
 /// TlsGetValue — retrieve the current thread's value for a slot.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn TlsGetValue(tls_index: u32) -> usize {
     threading::tls_get_value(tls_index)
 }
 
 /// TlsSetValue — set the current thread's value for a slot.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn TlsSetValue(tls_index: u32, value: usize) -> WinBool {
     if threading::tls_set_value(tls_index, value) {
         TRUE
@@ -193,16 +197,19 @@ pub unsafe extern "win64" fn TlsSetValue(tls_index: u32, value: usize) -> WinBoo
 // ── Thread query ─────────────────────────────────────────────────
 
 /// GetCurrentThread — pseudo-handle for the calling thread.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn GetCurrentThread() -> isize {
     -2 // Windows pseudo-handle
 }
 
 /// GetCurrentThreadId — Linux tid mapped to a DWORD.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn GetCurrentThreadId() -> u32 {
     unsafe { libc::syscall(libc::SYS_gettid) as u32 }
 }
 
 /// GetExitCodeThread — read exit code (STILL_ACTIVE while running).
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn GetExitCodeThread(
     thread_handle: isize,
     exit_code_out: *mut u32,
@@ -223,6 +230,7 @@ pub unsafe extern "win64" fn GetExitCodeThread(
 // ── Wait ─────────────────────────────────────────────────────────
 
 /// WaitForSingleObject — block until one handle is signalled or timeout.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn WaitForSingleObject(handle: isize, timeout_ms: u32) -> u32 {
     let h = Handle::from_raw(handle);
     match handle_table().get_waitable(h) {
@@ -235,6 +243,7 @@ pub unsafe extern "win64" fn WaitForSingleObject(handle: isize, timeout_ms: u32)
 }
 
 /// WaitForMultipleObjects — block until one or all handles are signalled.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn WaitForMultipleObjects(
     count: u32,
     handles_ptr: *const isize,
@@ -302,6 +311,7 @@ pub unsafe extern "win64" fn WaitForMultipleObjects(
 // ── Sleep ────────────────────────────────────────────────────────
 
 /// Sleep — suspend execution for the given number of milliseconds.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn Sleep(milliseconds: u32) {
     let dur = std::time::Duration::from_millis(milliseconds as u64);
     std::thread::sleep(dur);

@@ -13,7 +13,7 @@ pub use registry::{DllRegistry, LookupResult, WinApiFunc};
 /// using the Windows x64 calling convention.
 ///
 /// Re-exported from [`registry`] for convenience.
-
+///
 /// A single exported symbol from a DLL plugin.
 pub enum Export {
     /// A function export (IAT slot = address of function).

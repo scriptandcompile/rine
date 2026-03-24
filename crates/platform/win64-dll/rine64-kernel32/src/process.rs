@@ -41,6 +41,7 @@ fn cached_cmd_line() -> &'static CmdLineCache {
 ///
 /// # Safety
 /// Does not return.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ExitProcess(exit_code: u32) {
     std::process::exit(exit_code as i32);
@@ -50,6 +51,7 @@ pub unsafe extern "win64" fn ExitProcess(exit_code: u32) {
 ///
 /// # Safety
 /// The returned pointer is valid for the lifetime of the process.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetCommandLineA() -> *const u8 {
     cached_cmd_line().ansi.as_ptr().cast()
@@ -59,6 +61,7 @@ pub unsafe extern "win64" fn GetCommandLineA() -> *const u8 {
 ///
 /// # Safety
 /// The returned pointer is valid for the lifetime of the process.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetCommandLineW() -> *const u16 {
     cached_cmd_line().wide.as_ptr()
@@ -73,6 +76,7 @@ pub unsafe extern "win64" fn GetCommandLineW() -> *const u16 {
 ///
 /// # Safety
 /// `module_name` must be null or a valid null-terminated ANSI string.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetModuleHandleA(module_name: *const u8) -> usize {
     if module_name.is_null() {
@@ -93,6 +97,7 @@ pub unsafe extern "win64" fn GetModuleHandleA(module_name: *const u8) -> usize {
 ///
 /// # Safety
 /// `module_name` must be null or a valid null-terminated UTF-16LE string.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetModuleHandleW(module_name: *const u16) -> usize {
     if module_name.is_null() {
@@ -120,7 +125,7 @@ pub unsafe extern "win64" fn GetModuleHandleW(module_name: *const u16) -> usize 
 ///
 /// Stub: always returns 0 (ERROR_SUCCESS). A real per-thread last-error
 /// store will be added with the threading subsystem.
-#[allow(non_snake_case)]
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn GetLastError() -> u32 {
     0
 }
@@ -129,7 +134,7 @@ pub unsafe extern "win64" fn GetLastError() -> u32 {
 ///
 /// Stub: returns NULL (no previous handler). Exception handling is not
 /// yet implemented.
-#[allow(non_snake_case)]
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn SetUnhandledExceptionFilter(
     _filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
 ) -> usize {

@@ -22,6 +22,7 @@ static INITENV_PTR: std::sync::LazyLock<SyncPtr<*mut usize>> =
 /// __set_app_type — set the application type (console/GUI).
 ///
 /// No-op: rine always runs as a console application.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __set_app_type(_app_type: i32) {
     tracing::trace!("msvcrt::__set_app_type({_app_type})");
 }
@@ -29,6 +30,7 @@ pub unsafe extern "win64" fn __set_app_type(_app_type: i32) {
 /// __setusermatherr — register a custom math error handler.
 ///
 /// No-op: we don't support custom math error handlers.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __setusermatherr(_handler: usize) {
     tracing::trace!("msvcrt::__setusermatherr");
 }
@@ -37,6 +39,7 @@ pub unsafe extern "win64" fn __setusermatherr(_handler: usize) {
 ///
 /// Stub: returns ExceptionContinueSearch (1). Called only if an exception is
 /// thrown, which shouldn't happen in a simple hello world.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __C_specific_handler(
     _exception_record: usize,
     _establisher_frame: usize,
@@ -48,6 +51,7 @@ pub unsafe extern "win64" fn __C_specific_handler(
 }
 
 /// _commode — return a pointer to the commit mode variable.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _commode() -> *mut i32 {
     COMMODE_PTR.0
 }
@@ -58,6 +62,7 @@ pub fn commode_data_ptr() -> *mut i32 {
 }
 
 /// _fmode — return a pointer to the default file translation mode.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _fmode() -> *mut i32 {
     FMODE_PTR.0
 }
@@ -71,6 +76,7 @@ pub fn fmode_data_ptr() -> *mut i32 {
 ///
 /// Returns a pointer to a NULL pointer (empty environment at CRT level;
 /// the real environment is provided via `__getmainargs`).
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
     INITENV_PTR.0 as *const *const i8
 }
@@ -102,6 +108,7 @@ static FAKE_IOB: std::sync::LazyLock<Box<[u8; 144]>> = std::sync::LazyLock::new(
 /// Returns a fake FILE table. The first 3 entries represent stdin (0),
 /// stdout (1), stderr (2). We store a marker fd in the first field of
 /// each entry so fwrite/fprintf can identify the stream.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
     FAKE_IOB.as_ptr() as *mut u8
 }
@@ -110,18 +117,21 @@ pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
 ///
 /// Stub: returns the function pointer (success) but does not actually
 /// register it for later calling. Full atexit support in a later phase.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
     tracing::trace!("msvcrt::_onexit");
     func // return non-NULL to indicate success
 }
 
 /// _amsg_exit — display a runtime error message and abort.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _amsg_exit(msg_num: i32) {
     eprintln!("rine: msvcrt runtime error (msg_num={msg_num})");
     std::process::abort();
 }
 
 /// abort — abnormally terminate the process.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn abort() {
     tracing::debug!("msvcrt::abort");
     std::process::abort();
@@ -131,6 +141,7 @@ pub unsafe extern "win64" fn abort() {
 ///
 /// Stub: returns SIG_DFL (0). Minimal implementation since Windows signals
 /// are rarely used in practice.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn signal(
     _sig: i32,
     _handler: usize, // void (*)(int)
@@ -141,16 +152,19 @@ pub unsafe extern "win64" fn signal(
 /// _lock — acquire an internal CRT lock.
 ///
 /// No-op for single-threaded Phase 1.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _lock(_locknum: i32) {}
 
 /// _unlock — release an internal CRT lock.
 ///
 /// No-op for single-threaded Phase 1.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _unlock(_locknum: i32) {}
 
 /// _errno — return a pointer to the per-thread errno value.
 ///
 /// Returns a pointer to libc's errno, which is thread-local.
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _errno() -> *mut i32 {
     unsafe { libc::__errno_location() }
 }
@@ -158,6 +172,7 @@ pub unsafe extern "win64" fn _errno() -> *mut i32 {
 /// __p__environ — return a pointer to the environment variable array.
 ///
 /// Returns a pointer to a NULL pointer (minimal stub).
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
     INITENV_PTR.0 as *const *const *const i8
 }
@@ -165,6 +180,7 @@ pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
 /// __p__fmode — return a pointer to the global file mode variable.
 ///
 /// Returns the same pointer as `_fmode()`.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
     FMODE_PTR.0
 }
@@ -172,6 +188,7 @@ pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
 /// __p__commode — return a pointer to the global commit mode variable.
 ///
 /// Returns the same pointer as `_commode()`.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
     COMMODE_PTR.0
 }

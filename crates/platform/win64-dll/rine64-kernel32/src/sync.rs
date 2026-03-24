@@ -42,6 +42,7 @@ unsafe fn get_mutex(cs: *const u8) -> *mut libc::pthread_mutex_t {
 }
 
 /// InitializeCriticalSection
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn InitializeCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
@@ -50,6 +51,7 @@ pub unsafe extern "win64" fn InitializeCriticalSection(cs: *mut u8) {
 }
 
 /// InitializeCriticalSectionAndSpinCount — spin count is ignored (always 0).
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn InitializeCriticalSectionAndSpinCount(
     cs: *mut u8,
     _spin_count: u32,
@@ -62,6 +64,7 @@ pub unsafe extern "win64" fn InitializeCriticalSectionAndSpinCount(
 }
 
 /// EnterCriticalSection — lock the recursive mutex.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn EnterCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
@@ -78,6 +81,7 @@ pub unsafe extern "win64" fn EnterCriticalSection(cs: *mut u8) {
 }
 
 /// TryEnterCriticalSection — non-blocking lock attempt.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
     if cs.is_null() {
         return rine_types::errors::FALSE;
@@ -94,6 +98,7 @@ pub unsafe extern "win64" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
 }
 
 /// LeaveCriticalSection — unlock the recursive mutex.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn LeaveCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
@@ -106,6 +111,7 @@ pub unsafe extern "win64" fn LeaveCriticalSection(cs: *mut u8) {
 }
 
 /// DeleteCriticalSection — destroy and deallocate the mutex.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn DeleteCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
@@ -133,6 +139,7 @@ pub unsafe extern "win64" fn DeleteCriticalSection(cs: *mut u8) {
 ///     LPCSTR lpName                              // r9 (ignored)
 /// );
 /// ```
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn CreateEventA(
     _security_attrs: usize,
     manual_reset: WinBool,
@@ -152,6 +159,7 @@ pub unsafe extern "win64" fn CreateEventA(
 }
 
 /// CreateEventW — wide-string variant (name ignored).
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn CreateEventW(
     _security_attrs: usize,
     manual_reset: WinBool,
@@ -171,6 +179,7 @@ pub unsafe extern "win64" fn CreateEventW(
 }
 
 /// SetEvent — signal the event and wake waiters.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
     let h = Handle::from_raw(event_handle);
     let waitable = match handle_table().get_waitable(h) {
@@ -191,6 +200,7 @@ pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
 }
 
 /// ResetEvent — clear the signalled state.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn ResetEvent(event_handle: isize) -> WinBool {
     let h = Handle::from_raw(event_handle);
     let waitable = match handle_table().get_waitable(h) {

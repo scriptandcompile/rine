@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 /// Top-level per-application config.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppConfig {
@@ -18,7 +19,8 @@ pub struct AppConfig {
 }
 
 /// Drive mappings and path-translation options.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct FilesystemConfig {
     /// Root directory under which unmapped drive letters are created
@@ -37,19 +39,10 @@ pub struct FilesystemConfig {
     pub case_insensitive: bool,
 }
 
-impl Default for FilesystemConfig {
-    fn default() -> Self {
-        Self {
-            default_root: None,
-            drives: HashMap::new(),
-            case_insensitive: false,
-        }
-    }
-}
-
 impl FilesystemConfig {
     /// Build a [`PathTranslator`](crate::subsys::filesystem::PathTranslator)
     /// from this configuration.
+    #[allow(dead_code)]
     pub fn to_translator(&self) -> crate::subsys::filesystem::PathTranslator {
         let mut translator = match &self.default_root {
             Some(root) => crate::subsys::filesystem::PathTranslator::with_root(root.clone()),

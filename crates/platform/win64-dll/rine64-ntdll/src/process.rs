@@ -9,6 +9,7 @@ use rine_types::errors::NtStatus;
 ///
 /// # Safety
 /// Calling this function terminates the process; it does not return.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn NtTerminateProcess(
     process_handle: isize, // HANDLE — NULL or current-process pseudo-handle

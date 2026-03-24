@@ -44,7 +44,7 @@ pub unsafe fn init_teb() {
 
     // Fill in the self-pointer (gs:0x30 → TEB address).
     unsafe {
-        let teb64 = teb as *mut u64;
+        let _teb64 = teb as *mut u64;
         // StackBase — use a reasonable value (current stack pointer + 1 MiB).
         // The CRT only uses this for the startup lock spin loop.
         let stack_base: u64;

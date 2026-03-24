@@ -170,6 +170,12 @@ static HANDLE_TABLE: LazyLock<HandleTable> = LazyLock::new(|| HandleTable {
     }),
 });
 
+impl Default for HandleTable {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HandleTable {
     /// Create a new empty handle table (for tests).
     pub fn new() -> Self {
@@ -487,7 +493,7 @@ pub fn collect_find_entries(dir: &std::path::Path, pattern: &str) -> Vec<FindEnt
         }
         let meta = de.metadata().ok();
         let file_size = meta.as_ref().map_or(0, |m| m.len());
-        let is_dir = meta.as_ref().map_or(false, |m| m.is_dir());
+        let is_dir = meta.as_ref().is_some_and(|m| m.is_dir());
         let attributes = if is_dir {
             FILE_ATTRIBUTE_DIRECTORY
         } else {
@@ -513,9 +519,7 @@ pub fn collect_find_entries(dir: &std::path::Path, pattern: &str) -> Vec<FindEnt
 /// and directory is empty.
 pub fn split_find_path(win_path: &str) -> (&str, &str) {
     // Find last separator.
-    let sep = win_path
-        .rfind(|c: char| c == '\\' || c == '/')
-        .map(|i| i + 1);
+    let sep = win_path.rfind(['\\', '/']).map(|i| i + 1);
     match sep {
         Some(pos) => (&win_path[..pos], &win_path[pos..]),
         None => ("", win_path),

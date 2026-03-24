@@ -15,6 +15,7 @@ use super::memory::LoadedImage;
 #[derive(Debug, Error)]
 pub enum ResolverError {
     #[error("DLL not found and no implementation available: {dll}")]
+    #[allow(dead_code)]
     UnknownDll { dll: String },
 
     #[error("IAT write at {va} is outside the loaded image bounds")]
@@ -184,19 +185,17 @@ pub fn resolve_delay_imports(
     // in the same way as regular imports. We check the data directory entry
     // and, if present, log a warning. Full delay-load support will be added
     // when goblin exposes the parsed data or we parse it manually.
-    if let Some(ref optional_header) = pe.header.optional_header {
-        if let Some(delay_dd) = optional_header
+    if let Some(ref optional_header) = pe.header.optional_header
+        && let Some(delay_dd) = optional_header
             .data_directories
             .get_delay_import_descriptor()
-        {
-            if delay_dd.virtual_address != 0 {
-                warn!(
-                    rva = format_args!("{:#x}", delay_dd.virtual_address),
-                    size = format_args!("{:#x}", delay_dd.size),
-                    "PE has delay-load imports — not yet resolved (will be resolved on demand)"
-                );
-            }
-        }
+        && delay_dd.virtual_address != 0
+    {
+        warn!(
+            rva = format_args!("{:#x}", delay_dd.virtual_address),
+            size = format_args!("{:#x}", delay_dd.size),
+            "PE has delay-load imports \u{2014} not yet resolved (will be resolved on demand)"
+        );
     }
 
     Ok(ResolutionReport {
