@@ -16,9 +16,11 @@ impl DllPlugin for Kernel32Plugin {
 
     fn exports(&self) -> Vec<Export> {
         vec![
+            // Console
             Export::Func("GetStdHandle", as_win_api!(console::GetStdHandle)),
             Export::Func("WriteConsoleA", as_win_api!(console::WriteConsoleA)),
             Export::Func("WriteConsoleW", as_win_api!(console::WriteConsoleW)),
+            // File I/O
             Export::Func("CreateFileA", as_win_api!(file::CreateFileA)),
             Export::Func("CreateFileW", as_win_api!(file::CreateFileW)),
             Export::Func("ReadFile", as_win_api!(file::ReadFile)),
@@ -31,6 +33,7 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("FindNextFileA", as_win_api!(file::FindNextFileA)),
             Export::Func("FindNextFileW", as_win_api!(file::FindNextFileW)),
             Export::Func("FindClose", as_win_api!(file::FindClose)),
+            // Process
             Export::Func("ExitProcess", as_win_api!(process::ExitProcess)),
             Export::Func("GetCommandLineA", as_win_api!(process::GetCommandLineA)),
             Export::Func("GetCommandLineW", as_win_api!(process::GetCommandLineW)),
@@ -41,13 +44,22 @@ impl DllPlugin for Kernel32Plugin {
                 "SetUnhandledExceptionFilter",
                 as_win_api!(process::SetUnhandledExceptionFilter),
             ),
+            // Synchronization — critical sections
             Export::Func(
                 "InitializeCriticalSection",
                 as_win_api!(sync::InitializeCriticalSection),
             ),
             Export::Func(
+                "InitializeCriticalSectionAndSpinCount",
+                as_win_api!(sync::InitializeCriticalSectionAndSpinCount),
+            ),
+            Export::Func(
                 "EnterCriticalSection",
                 as_win_api!(sync::EnterCriticalSection),
+            ),
+            Export::Func(
+                "TryEnterCriticalSection",
+                as_win_api!(sync::TryEnterCriticalSection),
             ),
             Export::Func(
                 "LeaveCriticalSection",
@@ -57,8 +69,33 @@ impl DllPlugin for Kernel32Plugin {
                 "DeleteCriticalSection",
                 as_win_api!(sync::DeleteCriticalSection),
             ),
+            // Synchronization — events
+            Export::Func("CreateEventA", as_win_api!(sync::CreateEventA)),
+            Export::Func("CreateEventW", as_win_api!(sync::CreateEventW)),
+            Export::Func("SetEvent", as_win_api!(sync::SetEvent)),
+            Export::Func("ResetEvent", as_win_api!(sync::ResetEvent)),
+            // Threading
+            Export::Func("CreateThread", as_win_api!(thread::CreateThread)),
+            Export::Func("TlsAlloc", as_win_api!(thread::TlsAlloc)),
+            Export::Func("TlsFree", as_win_api!(thread::TlsFree)),
             Export::Func("TlsGetValue", as_win_api!(thread::TlsGetValue)),
+            Export::Func("TlsSetValue", as_win_api!(thread::TlsSetValue)),
+            Export::Func("GetCurrentThread", as_win_api!(thread::GetCurrentThread)),
+            Export::Func(
+                "GetCurrentThreadId",
+                as_win_api!(thread::GetCurrentThreadId),
+            ),
+            Export::Func("GetExitCodeThread", as_win_api!(thread::GetExitCodeThread)),
+            Export::Func(
+                "WaitForSingleObject",
+                as_win_api!(thread::WaitForSingleObject),
+            ),
+            Export::Func(
+                "WaitForMultipleObjects",
+                as_win_api!(thread::WaitForMultipleObjects),
+            ),
             Export::Func("Sleep", as_win_api!(thread::Sleep)),
+            // Memory
             Export::Func("VirtualProtect", as_win_api!(memory::VirtualProtect)),
             Export::Func("VirtualQuery", as_win_api!(memory::VirtualQuery)),
         ]

@@ -202,6 +202,11 @@ pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
             // FindData has no OS resource to free.
             errors::TRUE
         }
+        Some(HandleEntry::Thread(_)) => {
+            // Thread keeps running; we just release our handle.
+            errors::TRUE
+        }
+        Some(HandleEntry::Event(_)) => errors::TRUE,
         None => {
             tracing::warn!(?handle, "CloseHandle: unknown handle");
             errors::FALSE

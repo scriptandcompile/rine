@@ -43,3 +43,5 @@ pub const ERROR_ACCESS_DENIED: u32 = 5;
 pub const ERROR_INVALID_HANDLE: u32 = 6;
 pub const ERROR_NO_MORE_FILES: u32 = 18;
 pub const ERROR_ALREADY_EXISTS: u32 = 183;
+pub const ERROR_INVALID_PARAMETER: u32 = 87;
+pub const ERROR_NOT_ENOUGH_MEMORY: u32 = 8;

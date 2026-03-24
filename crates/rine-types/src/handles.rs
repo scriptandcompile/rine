@@ -13,6 +13,8 @@ use std::collections::HashMap;
 
 use std::sync::Mutex;
 
+use crate::threading::{EventWaitable, ThreadWaitable, Waitable};
+
 // ---------------------------------------------------------------------------
 // Handle / HModule newtypes
 // ---------------------------------------------------------------------------
@@ -117,6 +119,10 @@ pub enum HandleEntry {
     File(i32),
     /// A `FindFirstFile` directory search iterator.
     FindData(FindDataState),
+    /// A thread created by `CreateThread`.
+    Thread(ThreadWaitable),
+    /// An event object created by `CreateEvent`.
+    Event(EventWaitable),
 }
 
 /// State kept for an active `FindFirstFile`/`FindNextFile` session.
@@ -221,6 +227,29 @@ impl HandleTable {
         let mut inner = self.inner.lock().unwrap();
         match inner.map.get_mut(&h.as_raw()) {
             Some(HandleEntry::FindData(state)) => Some(f(state)),
+            _ => None,
+        }
+    }
+
+    /// Get a cloneable waitable object for `WaitForSingleObject` etc.
+    /// The returned `Waitable` is Arc-backed so it can be waited on
+    /// without holding the table lock.
+    pub fn get_waitable(&self, h: Handle) -> Option<Waitable> {
+        let inner = self.inner.lock().unwrap();
+        match inner.map.get(&h.as_raw()) {
+            Some(HandleEntry::Thread(t)) => Some(Waitable::Thread(t.clone())),
+            Some(HandleEntry::Event(e)) => Some(Waitable::Event(e.clone())),
+            _ => None,
+        }
+    }
+
+    /// Read a thread's exit code (returns [`STILL_ACTIVE`](crate::threading::STILL_ACTIVE) while running).
+    pub fn get_thread_exit_code(&self, h: Handle) -> Option<u32> {
+        let inner = self.inner.lock().unwrap();
+        match inner.map.get(&h.as_raw()) {
+            Some(HandleEntry::Thread(t)) => {
+                Some(t.exit_code.load(std::sync::atomic::Ordering::Acquire))
+            }
             _ => None,
         }
     }
