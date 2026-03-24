@@ -1,0 +1,106 @@
+use std::fs::File;
+use std::path::Path;
+
+use goblin::pe::PE;
+use goblin::pe::characteristic;
+use memmap2::Mmap;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum PeError {
+    #[error("failed to open file: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("failed to parse PE: {0}")]
+    Parse(#[from] goblin::error::Error),
+
+    #[error("not a PE64 (PE32+) binary — 32-bit PEs are not yet supported")]
+    Not64Bit,
+
+    #[error("binary is a DLL, not an executable")]
+    IsDll,
+
+    #[error("PE has no entry point")]
+    NoEntryPoint,
+}
+
+/// A parsed PE file backed by a memory-mapped file.
+///
+/// The `PE` borrows from the `Mmap`, so both must live together.
+pub struct ParsedPe {
+    pub pe: PE<'static>,
+    // The mmap must be kept alive for the lifetime of `pe`.
+    // Safety: `pe` borrows from `_mmap`. We ensure `_mmap` is never moved or
+    // dropped before `pe` by keeping them in the same struct, with `_mmap`
+    // declared after `pe` (Rust drops fields in declaration order).
+    _mmap: Mmap,
+}
+
+impl ParsedPe {
+    /// Parse and validate a PE file from disk.
+    ///
+    /// Validates:
+    /// - The file is a valid PE binary (goblin handles this)
+    /// - It is PE32+ (64-bit)
+    /// - It is not a DLL
+    /// - It has a non-zero entry point
+    pub fn load(path: &Path) -> Result<Self, PeError> {
+        let file = File::open(path)?;
+        // SAFETY: The file must not be modified while mapped. This is a
+        // reasonable assumption for PE loading — the file is read-only input.
+        let mmap = unsafe { Mmap::map(&file)? };
+
+        // Parse the mmap'd bytes. We need `pe` to borrow from `mmap` with a
+        // 'static lifetime so they can coexist in the struct. We use unsafe to
+        // extend the lifetime — this is sound because we keep both `pe` and
+        // `_mmap` in `ParsedPe` and never expose the mmap to be dropped early.
+        let bytes: &'static [u8] = unsafe { &*(mmap.as_ref() as *const [u8]) };
+        let pe = PE::parse(bytes)?;
+
+        validate(&pe)?;
+
+        Ok(ParsedPe { pe, _mmap: mmap })
+    }
+
+    /// Access the raw underlying file bytes (the mmap'd content).
+    pub fn file_bytes(&self) -> &[u8] {
+        &self._mmap
+    }
+}
+
+/// Validate that the parsed PE meets rine's requirements.
+fn validate(pe: &PE) -> Result<(), PeError> {
+    if !pe.is_64 {
+        return Err(PeError::Not64Bit);
+    }
+
+    if characteristic::is_dll(pe.header.coff_header.characteristics) {
+        return Err(PeError::IsDll);
+    }
+
+    if pe.entry == 0 {
+        return Err(PeError::NoEntryPoint);
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn rejects_nonexistent_file() {
+        let result = ParsedPe::load(Path::new("/nonexistent/fake.exe"));
+        assert!(matches!(result, Err(PeError::Io(_))));
+    }
+
+    #[test]
+    fn rejects_non_pe_file() {
+        // This source file is not a PE binary
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/pe/parser.rs");
+        let result = ParsedPe::load(&path);
+        assert!(matches!(result, Err(PeError::Parse(_))));
+    }
+}

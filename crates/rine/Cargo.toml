@@ -1,0 +1,21 @@
+[package]
+name = "rine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Windows PE executable loader for Linux"
+
+[dependencies]
+rine-dlls = { workspace = true }
+rine-types = { workspace = true }
+goblin = { workspace = true }
+nix = { workspace = true }
+libc = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+memmap2 = { workspace = true }
+bitflags = { workspace = true }
+thiserror = { workspace = true }

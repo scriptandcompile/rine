@@ -1,0 +1,9 @@
+[package]
+name = "rine-types"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared Windows type definitions for rine"
+
+[dependencies]
+bitflags = { workspace = true }

@@ -1,0 +1,1 @@
+// WriteConsoleA/W, GetStdHandle, etc.
