@@ -599,4 +599,76 @@ mod tests {
         assert_eq!(split_find_path("*.exe"), ("", "*.exe"));
         assert_eq!(split_find_path(r"foo\bar"), (r"foo\", "bar"));
     }
+
+    #[test]
+    fn handle_table_thread_entry() {
+        use crate::threading::{STILL_ACTIVE, ThreadWaitable};
+        use std::sync::atomic::AtomicU32;
+        use std::sync::{Arc, Condvar, Mutex};
+
+        let table = HandleTable::new();
+        let tw = ThreadWaitable {
+            exit_code: Arc::new(AtomicU32::new(STILL_ACTIVE)),
+            completed: Arc::new((Mutex::new(false), Condvar::new())),
+        };
+        let h = table.insert(HandleEntry::Thread(tw));
+
+        // get_fd returns None for thread handles.
+        assert!(table.get_fd(h).is_none());
+
+        // get_thread_exit_code returns STILL_ACTIVE.
+        assert_eq!(table.get_thread_exit_code(h), Some(STILL_ACTIVE));
+
+        // get_waitable returns a Thread variant.
+        assert!(matches!(
+            table.get_waitable(h),
+            Some(crate::threading::Waitable::Thread(_))
+        ));
+    }
+
+    #[test]
+    fn handle_table_event_entry() {
+        use crate::threading::{EventInner, EventWaitable};
+        use std::sync::{Arc, Condvar, Mutex};
+
+        let table = HandleTable::new();
+        let e = EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(false),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        };
+        let h = table.insert(HandleEntry::Event(e));
+
+        assert!(table.get_fd(h).is_none());
+        assert!(table.get_thread_exit_code(h).is_none());
+        assert!(matches!(
+            table.get_waitable(h),
+            Some(crate::threading::Waitable::Event(_))
+        ));
+    }
+
+    #[test]
+    fn handle_table_get_waitable_returns_none_for_file() {
+        let table = HandleTable::new();
+        let h = table.insert(HandleEntry::File(99));
+        assert!(table.get_waitable(h).is_none());
+    }
+
+    #[test]
+    fn handle_table_remove_thread() {
+        use crate::threading::{STILL_ACTIVE, ThreadWaitable};
+        use std::sync::atomic::AtomicU32;
+        use std::sync::{Arc, Condvar, Mutex};
+
+        let table = HandleTable::new();
+        let tw = ThreadWaitable {
+            exit_code: Arc::new(AtomicU32::new(STILL_ACTIVE)),
+            completed: Arc::new((Mutex::new(false), Condvar::new())),
+        };
+        let h = table.insert(HandleEntry::Thread(tw));
+        assert!(matches!(table.remove(h), Some(HandleEntry::Thread(_))));
+        assert!(table.get_waitable(h).is_none());
+    }
 }

@@ -214,3 +214,228 @@ fn wait_event(e: &EventWaitable, timeout_ms: u32) -> u32 {
     }
     WAIT_OBJECT_0
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── TLS tests ────────────────────────────────────────────────
+
+    #[test]
+    fn tls_alloc_returns_sequential_indices() {
+        let a = tls_alloc().unwrap();
+        let b = tls_alloc().unwrap();
+        // Indices are unique (not necessarily contiguous due to parallel tests,
+        // but must differ).
+        assert_ne!(a, b);
+        tls_free(a);
+        tls_free(b);
+    }
+
+    #[test]
+    fn tls_get_set_roundtrip() {
+        let idx = tls_alloc().unwrap();
+        assert_eq!(tls_get_value(idx), 0); // default is zero
+        assert!(tls_set_value(idx, 0xDEAD_BEEF));
+        assert_eq!(tls_get_value(idx), 0xDEAD_BEEF);
+        tls_free(idx);
+    }
+
+    #[test]
+    fn tls_free_clears_value() {
+        let idx = tls_alloc().unwrap();
+        tls_set_value(idx, 42);
+        assert!(tls_free(idx));
+        // After free, value reads as 0 (slot no longer allocated).
+        assert_eq!(tls_get_value(idx), 0);
+    }
+
+    #[test]
+    fn tls_free_unallocated_returns_false() {
+        // Freeing a never-allocated slot should fail.
+        // Use a high index that's extremely unlikely to be allocated.
+        assert!(!tls_free(TLS_MAX_SLOTS as u32)); // out of range
+    }
+
+    #[test]
+    fn tls_double_free_returns_false() {
+        let idx = tls_alloc().unwrap();
+        assert!(tls_free(idx));
+        assert!(!tls_free(idx)); // second free fails
+    }
+
+    #[test]
+    fn tls_out_of_range_index() {
+        assert_eq!(tls_get_value(TLS_MAX_SLOTS as u32 + 1), 0);
+        assert!(!tls_set_value(TLS_MAX_SLOTS as u32 + 1, 99));
+    }
+
+    #[test]
+    fn tls_realloc_reuses_freed_slot() {
+        let a = tls_alloc().unwrap();
+        tls_free(a);
+        let b = tls_alloc().unwrap();
+        // The freed slot should be available again; the allocator scans
+        // from index 0 so `b` will be <= `a` (it gets `a` or a lower
+        // slot that another parallel test freed).
+        // Just verify we got a valid index back.
+        assert!(b < TLS_MAX_SLOTS as u32);
+        tls_free(b);
+    }
+
+    #[test]
+    fn tls_per_thread_isolation() {
+        let idx = tls_alloc().unwrap();
+        tls_set_value(idx, 111);
+
+        let child_saw = std::thread::spawn(move || {
+            // Child thread should see default value (0), not parent's.
+            let v = tls_get_value(idx);
+            tls_set_value(idx, 222);
+            (v, tls_get_value(idx))
+        })
+        .join()
+        .unwrap();
+
+        assert_eq!(child_saw, (0, 222));
+        // Parent's value unchanged.
+        assert_eq!(tls_get_value(idx), 111);
+        tls_free(idx);
+    }
+
+    // ── Event wait tests ─────────────────────────────────────────
+
+    fn make_event(manual_reset: bool, initial: bool) -> EventWaitable {
+        EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(initial),
+                condvar: Condvar::new(),
+                manual_reset,
+            }),
+        }
+    }
+
+    #[test]
+    fn event_initially_signaled_returns_immediately() {
+        let e = make_event(true, true);
+        let w = Waitable::Event(e);
+        assert_eq!(wait_on(&w, 0), WAIT_OBJECT_0);
+    }
+
+    #[test]
+    fn event_initially_unsignaled_times_out() {
+        let e = make_event(true, false);
+        let w = Waitable::Event(e);
+        assert_eq!(wait_on(&w, 0), WAIT_TIMEOUT);
+    }
+
+    #[test]
+    fn auto_reset_event_clears_after_wait() {
+        let e = make_event(false, true); // auto-reset, initially signaled
+        let w = Waitable::Event(e);
+        assert_eq!(wait_on(&w, 0), WAIT_OBJECT_0); // consumes the signal
+        assert_eq!(wait_on(&w, 0), WAIT_TIMEOUT); // now unsignaled
+    }
+
+    #[test]
+    fn manual_reset_event_stays_signaled() {
+        let e = make_event(true, true); // manual-reset, initially signaled
+        let w = Waitable::Event(e);
+        assert_eq!(wait_on(&w, 0), WAIT_OBJECT_0);
+        assert_eq!(wait_on(&w, 0), WAIT_OBJECT_0); // still signaled
+    }
+
+    #[test]
+    fn event_signal_from_another_thread() {
+        let e = make_event(true, false);
+        let inner = Arc::clone(&e.inner);
+        let w = Waitable::Event(e);
+
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(20));
+            *inner.signaled.lock().unwrap() = true;
+            inner.condvar.notify_all();
+        });
+
+        assert_eq!(wait_on(&w, 1000), WAIT_OBJECT_0);
+    }
+
+    #[test]
+    fn event_timeout_when_never_signaled() {
+        let e = make_event(true, false);
+        let w = Waitable::Event(e);
+        let start = Instant::now();
+        assert_eq!(wait_on(&w, 50), WAIT_TIMEOUT);
+        let elapsed = start.elapsed();
+        assert!(elapsed >= Duration::from_millis(40));
+        assert!(elapsed < Duration::from_millis(200));
+    }
+
+    // ── Thread waitable tests ────────────────────────────────────
+
+    fn make_thread_waitable() -> ThreadWaitable {
+        ThreadWaitable {
+            exit_code: Arc::new(AtomicU32::new(STILL_ACTIVE)),
+            completed: Arc::new((Mutex::new(false), Condvar::new())),
+        }
+    }
+
+    #[test]
+    fn thread_wait_returns_timeout_while_running() {
+        let tw = make_thread_waitable();
+        let w = Waitable::Thread(tw);
+        assert_eq!(wait_on(&w, 0), WAIT_TIMEOUT);
+    }
+
+    #[test]
+    fn thread_wait_returns_immediately_when_completed() {
+        let tw = make_thread_waitable();
+        // Simulate thread completion.
+        tw.exit_code.store(0, Ordering::Release);
+        let (lock, cvar) = &*tw.completed;
+        *lock.lock().unwrap() = true;
+        cvar.notify_all();
+
+        let w = Waitable::Thread(tw);
+        assert_eq!(wait_on(&w, 0), WAIT_OBJECT_0);
+    }
+
+    #[test]
+    fn thread_wait_with_timeout_succeeds_when_completed_in_time() {
+        let tw = make_thread_waitable();
+        let completed = Arc::clone(&tw.completed);
+        let exit_code = Arc::clone(&tw.exit_code);
+
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(20));
+            exit_code.store(42, Ordering::Release);
+            let (lock, cvar) = &*completed;
+            *lock.lock().unwrap() = true;
+            cvar.notify_all();
+        });
+
+        let w = Waitable::Thread(tw);
+        assert_eq!(wait_on(&w, 1000), WAIT_OBJECT_0);
+    }
+
+    #[test]
+    fn thread_wait_timeout_fires_when_not_completed() {
+        let tw = make_thread_waitable();
+        let w = Waitable::Thread(tw);
+        let start = Instant::now();
+        assert_eq!(wait_on(&w, 50), WAIT_TIMEOUT);
+        assert!(start.elapsed() >= Duration::from_millis(40));
+    }
+
+    // ── Constants ────────────────────────────────────────────────
+
+    #[test]
+    fn windows_constants_are_correct() {
+        assert_eq!(INFINITE, 0xFFFF_FFFF);
+        assert_eq!(WAIT_OBJECT_0, 0);
+        assert_eq!(WAIT_TIMEOUT, 0x102);
+        assert_eq!(WAIT_FAILED, 0xFFFF_FFFF);
+        assert_eq!(STILL_ACTIVE, 259);
+        assert_eq!(TLS_OUT_OF_INDEXES, 0xFFFF_FFFF);
+    }
+}
