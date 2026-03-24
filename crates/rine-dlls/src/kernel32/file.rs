@@ -12,7 +12,7 @@ use rine_types::handles::{Handle, handle_to_fd};
 /// `buffer` must point to at least `bytes_to_write` readable bytes.
 /// `bytes_written` may be null; if non-null must be writable.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WriteFile(
+pub unsafe extern "win64" fn WriteFile(
     file: isize,                         // HANDLE
     buffer: *const u8,                   // LPCVOID
     bytes_to_write: u32,                 // DWORD

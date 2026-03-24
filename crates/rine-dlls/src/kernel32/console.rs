@@ -11,7 +11,7 @@ use rine_types::handles::{INVALID_HANDLE_VALUE, fd_to_handle, handle_to_fd, std_
 /// # Safety
 /// No pointer arguments; always safe at the ABI level.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetStdHandle(nstd_handle: u32) -> isize {
+pub unsafe extern "win64" fn GetStdHandle(nstd_handle: u32) -> isize {
     match std_handle_to_fd(nstd_handle) {
         Some(fd) => fd_to_handle(fd).as_raw(),
         None => {
@@ -27,7 +27,7 @@ pub unsafe extern "C" fn GetStdHandle(nstd_handle: u32) -> isize {
 /// `buffer` must point to at least `chars_to_write` readable bytes.
 /// `chars_written` may be null; if non-null it must be a writable `*mut u32`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WriteConsoleA(
+pub unsafe extern "win64" fn WriteConsoleA(
     console_output: isize,               // HANDLE
     buffer: *const u8,                   // const VOID*
     chars_to_write: u32,                 // DWORD (number of bytes)
@@ -59,7 +59,7 @@ pub unsafe extern "C" fn WriteConsoleA(
 /// # Safety
 /// `buffer` must point to at least `chars_to_write` valid `u16` values.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WriteConsoleW(
+pub unsafe extern "win64" fn WriteConsoleW(
     console_output: isize,
     buffer: *const u16,
     chars_to_write: u32,

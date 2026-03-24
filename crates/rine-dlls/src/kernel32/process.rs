@@ -42,7 +42,7 @@ fn cached_cmd_line() -> &'static CmdLineCache {
 /// # Safety
 /// Does not return.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ExitProcess(exit_code: u32) {
+pub unsafe extern "win64" fn ExitProcess(exit_code: u32) {
     std::process::exit(exit_code as i32);
 }
 
@@ -51,7 +51,7 @@ pub unsafe extern "C" fn ExitProcess(exit_code: u32) {
 /// # Safety
 /// The returned pointer is valid for the lifetime of the process.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCommandLineA() -> *const u8 {
+pub unsafe extern "win64" fn GetCommandLineA() -> *const u8 {
     cached_cmd_line().ansi.as_ptr().cast()
 }
 
@@ -60,7 +60,7 @@ pub unsafe extern "C" fn GetCommandLineA() -> *const u8 {
 /// # Safety
 /// The returned pointer is valid for the lifetime of the process.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCommandLineW() -> *const u16 {
+pub unsafe extern "win64" fn GetCommandLineW() -> *const u16 {
     cached_cmd_line().wide.as_ptr()
 }
 
@@ -74,7 +74,7 @@ pub unsafe extern "C" fn GetCommandLineW() -> *const u16 {
 /// # Safety
 /// `module_name` must be null or a valid null-terminated ANSI string.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetModuleHandleA(module_name: *const u8) -> usize {
+pub unsafe extern "win64" fn GetModuleHandleA(module_name: *const u8) -> usize {
     if module_name.is_null() {
         // TODO: return the actual image base once the loader exposes it.
         tracing::debug!("GetModuleHandleA(NULL) — returning 0 (placeholder)");
@@ -94,7 +94,7 @@ pub unsafe extern "C" fn GetModuleHandleA(module_name: *const u8) -> usize {
 /// # Safety
 /// `module_name` must be null or a valid null-terminated UTF-16LE string.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetModuleHandleW(module_name: *const u16) -> usize {
+pub unsafe extern "win64" fn GetModuleHandleW(module_name: *const u16) -> usize {
     if module_name.is_null() {
         tracing::debug!("GetModuleHandleW(NULL) — returning 0 (placeholder)");
         return 0;
@@ -114,4 +114,24 @@ pub unsafe extern "C" fn GetModuleHandleW(module_name: *const u16) -> usize {
         "GetModuleHandleW: non-NULL module_name not yet supported"
     );
     0
+}
+
+/// GetLastError — return the last-error code for the calling thread.
+///
+/// Stub: always returns 0 (ERROR_SUCCESS). A real per-thread last-error
+/// store will be added with the threading subsystem.
+#[allow(non_snake_case)]
+pub unsafe extern "win64" fn GetLastError() -> u32 {
+    0
+}
+
+/// SetUnhandledExceptionFilter — install a top-level exception filter.
+///
+/// Stub: returns NULL (no previous handler). Exception handling is not
+/// yet implemented.
+#[allow(non_snake_case)]
+pub unsafe extern "win64" fn SetUnhandledExceptionFilter(
+    _filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
+) -> usize {
+    0 // NULL — no previous handler
 }
