@@ -26,7 +26,10 @@ use crate::loader::resolver;
 use crate::pe::parser::ParsedPe;
 
 fn main() -> ExitCode {
-    tracing_subscriber::fmt().with_target(false).init();
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .with_writer(std::io::stderr)
+        .init();
 
     let cli = Cli::parse();
 
