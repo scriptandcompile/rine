@@ -4,7 +4,10 @@
 use std::collections::HashMap;
 
 /// A function pointer stored in the registry, castable to the appropriate signature.
-pub type WinApiFunc = unsafe extern "C" fn();
+///
+/// Uses `extern "win64"` because PE code calls through the IAT using
+/// the Windows x64 calling convention.
+pub type WinApiFunc = unsafe extern "win64" fn();
 
 /// Type-erase a function pointer to `WinApiFunc` for registry storage.
 ///
@@ -126,6 +129,14 @@ impl DllRegistry {
         self.get_or_create_module(dll).register_name(name, func);
     }
 
+    /// Register a data export. The IAT slot will contain the raw address
+    /// (e.g. pointer to a variable), not a function pointer. The PE code
+    /// reads this value directly as a pointer.
+    fn register_data(&mut self, dll: &str, name: &'static str, addr: *const ()) {
+        let func = unsafe { core::mem::transmute::<*const (), WinApiFunc>(addr) };
+        self.get_or_create_module(dll).register_name(name, func);
+    }
+
     fn register_func_ordinal(&mut self, dll: &str, ordinal: u16, func: WinApiFunc) {
         self.get_or_create_module(dll)
             .register_ordinal(ordinal, func);
@@ -177,6 +188,216 @@ impl DllRegistry {
             as_win_api!(crate::ntdll::rtl::RtlInitUnicodeString),
         );
 
+        // ----- msvcrt.dll -----
+        self.register_func(
+            "msvcrt.dll",
+            "printf",
+            as_win_api!(crate::msvcrt::stdio::printf),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "puts",
+            as_win_api!(crate::msvcrt::stdio::puts),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "fprintf",
+            as_win_api!(crate::msvcrt::stdio::fprintf),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "vfprintf",
+            as_win_api!(crate::msvcrt::stdio::vfprintf),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "fwrite",
+            as_win_api!(crate::msvcrt::stdio::fwrite),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "exit",
+            as_win_api!(crate::msvcrt::stdlib::exit),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "_cexit",
+            as_win_api!(crate::msvcrt::stdlib::_cexit),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "__getmainargs",
+            as_win_api!(crate::msvcrt::crt_init::__getmainargs),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "_initterm",
+            as_win_api!(crate::msvcrt::crt_init::_initterm),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "_initterm_e",
+            as_win_api!(crate::msvcrt::crt_init::_initterm_e),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "__set_app_type",
+            as_win_api!(crate::msvcrt::crt_support::__set_app_type),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "__setusermatherr",
+            as_win_api!(crate::msvcrt::crt_support::__setusermatherr),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "__C_specific_handler",
+            as_win_api!(crate::msvcrt::crt_support::__C_specific_handler),
+        );
+        self.register_data(
+            "msvcrt.dll",
+            "_commode",
+            crate::msvcrt::crt_support::commode_data_ptr() as *const (),
+        );
+        self.register_data(
+            "msvcrt.dll",
+            "_fmode",
+            crate::msvcrt::crt_support::fmode_data_ptr() as *const (),
+        );
+        self.register_data(
+            "msvcrt.dll",
+            "__initenv",
+            crate::msvcrt::crt_support::initenv_data_ptr() as *const (),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "__iob_func",
+            as_win_api!(crate::msvcrt::crt_support::__iob_func),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "_onexit",
+            as_win_api!(crate::msvcrt::crt_support::_onexit),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "_amsg_exit",
+            as_win_api!(crate::msvcrt::crt_support::_amsg_exit),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "abort",
+            as_win_api!(crate::msvcrt::crt_support::abort),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "signal",
+            as_win_api!(crate::msvcrt::crt_support::signal),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "_lock",
+            as_win_api!(crate::msvcrt::crt_support::_lock),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "_unlock",
+            as_win_api!(crate::msvcrt::crt_support::_unlock),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "_errno",
+            as_win_api!(crate::msvcrt::crt_support::_errno),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "__p__environ",
+            as_win_api!(crate::msvcrt::crt_support::__p__environ),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "__p__fmode",
+            as_win_api!(crate::msvcrt::crt_support::__p__fmode),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "__p__commode",
+            as_win_api!(crate::msvcrt::crt_support::__p__commode),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "malloc",
+            as_win_api!(crate::msvcrt::memory::malloc),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "calloc",
+            as_win_api!(crate::msvcrt::memory::calloc),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "realloc",
+            as_win_api!(crate::msvcrt::memory::realloc),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "free",
+            as_win_api!(crate::msvcrt::memory::free),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "memcpy",
+            as_win_api!(crate::msvcrt::memory::memcpy),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "memset",
+            as_win_api!(crate::msvcrt::memory::memset),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "strlen",
+            as_win_api!(crate::msvcrt::string::strlen),
+        );
+        self.register_func(
+            "msvcrt.dll",
+            "strncmp",
+            as_win_api!(crate::msvcrt::string::strncmp),
+        );
+
+        // Register the same functions under CRT forwarder DLL names used
+        // by MinGW-w64 and UCRT-based executables.
+        self.register_func(
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "printf",
+            as_win_api!(crate::msvcrt::stdio::printf),
+        );
+        self.register_func(
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "puts",
+            as_win_api!(crate::msvcrt::stdio::puts),
+        );
+        self.register_func(
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "exit",
+            as_win_api!(crate::msvcrt::stdlib::exit),
+        );
+        self.register_func(
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "_cexit",
+            as_win_api!(crate::msvcrt::stdlib::_cexit),
+        );
+        self.register_func(
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "_initterm",
+            as_win_api!(crate::msvcrt::crt_init::_initterm),
+        );
+        self.register_func(
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "_initterm_e",
+            as_win_api!(crate::msvcrt::crt_init::_initterm_e),
+        );
+
         // ----- kernel32.dll -----
         self.register_func(
             "kernel32.dll",
@@ -223,6 +444,56 @@ impl DllRegistry {
             "GetModuleHandleW",
             as_win_api!(crate::kernel32::process::GetModuleHandleW),
         );
+        self.register_func(
+            "kernel32.dll",
+            "GetLastError",
+            as_win_api!(crate::kernel32::process::GetLastError),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "SetUnhandledExceptionFilter",
+            as_win_api!(crate::kernel32::process::SetUnhandledExceptionFilter),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "InitializeCriticalSection",
+            as_win_api!(crate::kernel32::sync::InitializeCriticalSection),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "EnterCriticalSection",
+            as_win_api!(crate::kernel32::sync::EnterCriticalSection),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "LeaveCriticalSection",
+            as_win_api!(crate::kernel32::sync::LeaveCriticalSection),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "DeleteCriticalSection",
+            as_win_api!(crate::kernel32::sync::DeleteCriticalSection),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "TlsGetValue",
+            as_win_api!(crate::kernel32::thread::TlsGetValue),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "Sleep",
+            as_win_api!(crate::kernel32::thread::Sleep),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "VirtualProtect",
+            as_win_api!(crate::kernel32::memory::VirtualProtect),
+        );
+        self.register_func(
+            "kernel32.dll",
+            "VirtualQuery",
+            as_win_api!(crate::kernel32::memory::VirtualQuery),
+        );
     }
 }
 
@@ -245,7 +516,7 @@ fn normalize_dll_name(name: &str) -> String {
 /// Default stub for unimplemented Windows API functions.
 /// Logs the call and aborts — this is intentionally noisy so missing
 /// implementations are immediately visible during development.
-unsafe extern "C" fn stub_function() {
+unsafe extern "win64" fn stub_function() {
     // In a real call this will be hit when the PE tries to call an
     // unimplemented import. We can't know which function was called from
     // here (the caller burned through the IAT pointer), but the resolver
@@ -292,7 +563,7 @@ mod tests {
     fn manual_registration_works() {
         let mut reg = DllRegistry::new();
 
-        unsafe extern "C" fn fake_func() {}
+        unsafe extern "win64" fn fake_func() {}
 
         reg.register_func("test.dll", "TestFunc", fake_func);
         reg.register_func_ordinal("test.dll", 42, fake_func);
@@ -316,22 +587,106 @@ mod tests {
         let reg = DllRegistry::new();
 
         // ntdll
-        assert!(matches!(reg.resolve_by_name("ntdll.dll", "NtWriteFile"), LookupResult::Found(_)));
-        assert!(matches!(reg.resolve_by_name("ntdll.dll", "NtTerminateProcess"), LookupResult::Found(_)));
-        assert!(matches!(reg.resolve_by_name("ntdll.dll", "RtlInitUnicodeString"), LookupResult::Found(_)));
+        assert!(matches!(
+            reg.resolve_by_name("ntdll.dll", "NtWriteFile"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("ntdll.dll", "NtTerminateProcess"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("ntdll.dll", "RtlInitUnicodeString"),
+            LookupResult::Found(_)
+        ));
 
         // kernel32
-        assert!(matches!(reg.resolve_by_name("kernel32.dll", "GetStdHandle"), LookupResult::Found(_)));
-        assert!(matches!(reg.resolve_by_name("kernel32.dll", "WriteConsoleA"), LookupResult::Found(_)));
-        assert!(matches!(reg.resolve_by_name("kernel32.dll", "WriteConsoleW"), LookupResult::Found(_)));
-        assert!(matches!(reg.resolve_by_name("kernel32.dll", "WriteFile"), LookupResult::Found(_)));
-        assert!(matches!(reg.resolve_by_name("kernel32.dll", "ExitProcess"), LookupResult::Found(_)));
-        assert!(matches!(reg.resolve_by_name("kernel32.dll", "GetCommandLineA"), LookupResult::Found(_)));
-        assert!(matches!(reg.resolve_by_name("kernel32.dll", "GetCommandLineW"), LookupResult::Found(_)));
-        assert!(matches!(reg.resolve_by_name("kernel32.dll", "GetModuleHandleA"), LookupResult::Found(_)));
-        assert!(matches!(reg.resolve_by_name("kernel32.dll", "GetModuleHandleW"), LookupResult::Found(_)));
+        assert!(matches!(
+            reg.resolve_by_name("kernel32.dll", "GetStdHandle"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("kernel32.dll", "WriteConsoleA"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("kernel32.dll", "WriteConsoleW"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("kernel32.dll", "WriteFile"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("kernel32.dll", "ExitProcess"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("kernel32.dll", "GetCommandLineA"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("kernel32.dll", "GetCommandLineW"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("kernel32.dll", "GetModuleHandleA"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("kernel32.dll", "GetModuleHandleW"),
+            LookupResult::Found(_)
+        ));
 
         // Unimplemented functions still return Stub
-        assert!(matches!(reg.resolve_by_name("kernel32.dll", "CreateFileA"), LookupResult::Stub(_)));
+        assert!(matches!(
+            reg.resolve_by_name("kernel32.dll", "CreateFileA"),
+            LookupResult::Stub(_)
+        ));
+    }
+
+    #[test]
+    fn phase1_step5_msvcrt_functions_resolve_as_found() {
+        let reg = DllRegistry::new();
+
+        // msvcrt.dll
+        assert!(matches!(
+            reg.resolve_by_name("msvcrt.dll", "printf"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("msvcrt.dll", "puts"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("msvcrt.dll", "exit"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("msvcrt.dll", "_cexit"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("msvcrt.dll", "__getmainargs"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("msvcrt.dll", "_initterm"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("msvcrt.dll", "_initterm_e"),
+            LookupResult::Found(_)
+        ));
+
+        // CRT forwarder DLLs should resolve the same functions
+        assert!(matches!(
+            reg.resolve_by_name("api-ms-win-crt-stdio-l1-1-0.dll", "printf"),
+            LookupResult::Found(_)
+        ));
+        assert!(matches!(
+            reg.resolve_by_name("api-ms-win-crt-runtime-l1-1-0.dll", "_initterm"),
+            LookupResult::Found(_)
+        ));
     }
 }
