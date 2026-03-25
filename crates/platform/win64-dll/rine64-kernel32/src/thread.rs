@@ -5,7 +5,7 @@ use std::ptr;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 
-use rine_types::errors::{FALSE, TRUE, WinBool};
+use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, INVALID_HANDLE_VALUE, handle_table};
 use rine_types::threading::{
     self, INFINITE, STILL_ACTIVE, TLS_OUT_OF_INDEXES, ThreadWaitable, WAIT_FAILED, WAIT_OBJECT_0,
@@ -172,9 +172,9 @@ pub unsafe extern "win64" fn TlsAlloc() -> u32 {
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn TlsFree(tls_index: u32) -> WinBool {
     if threading::tls_free(tls_index) {
-        TRUE
+        WinBool::TRUE
     } else {
-        FALSE
+        WinBool::FALSE
     }
 }
 
@@ -188,9 +188,9 @@ pub unsafe extern "win64" fn TlsGetValue(tls_index: u32) -> usize {
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn TlsSetValue(tls_index: u32, value: usize) -> WinBool {
     if threading::tls_set_value(tls_index, value) {
-        TRUE
+        WinBool::TRUE
     } else {
-        FALSE
+        WinBool::FALSE
     }
 }
 
@@ -215,15 +215,15 @@ pub unsafe extern "win64" fn GetExitCodeThread(
     exit_code_out: *mut u32,
 ) -> WinBool {
     if exit_code_out.is_null() {
-        return FALSE;
+        return WinBool::FALSE;
     }
     let h = Handle::from_raw(thread_handle);
     match handle_table().get_thread_exit_code(h) {
         Some(code) => {
             unsafe { ptr::write(exit_code_out, code) };
-            TRUE
+            WinBool::TRUE
         }
-        None => FALSE,
+        None => WinBool::FALSE,
     }
 }
 
@@ -269,7 +269,7 @@ pub unsafe extern "win64" fn WaitForMultipleObjects(
     }
     let waitables: Vec<Waitable> = waitables.into_iter().flatten().collect();
 
-    if wait_all != 0 {
+    if wait_all.is_true() {
         // Wait for ALL objects — sequentially, adjusting timeout.
         let start = std::time::Instant::now();
         for w in &waitables {

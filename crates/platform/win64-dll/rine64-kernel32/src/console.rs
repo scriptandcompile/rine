@@ -36,19 +36,19 @@ pub unsafe extern "win64" fn WriteConsoleA(
 ) -> WinBool {
     let handle = rine_types::handles::Handle::from_raw(console_output);
     let Some(fd) = handle_to_fd(handle) else {
-        return errors::FALSE;
+        return errors::WinBool::FALSE;
     };
 
     let written = unsafe { libc::write(fd, buffer.cast(), chars_to_write as usize) };
 
     if written < 0 {
-        return errors::FALSE;
+        return WinBool::FALSE;
     }
 
     if !chars_written.is_null() {
         unsafe { *chars_written = written as u32 };
     }
-    errors::TRUE
+    WinBool::TRUE
 }
 
 /// WriteConsoleW — write a wide (UTF-16LE) string to a console handle.
@@ -68,7 +68,7 @@ pub unsafe extern "win64" fn WriteConsoleW(
 ) -> WinBool {
     let handle = rine_types::handles::Handle::from_raw(console_output);
     let Some(fd) = handle_to_fd(handle) else {
-        return errors::FALSE;
+        return WinBool::FALSE;
     };
 
     // Build a &[u16] from the raw pointer and decode to UTF-8.
@@ -78,12 +78,12 @@ pub unsafe extern "win64" fn WriteConsoleW(
     let written = unsafe { libc::write(fd, utf8.as_ptr().cast(), utf8.len()) };
 
     if written < 0 {
-        return errors::FALSE;
+        return WinBool::FALSE;
     }
 
     // Report the number of *wide chars* consumed (all of them on success).
     if !chars_written.is_null() {
         unsafe { *chars_written = chars_to_write };
     }
-    errors::TRUE
+    WinBool::TRUE
 }

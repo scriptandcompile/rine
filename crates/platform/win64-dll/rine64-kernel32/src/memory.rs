@@ -1,6 +1,6 @@
 //! kernel32 memory functions: VirtualProtect, VirtualQuery (minimal Phase 1).
 
-use rine_types::errors::{self, WinBool};
+use rine_types::errors::WinBool;
 
 /// VirtualProtect — change the protection on a region of pages.
 ///
@@ -20,9 +20,9 @@ pub unsafe extern "win64" fn VirtualProtect(
     let prot = win_protect_to_linux(new_protect);
     let result = unsafe { libc::mprotect(address.cast(), size, prot) };
     if result == 0 {
-        errors::TRUE
+        WinBool::TRUE
     } else {
-        errors::FALSE
+        WinBool::FALSE
     }
 }
 

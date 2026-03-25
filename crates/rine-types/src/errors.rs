@@ -31,9 +31,34 @@ impl core::fmt::Debug for NtStatus {
 }
 
 /// Win32 BOOL — 0 means FALSE, non-zero means TRUE.
-pub type WinBool = i32;
-pub const TRUE: WinBool = 1;
-pub const FALSE: WinBool = 0;
+///
+/// Represented as a `#[repr(transparent)]` i32 wrapper rather than an
+/// enum so that any value received from PE code is valid (Windows only
+/// guarantees FALSE == 0; any non-zero value is truthy).
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct WinBool(pub i32);
+
+impl WinBool {
+    pub const FALSE: Self = Self(0);
+    pub const TRUE: Self = Self(1);
+
+    /// Windows-style truth check: anything non-zero is truthy.
+    #[inline]
+    pub const fn is_true(self) -> bool {
+        self.0 != 0
+    }
+}
+
+impl core::fmt::Debug for WinBool {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self.0 {
+            0 => f.write_str("FALSE"),
+            1 => f.write_str("TRUE"),
+            other => write!(f, "BOOL({other})"),
+        }
+    }
+}
 
 // Win32 error codes (GetLastError / SetLastError values).
 pub const ERROR_SUCCESS: u32 = 0;

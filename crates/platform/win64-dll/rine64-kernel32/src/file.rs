@@ -1,7 +1,7 @@
 //! kernel32 file I/O: CreateFileA/W, ReadFile, WriteFile, CloseHandle,
 //! GetFileSize, SetFilePointer, FindFirstFileA/W, FindNextFileA/W, FindClose.
 
-use rine_types::errors::{self, WinBool};
+use rine_types::errors::WinBool;
 use rine_types::handles::{
     self, CREATE_ALWAYS, CREATE_NEW, FILE_BEGIN, FILE_CURRENT, FILE_END, FindDataState,
     GENERIC_READ, GENERIC_WRITE, Handle, HandleEntry, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE,
@@ -142,18 +142,18 @@ pub unsafe extern "win64" fn ReadFile(
 ) -> WinBool {
     let handle = Handle::from_raw(file);
     let Some(fd) = handle_to_fd(handle) else {
-        return errors::FALSE;
+        return WinBool::FALSE;
     };
 
     let n = unsafe { libc::read(fd, buffer.cast(), bytes_to_read as usize) };
     if n < 0 {
-        return errors::FALSE;
+        return WinBool::FALSE;
     }
 
     if !bytes_read.is_null() {
         unsafe { *bytes_read = n as u32 };
     }
-    errors::TRUE
+    WinBool::TRUE
 }
 
 // ---------------------------------------------------------------------------
@@ -175,18 +175,18 @@ pub unsafe extern "win64" fn WriteFile(
 ) -> WinBool {
     let handle = Handle::from_raw(file);
     let Some(fd) = handle_to_fd(handle) else {
-        return errors::FALSE;
+        return WinBool::FALSE;
     };
 
     let written = unsafe { libc::write(fd, buffer.cast(), bytes_to_write as usize) };
     if written < 0 {
-        return errors::FALSE;
+        return WinBool::FALSE;
     }
 
     if !bytes_written.is_null() {
         unsafe { *bytes_written = written as u32 };
     }
-    errors::TRUE
+    WinBool::TRUE
 }
 
 // ---------------------------------------------------------------------------
@@ -201,20 +201,20 @@ pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
     match handle_table().remove(handle) {
         Some(HandleEntry::File(fd)) => {
             unsafe { libc::close(fd) };
-            errors::TRUE
+            WinBool::TRUE
         }
         Some(HandleEntry::FindData(_)) => {
             // FindData has no OS resource to free.
-            errors::TRUE
+            WinBool::TRUE
         }
         Some(HandleEntry::Thread(_)) => {
             // Thread keeps running; we just release our handle.
-            errors::TRUE
+            WinBool::TRUE
         }
-        Some(HandleEntry::Event(_)) => errors::TRUE,
+        Some(HandleEntry::Event(_)) => WinBool::TRUE,
         None => {
             tracing::warn!(?handle, "CloseHandle: unknown handle");
-            errors::FALSE
+            WinBool::FALSE
         }
     }
 }
@@ -370,7 +370,7 @@ pub unsafe extern "win64" fn FindNextFileA(
     find_data: *mut Win32FindDataA,
 ) -> WinBool {
     if find_data.is_null() {
-        return errors::FALSE;
+        return WinBool::FALSE;
     }
     let handle = Handle::from_raw(find_file);
 
@@ -385,8 +385,8 @@ pub unsafe extern "win64" fn FindNextFileA(
     });
 
     match result {
-        Some(true) => errors::TRUE,
-        _ => errors::FALSE,
+        Some(true) => WinBool::TRUE,
+        _ => WinBool::FALSE,
     }
 }
 
@@ -397,7 +397,7 @@ pub unsafe extern "win64" fn FindNextFileW(
     find_data: *mut Win32FindDataW,
 ) -> WinBool {
     if find_data.is_null() {
-        return errors::FALSE;
+        return WinBool::FALSE;
     }
     let handle = Handle::from_raw(find_file);
 
@@ -412,8 +412,8 @@ pub unsafe extern "win64" fn FindNextFileW(
     });
 
     match result {
-        Some(true) => errors::TRUE,
-        _ => errors::FALSE,
+        Some(true) => WinBool::TRUE,
+        _ => WinBool::FALSE,
     }
 }
 

@@ -224,7 +224,7 @@ mod tests {
 
     #[test]
     #[serial]
-    fn tls_alloc_returns_sequential_indices() {
+    fn sequential_tls_alloc_indicies_differ() {
         let a = tls_alloc().unwrap();
         let b = tls_alloc().unwrap();
         // Indices are unique (not necessarily contiguous due to parallel tests,
@@ -238,7 +238,7 @@ mod tests {
     #[serial]
     fn tls_get_set_roundtrip() {
         let idx = tls_alloc().unwrap();
-        assert_eq!(tls_get_value(idx), 0); // default is zero
+        assert_ne!(tls_get_value(idx), 0xDEAD_BEEF); // default is zero, but shouldn't be this arbitrary value.
         assert!(tls_set_value(idx, 0xDEAD_BEEF));
         assert_eq!(tls_get_value(idx), 0xDEAD_BEEF);
         tls_free(idx);

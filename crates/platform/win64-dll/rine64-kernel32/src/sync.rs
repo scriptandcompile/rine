@@ -57,10 +57,10 @@ pub unsafe extern "win64" fn InitializeCriticalSectionAndSpinCount(
     _spin_count: u32,
 ) -> WinBool {
     if cs.is_null() {
-        return rine_types::errors::FALSE;
+        return WinBool::FALSE;
     }
     unsafe { init_cs(cs) };
-    rine_types::errors::TRUE
+    WinBool::TRUE
 }
 
 /// EnterCriticalSection — lock the recursive mutex.
@@ -84,16 +84,16 @@ pub unsafe extern "win64" fn EnterCriticalSection(cs: *mut u8) {
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
     if cs.is_null() {
-        return rine_types::errors::FALSE;
+        return WinBool::FALSE;
     }
     let mutex = unsafe { get_mutex(cs) };
     if mutex.is_null() {
-        return rine_types::errors::FALSE;
+        return WinBool::FALSE;
     }
     if unsafe { libc::pthread_mutex_trylock(mutex) } == 0 {
-        rine_types::errors::TRUE
+        WinBool::TRUE
     } else {
-        rine_types::errors::FALSE
+        WinBool::FALSE
     }
 }
 
@@ -148,9 +148,9 @@ pub unsafe extern "win64" fn CreateEventA(
 ) -> isize {
     let waitable = EventWaitable {
         inner: Arc::new(EventInner {
-            signaled: Mutex::new(initial_state != 0),
+            signaled: Mutex::new(initial_state.is_true()),
             condvar: Condvar::new(),
-            manual_reset: manual_reset != 0,
+            manual_reset: manual_reset.is_true(),
         }),
     };
     let h = handle_table().insert(HandleEntry::Event(waitable));
@@ -168,9 +168,9 @@ pub unsafe extern "win64" fn CreateEventW(
 ) -> isize {
     let waitable = EventWaitable {
         inner: Arc::new(EventInner {
-            signaled: Mutex::new(initial_state != 0),
+            signaled: Mutex::new(initial_state.is_true()),
             condvar: Condvar::new(),
-            manual_reset: manual_reset != 0,
+            manual_reset: manual_reset.is_true(),
         }),
     };
     let h = handle_table().insert(HandleEntry::Event(waitable));
@@ -186,7 +186,7 @@ pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
         Some(rine_types::threading::Waitable::Event(e)) => e,
         _ => {
             warn!(handle = event_handle, "SetEvent: invalid handle");
-            return rine_types::errors::FALSE;
+            return WinBool::FALSE;
         }
     };
     let mut signaled = waitable.inner.signaled.lock().unwrap();
@@ -196,7 +196,7 @@ pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
     } else {
         waitable.inner.condvar.notify_one();
     }
-    rine_types::errors::TRUE
+    WinBool::TRUE
 }
 
 /// ResetEvent — clear the signalled state.
@@ -207,10 +207,10 @@ pub unsafe extern "win64" fn ResetEvent(event_handle: isize) -> WinBool {
         Some(rine_types::threading::Waitable::Event(e)) => e,
         _ => {
             warn!(handle = event_handle, "ResetEvent: invalid handle");
-            return rine_types::errors::FALSE;
+            return WinBool::FALSE;
         }
     };
     let mut signaled = waitable.inner.signaled.lock().unwrap();
     *signaled = false;
-    rine_types::errors::TRUE
+    WinBool::TRUE
 }
