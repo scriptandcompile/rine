@@ -43,7 +43,7 @@ fn cached_cmd_line() -> &'static CmdLineCache {
 /// Does not return.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn ExitProcess(exit_code: u32) {
+pub unsafe extern "win64" fn ExitProcess(exit_code: u32) -> ! {
     std::process::exit(exit_code as i32);
 }
 
