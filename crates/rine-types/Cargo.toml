@@ -7,3 +7,6 @@ description = "Shared Windows type definitions for rine"
 
 [dependencies]
 bitflags = { workspace = true }
+
+[dev-dependencies]
+serial_test = { workspace = true }

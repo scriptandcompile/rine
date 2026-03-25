@@ -218,10 +218,12 @@ fn wait_event(e: &EventWaitable, timeout_ms: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     // ── TLS tests ────────────────────────────────────────────────
 
     #[test]
+    #[serial]
     fn tls_alloc_returns_sequential_indices() {
         let a = tls_alloc().unwrap();
         let b = tls_alloc().unwrap();
@@ -233,6 +235,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn tls_get_set_roundtrip() {
         let idx = tls_alloc().unwrap();
         assert_eq!(tls_get_value(idx), 0); // default is zero
@@ -242,6 +245,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn tls_free_clears_value() {
         let idx = tls_alloc().unwrap();
         tls_set_value(idx, 42);
@@ -251,6 +255,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn tls_free_unallocated_returns_false() {
         // Freeing a never-allocated slot should fail.
         // Use a high index that's extremely unlikely to be allocated.
@@ -258,6 +263,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn tls_double_free_returns_false() {
         let idx = tls_alloc().unwrap();
         assert!(tls_free(idx));
@@ -265,12 +271,14 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn tls_out_of_range_index() {
         assert_eq!(tls_get_value(TLS_MAX_SLOTS as u32 + 1), 0);
         assert!(!tls_set_value(TLS_MAX_SLOTS as u32 + 1, 99));
     }
 
     #[test]
+    #[serial]
     fn tls_realloc_reuses_freed_slot() {
         let a = tls_alloc().unwrap();
         tls_free(a);
@@ -284,6 +292,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn tls_per_thread_isolation() {
         let idx = tls_alloc().unwrap();
         tls_set_value(idx, 111);
