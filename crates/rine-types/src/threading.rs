@@ -11,11 +11,28 @@ use std::time::{Duration, Instant};
 
 // ── Windows constants ────────────────────────────────────────────
 
+///
 pub const INFINITE: u32 = 0xFFFF_FFFF;
-pub const WAIT_OBJECT_0: u32 = 0x0000_0000;
-pub const WAIT_ABANDONED_0: u32 = 0x0000_0080;
-pub const WAIT_TIMEOUT: u32 = 0x0000_0102;
-pub const WAIT_FAILED: u32 = 0xFFFF_FFFF;
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct WaitStatus(pub u32);
+
+impl WaitStatus {
+    /// The specified object is a mutex object that was not released by the
+    /// thread that owned the mutex object before the owning thread terminated.
+    /// Ownership of the mutex object is granted to the calling thread and the
+    /// mutex state is set to nonsignaled.
+    pub const WAIT_ABANDONED: Self = Self(0x0000_0080);
+    /// Wait succeeded, and the object is signaled.
+    pub const WAIT_OBJECT_0: Self = Self(0x0000_0000);
+    /// The time-out interval elapsed, and the object's state is nonsignaled.
+    pub const WAIT_TIMEOUT: Self = Self(0x0000_0102);
+    /// The function has failed. To get extended error information, call
+    /// `GetLastError()`.
+    pub const WAIT_FAILED: Self = Self(0xFFFF_FFFF);
+}
+
 pub const STILL_ACTIVE: u32 = 259;
 pub const TLS_OUT_OF_INDEXES: u32 = 0xFFFF_FFFF;
 
@@ -157,27 +174,27 @@ fn wait_thread(t: &ThreadWaitable, timeout_ms: u32) -> u32 {
     let (lock, cvar) = &*t.completed;
     let mut done = lock.lock().unwrap();
     if *done {
-        return WAIT_OBJECT_0;
+        return WaitStatus::WAIT_OBJECT_0.0;
     }
     if timeout_ms == 0 {
-        return WAIT_TIMEOUT;
+        return WaitStatus::WAIT_TIMEOUT.0;
     }
     if timeout_ms == INFINITE {
         while !*done {
             done = cvar.wait(done).unwrap();
         }
-        return WAIT_OBJECT_0;
+        return WaitStatus::WAIT_OBJECT_0.0;
     }
     let deadline = Instant::now() + Duration::from_millis(timeout_ms as u64);
     while !*done {
         let remaining = deadline.saturating_duration_since(Instant::now());
         if remaining.is_zero() {
-            return WAIT_TIMEOUT;
+            return WaitStatus::WAIT_TIMEOUT.0;
         }
         let result = cvar.wait_timeout(done, remaining).unwrap();
         done = result.0;
     }
-    WAIT_OBJECT_0
+    WaitStatus::WAIT_OBJECT_0.0
 }
 
 fn wait_event(e: &EventWaitable, timeout_ms: u32) -> u32 {
@@ -186,10 +203,10 @@ fn wait_event(e: &EventWaitable, timeout_ms: u32) -> u32 {
         if !e.inner.manual_reset {
             *signaled = false; // auto-reset
         }
-        return WAIT_OBJECT_0;
+        return WaitStatus::WAIT_OBJECT_0.0;
     }
     if timeout_ms == 0 {
-        return WAIT_TIMEOUT;
+        return WaitStatus::WAIT_TIMEOUT.0;
     }
     if timeout_ms == INFINITE {
         while !*signaled {
@@ -198,13 +215,13 @@ fn wait_event(e: &EventWaitable, timeout_ms: u32) -> u32 {
         if !e.inner.manual_reset {
             *signaled = false;
         }
-        return WAIT_OBJECT_0;
+        return WaitStatus::WAIT_OBJECT_0.0;
     }
     let deadline = Instant::now() + Duration::from_millis(timeout_ms as u64);
     while !*signaled {
         let remaining = deadline.saturating_duration_since(Instant::now());
         if remaining.is_zero() {
-            return WAIT_TIMEOUT;
+            return WaitStatus::WAIT_TIMEOUT.0;
         }
         let result = e.inner.condvar.wait_timeout(signaled, remaining).unwrap();
         signaled = result.0;
@@ -212,7 +229,7 @@ fn wait_event(e: &EventWaitable, timeout_ms: u32) -> u32 {
     if !e.inner.manual_reset {
         *signaled = false;
     }
-    WAIT_OBJECT_0
+    WaitStatus::WAIT_OBJECT_0.0
 }
 
 #[cfg(test)]
@@ -328,30 +345,30 @@ mod tests {
     fn event_initially_signaled_returns_immediately() {
         let e = make_event(true, true);
         let w = Waitable::Event(e);
-        assert_eq!(wait_on(&w, 0), WAIT_OBJECT_0);
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
     }
 
     #[test]
     fn event_initially_unsignaled_times_out() {
         let e = make_event(true, false);
         let w = Waitable::Event(e);
-        assert_eq!(wait_on(&w, 0), WAIT_TIMEOUT);
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
     }
 
     #[test]
     fn auto_reset_event_clears_after_wait() {
         let e = make_event(false, true); // auto-reset, initially signaled
         let w = Waitable::Event(e);
-        assert_eq!(wait_on(&w, 0), WAIT_OBJECT_0); // consumes the signal
-        assert_eq!(wait_on(&w, 0), WAIT_TIMEOUT); // now unsignaled
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0); // consumes the signal
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0); // now unsignaled
     }
 
     #[test]
     fn manual_reset_event_stays_signaled() {
         let e = make_event(true, true); // manual-reset, initially signaled
         let w = Waitable::Event(e);
-        assert_eq!(wait_on(&w, 0), WAIT_OBJECT_0);
-        assert_eq!(wait_on(&w, 0), WAIT_OBJECT_0); // still signaled
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0); // still signaled
     }
 
     #[test]
@@ -366,7 +383,7 @@ mod tests {
             inner.condvar.notify_all();
         });
 
-        assert_eq!(wait_on(&w, 1000), WAIT_OBJECT_0);
+        assert_eq!(wait_on(&w, 1000), WaitStatus::WAIT_OBJECT_0.0);
     }
 
     #[test]
@@ -374,7 +391,7 @@ mod tests {
         let e = make_event(true, false);
         let w = Waitable::Event(e);
         let start = Instant::now();
-        assert_eq!(wait_on(&w, 50), WAIT_TIMEOUT);
+        assert_eq!(wait_on(&w, 50), WaitStatus::WAIT_TIMEOUT.0);
         let elapsed = start.elapsed();
         assert!(elapsed >= Duration::from_millis(40));
         assert!(elapsed < Duration::from_millis(200));
@@ -393,7 +410,7 @@ mod tests {
     fn thread_wait_returns_timeout_while_running() {
         let tw = make_thread_waitable();
         let w = Waitable::Thread(tw);
-        assert_eq!(wait_on(&w, 0), WAIT_TIMEOUT);
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
     }
 
     #[test]
@@ -406,7 +423,7 @@ mod tests {
         cvar.notify_all();
 
         let w = Waitable::Thread(tw);
-        assert_eq!(wait_on(&w, 0), WAIT_OBJECT_0);
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
     }
 
     #[test]
@@ -424,7 +441,7 @@ mod tests {
         });
 
         let w = Waitable::Thread(tw);
-        assert_eq!(wait_on(&w, 1000), WAIT_OBJECT_0);
+        assert_eq!(wait_on(&w, 1000), WaitStatus::WAIT_OBJECT_0.0);
     }
 
     #[test]
@@ -432,7 +449,7 @@ mod tests {
         let tw = make_thread_waitable();
         let w = Waitable::Thread(tw);
         let start = Instant::now();
-        assert_eq!(wait_on(&w, 50), WAIT_TIMEOUT);
+        assert_eq!(wait_on(&w, 50), WaitStatus::WAIT_TIMEOUT.0);
         assert!(start.elapsed() >= Duration::from_millis(40));
     }
 
@@ -441,9 +458,11 @@ mod tests {
     #[test]
     fn windows_constants_are_correct() {
         assert_eq!(INFINITE, 0xFFFF_FFFF);
-        assert_eq!(WAIT_OBJECT_0, 0);
-        assert_eq!(WAIT_TIMEOUT, 0x102);
-        assert_eq!(WAIT_FAILED, 0xFFFF_FFFF);
+
+        assert_eq!(WaitStatus::WAIT_OBJECT_0.0, 0);
+        assert_eq!(WaitStatus::WAIT_TIMEOUT.0, 0x102);
+        assert_eq!(WaitStatus::WAIT_FAILED.0, 0xFFFF_FFFF);
+
         assert_eq!(STILL_ACTIVE, 259);
         assert_eq!(TLS_OUT_OF_INDEXES, 0xFFFF_FFFF);
     }

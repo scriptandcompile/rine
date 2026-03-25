@@ -8,8 +8,7 @@ use std::sync::{Arc, Condvar, Mutex};
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, INVALID_HANDLE_VALUE, handle_table};
 use rine_types::threading::{
-    self, INFINITE, STILL_ACTIVE, TLS_OUT_OF_INDEXES, ThreadWaitable, WAIT_FAILED, WAIT_OBJECT_0,
-    WAIT_TIMEOUT, Waitable,
+    self, INFINITE, STILL_ACTIVE, TLS_OUT_OF_INDEXES, ThreadWaitable, WaitStatus, Waitable,
 };
 use tracing::{debug, warn};
 
@@ -237,7 +236,7 @@ pub unsafe extern "win64" fn WaitForSingleObject(handle: isize, timeout_ms: u32)
         Some(waitable) => threading::wait_on(&waitable, timeout_ms),
         None => {
             warn!(handle, "WaitForSingleObject: invalid handle");
-            WAIT_FAILED
+            WaitStatus::WAIT_FAILED.0
         }
     }
 }
@@ -251,7 +250,7 @@ pub unsafe extern "win64" fn WaitForMultipleObjects(
     timeout_ms: u32,
 ) -> u32 {
     if handles_ptr.is_null() || count == 0 || count > 64 {
-        return WAIT_FAILED;
+        return WaitStatus::WAIT_FAILED.0;
     }
 
     let raw_handles: Vec<isize> = (0..count as usize)
@@ -265,7 +264,7 @@ pub unsafe extern "win64" fn WaitForMultipleObjects(
 
     if waitables.iter().any(|w| w.is_none()) {
         warn!("WaitForMultipleObjects: one or more invalid handles");
-        return WAIT_FAILED;
+        return WaitStatus::WAIT_FAILED.0;
     }
     let waitables: Vec<Waitable> = waitables.into_iter().flatten().collect();
 
@@ -278,29 +277,29 @@ pub unsafe extern "win64" fn WaitForMultipleObjects(
             } else {
                 let elapsed = start.elapsed().as_millis() as u32;
                 if elapsed >= timeout_ms {
-                    return WAIT_TIMEOUT;
+                    return WaitStatus::WAIT_TIMEOUT.0;
                 }
                 timeout_ms - elapsed
             };
             let result = threading::wait_on(w, remaining);
-            if result != WAIT_OBJECT_0 {
+            if result != WaitStatus::WAIT_OBJECT_0.0 {
                 return result;
             }
         }
-        WAIT_OBJECT_0
+        WaitStatus::WAIT_OBJECT_0.0
     } else {
         // Wait for ANY object — poll with short sleeps.
         let start = std::time::Instant::now();
         loop {
             for (i, w) in waitables.iter().enumerate() {
-                if threading::wait_on(w, 0) == WAIT_OBJECT_0 {
-                    return WAIT_OBJECT_0 + i as u32;
+                if threading::wait_on(w, 0) == WaitStatus::WAIT_OBJECT_0.0 {
+                    return WaitStatus(WaitStatus::WAIT_OBJECT_0.0 + i as u32).0;
                 }
             }
             if timeout_ms != INFINITE {
                 let elapsed = start.elapsed().as_millis() as u32;
                 if elapsed >= timeout_ms {
-                    return WAIT_TIMEOUT;
+                    return WaitStatus::WAIT_TIMEOUT.0;
                 }
             }
             std::thread::sleep(std::time::Duration::from_millis(1));
