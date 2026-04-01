@@ -60,6 +60,7 @@ body {
 .badge-waiting { background: var(--border); color: var(--text-muted); }
 .badge-running { background: #1e4620; color: var(--success); }
 .badge-exited  { background: #3b1d2e; color: var(--danger); }
+.badge-exited-ok { background: #1e4620; color: var(--success); }
 
 /* Tabs */
 .tabs {

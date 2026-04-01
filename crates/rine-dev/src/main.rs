@@ -62,6 +62,12 @@ fn main() {
                 }
 
                 // Connection closed — rine process exited.
+                if let Some(state) = handle.try_state::<AppState>() {
+                    let mut snap = state.0.lock().unwrap();
+                    if snap.exited.is_none() {
+                        snap.exited = Some(-1);
+                    }
+                }
                 let _ = handle.emit("rine-disconnected", ());
             });
 

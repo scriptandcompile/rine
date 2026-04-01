@@ -4,8 +4,6 @@
 //! PE's `AddressOfEntryPoint`. The PE's CRT startup code then calls our
 //! reimplemented DLL functions through the Import Address Table.
 
-use std::convert::Infallible;
-
 use rine_types::memory::{RelativeVirtualAddress, VirtualAddress};
 use thiserror::Error;
 use tracing::{debug, info};
@@ -24,9 +22,12 @@ pub enum EntryError {
 
 /// Execute the loaded PE image's entry point.
 ///
-/// This function does not return — it either transfers control to the PE
-/// (which calls `ExitProcess`) or terminates with the entry point's return code.
-pub fn execute(image: &LoadedImage, parsed: &ParsedPe) -> Result<Infallible, EntryError> {
+/// Transfers control to the PE entry point. If the entry point returns
+/// (rather than calling `ExitProcess`), this returns the exit code.
+///
+/// **Note:** Most PE executables call `ExitProcess` which invokes
+/// `std::process::exit()` and never returns here.
+pub fn execute(image: &LoadedImage, parsed: &ParsedPe) -> Result<i32, EntryError> {
     let entry_rva = parsed.pe.entry;
     if entry_rva == 0 {
         return Err(EntryError::NoEntryPoint);
@@ -52,7 +53,7 @@ pub fn execute(image: &LoadedImage, parsed: &ParsedPe) -> Result<Infallible, Ent
     let exit_code = unsafe { trampoline(entry_va.as_usize()) };
 
     debug!(exit_code, "PE entry point returned");
-    std::process::exit(exit_code as i32);
+    Ok(exit_code as i32)
 }
 
 /// Assembly trampoline that calls a PE entry point with a proper Windows x64

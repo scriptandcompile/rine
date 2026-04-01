@@ -11,7 +11,7 @@ const { listen, invoke } = (function() {
 })();
 
 // ── State ──────────────────────────────────────────
-let state = { pe: null, config: null, imports: null, exited: null };
+let state = { pe: null, config: null, imports: null, exited: null, exitCode: null };
 let events = [];
 let startTime = Date.now();
 
@@ -188,10 +188,16 @@ function addEventEntry(event) {
 }
 
 function updateStatusBar() {
-  document.getElementById('stat-status').textContent =
-    state.exited != null ? `Status: exited (${state.exited})`
-    : state.pe ? 'Status: running'
-    : 'Status: waiting';
+  const el = document.getElementById('stat-status');
+  if (state.exited != null) {
+    el.textContent = state.exitCode != null
+      ? (state.exitCode === 0 ? 'Status: exited - success' : `Status: exited - code ${state.exitCode}`)
+      : 'Status: exited';
+  } else if (state.pe) {
+    el.textContent = 'Status: running';
+  } else {
+    el.textContent = 'Status: waiting';
+  }
 
   if (state.imports) {
     document.getElementById('stat-imports').textContent =
@@ -206,8 +212,10 @@ function updateStatusBar() {
 function updateStatusBadge() {
   const badge = document.getElementById('status-badge');
   if (state.exited != null) {
-    badge.textContent = `exited (${state.exited})`;
-    badge.className = 'badge badge-exited';
+    badge.textContent = state.exitCode != null
+      ? (state.exitCode === 0 ? 'exited - success' : `exited - code ${state.exitCode}`)
+      : 'exited';
+    badge.className = state.exitCode === 0 ? 'badge badge-exited-ok' : 'badge badge-exited';
   } else if (state.pe) {
     badge.textContent = 'running';
     badge.className = 'badge badge-running';
@@ -244,7 +252,8 @@ function handleEvent(event) {
       renderImportSummary(event);
       break;
     case 'ProcessExited':
-      state.exited = event.exit_code;
+      state.exited = true;
+      state.exitCode = event.exit_code;
       break;
   }
 
@@ -259,7 +268,7 @@ listen('dev-event', (e) => {
 
 listen('rine-disconnected', () => {
   if (state.exited == null) {
-    state.exited = -1;
+    state.exited = true;
     updateStatusBar();
     updateStatusBadge();
   }
@@ -281,7 +290,10 @@ invoke('get_state').then(snap => {
   if (snap.pe) { state.pe = snap.pe; renderPeInfo(snap.pe); renderSections(snap.pe.sections); }
   if (snap.config) { state.config = snap.config; renderConfigInfo(snap.config); }
   if (snap.imports) { state.imports = snap.imports; renderImportSummary(snap.imports); }
-  if (snap.exited != null) { state.exited = snap.exited; }
+  if (snap.exited != null) {
+    state.exited = true;
+    state.exitCode = snap.exited === -1 ? null : snap.exited;
+  }
   updateStatusBar();
   updateStatusBadge();
 }).catch(() => {});

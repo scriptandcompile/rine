@@ -218,8 +218,17 @@ pub fn run(
     //     that reads gs:0x30 doesn't segfault.
     unsafe { subsys::threading::init_teb() };
 
-    // 6. Execute the PE entry point (does not return).
-    match crate::loader::entry::execute(&image, &parsed)? {}
+    // 6. Execute the PE entry point.
+    let exit_code = crate::loader::entry::execute(&image, &parsed)?;
+
+    dev_emit!(
+        dev_channel,
+        rine_channel::DevEvent::ProcessExited {
+            exit_code: exit_code,
+        }
+    );
+
+    std::process::exit(exit_code);
 }
 
 /// Top-level error type wrapping all stages of PE loading and execution.
