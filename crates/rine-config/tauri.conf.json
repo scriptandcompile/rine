@@ -1,0 +1,29 @@
+{
+  "productName": "rine-config",
+  "version": "0.1.0",
+  "identifier": "dev.rine.config",
+  "build": {
+    "frontendDist": "frontend/dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "rine — Configuration Editor",
+        "width": 900,
+        "height": 650,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'"
+    }
+  },
+  "bundle": {
+    "active": false,
+    "icon": []
+  }
+}

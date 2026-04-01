@@ -6,3 +6,6 @@ pub mod os;
 pub mod registry;
 pub mod strings;
 pub mod threading;
+
+#[cfg(feature = "config")]
+pub mod config;

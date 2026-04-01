@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rine — Configuration Editor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>rine</h1>
+      <span class="subtitle">Configuration Editor</span>
+    </header>
+
+    <div id="no-exe" class="panel">
+      <p>No executable selected. Launch with:</p>
+      <code>rine --config &lt;path-to-exe&gt;</code>
+    </div>
+
+    <div id="editor" class="hidden">
+      <div class="exe-info panel">
+        <label>Executable</label>
+        <span id="exe-path-display"></span>
+        <div class="config-path">
+          <label>Config file</label>
+          <span id="config-path-display"></span>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <nav class="tabs">
+        <button class="tab active" data-tab="general">General</button>
+        <button class="tab" data-tab="filesystem">Filesystem</button>
+        <button class="tab" data-tab="dll">DLL</button>
+        <button class="tab" data-tab="environment">Environment</button>
+        <button class="tab" data-tab="runner">Runner</button>
+      </nav>
+
+      <!-- General Tab -->
+      <section id="tab-general" class="tab-content active">
+        <div class="field">
+          <label for="win-version">Windows Version</label>
+          <select id="win-version"></select>
+        </div>
+      </section>
+
+      <!-- Filesystem Tab -->
+      <section id="tab-filesystem" class="tab-content">
+        <div class="field">
+          <label for="default-root">Default Root</label>
+          <input type="text" id="default-root" placeholder="~/.rine/drives (default)">
+        </div>
+        <div class="field">
+          <label>
+            <input type="checkbox" id="case-insensitive">
+            Case-insensitive filesystem (slower)
+          </label>
+        </div>
+        <div class="field">
+          <label>Drive Mappings</label>
+          <div id="drive-list" class="kv-list"></div>
+          <button id="add-drive" class="btn-small">+ Add Drive</button>
+        </div>
+      </section>
+
+      <!-- DLL Tab -->
+      <section id="tab-dll" class="tab-content">
+        <div class="field">
+          <label for="search-order">DLL Search Order</label>
+          <p class="hint">DLLs tried before built-in registry, one per line.</p>
+          <textarea id="search-order" rows="4" placeholder="msvcrt.dll&#10;kernel32.dll"></textarea>
+        </div>
+        <div class="field">
+          <label for="force-stub">Force Stub DLLs</label>
+          <p class="hint">DLLs that are never loaded from disk, one per line.</p>
+          <textarea id="force-stub" rows="4" placeholder="d3d11.dll"></textarea>
+        </div>
+      </section>
+
+      <!-- Environment Tab -->
+      <section id="tab-environment" class="tab-content">
+        <div class="field">
+          <label>Environment Variables</label>
+          <div id="env-list" class="kv-list"></div>
+          <button id="add-env" class="btn-small">+ Add Variable</button>
+        </div>
+      </section>
+
+      <!-- Runner Tab -->
+      <section id="tab-runner" class="tab-content">
+        <button id="launch-btn" class="btn-primary">Launch with rine</button>
+        <div id="runner-output" class="output-box"></div>
+      </section>
+
+      <!-- Bottom Actions -->
+      <div class="actions">
+        <button id="save-btn" class="btn-primary">Save</button>
+        <button id="reset-btn" class="btn-secondary">Reset to Defaults</button>
+        <span id="status-msg"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

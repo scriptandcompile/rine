@@ -5,8 +5,16 @@ edition.workspace = true
 license.workspace = true
 description = "Shared Windows type definitions for rine"
 
+[features]
+config = ["dep:serde", "dep:toml", "dep:thiserror"]
+
 [dependencies]
 bitflags = { workspace = true }
+serde = { workspace = true, optional = true }
+toml = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }
 
 [dev-dependencies]
 serial_test = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
