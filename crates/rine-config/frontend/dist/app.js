@@ -1,8 +1,23 @@
 // rine-config frontend — Tauri IPC via window.__TAURI__
 const { invoke } = window.__TAURI__.core;
+const { listen } = window.__TAURI__.event;
 
 let exePath = null;
 let config = null;
+let dirty = false;
+
+function markDirty() {
+  if (dirty) return;
+  dirty = true;
+  invoke("set_menu_enabled", { id: "save", enabled: true });
+  invoke("set_menu_enabled", { id: "reset", enabled: true });
+}
+
+function markClean() {
+  dirty = false;
+  invoke("set_menu_enabled", { id: "save", enabled: false });
+  invoke("set_menu_enabled", { id: "reset", enabled: false });
+}
 
 // ---------------------------------------------------------------------------
 // Initialization
@@ -45,6 +60,8 @@ async function loadConfig(path) {
 
     await populateVersions();
     populateForm();
+    markClean();
+    observeChanges();
   } catch (err) {
     showStatus("Failed to load config: " + err, true);
   }
@@ -132,10 +149,17 @@ async function saveConfig() {
   readForm();
   try {
     await invoke("save_config_cmd", { exePath, config });
+    markClean();
     showStatus("Saved", false);
   } catch (err) {
     showStatus("Save failed: " + err, true);
   }
+}
+
+function observeChanges() {
+  const editor = document.getElementById("editor");
+  editor.addEventListener("input", markDirty);
+  editor.addEventListener("change", markDirty);
 }
 
 // ---------------------------------------------------------------------------
@@ -154,9 +178,11 @@ function setupTabs() {
 }
 
 function setupButtons() {
-  document.getElementById("save-btn").addEventListener("click", saveConfig);
+  // Listen for File > Save from native menu
+  listen("menu-save", () => saveConfig());
 
-  document.getElementById("reset-btn").addEventListener("click", () => {
+  // Listen for File > Reset to Defaults from native menu
+  listen("menu-reset", () => {
     config = {
       filesystem: { default_root: null, drives: {}, case_insensitive: false },
       windows_version: "win11",
@@ -164,15 +190,18 @@ function setupButtons() {
       environment: {},
     };
     populateForm();
+    markDirty();
     showStatus("Reset to defaults (not saved yet)", false);
   });
 
   document.getElementById("add-drive").addEventListener("click", () => {
     addKvRow(document.getElementById("drive-list"), "", "", "A-Z", "Drive letter");
+    markDirty();
   });
 
   document.getElementById("add-env").addEventListener("click", () => {
     addKvRow(document.getElementById("env-list"), "", "", "VARIABLE", "Name");
+    markDirty();
   });
 
   document.getElementById("launch-btn").addEventListener("click", async () => {
@@ -196,7 +225,7 @@ function addKvRow(container, key, value, keyPlaceholder, keyLabel) {
     <input type="text" class="kv-value" value="${escHtml(value)}" placeholder="Value">
     <button class="btn-remove" title="Remove">&times;</button>
   `;
-  row.querySelector(".btn-remove").addEventListener("click", () => row.remove());
+  row.querySelector(".btn-remove").addEventListener("click", () => { row.remove(); markDirty(); });
   container.appendChild(row);
 }
 

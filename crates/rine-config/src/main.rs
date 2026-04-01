@@ -3,7 +3,8 @@
 use rine_config_lib::{self as lib, AppConfig, VersionOption, WindowsVersion};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use tauri::State;
+use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
+use tauri::{AppHandle, Emitter, State};
 
 /// Holds the exe path passed as a CLI argument.
 struct ExePath(Mutex<Option<String>>);
@@ -11,6 +12,18 @@ struct ExePath(Mutex<Option<String>>);
 #[tauri::command]
 fn get_exe_path(state: State<'_, ExePath>) -> Option<String> {
     state.0.lock().unwrap().clone()
+}
+
+#[tauri::command]
+fn set_menu_enabled(app: AppHandle, id: String, enabled: bool) -> Result<(), String> {
+    let menu = app.menu().ok_or("no menu")?;
+    if let Some(item) = menu.get(&id) {
+        item.as_menuitem()
+            .ok_or("not a menu item")?
+            .set_enabled(enabled)
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -86,8 +99,48 @@ fn main() {
 
     tauri::Builder::default()
         .manage(ExePath(Mutex::new(exe_path)))
+        .setup(|app| {
+            let save_item = MenuItemBuilder::with_id("save", "Save")
+                .accelerator("CmdOrCtrl+S")
+                .enabled(false)
+                .build(app)?;
+            let reset_item = MenuItemBuilder::with_id("reset", "Reset to Defaults")
+                .enabled(false)
+                .build(app)?;
+            let exit_item = MenuItemBuilder::with_id("exit", "Exit")
+                .accelerator("CmdOrCtrl+Q")
+                .build(app)?;
+            let file_menu = SubmenuBuilder::new(app, "File")
+                .item(&save_item)
+                .separator()
+                .item(&reset_item)
+                .separator()
+                .item(&exit_item)
+                .build()?;
+            let menu = MenuBuilder::new(app).item(&file_menu).build()?;
+            app.set_menu(menu)?;
+
+            let handle = app.handle().clone();
+            app.on_menu_event(move |_app, event| {
+                match event.id().as_ref() {
+                    "save" => {
+                        let _ = handle.emit("menu-save", ());
+                    }
+                    "reset" => {
+                        let _ = handle.emit("menu-reset", ());
+                    }
+                    "exit" => {
+                        std::process::exit(0);
+                    }
+                    _ => {}
+                }
+            });
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_exe_path,
+            set_menu_enabled,
             get_config,
             save_config_cmd,
             get_config_path,
