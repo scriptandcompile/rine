@@ -21,6 +21,8 @@ use rine64_user32::User32Plugin;
 use rine64_ws2_32::Ws2_32Plugin;
 
 use crate::cli::Cli;
+use crate::config::errors::ConfigError;
+use crate::config::manager::ConfigManager;
 use crate::loader::memory::LoadedImage;
 use crate::loader::resolver;
 use crate::pe::parser::ParsedPe;
@@ -33,6 +35,11 @@ fn main() -> ExitCode {
 
     let cli = Cli::parse();
 
+    // Handle `--config`: print/create the per-app config and exit.
+    if cli.show_config {
+        return show_config(&cli);
+    }
+
     match run(&cli) {
         Ok(infallible) => match infallible {},
         Err(e) => {
@@ -42,8 +49,59 @@ fn main() -> ExitCode {
     }
 }
 
+/// Print the path and contents of the per-app config. Creates a default
+/// config file if one does not yet exist.
+fn show_config(cli: &Cli) -> ExitCode {
+    let mgr = ConfigManager::new();
+    let cfg = match mgr.load(&cli.exe_path) {
+        Ok(c) => c,
+        Err(e) => {
+            error!("{e}");
+            return ExitCode::FAILURE;
+        }
+    };
+
+    let path = mgr.config_path(&cli.exe_path);
+    if !path.exists() {
+        match mgr.save(&cli.exe_path, &cfg) {
+            Ok(p) => eprintln!("created default config: {}", p.display()),
+            Err(e) => {
+                error!("{e}");
+                return ExitCode::FAILURE;
+            }
+        }
+    } else {
+        eprintln!("config: {}", path.display());
+    }
+
+    match toml::to_string_pretty(&cfg) {
+        Ok(s) => print!("{s}"),
+        Err(e) => {
+            error!("failed to serialise config: {e}");
+            return ExitCode::FAILURE;
+        }
+    }
+
+    ExitCode::SUCCESS
+}
+
 fn run(cli: &Cli) -> Result<std::convert::Infallible, RunError> {
     info!(exe = %cli.exe_path.display(), "loading PE");
+
+    // 0. Load per-app configuration.
+    let mgr = ConfigManager::new();
+    let app_config = mgr.load(&cli.exe_path).map_err(RunError::Config)?;
+    info!(
+        version = %app_config.windows_version,
+        config = %mgr.config_path(&cli.exe_path).display(),
+        "app config loaded"
+    );
+
+    // Inject environment overrides from the config.
+    for (key, value) in &app_config.environment {
+        // SAFETY: rine is single-threaded at this point (before PE entry).
+        unsafe { std::env::set_var(key, value) };
+    }
 
     // 1. Parse the PE file.
     let parsed = ParsedPe::load(&cli.exe_path)?;
@@ -106,6 +164,9 @@ fn run(cli: &Cli) -> Result<std::convert::Infallible, RunError> {
 /// Top-level error type wrapping all stages of PE loading and execution.
 #[derive(Debug, thiserror::Error)]
 enum RunError {
+    #[error("{0}")]
+    Config(#[source] ConfigError),
+
     #[error("{0}")]
     Pe(#[from] pe::parser::PeError),
 
