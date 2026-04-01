@@ -1,3 +1,4 @@
+pub mod environment;
 pub mod errors;
 pub mod handles;
 pub mod memory;

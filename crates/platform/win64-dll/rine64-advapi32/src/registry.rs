@@ -8,6 +8,7 @@ use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::registry::{
     self, RegistryKeyState, RegistryValue, is_predefined_key, registry_store,
 };
+use rine_types::strings::{read_cstr, read_wstr};
 
 // ---------------------------------------------------------------------------
 // Win32 error codes specific to registry
@@ -18,31 +19,6 @@ const ERROR_MORE_DATA: u32 = 234;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/// Read a null-terminated ANSI string from a raw pointer.
-unsafe fn cstr_from_ptr(ptr: *const u8) -> String {
-    if ptr.is_null() {
-        return String::new();
-    }
-    unsafe { std::ffi::CStr::from_ptr(ptr.cast()) }
-        .to_string_lossy()
-        .into_owned()
-}
-
-/// Read a null-terminated UTF-16LE string from a raw pointer.
-unsafe fn wstr_from_ptr(ptr: *const u16) -> String {
-    if ptr.is_null() {
-        return String::new();
-    }
-    let mut len = 0;
-    unsafe {
-        while *ptr.add(len) != 0 {
-            len += 1;
-        }
-    }
-    let slice = unsafe { std::slice::from_raw_parts(ptr, len) };
-    String::from_utf16_lossy(slice)
-}
 
 /// Resolve a handle to (root_hkey, subkey_path).
 /// Works for both predefined root keys and opened sub-key handles.
@@ -78,7 +54,7 @@ pub unsafe extern "win64" fn RegOpenKeyExA(
     _desired: u32,
     result_key: *mut isize,
 ) -> u32 {
-    let sub = unsafe { cstr_from_ptr(sub_key) };
+    let sub = unsafe { read_cstr(sub_key) }.unwrap_or_default();
     reg_open_key_impl(hkey, &sub, result_key)
 }
 
@@ -91,7 +67,7 @@ pub unsafe extern "win64" fn RegOpenKeyExW(
     _desired: u32,
     result_key: *mut isize,
 ) -> u32 {
-    let sub = unsafe { wstr_from_ptr(sub_key) };
+    let sub = unsafe { read_wstr(sub_key) }.unwrap_or_default();
     reg_open_key_impl(hkey, &sub, result_key)
 }
 
@@ -144,7 +120,7 @@ pub unsafe extern "win64" fn RegCreateKeyExA(
     result_key: *mut isize,
     _disposition: *mut u32,
 ) -> u32 {
-    let sub = unsafe { cstr_from_ptr(sub_key) };
+    let sub = unsafe { read_cstr(sub_key) }.unwrap_or_default();
     reg_create_key_impl(hkey, &sub, result_key)
 }
 
@@ -161,7 +137,7 @@ pub unsafe extern "win64" fn RegCreateKeyExW(
     result_key: *mut isize,
     _disposition: *mut u32,
 ) -> u32 {
-    let sub = unsafe { wstr_from_ptr(sub_key) };
+    let sub = unsafe { read_wstr(sub_key) }.unwrap_or_default();
     reg_create_key_impl(hkey, &sub, result_key)
 }
 
@@ -205,7 +181,7 @@ pub unsafe extern "win64" fn RegQueryValueExA(
     data: *mut u8,
     data_size: *mut u32,
 ) -> u32 {
-    let name = unsafe { cstr_from_ptr(value_name) };
+    let name = unsafe { read_cstr(value_name) }.unwrap_or_default();
     reg_query_value_impl(hkey, &name, value_type, data, data_size)
 }
 
@@ -219,7 +195,7 @@ pub unsafe extern "win64" fn RegQueryValueExW(
     data: *mut u8,
     data_size: *mut u32,
 ) -> u32 {
-    let name = unsafe { wstr_from_ptr(value_name) };
+    let name = unsafe { read_wstr(value_name) }.unwrap_or_default();
     reg_query_value_impl(hkey, &name, value_type, data, data_size)
 }
 
@@ -301,7 +277,7 @@ pub unsafe extern "win64" fn RegSetValueExA(
     data: *const u8,
     data_size: u32,
 ) -> u32 {
-    let name = unsafe { cstr_from_ptr(value_name) };
+    let name = unsafe { read_cstr(value_name) }.unwrap_or_default();
     reg_set_value_impl(hkey, &name, value_type, data, data_size)
 }
 
@@ -315,7 +291,7 @@ pub unsafe extern "win64" fn RegSetValueExW(
     data: *const u8,
     data_size: u32,
 ) -> u32 {
-    let name = unsafe { wstr_from_ptr(value_name) };
+    let name = unsafe { read_wstr(value_name) }.unwrap_or_default();
     reg_set_value_impl(hkey, &name, value_type, data, data_size)
 }
 

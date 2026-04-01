@@ -1,4 +1,5 @@
 pub mod console;
+pub mod environment;
 pub mod file;
 pub mod memory;
 pub mod process;
@@ -114,6 +115,39 @@ impl DllPlugin for Kernel32Plugin {
                 as_win_api!(thread::WaitForMultipleObjects),
             ),
             Export::Func("Sleep", as_win_api!(thread::Sleep)),
+            // Environment
+            Export::Func(
+                "GetEnvironmentVariableA",
+                as_win_api!(environment::GetEnvironmentVariableA),
+            ),
+            Export::Func(
+                "GetEnvironmentVariableW",
+                as_win_api!(environment::GetEnvironmentVariableW),
+            ),
+            Export::Func(
+                "SetEnvironmentVariableA",
+                as_win_api!(environment::SetEnvironmentVariableA),
+            ),
+            Export::Func(
+                "SetEnvironmentVariableW",
+                as_win_api!(environment::SetEnvironmentVariableW),
+            ),
+            Export::Func(
+                "ExpandEnvironmentStringsA",
+                as_win_api!(environment::ExpandEnvironmentStringsA),
+            ),
+            Export::Func(
+                "ExpandEnvironmentStringsW",
+                as_win_api!(environment::ExpandEnvironmentStringsW),
+            ),
+            Export::Func(
+                "GetEnvironmentStringsW",
+                as_win_api!(environment::GetEnvironmentStringsW),
+            ),
+            Export::Func(
+                "FreeEnvironmentStringsW",
+                as_win_api!(environment::FreeEnvironmentStringsW),
+            ),
             // Memory
             Export::Func("GetProcessHeap", as_win_api!(memory::GetProcessHeap)),
             Export::Func("HeapCreate", as_win_api!(memory::HeapCreate)),

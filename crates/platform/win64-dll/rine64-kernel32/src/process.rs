@@ -11,6 +11,7 @@ use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
+use rine_types::strings::{read_cstr, read_wstr};
 use rine_types::threading::{ProcessWaitable, STILL_ACTIVE};
 use tracing::{debug, warn};
 
@@ -154,37 +155,6 @@ pub unsafe extern "win64" fn SetUnhandledExceptionFilter(
 // ---------------------------------------------------------------------------
 // CreateProcess helpers
 // ---------------------------------------------------------------------------
-
-/// Read a null-terminated ANSI string from a raw pointer.
-///
-/// # Safety
-/// `ptr` must be null or point to a valid null-terminated byte string.
-unsafe fn read_cstr(ptr: *const u8) -> String {
-    if ptr.is_null() {
-        return String::new();
-    }
-    unsafe { std::ffi::CStr::from_ptr(ptr.cast()) }
-        .to_string_lossy()
-        .into_owned()
-}
-
-/// Read a null-terminated UTF-16LE string from a raw pointer.
-///
-/// # Safety
-/// `ptr` must be null or point to a valid null-terminated UTF-16 string.
-unsafe fn read_wstr(ptr: *const u16) -> String {
-    if ptr.is_null() {
-        return String::new();
-    }
-    let mut len = 0;
-    unsafe {
-        while *ptr.add(len) != 0 {
-            len += 1;
-        }
-    }
-    let slice = unsafe { core::slice::from_raw_parts(ptr, len) };
-    String::from_utf16_lossy(slice)
-}
 
 /// Split a command line respecting double-quote grouping (simplified
 /// Windows `CommandLineToArgvW` rules).
@@ -393,8 +363,8 @@ pub unsafe extern "win64" fn CreateProcessA(
     _startup_info: *const StartupInfoA,    // [rsp+0x48]
     process_info: *mut ProcessInformation, // [rsp+0x50]
 ) -> WinBool {
-    let app = unsafe { read_cstr(application_name) };
-    let cmd = unsafe { read_cstr(command_line.cast_const()) };
+    let app = unsafe { read_cstr(application_name) }.unwrap_or_default();
+    let cmd = unsafe { read_cstr(command_line.cast_const()) }.unwrap_or_default();
 
     let (exe, args) = if !app.is_empty() {
         (app, split_cmd_line(&cmd))
@@ -434,8 +404,8 @@ pub unsafe extern "win64" fn CreateProcessW(
     _startup_info: *const StartupInfoW,    // [rsp+0x48]
     process_info: *mut ProcessInformation, // [rsp+0x50]
 ) -> WinBool {
-    let app = unsafe { read_wstr(application_name) };
-    let cmd = unsafe { read_wstr(command_line.cast_const()) };
+    let app = unsafe { read_wstr(application_name) }.unwrap_or_default();
+    let cmd = unsafe { read_wstr(command_line.cast_const()) }.unwrap_or_default();
 
     let (exe, args) = if !app.is_empty() {
         (app, split_cmd_line(&cmd))
@@ -522,30 +492,6 @@ mod tests {
     #[test]
     fn split_multiple_spaces() {
         assert_eq!(split_cmd_line("a   b\tc"), vec!["a", "b", "c"]);
-    }
-
-    // ── read_cstr / read_wstr ────────────────────────────────────
-
-    #[test]
-    fn read_cstr_null() {
-        assert_eq!(unsafe { read_cstr(std::ptr::null()) }, "");
-    }
-
-    #[test]
-    fn read_cstr_valid() {
-        let s = b"hello\0";
-        assert_eq!(unsafe { read_cstr(s.as_ptr()) }, "hello");
-    }
-
-    #[test]
-    fn read_wstr_null() {
-        assert_eq!(unsafe { read_wstr(std::ptr::null()) }, "");
-    }
-
-    #[test]
-    fn read_wstr_valid() {
-        let s: Vec<u16> = "hello\0".encode_utf16().collect();
-        assert_eq!(unsafe { read_wstr(s.as_ptr()) }, "hello");
     }
 
     // ── parse_env_block ─────────────────────────────────────────

@@ -303,6 +303,27 @@ fn registry_ops() {
 }
 
 // ============================================================================
+// Environment variables
+// ============================================================================
+
+#[test]
+fn env_ops() {
+    assert_run(
+        "env_ops",
+        0,
+        "get_existing: ok\n\
+         get_missing: ok\n\
+         get_small_buffer: ok\n\
+         set_and_get: ok\n\
+         set_delete: ok\n\
+         case_insensitive: ok\n\
+         expand: ok\n\
+         expand_undefined: ok\n\
+         get_strings_w: ok",
+    );
+}
+
+// ============================================================================
 // Printf (known failing — tracks localeconv/fputc implementation)
 // ============================================================================
 
