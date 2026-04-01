@@ -42,6 +42,15 @@ fn main() -> ExitCode {
     if cli.uninstall_desktop {
         return uninstall_desktop_cmd();
     }
+    if cli.context_menu_status {
+        return context_menu_status_cmd();
+    }
+    if cli.install_context_menu {
+        return install_context_menu_cmd();
+    }
+    if cli.uninstall_context_menu {
+        return uninstall_context_menu_cmd();
+    }
 
     let Some(ref exe_path) = cli.exe_path else {
         error!("no .exe path provided");

@@ -40,3 +40,18 @@ pub enum DesktopError {
     #[error("{0}")]
     Io(#[from] io::Error),
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum ContextMenuError {
+    #[error("could not determine rine binary path: {0}")]
+    NoSelfPath(io::Error),
+
+    #[error("XDG data directory not found (no HOME or XDG_DATA_HOME set)")]
+    NoDataDir,
+
+    #[error("context menu integration not installed — nothing to uninstall")]
+    NotInstalled,
+
+    #[error("{0}")]
+    Io(#[from] io::Error),
+}

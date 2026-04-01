@@ -40,6 +40,18 @@ pub struct Cli {
     #[arg(long)]
     pub desktop_status: bool,
 
+    /// Install right-click context menu entries for file managers.
+    #[arg(long)]
+    pub install_context_menu: bool,
+
+    /// Remove right-click context menu entries.
+    #[arg(long)]
+    pub uninstall_context_menu: bool,
+
+    /// Show the current context menu integration status.
+    #[arg(long)]
+    pub context_menu_status: bool,
+
     /// Arguments to pass to the Windows executable.
     #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
     pub exe_args: Vec<String>,
