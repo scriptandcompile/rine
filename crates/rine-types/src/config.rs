@@ -80,10 +80,10 @@ impl WindowsVersion {
     /// Human-readable label (e.g. `"Windows 11 (10.0)"`).
     pub fn label(&self) -> &'static str {
         match self {
-            Self::WinXP => "Windows XP (5.1)",
-            Self::Win7 => "Windows 7 (6.1)",
-            Self::Win10 => "Windows 10 (10.0)",
-            Self::Win11 => "Windows 11 (10.0)",
+            Self::WinXP => "Windows XP (5.1.2600)",
+            Self::Win7 => "Windows 7 (6.1.7601)",
+            Self::Win10 => "Windows 10 (10.0.19045)",
+            Self::Win11 => "Windows 11 (10.0.22631)",
         }
     }
 
