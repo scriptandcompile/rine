@@ -6,6 +6,7 @@
 #[allow(unused_imports)]
 pub use rine_types::config::{AppConfig, DllConfig, FilesystemConfig, WindowsVersion};
 
+#[allow(dead_code)]
 pub trait FilesystemConfigExt {
     fn to_translator(&self) -> crate::subsys::filesystem::PathTranslator;
 }

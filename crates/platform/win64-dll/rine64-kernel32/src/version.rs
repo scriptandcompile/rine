@@ -106,6 +106,11 @@ pub unsafe extern "win64" fn GetVersionExA(info: *mut OsVersionInfoA) -> i32 {
 ///
 /// Layout: `LOBYTE(LOWORD)` = major, `HIBYTE(LOWORD)` = minor,
 /// `HIWORD` = build number.
+///
+/// # Safety
+///
+/// Called from PE code via the Windows ABI. The caller must ensure the
+/// global version info has been initialised before entry.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetVersion() -> u32 {

@@ -54,6 +54,7 @@ impl ConfigManager {
     }
 
     /// Return the app-hash directory name for `exe_path`.
+    #[allow(dead_code)]
     pub fn app_dir(&self, exe_path: &Path) -> PathBuf {
         let hash = config::app_hash(exe_path);
         self.root.join(&hash)
