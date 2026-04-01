@@ -1,0 +1,6 @@
+[package]
+name = "rine-frontend-common"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared frontend assets (JS/CSS) for rine Tauri apps"

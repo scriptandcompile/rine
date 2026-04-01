@@ -3292,6 +3292,7 @@ name = "rine-config"
 version = "0.1.0"
 dependencies = [
  "rfd",
+ "rine-frontend-common",
  "rine-types",
  "serde",
  "serde_json",
@@ -3305,6 +3306,7 @@ name = "rine-dev"
 version = "0.1.0"
 dependencies = [
  "rine-channel",
+ "rine-frontend-common",
  "serde",
  "serde_json",
  "tauri",
@@ -3317,6 +3319,10 @@ version = "0.1.0"
 dependencies = [
  "tracing",
 ]
+
+[[package]]
+name = "rine-frontend-common"
+version = "0.1.0"
 
 [[package]]
 name = "rine-types"

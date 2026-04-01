@@ -17,6 +17,7 @@
       <button class="tab active" data-tab="overview">Overview</button>
       <button class="tab" data-tab="imports">Imports</button>
       <button class="tab" data-tab="events">Events</button>
+      <button class="tab" data-tab="output">Output</button>
     </nav>
 
     <!-- Overview Tab -->
@@ -91,6 +92,16 @@
       <div id="event-log" class="event-log"></div>
     </section>
 
+    <!-- Output Tab -->
+    <section id="tab-output" class="tab-content">
+      <div class="output-tabs">
+        <button class="output-tab active" data-output="stdout">stdout</button>
+        <button class="output-tab" data-output="stderr">stderr</button>
+      </div>
+      <div id="output-stdout" class="output-box output-pane active"></div>
+      <div id="output-stderr" class="output-box output-pane"></div>
+    </section>
+
     <footer class="statusbar">
       <span id="stat-status">Status: waiting</span>
       <span id="stat-imports">Imports: —</span>
@@ -98,6 +109,7 @@
     </footer>
   </div>
 
+  <script src="ansi.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

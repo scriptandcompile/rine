@@ -33,6 +33,17 @@ pub enum DevEvent {
     ProcessExited {
         exit_code: i32,
     },
+    OutputData {
+        stream: OutputStream,
+        data: String,
+    },
+}
+
+/// Which output stream a piece of data came from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum OutputStream {
+    Stdout,
+    Stderr,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -37,51 +37,22 @@ pub fn run(
 
     // ── Dev channel setup ──────────────────────────────────────────
     #[cfg(feature = "dev")]
-    let mut dev_channel: Option<rine_channel::DevSender> = if cli.dev {
-        None // Will be connected after rine-dev is spawned (handled in main.rs)
-    } else {
-        None
-    };
+    let mut dev_channel: Option<rine_channel::DevSender> = None;
     #[cfg(not(feature = "dev"))]
     let _dev_channel: Option<()> = None;
 
-    // If --dev, spawn rine-dev and connect the channel.
+    // If RINE_DEV_SOCKET is set, rine-dev spawned us as a child process.
+    // Connect to its socket so we can send structured events (PeLoaded, etc.).
+    // stdout/stderr are already piped by rine-dev — no capture needed here.
     #[cfg(feature = "dev")]
-    if cli.dev {
-        let socket_path =
-            std::env::temp_dir().join(format!("rine-dev-{}.sock", std::process::id()));
-
-        // Spawn rine-dev binary.
-        let dev_bin = std::env::current_exe()
-            .ok()
-            .and_then(|p| {
-                let sibling = p.with_file_name("rine-dev");
-                sibling.is_file().then_some(sibling)
-            })
-            .unwrap_or_else(|| "rine-dev".into());
-
-        info!(bin = %dev_bin.display(), socket = %socket_path.display(), "launching rine-dev");
-
-        match std::process::Command::new(&dev_bin)
-            .arg("--socket")
-            .arg(&socket_path)
-            .spawn()
-        {
-            Ok(_child) => match rine_channel::DevSender::connect(&socket_path) {
-                Ok(sender) => {
-                    info!("connected to rine-dev dashboard");
-                    dev_channel = Some(sender);
-                }
-                Err(e) => {
-                    tracing::warn!("failed to connect to rine-dev: {e}");
-                }
-            },
+    if let Ok(socket_path) = std::env::var("RINE_DEV_SOCKET") {
+        match rine_channel::DevSender::connect(std::path::Path::new(&socket_path)) {
+            Ok(sender) => {
+                info!("connected to rine-dev dashboard");
+                dev_channel = Some(sender);
+            }
             Err(e) => {
-                tracing::warn!(
-                    "failed to launch rine-dev ({}): {e}\n\
-                     hint: make sure rine-dev is built (`cargo build -p rine-dev`)",
-                    dev_bin.display()
-                );
+                tracing::warn!("failed to connect to rine-dev: {e}");
             }
         }
     }

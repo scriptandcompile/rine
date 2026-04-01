@@ -11,7 +11,7 @@ const { listen, invoke } = (function() {
 })();
 
 // ── State ──────────────────────────────────────────
-let state = { pe: null, config: null, imports: null, exited: null, exitCode: null };
+let state = { pe: null, config: null, imports: null, exited: null, exitCode: null, stdout: '', stderr: '' };
 let events = [];
 let startTime = Date.now();
 
@@ -209,6 +209,12 @@ function updateStatusBar() {
   }
 }
 
+function renderOutput(stream, text) {
+  const el = document.getElementById('output-' + stream);
+  el.innerHTML = typeof ansiToHtml === 'function' ? ansiToHtml(text) : esc(text);
+  el.scrollTop = el.scrollHeight;
+}
+
 function updateStatusBadge() {
   const badge = document.getElementById('status-badge');
   if (state.exited != null) {
@@ -255,6 +261,15 @@ function handleEvent(event) {
       state.exited = true;
       state.exitCode = event.exit_code;
       break;
+    case 'OutputData':
+      if (event.stream === 'Stdout') {
+        state.stdout += event.data;
+        renderOutput('stdout', state.stdout);
+      } else {
+        state.stderr += event.data;
+        renderOutput('stderr', state.stderr);
+      }
+      break;
   }
 
   updateStatusBar();
@@ -273,6 +288,16 @@ listen('rine-disconnected', () => {
     updateStatusBadge();
   }
 });
+
+// Output sub-tab switching
+for (const btn of document.querySelectorAll('.output-tab')) {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.output-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.output-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('output-' + btn.dataset.output).classList.add('active');
+  });
+}
 
 // Filter listeners
 document.getElementById('import-filter').addEventListener('input', applyImportFilter);
@@ -294,6 +319,8 @@ invoke('get_state').then(snap => {
     state.exited = true;
     state.exitCode = snap.exited === -1 ? null : snap.exited;
   }
+  if (snap.stdout) { state.stdout = snap.stdout; renderOutput('stdout', state.stdout); }
+  if (snap.stderr) { state.stderr = snap.stderr; renderOutput('stderr', state.stderr); }
   updateStatusBar();
   updateStatusBadge();
 }).catch(() => {});

@@ -7,6 +7,8 @@ pub struct StateSnapshot {
     pub config: Option<ConfigInfo>,
     pub imports: Option<ImportsInfo>,
     pub exited: Option<i32>,
+    pub stdout: String,
+    pub stderr: String,
 }
 
 #[derive(Debug, Clone, Serialize)]

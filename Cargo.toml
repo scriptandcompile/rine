@@ -7,6 +7,7 @@ members = [
     "crates/rine-config",
     "crates/rine-channel",
     "crates/rine-dev",
+    "crates/rine-frontend-common",
     "crates/platform/win64-dll/rine64-kernel32",
     "crates/platform/win64-dll/rine64-msvcrt",
     "crates/platform/win64-dll/rine64-ntdll",
@@ -25,6 +26,7 @@ license = "MIT"
 rine-dlls = { path = "crates/rine-dlls" }
 rine-types = { path = "crates/rine-types" }
 rine-channel = { path = "crates/rine-channel" }
+rine-frontend-common = { path = "crates/rine-frontend-common" }
 rine64-kernel32 = { path = "crates/platform/win64-dll/rine64-kernel32" }
 rine64-msvcrt = { path = "crates/platform/win64-dll/rine64-msvcrt" }
 rine64-ntdll = { path = "crates/platform/win64-dll/rine64-ntdll" }

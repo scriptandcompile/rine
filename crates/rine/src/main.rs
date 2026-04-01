@@ -72,6 +72,41 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
 
+    // --dev: launch rine-dev which will spawn us back as a child with
+    // piped stdout/stderr for output capture.
+    #[cfg(feature = "dev")]
+    if cli.dev && std::env::var_os("RINE_DEV_SOCKET").is_none() {
+        let dev_bin = std::env::current_exe()
+            .ok()
+            .and_then(|p| {
+                let sibling = p.with_file_name("rine-dev");
+                sibling.is_file().then_some(sibling)
+            })
+            .unwrap_or_else(|| std::path::PathBuf::from("rine-dev"));
+
+        match std::process::Command::new(&dev_bin)
+            .arg("--exe")
+            .arg(exe_path)
+            .status()
+        {
+            Ok(status) => {
+                return if status.success() {
+                    ExitCode::SUCCESS
+                } else {
+                    ExitCode::FAILURE
+                };
+            }
+            Err(e) => {
+                error!(
+                    "failed to launch rine-dev ({}): {e}\n\
+                     hint: make sure rine-dev is built (`cargo build -p rine-dev`)",
+                    dev_bin.display()
+                );
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+
     match run(exe_path, &cli) {
         Ok(infallible) => match infallible {},
         Err(e) => {

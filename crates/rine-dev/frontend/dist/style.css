@@ -98,18 +98,20 @@ body {
 
 /* Cards grid */
 .cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 .card {
+  flex: 1 1 0;
+  min-width: 0;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
 }
 .card-wide {
-  grid-column: 1 / -1;
+  flex-basis: 100%;
 }
 .card h2 {
   font-size: 12px;
@@ -275,4 +277,46 @@ body {
   font-size: 12px;
   color: var(--text-muted);
   flex-shrink: 0;
+}
+
+/* Output tab */
+.output-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.output-tab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.output-tab:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.output-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.output-pane { display: none; }
+.output-pane.active { display: block; flex: 1; }
+.output-box {
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  min-height: 60px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text);
 }
