@@ -64,6 +64,7 @@ impl DllPlugin for MsvcrtPlugin {
             Export::Func("memset", as_win_api!(memory::memset)),
             // string
             Export::Func("strlen", as_win_api!(string::strlen)),
+            Export::Func("strcmp", as_win_api!(string::strcmp)),
             Export::Func("strncmp", as_win_api!(string::strncmp)),
         ]
     }

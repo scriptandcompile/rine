@@ -382,6 +382,8 @@ name = "rine64-advapi32"
 version = "0.1.0"
 dependencies = [
  "rine-dlls",
+ "rine-types",
+ "tracing",
 ]
 
 [[package]]

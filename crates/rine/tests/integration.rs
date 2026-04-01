@@ -284,6 +284,25 @@ fn heap_memory() {
 }
 
 // ============================================================================
+// Registry emulation
+// ============================================================================
+
+#[test]
+fn registry_ops() {
+    assert_run(
+        "registry_ops",
+        0,
+        "reg_open_existing: ok\n\
+         reg_open_missing: ok\n\
+         reg_query_dword: ok\n\
+         reg_query_string: ok\n\
+         reg_create_set_query: ok\n\
+         reg_set_string: ok\n\
+         reg_close_predefined: ok",
+    );
+}
+
+// ============================================================================
 // Printf (known failing — tracks localeconv/fputc implementation)
 // ============================================================================
 

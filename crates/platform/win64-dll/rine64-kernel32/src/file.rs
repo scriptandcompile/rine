@@ -216,6 +216,7 @@ pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
         Some(HandleEntry::Mutex(_)) => WinBool::TRUE,
         Some(HandleEntry::Semaphore(_)) => WinBool::TRUE,
         Some(HandleEntry::Heap(_)) => WinBool::TRUE,
+        Some(HandleEntry::RegistryKey(_)) => WinBool::TRUE,
         None => {
             tracing::warn!(?handle, "CloseHandle: unknown handle");
             WinBool::FALSE

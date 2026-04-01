@@ -13,6 +13,7 @@ use std::collections::HashMap;
 
 use std::sync::Mutex;
 
+use crate::registry::RegistryKeyState;
 use crate::threading::{
     EventWaitable, MutexWaitable, ProcessWaitable, SemaphoreWaitable, ThreadWaitable, Waitable,
 };
@@ -149,6 +150,8 @@ pub enum HandleEntry {
     Semaphore(SemaphoreWaitable),
     /// A heap object created by `HeapCreate`.
     Heap(HeapState),
+    /// A registry key opened by `RegOpenKeyEx` / `RegCreateKeyEx`.
+    RegistryKey(RegistryKeyState),
 }
 
 /// State kept for an active `FindFirstFile`/`FindNextFile` session.
@@ -272,6 +275,19 @@ impl HandleTable {
         let inner = self.inner.lock().unwrap();
         match inner.map.get(&h.as_raw()) {
             Some(HandleEntry::Heap(state)) => Some(f(state)),
+            _ => None,
+        }
+    }
+
+    /// Run a closure with access to the registry key state behind a handle.
+    /// Returns `None` if the handle doesn't exist or isn't a RegistryKey handle.
+    pub fn with_registry_key<F, R>(&self, h: Handle, f: F) -> Option<R>
+    where
+        F: FnOnce(&RegistryKeyState) -> R,
+    {
+        let inner = self.inner.lock().unwrap();
+        match inner.map.get(&h.as_raw()) {
+            Some(HandleEntry::RegistryKey(state)) => Some(f(state)),
             _ => None,
         }
     }
