@@ -5,6 +5,7 @@ pub mod memory;
 pub mod process;
 pub mod sync;
 pub mod thread;
+pub mod version;
 
 use rine_dlls::{DllPlugin, Export, as_win_api};
 
@@ -160,6 +161,10 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("VirtualFree", as_win_api!(memory::VirtualFree)),
             Export::Func("VirtualProtect", as_win_api!(memory::VirtualProtect)),
             Export::Func("VirtualQuery", as_win_api!(memory::VirtualQuery)),
+            // Version
+            Export::Func("GetVersionExA", as_win_api!(version::GetVersionExA)),
+            Export::Func("GetVersionExW", as_win_api!(version::GetVersionExW)),
+            Export::Func("GetVersion", as_win_api!(version::GetVersion)),
         ]
     }
 }

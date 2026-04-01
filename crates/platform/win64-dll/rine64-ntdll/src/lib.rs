@@ -30,6 +30,7 @@ impl DllPlugin for NtdllPlugin {
                 "RtlInitUnicodeString",
                 as_win_api!(rtl::RtlInitUnicodeString),
             ),
+            Export::Func("RtlGetVersion", as_win_api!(rtl::RtlGetVersion)),
         ]
     }
 }

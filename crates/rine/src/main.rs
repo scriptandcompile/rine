@@ -153,8 +153,11 @@ fn run(cli: &Cli) -> Result<std::convert::Infallible, RunError> {
     // 4. Set final memory protections on PE sections.
     image.protect(&parsed.pe)?;
 
-    // 5. Set up fake Windows Thread Environment Block (TEB) so CRT code
-    //    that reads gs:0x30 doesn't segfault.
+    // 5a. Set the spoofed Windows version from config.
+    subsys::version::init_version(app_config.windows_version);
+
+    // 5b. Set up fake Windows Thread Environment Block (TEB) so CRT code
+    //     that reads gs:0x30 doesn't segfault.
     unsafe { subsys::threading::init_teb() };
 
     // 6. Execute the PE entry point (does not return).

@@ -401,6 +401,7 @@ dependencies = [
  "nix",
  "rine-dlls",
  "rine-types",
+ "serial_test",
  "tracing",
 ]
 
@@ -422,6 +423,7 @@ dependencies = [
  "nix",
  "rine-dlls",
  "rine-types",
+ "serial_test",
  "tracing",
 ]
 
