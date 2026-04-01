@@ -265,6 +265,25 @@ fn sync_primitives() {
 }
 
 // ============================================================================
+// Heap management & virtual memory
+// ============================================================================
+
+#[test]
+fn heap_memory() {
+    assert_run(
+        "heap_memory",
+        0,
+        "heap_alloc_free: ok\n\
+         heap_zero_memory: ok\n\
+         heap_realloc: ok\n\
+         heap_create_destroy: ok\n\
+         virtual_alloc_free: ok\n\
+         virtual_alloc_large: ok\n\
+         multiple_allocs: ok",
+    );
+}
+
+// ============================================================================
 // Printf (known failing — tracks localeconv/fputc implementation)
 // ============================================================================
 

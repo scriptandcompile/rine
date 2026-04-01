@@ -18,6 +18,22 @@ use crate::threading::{
 };
 
 // ---------------------------------------------------------------------------
+// Heap state (for HeapCreate handles)
+// ---------------------------------------------------------------------------
+
+/// State tracked for a heap created via `HeapCreate`.
+///
+/// Each heap is backed by the Rust global allocator.  We track outstanding
+/// allocations so we can clean up on `HeapDestroy` and implement `HeapSize`.
+#[derive(Debug)]
+pub struct HeapState {
+    /// Outstanding allocations: address → (layout.size, layout.align).
+    pub allocations: Mutex<HashMap<usize, (usize, usize)>>,
+    /// Default flags passed to `HeapCreate` (e.g. `HEAP_GENERATE_EXCEPTIONS`).
+    pub flags: u32,
+}
+
+// ---------------------------------------------------------------------------
 // Handle / HModule newtypes
 // ---------------------------------------------------------------------------
 
@@ -131,6 +147,8 @@ pub enum HandleEntry {
     Mutex(MutexWaitable),
     /// A semaphore object created by `CreateSemaphore`.
     Semaphore(SemaphoreWaitable),
+    /// A heap object created by `HeapCreate`.
+    Heap(HeapState),
 }
 
 /// State kept for an active `FindFirstFile`/`FindNextFile` session.
@@ -241,6 +259,19 @@ impl HandleTable {
         let mut inner = self.inner.lock().unwrap();
         match inner.map.get_mut(&h.as_raw()) {
             Some(HandleEntry::FindData(state)) => Some(f(state)),
+            _ => None,
+        }
+    }
+
+    /// Run a closure with access to the heap state behind a handle.
+    /// Returns `None` if the handle doesn't exist or isn't a Heap handle.
+    pub fn with_heap<F, R>(&self, h: Handle, f: F) -> Option<R>
+    where
+        F: FnOnce(&HeapState) -> R,
+    {
+        let inner = self.inner.lock().unwrap();
+        match inner.map.get(&h.as_raw()) {
+            Some(HandleEntry::Heap(state)) => Some(f(state)),
             _ => None,
         }
     }
