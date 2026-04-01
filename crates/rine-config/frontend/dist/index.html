@@ -15,15 +15,6 @@
     </div>
 
     <div id="editor" class="hidden">
-      <div class="exe-info panel">
-        <label>Executable</label>
-        <span id="exe-path-display"></span>
-        <div class="config-path">
-          <label>Config file</label>
-          <span id="config-path-display"></span>
-        </div>
-      </div>
-
       <!-- Tabs -->
       <nav class="tabs">
         <button class="tab active" data-tab="general">General</button>
@@ -36,6 +27,14 @@
 
       <!-- General Tab -->
       <section id="tab-general" class="tab-content active">
+        <div class="exe-info panel">
+          <label>Executable</label>
+          <span id="exe-path-display"></span>
+          <div class="config-path">
+            <label>Config file</label>
+            <span id="config-path-display"></span>
+          </div>
+        </div>
         <div class="field">
           <label for="win-version">Windows Version</label>
           <div class="select-wrap">
