@@ -6,7 +6,7 @@ license.workspace = true
 description = "Windows PE executable loader for Linux"
 
 [features]
-default = []
+default = ["dev"]
 dev = ["dep:rine-channel"]
 
 [dependencies]
