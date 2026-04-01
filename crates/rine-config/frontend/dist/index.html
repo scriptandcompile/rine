@@ -8,10 +8,6 @@
 </head>
 <body>
   <div id="app">
-    <header>
-      <h1>rine</h1>
-      <span class="subtitle">Configuration Editor</span>
-    </header>
 
     <div id="no-exe" class="panel">
       <p>No executable selected. Launch with:</p>
@@ -41,7 +37,9 @@
       <section id="tab-general" class="tab-content active">
         <div class="field">
           <label for="win-version">Windows Version</label>
-          <select id="win-version"></select>
+          <div class="select-wrap">
+            <select id="win-version"></select>
+          </div>
         </div>
       </section>
 
