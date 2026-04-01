@@ -25,3 +25,18 @@ pub enum BinfmtError {
     #[error("{0}")]
     Io(#[from] io::Error),
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum DesktopError {
+    #[error("could not determine rine binary path: {0}")]
+    NoSelfPath(io::Error),
+
+    #[error("XDG data directory not found (no HOME or XDG_DATA_HOME set)")]
+    NoDataDir,
+
+    #[error("desktop entry not installed — nothing to uninstall")]
+    NotInstalled,
+
+    #[error("{0}")]
+    Io(#[from] io::Error),
+}
