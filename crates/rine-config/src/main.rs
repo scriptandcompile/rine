@@ -121,19 +121,17 @@ fn main() {
             app.set_menu(menu)?;
 
             let handle = app.handle().clone();
-            app.on_menu_event(move |_app, event| {
-                match event.id().as_ref() {
-                    "save" => {
-                        let _ = handle.emit("menu-save", ());
-                    }
-                    "reset" => {
-                        let _ = handle.emit("menu-reset", ());
-                    }
-                    "exit" => {
-                        std::process::exit(0);
-                    }
-                    _ => {}
+            app.on_menu_event(move |_app, event| match event.id().as_ref() {
+                "save" => {
+                    let _ = handle.emit("menu-save", ());
                 }
+                "reset" => {
+                    let _ = handle.emit("menu-reset", ());
+                }
+                "exit" => {
+                    std::process::exit(0);
+                }
+                _ => {}
             });
 
             Ok(())
