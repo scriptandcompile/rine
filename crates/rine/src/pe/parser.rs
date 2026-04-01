@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use goblin::pe::PE;
 use goblin::pe::characteristic;
@@ -8,8 +8,11 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum PeError {
-    #[error("failed to open file: {0}")]
-    Io(#[from] std::io::Error),
+    #[error("failed to open file `{path}`: {source}")]
+    Io {
+        source: std::io::Error,
+        path: PathBuf,
+    },
 
     #[error("failed to parse PE: {0}")]
     Parse(#[from] goblin::error::Error),
@@ -45,10 +48,28 @@ impl ParsedPe {
     /// - It is not a DLL
     /// - It has a non-zero entry point
     pub fn load(path: &Path) -> Result<Self, PeError> {
-        let file = File::open(path)?;
+        // Try the path as-is first; if it doesn't exist and has no extension,
+        // retry with ".exe" appended (matching Windows behaviour).
+        let resolved;
+        let open_path = if !path.exists() && path.extension().is_none() {
+            resolved = path.with_extension("exe");
+            &resolved
+        } else {
+            path
+        };
+
+        let file = File::open(open_path).map_err(|e| PeError::Io {
+            source: e,
+            path: open_path.to_path_buf(),
+        })?;
         // SAFETY: The file must not be modified while mapped. This is a
         // reasonable assumption for PE loading — the file is read-only input.
-        let mmap = unsafe { Mmap::map(&file)? };
+        let mmap = unsafe {
+            Mmap::map(&file).map_err(|e| PeError::Io {
+                source: e,
+                path: open_path.to_path_buf(),
+            })?
+        };
 
         // Parse the mmap'd bytes. We need `pe` to borrow from `mmap` with a
         // 'static lifetime so they can coexist in the struct. We use unsafe to
@@ -93,7 +114,7 @@ mod tests {
     #[test]
     fn rejects_nonexistent_file() {
         let result = ParsedPe::load(Path::new("/nonexistent/fake.exe"));
-        assert!(matches!(result, Err(PeError::Io(_))));
+        assert!(matches!(result, Err(PeError::Io { .. })));
     }
 
     #[test]
