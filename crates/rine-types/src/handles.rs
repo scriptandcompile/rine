@@ -13,7 +13,7 @@ use std::collections::HashMap;
 
 use std::sync::Mutex;
 
-use crate::threading::{EventWaitable, ThreadWaitable, Waitable};
+use crate::threading::{EventWaitable, ProcessWaitable, ThreadWaitable, Waitable};
 
 // ---------------------------------------------------------------------------
 // Handle / HModule newtypes
@@ -123,6 +123,8 @@ pub enum HandleEntry {
     Thread(ThreadWaitable),
     /// An event object created by `CreateEvent`.
     Event(EventWaitable),
+    /// A child process created by `CreateProcess`.
+    Process(ProcessWaitable),
 }
 
 /// State kept for an active `FindFirstFile`/`FindNextFile` session.
@@ -245,6 +247,7 @@ impl HandleTable {
         match inner.map.get(&h.as_raw()) {
             Some(HandleEntry::Thread(t)) => Some(Waitable::Thread(t.clone())),
             Some(HandleEntry::Event(e)) => Some(Waitable::Event(e.clone())),
+            Some(HandleEntry::Process(p)) => Some(Waitable::Process(p.clone())),
             _ => None,
         }
     }

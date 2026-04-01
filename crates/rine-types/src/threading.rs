@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 
 // ── Windows constants ────────────────────────────────────────────
 
-///
+/// Infinite timeout value for wait functions (milliseconds).
 pub const INFINITE: u32 = 0xFFFF_FFFF;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -130,6 +130,26 @@ impl fmt::Debug for ThreadWaitable {
     }
 }
 
+/// Shared state backing a process handle.
+#[derive(Clone)]
+pub struct ProcessWaitable {
+    /// Exit code.  [`STILL_ACTIVE`] while the process is running.
+    pub exit_code: Arc<AtomicU32>,
+    /// (`done` flag, condvar) — signalled when the process exits.
+    pub completed: Arc<(Mutex<bool>, Condvar)>,
+    /// Linux PID of the child process.
+    pub pid: u32,
+}
+
+impl fmt::Debug for ProcessWaitable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ProcessWaitable")
+            .field("pid", &self.pid)
+            .field("exit_code", &self.exit_code.load(Ordering::Relaxed))
+            .finish()
+    }
+}
+
 /// Shared state backing an event handle.
 #[derive(Clone)]
 pub struct EventWaitable {
@@ -157,6 +177,7 @@ pub struct EventInner {
 pub enum Waitable {
     Thread(ThreadWaitable),
     Event(EventWaitable),
+    Process(ProcessWaitable),
 }
 
 // ── Wait helpers ─────────────────────────────────────────────────
@@ -167,11 +188,39 @@ pub fn wait_on(waitable: &Waitable, timeout_ms: u32) -> u32 {
     match waitable {
         Waitable::Thread(t) => wait_thread(t, timeout_ms),
         Waitable::Event(e) => wait_event(e, timeout_ms),
+        Waitable::Process(p) => wait_process(p, timeout_ms),
     }
 }
 
 fn wait_thread(t: &ThreadWaitable, timeout_ms: u32) -> u32 {
     let (lock, cvar) = &*t.completed;
+    let mut done = lock.lock().unwrap();
+    if *done {
+        return WaitStatus::WAIT_OBJECT_0.0;
+    }
+    if timeout_ms == 0 {
+        return WaitStatus::WAIT_TIMEOUT.0;
+    }
+    if timeout_ms == INFINITE {
+        while !*done {
+            done = cvar.wait(done).unwrap();
+        }
+        return WaitStatus::WAIT_OBJECT_0.0;
+    }
+    let deadline = Instant::now() + Duration::from_millis(timeout_ms as u64);
+    while !*done {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return WaitStatus::WAIT_TIMEOUT.0;
+        }
+        let result = cvar.wait_timeout(done, remaining).unwrap();
+        done = result.0;
+    }
+    WaitStatus::WAIT_OBJECT_0.0
+}
+
+fn wait_process(p: &ProcessWaitable, timeout_ms: u32) -> u32 {
+    let (lock, cvar) = &*p.completed;
     let mut done = lock.lock().unwrap();
     if *done {
         return WaitStatus::WAIT_OBJECT_0.0;

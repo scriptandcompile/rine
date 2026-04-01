@@ -5,7 +5,7 @@ use rine_types::errors::NtStatus;
 use rine_types::handles::{
     GENERIC_READ, GENERIC_WRITE, Handle, HandleEntry, handle_table, handle_to_fd,
 };
-use rine_types::structs::IoStatusBlock;
+use rine_types::os::IoStatusBlock;
 
 // ---------------------------------------------------------------------------
 // NtCreateFile
@@ -220,6 +220,7 @@ pub unsafe extern "win64" fn NtClose(object_handle: isize) -> u32 {
         Some(HandleEntry::FindData(_)) => NtStatus::SUCCESS.0,
         Some(HandleEntry::Thread(_)) => NtStatus::SUCCESS.0,
         Some(HandleEntry::Event(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::Process(_)) => NtStatus::SUCCESS.0,
         None => {
             tracing::warn!(handle = object_handle, "NtClose: unknown handle");
             NtStatus::INVALID_HANDLE.0

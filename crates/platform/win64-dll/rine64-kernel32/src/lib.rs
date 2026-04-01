@@ -44,6 +44,20 @@ impl DllPlugin for Kernel32Plugin {
                 "SetUnhandledExceptionFilter",
                 as_win_api!(process::SetUnhandledExceptionFilter),
             ),
+            Export::Func("CreateProcessA", as_win_api!(process::CreateProcessA)),
+            Export::Func("CreateProcessW", as_win_api!(process::CreateProcessW)),
+            Export::Func(
+                "GetCurrentProcessId",
+                as_win_api!(process::GetCurrentProcessId),
+            ),
+            Export::Func(
+                "GetCurrentProcess",
+                as_win_api!(process::GetCurrentProcess),
+            ),
+            Export::Func(
+                "GetExitCodeProcess",
+                as_win_api!(process::GetExitCodeProcess),
+            ),
             // Synchronization — critical sections
             Export::Func(
                 "InitializeCriticalSection",
