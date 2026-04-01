@@ -33,7 +33,7 @@ pub struct AppConfig {
 // ---------------------------------------------------------------------------
 
 /// Windows version to report via `GetVersionEx` / `RtlGetVersion`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum WindowsVersion {
     #[serde(alias = "xp")]
@@ -42,14 +42,9 @@ pub enum WindowsVersion {
     Win7,
     #[serde(alias = "10", alias = "win10")]
     Win10,
+    #[default]
     #[serde(alias = "11", alias = "win11")]
     Win11,
-}
-
-impl Default for WindowsVersion {
-    fn default() -> Self {
-        Self::Win10
-    }
 }
 
 impl WindowsVersion {
@@ -147,7 +142,7 @@ mod tests {
         let parsed: AppConfig = toml::from_str(&toml_str).unwrap();
         assert_eq!(parsed.filesystem.case_insensitive, false);
         assert!(parsed.filesystem.drives.is_empty());
-        assert_eq!(parsed.windows_version, WindowsVersion::Win10);
+        assert_eq!(parsed.windows_version, WindowsVersion::Win11);
         assert!(parsed.dll.search_order.is_empty());
         assert!(parsed.environment.is_empty());
     }

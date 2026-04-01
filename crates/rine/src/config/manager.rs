@@ -43,7 +43,7 @@ impl ConfigManager {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent).map_err(|e| ConfigError::Io(parent.to_path_buf(), e))?;
         }
-        let contents = toml::to_string_pretty(cfg).map_err(|e| ConfigError::Serialize(e))?;
+        let contents = toml::to_string_pretty(cfg).map_err(ConfigError::Serialize)?;
         fs::write(&path, contents).map_err(|e| ConfigError::Io(path.clone(), e))?;
         Ok(path)
     }
@@ -78,7 +78,7 @@ mod tests {
         let cfg = mgr.load(Path::new("/fake.exe")).unwrap();
         assert_eq!(
             cfg.windows_version,
-            super::super::schema::WindowsVersion::Win10
+            super::super::schema::WindowsVersion::Win11
         );
     }
 
