@@ -206,15 +206,33 @@ function setupButtons() {
 
   document.getElementById("launch-btn").addEventListener("click", async () => {
     if (!exePath) return;
-    const box = document.getElementById("runner-output");
-    box.textContent = "Launching…";
+    const stdoutBox = document.getElementById("runner-stdout");
+    const stderrBox = document.getElementById("runner-stderr");
+    const exitDisplay = document.getElementById("exit-code-display");
+    stdoutBox.innerHTML = "Launching…";
+    stderrBox.innerHTML = "";
+    exitDisplay.classList.add("hidden");
     try {
-      const output = await invoke("launch_exe", { exePath });
-      box.innerHTML = ansiToHtml(output);
+      const { stdout, stderr, exit_code } = await invoke("launch_exe", { exePath });
+      stdoutBox.innerHTML = stdout ? ansiToHtml(stdout) : "<em>no output</em>";
+      stderrBox.innerHTML = stderr ? ansiToHtml(stderr) : "<em>no output</em>";
+      exitDisplay.textContent = "exit " + exit_code;
+      exitDisplay.className = "exit-code" + (exit_code !== 0 ? " error" : "");
     } catch (err) {
-      box.textContent = "Error: " + err;
+      stdoutBox.textContent = "Error: " + err;
+      stderrBox.innerHTML = "";
     }
   });
+
+  // Runner sub-tabs
+  for (const btn of document.querySelectorAll(".runner-tab")) {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".runner-tab").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".runner-pane").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("runner-" + btn.dataset.output).classList.add("active");
+    });
+  }
 }
 
 function addKvRow(container, key, value, keyPlaceholder, keyLabel) {

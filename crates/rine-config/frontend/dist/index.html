@@ -87,8 +87,16 @@
 
       <!-- Runner Tab -->
       <section id="tab-runner" class="tab-content">
-        <button id="launch-btn" class="btn-primary">Launch with rine</button>
-        <div id="runner-output" class="output-box"></div>
+        <div class="runner-toolbar">
+          <button id="launch-btn" class="btn-primary">Launch with rine</button>
+          <span id="exit-code-display" class="exit-code hidden"></span>
+        </div>
+        <div class="runner-tabs">
+          <button class="runner-tab active" data-output="stdout">stdout</button>
+          <button class="runner-tab" data-output="stderr">stderr</button>
+        </div>
+        <div id="runner-stdout" class="output-box runner-pane active"></div>
+        <div id="runner-stderr" class="output-box runner-pane"></div>
       </section>
     </div>
   </div>

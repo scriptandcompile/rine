@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use rine_config_lib::{self as lib, AppConfig, VersionOption, WindowsVersion};
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
@@ -56,8 +57,15 @@ fn get_windows_versions() -> Vec<VersionOption> {
         .collect()
 }
 
+#[derive(Serialize)]
+struct LaunchOutput {
+    stdout: String,
+    stderr: String,
+    exit_code: i32,
+}
+
 #[tauri::command]
-fn launch_exe(exe_path: String) -> Result<String, String> {
+fn launch_exe(exe_path: String) -> Result<LaunchOutput, String> {
     let rine_bin = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|d| d.join("rine")))
@@ -68,23 +76,11 @@ fn launch_exe(exe_path: String) -> Result<String, String> {
         .output()
         .map_err(|e| format!("Failed to launch rine: {e}"))?;
 
-    let mut result = String::new();
-    if !output.stdout.is_empty() {
-        result.push_str(&String::from_utf8_lossy(&output.stdout));
-    }
-    if !output.stderr.is_empty() {
-        if !result.is_empty() {
-            result.push('\n');
-        }
-        result.push_str(&String::from_utf8_lossy(&output.stderr));
-    }
-    if result.is_empty() {
-        result = format!(
-            "Process exited with code {}",
-            output.status.code().unwrap_or(-1)
-        );
-    }
-    Ok(result)
+    Ok(LaunchOutput {
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        exit_code: output.status.code().unwrap_or(-1),
+    })
 }
 
 fn main() {
