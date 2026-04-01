@@ -210,7 +210,7 @@ function setupButtons() {
     box.textContent = "Launching…";
     try {
       const output = await invoke("launch_exe", { exePath });
-      box.textContent = output;
+      box.innerHTML = ansiToHtml(output);
     } catch (err) {
       box.textContent = "Error: " + err;
     }
