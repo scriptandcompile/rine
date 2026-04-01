@@ -74,7 +74,7 @@ fn assert_exit_code(name: &str, expected_code: i32) {
 }
 
 // ============================================================================
-// Tier 1: Minimal PE loading — exit codes
+// Minimal PE loading — exit codes
 // ============================================================================
 
 #[test]
@@ -88,7 +88,7 @@ fn exit_code_42() {
 }
 
 // ============================================================================
-// Tier 2: CRT I/O — puts, WriteConsoleA, WriteFile
+// CRT I/O — puts, WriteConsoleA, WriteFile
 // ============================================================================
 
 #[test]
@@ -107,7 +107,7 @@ fn write_file_stdout() {
 }
 
 // ============================================================================
-// Tier 3: Heap — malloc, calloc, realloc, free
+// Heap — malloc, calloc, realloc, free
 // ============================================================================
 
 #[test]
@@ -125,7 +125,7 @@ fn calloc_realloc() {
 }
 
 // ============================================================================
-// Tier 4: String/memory functions
+// String/memory functions
 // ============================================================================
 
 #[test]
@@ -134,7 +134,7 @@ fn string_ops() {
 }
 
 // ============================================================================
-// Tier 5: Process lifecycle
+// Process lifecycle
 // ============================================================================
 
 #[test]
@@ -155,7 +155,7 @@ fn exit_process() {
 }
 
 // ============================================================================
-// Tier 6: Data sections — .data, .bss, relocations
+// Data sections — .data, .bss, relocations
 // ============================================================================
 
 #[test]
@@ -168,7 +168,7 @@ fn global_data() {
 }
 
 // ============================================================================
-// Tier 7: Stack & calling conventions
+// Stack & calling conventions
 // ============================================================================
 
 #[test]
@@ -192,7 +192,7 @@ fn struct_layout() {
 }
 
 // ============================================================================
-// Tier 8: Command-line arguments
+// Command-line arguments
 // ============================================================================
 
 #[test]
@@ -227,7 +227,45 @@ fn cmdline_with_args() {
 }
 
 // ============================================================================
-// Tier 9: Printf (known failing — tracks localeconv/fputc implementation)
+// Process & threading
+// ============================================================================
+
+#[test]
+fn process_threads() {
+    assert_run(
+        "process_threads",
+        0,
+        "pid: ok\n\
+         pseudo_handle: ok\n\
+         thread_exit: ok\n\
+         thread_param: ok\n\
+         wait_multiple: ok\n\
+         wait_timeout: ok\n\
+         sleep: ok",
+    );
+}
+
+// ============================================================================
+// Synchronization primitives
+// ============================================================================
+
+#[test]
+fn sync_primitives() {
+    assert_run(
+        "sync_primitives",
+        0,
+        "cs: ok\n\
+         events: ok\n\
+         auto_reset: ok\n\
+         mutex: ok\n\
+         mutex_recursive: ok\n\
+         semaphore: ok\n\
+         sem_release: ok",
+    );
+}
+
+// ============================================================================
+// Printf (known failing — tracks localeconv/fputc implementation)
 // ============================================================================
 
 #[test]

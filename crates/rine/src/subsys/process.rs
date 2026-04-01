@@ -231,9 +231,7 @@ pub fn get_process_exit_code(h: Handle) -> Option<u32> {
     // We need to peek at the entry without removing it.
     let table_inner = inner.get_waitable(h)?;
     match table_inner {
-        rine_types::threading::Waitable::Process(p) => {
-            Some(p.exit_code.load(Ordering::Acquire))
-        }
+        rine_types::threading::Waitable::Process(p) => Some(p.exit_code.load(Ordering::Acquire)),
         _ => None,
     }
 }

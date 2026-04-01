@@ -412,7 +412,7 @@ pub unsafe extern "win64" fn ReleaseSemaphore(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rine_types::threading::{wait_on, WaitStatus};
+    use rine_types::threading::{WaitStatus, wait_on};
     use std::ptr;
 
     // ── Critical Section tests ───────────────────────────────────
@@ -486,16 +486,12 @@ mod tests {
 
             assert!(SetEvent(h).is_true());
             // Event is signaled, wait should succeed.
-            let w = handle_table()
-                .get_waitable(Handle::from_raw(h))
-                .unwrap();
+            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
 
             assert!(ResetEvent(h).is_true());
             // Event is now unsignaled.
-            let w = handle_table()
-                .get_waitable(Handle::from_raw(h))
-                .unwrap();
+            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
         }
     }
@@ -505,9 +501,7 @@ mod tests {
         unsafe {
             let h = CreateEventW(0, WinBool::FALSE, WinBool::TRUE, ptr::null());
             assert_ne!(h, 0);
-            let w = handle_table()
-                .get_waitable(Handle::from_raw(h))
-                .unwrap();
+            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
             // Auto-reset, initially signaled — first wait succeeds, second times out.
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
@@ -530,9 +524,7 @@ mod tests {
             let h = CreateMutexA(0, WinBool::FALSE, ptr::null());
             assert_ne!(h, 0);
 
-            let w = handle_table()
-                .get_waitable(Handle::from_raw(h))
-                .unwrap();
+            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
             // Unowned mutex should be immediately acquirable.
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
         }
@@ -545,9 +537,7 @@ mod tests {
             assert_ne!(h, 0);
 
             // Same thread can recursively acquire.
-            let w = handle_table()
-                .get_waitable(Handle::from_raw(h))
-                .unwrap();
+            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
         }
     }
@@ -590,9 +580,7 @@ mod tests {
         unsafe {
             let h = CreateMutexA(0, WinBool::TRUE, ptr::null());
             // Recursive acquire.
-            let w = handle_table()
-                .get_waitable(Handle::from_raw(h))
-                .unwrap();
+            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0); // count = 2
 
             // First release (count → 1): still owned.
@@ -615,9 +603,7 @@ mod tests {
 
             // Spawn a thread that tries to acquire (should block/timeout).
             let child = std::thread::spawn(move || {
-                let w = handle_table()
-                    .get_waitable(Handle::from_raw(h))
-                    .unwrap();
+                let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
                 let result = wait_on(&w, 10);
                 // Should timeout because parent holds it.
                 assert_eq!(result, WaitStatus::WAIT_TIMEOUT.0);
@@ -675,9 +661,7 @@ mod tests {
     fn semaphore_wait_and_release() {
         unsafe {
             let h = CreateSemaphoreA(0, 1, 5, ptr::null());
-            let w = handle_table()
-                .get_waitable(Handle::from_raw(h))
-                .unwrap();
+            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
 
             // Count is 1, first wait succeeds.
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
@@ -732,9 +716,7 @@ mod tests {
             let h = CreateSemaphoreA(0, 0, 5, ptr::null());
 
             let child = std::thread::spawn(move || {
-                let w = handle_table()
-                    .get_waitable(Handle::from_raw(h))
-                    .unwrap();
+                let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
                 wait_on(&w, 2000)
             });
 

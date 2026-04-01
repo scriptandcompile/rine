@@ -50,10 +50,7 @@ impl DllPlugin for Kernel32Plugin {
                 "GetCurrentProcessId",
                 as_win_api!(process::GetCurrentProcessId),
             ),
-            Export::Func(
-                "GetCurrentProcess",
-                as_win_api!(process::GetCurrentProcess),
-            ),
+            Export::Func("GetCurrentProcess", as_win_api!(process::GetCurrentProcess)),
             Export::Func(
                 "GetExitCodeProcess",
                 as_win_api!(process::GetExitCodeProcess),
