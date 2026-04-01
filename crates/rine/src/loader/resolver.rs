@@ -34,6 +34,7 @@ pub struct DllResolutionSummary {
     pub dll_name: String,
     pub resolved: usize,
     pub stubbed: usize,
+    pub resolved_names: Vec<String>,
     pub stubbed_names: Vec<String>,
 }
 
@@ -84,6 +85,7 @@ pub fn resolve_imports(
             dll_name: dll_name.to_string(),
             resolved: 0,
             stubbed: 0,
+            resolved_names: Vec::new(),
             stubbed_names: Vec::new(),
         };
 
@@ -132,6 +134,7 @@ pub fn resolve_imports(
                         "resolved import"
                     );
                     summary.resolved += 1;
+                    summary.resolved_names.push(func_name);
                     write_iat_entry(iat_slot_va, func as usize);
                 }
                 LookupResult::Stub(func) => {

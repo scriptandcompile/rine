@@ -52,6 +52,10 @@ pub struct Cli {
     #[arg(long)]
     pub context_menu_status: bool,
 
+    /// Launch the developer dashboard alongside the PE.
+    #[arg(long)]
+    pub dev: bool,
+
     /// Arguments to pass to the Windows executable.
     #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
     pub exe_args: Vec<String>,

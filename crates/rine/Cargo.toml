@@ -5,9 +5,14 @@ edition.workspace = true
 license.workspace = true
 description = "Windows PE executable loader for Linux"
 
+[features]
+default = []
+dev = ["dep:rine-channel"]
+
 [dependencies]
 rine-dlls = { workspace = true }
 rine-types = { workspace = true, features = ["config"] }
+rine-channel = { workspace = true, optional = true }
 rine64-kernel32 = { workspace = true }
 rine64-msvcrt = { workspace = true }
 rine64-ntdll = { workspace = true }

@@ -63,6 +63,15 @@ fn main() -> ExitCode {
         return show_config(exe_path);
     }
 
+    // Warn if --dev is used without the dev feature.
+    #[cfg(not(feature = "dev"))]
+    if cli.dev {
+        error!(
+            "--dev requires rine to be built with the `dev` feature: cargo build --features dev"
+        );
+        return ExitCode::FAILURE;
+    }
+
     match run(exe_path, &cli) {
         Ok(infallible) => match infallible {},
         Err(e) => {

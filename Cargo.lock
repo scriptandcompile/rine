@@ -3262,6 +3262,7 @@ dependencies = [
  "libc",
  "memmap2",
  "nix",
+ "rine-channel",
  "rine-dlls",
  "rine-types",
  "rine64-advapi32",
@@ -3279,6 +3280,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rine-channel"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "rine-config"
 version = "0.1.0"
 dependencies = [
@@ -3289,6 +3298,17 @@ dependencies = [
  "tauri",
  "tauri-build",
  "toml 0.9.12+spec-1.1.0",
+]
+
+[[package]]
+name = "rine-dev"
+version = "0.1.0"
+dependencies = [
+ "rine-channel",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
 ]
 
 [[package]]

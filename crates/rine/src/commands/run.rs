@@ -19,8 +19,72 @@ use crate::loader::resolver;
 use crate::pe::parser::ParsedPe;
 use crate::subsys;
 
-pub fn run(exe_path: &Path, _cli: &Cli) -> Result<std::convert::Infallible, RunError> {
+/// Conditionally emits a dev event. Compiles to nothing without the `dev` feature.
+macro_rules! dev_emit {
+    ($channel:expr, $event:expr) => {
+        #[cfg(feature = "dev")]
+        if let Some(ch) = $channel.as_mut() {
+            let _ = ch.send(&$event);
+        }
+    };
+}
+
+pub fn run(
+    exe_path: &Path,
+    #[allow(unused)] cli: &Cli,
+) -> Result<std::convert::Infallible, RunError> {
     info!(exe = %exe_path.display(), "loading PE");
+
+    // ── Dev channel setup ──────────────────────────────────────────
+    #[cfg(feature = "dev")]
+    let mut dev_channel: Option<rine_channel::DevSender> = if cli.dev {
+        None // Will be connected after rine-dev is spawned (handled in main.rs)
+    } else {
+        None
+    };
+    #[cfg(not(feature = "dev"))]
+    let _dev_channel: Option<()> = None;
+
+    // If --dev, spawn rine-dev and connect the channel.
+    #[cfg(feature = "dev")]
+    if cli.dev {
+        let socket_path =
+            std::env::temp_dir().join(format!("rine-dev-{}.sock", std::process::id()));
+
+        // Spawn rine-dev binary.
+        let dev_bin = std::env::current_exe()
+            .ok()
+            .and_then(|p| {
+                let sibling = p.with_file_name("rine-dev");
+                sibling.is_file().then_some(sibling)
+            })
+            .unwrap_or_else(|| "rine-dev".into());
+
+        info!(bin = %dev_bin.display(), socket = %socket_path.display(), "launching rine-dev");
+
+        match std::process::Command::new(&dev_bin)
+            .arg("--socket")
+            .arg(&socket_path)
+            .spawn()
+        {
+            Ok(_child) => match rine_channel::DevSender::connect(&socket_path) {
+                Ok(sender) => {
+                    info!("connected to rine-dev dashboard");
+                    dev_channel = Some(sender);
+                }
+                Err(e) => {
+                    tracing::warn!("failed to connect to rine-dev: {e}");
+                }
+            },
+            Err(e) => {
+                tracing::warn!(
+                    "failed to launch rine-dev ({}): {e}\n\
+                     hint: make sure rine-dev is built (`cargo build -p rine-dev`)",
+                    dev_bin.display()
+                );
+            }
+        }
+    }
 
     // 0. Load per-app configuration.
     let mgr = ConfigManager::new();
@@ -29,6 +93,19 @@ pub fn run(exe_path: &Path, _cli: &Cli) -> Result<std::convert::Infallible, RunE
         version = %app_config.windows_version,
         config = %mgr.config_path(exe_path).display(),
         "app config loaded"
+    );
+
+    dev_emit!(
+        dev_channel,
+        rine_channel::DevEvent::ConfigLoaded {
+            config_path: mgr.config_path(exe_path).display().to_string(),
+            windows_version: app_config.windows_version.to_string(),
+            environment_overrides: app_config
+                .environment
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+        }
     );
 
     // Inject environment overrides from the config.
@@ -52,6 +129,32 @@ pub fn run(exe_path: &Path, _cli: &Cli) -> Result<std::convert::Infallible, RunE
         base = format_args!("{}", image.base()),
         size = format_args!("{:#x}", image.size()),
         "image loaded"
+    );
+
+    dev_emit!(
+        dev_channel,
+        rine_channel::DevEvent::PeLoaded {
+            exe_path: exe_path.display().to_string(),
+            image_base: image.base().as_usize() as u64,
+            image_size: image.size() as u64,
+            entry_rva: parsed.pe.entry as u64,
+            relocation_delta: image.base().as_usize() as i64 - parsed.pe.image_base as i64,
+            sections: parsed
+                .pe
+                .sections
+                .iter()
+                .map(|s| {
+                    rine_channel::SectionInfo {
+                        name: String::from_utf8_lossy(&s.name)
+                            .trim_end_matches('\0')
+                            .to_string(),
+                        virtual_address: s.virtual_address as u64,
+                        virtual_size: s.virtual_size as u64,
+                        characteristics: s.characteristics,
+                    }
+                })
+                .collect(),
+        }
     );
 
     // 3. Resolve imports (write function pointers into the IAT).
@@ -80,6 +183,27 @@ pub fn run(exe_path: &Path, _cli: &Cli) -> Result<std::convert::Infallible, RunE
             );
         }
     }
+
+    dev_emit!(
+        dev_channel,
+        rine_channel::DevEvent::ImportsResolved {
+            summaries: report
+                .dll_summaries
+                .iter()
+                .map(|d| {
+                    rine_channel::DllSummary {
+                        dll_name: d.dll_name.clone(),
+                        resolved: d.resolved,
+                        stubbed: d.stubbed,
+                        resolved_names: d.resolved_names.clone(),
+                        stubbed_names: d.stubbed_names.clone(),
+                    }
+                })
+                .collect(),
+            total_resolved: report.total_resolved,
+            total_stubbed: report.total_stubbed,
+        }
+    );
 
     // Also attempt delay-load imports (currently just warns if present).
     let _ = resolver::resolve_delay_imports(&image, &parsed.pe, &registry);

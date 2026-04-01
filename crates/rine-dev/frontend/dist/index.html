@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rine-dev</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <h1>rine-dev</h1>
+      <span id="status-badge" class="badge badge-waiting">waiting for rine…</span>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="imports">Imports</button>
+      <button class="tab" data-tab="events">Events</button>
+    </nav>
+
+    <!-- Overview Tab -->
+    <section id="tab-overview" class="tab-content active">
+      <div class="cards">
+        <!-- PE Info Card -->
+        <div class="card" id="card-pe">
+          <h2>PE Info</h2>
+          <div class="card-body" id="pe-info">
+            <p class="placeholder">Waiting for PE load…</p>
+          </div>
+        </div>
+
+        <!-- Config Card -->
+        <div class="card" id="card-config">
+          <h2>Configuration</h2>
+          <div class="card-body" id="config-info">
+            <p class="placeholder">Waiting for config…</p>
+          </div>
+        </div>
+
+        <!-- Import Summary Card -->
+        <div class="card" id="card-imports">
+          <h2>Import Summary</h2>
+          <div class="card-body" id="import-summary">
+            <p class="placeholder">Waiting for import resolution…</p>
+          </div>
+        </div>
+
+        <!-- Sections Card -->
+        <div class="card card-wide" id="card-sections">
+          <h2>Sections</h2>
+          <div class="card-body" id="sections-info">
+            <p class="placeholder">Waiting for PE load…</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Imports Tab -->
+    <section id="tab-imports" class="tab-content">
+      <div class="toolbar">
+        <input type="text" id="import-filter" placeholder="Filter by DLL or function name…">
+        <label class="filter-label">
+          <input type="checkbox" id="import-stubs-only"> Stubs only
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table id="import-table">
+          <thead>
+            <tr>
+              <th>DLL</th>
+              <th>Function</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="import-tbody">
+            <tr><td colspan="3" class="placeholder">Waiting for import resolution…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Events Tab -->
+    <section id="tab-events" class="tab-content">
+      <div class="toolbar">
+        <input type="text" id="event-filter" placeholder="Filter events…">
+        <label class="filter-label">
+          <input type="checkbox" id="event-autoscroll" checked> Auto-scroll
+        </label>
+      </div>
+      <div id="event-log" class="event-log"></div>
+    </section>
+
+    <footer class="statusbar">
+      <span id="stat-status">Status: waiting</span>
+      <span id="stat-imports">Imports: —</span>
+      <span id="stat-sections">Sections: —</span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

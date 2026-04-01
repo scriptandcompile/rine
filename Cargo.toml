@@ -5,6 +5,8 @@ members = [
     "crates/rine-dlls",
     "crates/rine-types",
     "crates/rine-config",
+    "crates/rine-channel",
+    "crates/rine-dev",
     "crates/platform/win64-dll/rine64-kernel32",
     "crates/platform/win64-dll/rine64-msvcrt",
     "crates/platform/win64-dll/rine64-ntdll",
@@ -22,6 +24,7 @@ license = "MIT"
 [workspace.dependencies]
 rine-dlls = { path = "crates/rine-dlls" }
 rine-types = { path = "crates/rine-types" }
+rine-channel = { path = "crates/rine-channel" }
 rine64-kernel32 = { path = "crates/platform/win64-dll/rine64-kernel32" }
 rine64-msvcrt = { path = "crates/platform/win64-dll/rine64-msvcrt" }
 rine64-ntdll = { path = "crates/platform/win64-dll/rine64-ntdll" }
