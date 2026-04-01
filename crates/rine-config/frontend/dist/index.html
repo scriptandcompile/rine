@@ -47,11 +47,14 @@
       <section id="tab-filesystem" class="tab-content">
         <div class="field">
           <label for="default-root">Default Root</label>
-          <input type="text" id="default-root" placeholder="~/.rine/drives (default)">
+          <div class="input-browse">
+            <input type="text" id="default-root" placeholder="~/.rine/drives (default)">
+            <button id="browse-root" class="btn-small" title="Browse…">…</button>
+          </div>
         </div>
         <div class="field">
           <label>
-            <input type="checkbox" id="case-insensitive">
+            <input type="checkbox" id="case-insensitive" checked>
             Case-insensitive filesystem (slower)
           </label>
         </div>

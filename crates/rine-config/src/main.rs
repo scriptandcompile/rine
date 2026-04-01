@@ -83,6 +83,33 @@ fn launch_exe(exe_path: String) -> Result<LaunchOutput, String> {
     })
 }
 
+#[tauri::command]
+fn pick_folder(start_dir: Option<String>) -> Option<String> {
+    let mut dialog = rfd::FileDialog::new();
+    if let Some(ref dir) = start_dir {
+        let expanded = if let Some(rest) = dir.strip_prefix("~/") {
+            if let Some(home) = std::env::var_os("HOME") {
+                PathBuf::from(home).join(rest)
+            } else {
+                PathBuf::from(dir)
+            }
+        } else {
+            PathBuf::from(dir)
+        };
+        if !expanded.is_dir() {
+            let _ = std::fs::create_dir_all(&expanded);
+        }
+        if expanded.is_dir() {
+            dialog = dialog.set_directory(&expanded);
+        } else if let Some(home) = std::env::var_os("HOME") {
+            dialog = dialog.set_directory(PathBuf::from(home));
+        }
+    }
+    dialog
+        .pick_folder()
+        .map(|p| p.to_string_lossy().into_owned())
+}
+
 fn main() {
     // First non-flag argument is the exe path (e.g. `rine-config /path/to/app.exe`)
     let exe_path = std::env::args().nth(1).and_then(|arg| {
@@ -140,6 +167,7 @@ fn main() {
             get_config_path,
             get_windows_versions,
             launch_exe,
+            pick_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running rine-config");

@@ -184,7 +184,7 @@ function setupButtons() {
   // Listen for File > Reset to Defaults from native menu
   listen("menu-reset", () => {
     config = {
-      filesystem: { default_root: null, drives: {}, case_insensitive: false },
+      filesystem: { default_root: null, drives: {}, case_insensitive: true },
       windows_version: "win11",
       dll: { search_order: [], force_stub: [] },
       environment: {},
@@ -202,6 +202,20 @@ function setupButtons() {
   document.getElementById("add-env").addEventListener("click", () => {
     addKvRow(document.getElementById("env-list"), "", "", "VARIABLE", "Name");
     markDirty();
+  });
+
+  document.getElementById("browse-root").addEventListener("click", async () => {
+    const input = document.getElementById("default-root");
+    const startDir = input.value.trim() || "~/.rine/drives";
+    try {
+      const folder = await invoke("pick_folder", { startDir });
+      if (folder) {
+        input.value = folder;
+        markDirty();
+      }
+    } catch (err) {
+      // user cancelled or error — ignore
+    }
   });
 
   document.getElementById("launch-btn").addEventListener("click", async () => {

@@ -119,7 +119,7 @@ pub struct DllConfig {
 // ---------------------------------------------------------------------------
 
 /// Drive mappings and path-translation options.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct FilesystemConfig {
     /// Root directory under which unmapped drive letters are created
@@ -134,8 +134,17 @@ pub struct FilesystemConfig {
 
     /// When `true`, filename lookups walk the real directory tree to
     /// match names case-insensitively (like Windows NTFS).
-    /// Expensive — off by default.
     pub case_insensitive: bool,
+}
+
+impl Default for FilesystemConfig {
+    fn default() -> Self {
+        Self {
+            default_root: None,
+            drives: HashMap::new(),
+            case_insensitive: true,
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -244,7 +253,7 @@ mod tests {
         let cfg = AppConfig::default();
         let toml_str = toml::to_string_pretty(&cfg).unwrap();
         let parsed: AppConfig = toml::from_str(&toml_str).unwrap();
-        assert_eq!(parsed.filesystem.case_insensitive, false);
+        assert_eq!(parsed.filesystem.case_insensitive, true);
         assert!(parsed.filesystem.drives.is_empty());
         assert_eq!(parsed.windows_version, WindowsVersion::Win11);
         assert!(parsed.dll.search_order.is_empty());

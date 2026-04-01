@@ -178,6 +178,22 @@ select:focus {
 
 textarea { resize: vertical; }
 
+.input-browse {
+  display: flex;
+  gap: 6px;
+}
+
+.input-browse input {
+  flex: 1;
+}
+
+.input-browse .btn-small {
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
 select {
   cursor: pointer;
   -webkit-appearance: none;
