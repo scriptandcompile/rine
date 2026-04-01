@@ -6,6 +6,7 @@ mod loader;
 mod pe;
 mod subsys;
 
+use std::path::Path;
 use std::process::ExitCode;
 
 use clap::Parser;
@@ -23,6 +24,7 @@ use rine64_ws2_32::Ws2_32Plugin;
 use crate::cli::Cli;
 use crate::config::errors::ConfigError;
 use crate::config::manager::ConfigManager;
+use crate::integration::binfmt;
 use crate::loader::memory::LoadedImage;
 use crate::loader::resolver;
 use crate::pe::parser::ParsedPe;
@@ -35,12 +37,29 @@ fn main() -> ExitCode {
 
     let cli = Cli::parse();
 
-    // Handle `--config`: print/create the per-app config and exit.
-    if cli.show_config {
-        return show_config(&cli);
+    // Handle binfmt_misc commands (no exe_path required).
+    if cli.binfmt_status {
+        return binfmt_status_cmd();
+    }
+    if cli.install_binfmt {
+        return install_binfmt_cmd();
+    }
+    if cli.uninstall_binfmt {
+        return uninstall_binfmt_cmd();
     }
 
-    match run(&cli) {
+    let Some(ref exe_path) = cli.exe_path else {
+        error!("no .exe path provided");
+        eprintln!("Usage: rine <EXE_PATH> [EXE_ARGS]...");
+        return ExitCode::FAILURE;
+    };
+
+    // Handle `--config`: print/create the per-app config and exit.
+    if cli.show_config {
+        return show_config(exe_path);
+    }
+
+    match run(exe_path, &cli) {
         Ok(infallible) => match infallible {},
         Err(e) => {
             error!("{e}");
@@ -51,9 +70,9 @@ fn main() -> ExitCode {
 
 /// Print the path and contents of the per-app config. Creates a default
 /// config file if one does not yet exist.
-fn show_config(cli: &Cli) -> ExitCode {
+fn show_config(exe_path: &Path) -> ExitCode {
     let mgr = ConfigManager::new();
-    let cfg = match mgr.load(&cli.exe_path) {
+    let cfg = match mgr.load(exe_path) {
         Ok(c) => c,
         Err(e) => {
             error!("{e}");
@@ -61,9 +80,9 @@ fn show_config(cli: &Cli) -> ExitCode {
         }
     };
 
-    let path = mgr.config_path(&cli.exe_path);
+    let path = mgr.config_path(exe_path);
     if !path.exists() {
-        match mgr.save(&cli.exe_path, &cfg) {
+        match mgr.save(exe_path, &cfg) {
             Ok(p) => eprintln!("created default config: {}", p.display()),
             Err(e) => {
                 error!("{e}");
@@ -85,15 +104,54 @@ fn show_config(cli: &Cli) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn run(cli: &Cli) -> Result<std::convert::Infallible, RunError> {
-    info!(exe = %cli.exe_path.display(), "loading PE");
+fn binfmt_status_cmd() -> ExitCode {
+    match binfmt::status() {
+        Ok(s) => {
+            println!("binfmt_misc: {s}");
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            error!("{e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn install_binfmt_cmd() -> ExitCode {
+    match binfmt::install(None) {
+        Ok(interpreter) => {
+            println!("registered binfmt_misc handler: {}", interpreter.display());
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            error!("{e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn uninstall_binfmt_cmd() -> ExitCode {
+    match binfmt::uninstall() {
+        Ok(()) => {
+            println!("removed binfmt_misc handler");
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            error!("{e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn run(exe_path: &Path, _cli: &Cli) -> Result<std::convert::Infallible, RunError> {
+    info!(exe = %exe_path.display(), "loading PE");
 
     // 0. Load per-app configuration.
     let mgr = ConfigManager::new();
-    let app_config = mgr.load(&cli.exe_path).map_err(RunError::Config)?;
+    let app_config = mgr.load(exe_path).map_err(RunError::Config)?;
     info!(
         version = %app_config.windows_version,
-        config = %mgr.config_path(&cli.exe_path).display(),
+        config = %mgr.config_path(exe_path).display(),
         "app config loaded"
     );
 
@@ -104,7 +162,7 @@ fn run(cli: &Cli) -> Result<std::convert::Infallible, RunError> {
     }
 
     // 1. Parse the PE file.
-    let parsed = ParsedPe::load(&cli.exe_path)?;
+    let parsed = ParsedPe::load(exe_path)?;
     info!(
         entry_rva = format_args!("{:#x}", parsed.pe.entry),
         image_base = format_args!("{:#x}", parsed.pe.image_base),
