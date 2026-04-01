@@ -13,7 +13,9 @@ use std::collections::HashMap;
 
 use std::sync::Mutex;
 
-use crate::threading::{EventWaitable, ProcessWaitable, ThreadWaitable, Waitable};
+use crate::threading::{
+    EventWaitable, MutexWaitable, ProcessWaitable, SemaphoreWaitable, ThreadWaitable, Waitable,
+};
 
 // ---------------------------------------------------------------------------
 // Handle / HModule newtypes
@@ -125,6 +127,10 @@ pub enum HandleEntry {
     Event(EventWaitable),
     /// A child process created by `CreateProcess`.
     Process(ProcessWaitable),
+    /// A mutex object created by `CreateMutex`.
+    Mutex(MutexWaitable),
+    /// A semaphore object created by `CreateSemaphore`.
+    Semaphore(SemaphoreWaitable),
 }
 
 /// State kept for an active `FindFirstFile`/`FindNextFile` session.
@@ -248,6 +254,8 @@ impl HandleTable {
             Some(HandleEntry::Thread(t)) => Some(Waitable::Thread(t.clone())),
             Some(HandleEntry::Event(e)) => Some(Waitable::Event(e.clone())),
             Some(HandleEntry::Process(p)) => Some(Waitable::Process(p.clone())),
+            Some(HandleEntry::Mutex(m)) => Some(Waitable::Mutex(m.clone())),
+            Some(HandleEntry::Semaphore(s)) => Some(Waitable::Semaphore(s.clone())),
             _ => None,
         }
     }

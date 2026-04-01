@@ -7,6 +7,7 @@ use std::cell::RefCell;
 use std::fmt;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Condvar, LazyLock, Mutex};
+use std::thread;
 use std::time::{Duration, Instant};
 
 // ── Windows constants ────────────────────────────────────────────
@@ -171,6 +172,52 @@ pub struct EventInner {
     pub manual_reset: bool,
 }
 
+/// Shared state backing a mutex handle (`CreateMutex`).
+#[derive(Clone)]
+pub struct MutexWaitable {
+    pub inner: Arc<MutexInner>,
+}
+
+impl fmt::Debug for MutexWaitable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MutexWaitable").finish_non_exhaustive()
+    }
+}
+
+/// Interior of a Windows mutex object.
+pub struct MutexInner {
+    /// `None` = unlocked, `Some(tid)` = locked by that thread.
+    pub state: Mutex<MutexState>,
+    pub condvar: Condvar,
+}
+
+/// Run-time state of a Windows mutex.
+pub struct MutexState {
+    pub owner: Option<thread::ThreadId>,
+    pub count: u32,
+}
+
+/// Shared state backing a semaphore handle (`CreateSemaphore`).
+#[derive(Clone)]
+pub struct SemaphoreWaitable {
+    pub inner: Arc<SemaphoreInner>,
+}
+
+impl fmt::Debug for SemaphoreWaitable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SemaphoreWaitable")
+            .field("max_count", &self.inner.max_count)
+            .finish_non_exhaustive()
+    }
+}
+
+/// Interior of a Windows semaphore object.
+pub struct SemaphoreInner {
+    pub count: Mutex<i32>,
+    pub max_count: i32,
+    pub condvar: Condvar,
+}
+
 /// A waitable object extracted from the handle table (Arc-cloned so the
 /// table lock is not held during the wait).
 #[derive(Clone)]
@@ -178,6 +225,8 @@ pub enum Waitable {
     Thread(ThreadWaitable),
     Event(EventWaitable),
     Process(ProcessWaitable),
+    Mutex(MutexWaitable),
+    Semaphore(SemaphoreWaitable),
 }
 
 // ── Wait helpers ─────────────────────────────────────────────────
@@ -189,6 +238,8 @@ pub fn wait_on(waitable: &Waitable, timeout_ms: u32) -> u32 {
         Waitable::Thread(t) => wait_thread(t, timeout_ms),
         Waitable::Event(e) => wait_event(e, timeout_ms),
         Waitable::Process(p) => wait_process(p, timeout_ms),
+        Waitable::Mutex(m) => wait_mutex(m, timeout_ms),
+        Waitable::Semaphore(s) => wait_semaphore(s, timeout_ms),
     }
 }
 
@@ -278,6 +329,90 @@ fn wait_event(e: &EventWaitable, timeout_ms: u32) -> u32 {
     if !e.inner.manual_reset {
         *signaled = false;
     }
+    WaitStatus::WAIT_OBJECT_0.0
+}
+
+/// Helper: get current thread id.
+fn current_thread_id() -> thread::ThreadId {
+    thread::current().id()
+}
+
+fn wait_mutex(m: &MutexWaitable, timeout_ms: u32) -> u32 {
+    let tid = current_thread_id();
+    let mut state = m.inner.state.lock().unwrap();
+
+    // Already owned by this thread → increment recursion count.
+    if state.owner == Some(tid) {
+        state.count += 1;
+        return WaitStatus::WAIT_OBJECT_0.0;
+    }
+
+    // Unlocked → acquire immediately.
+    if state.owner.is_none() {
+        state.owner = Some(tid);
+        state.count = 1;
+        return WaitStatus::WAIT_OBJECT_0.0;
+    }
+
+    // Zero timeout → poll only.
+    if timeout_ms == 0 {
+        return WaitStatus::WAIT_TIMEOUT.0;
+    }
+
+    if timeout_ms == INFINITE {
+        while state.owner.is_some() {
+            state = m.inner.condvar.wait(state).unwrap();
+        }
+        state.owner = Some(tid);
+        state.count = 1;
+        return WaitStatus::WAIT_OBJECT_0.0;
+    }
+
+    let deadline = Instant::now() + Duration::from_millis(timeout_ms as u64);
+    while state.owner.is_some() {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return WaitStatus::WAIT_TIMEOUT.0;
+        }
+        let result = m.inner.condvar.wait_timeout(state, remaining).unwrap();
+        state = result.0;
+    }
+    state.owner = Some(tid);
+    state.count = 1;
+    WaitStatus::WAIT_OBJECT_0.0
+}
+
+fn wait_semaphore(s: &SemaphoreWaitable, timeout_ms: u32) -> u32 {
+    let mut count = s.inner.count.lock().unwrap();
+
+    // Available → decrement and return.
+    if *count > 0 {
+        *count -= 1;
+        return WaitStatus::WAIT_OBJECT_0.0;
+    }
+
+    if timeout_ms == 0 {
+        return WaitStatus::WAIT_TIMEOUT.0;
+    }
+
+    if timeout_ms == INFINITE {
+        while *count == 0 {
+            count = s.inner.condvar.wait(count).unwrap();
+        }
+        *count -= 1;
+        return WaitStatus::WAIT_OBJECT_0.0;
+    }
+
+    let deadline = Instant::now() + Duration::from_millis(timeout_ms as u64);
+    while *count == 0 {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return WaitStatus::WAIT_TIMEOUT.0;
+        }
+        let result = s.inner.condvar.wait_timeout(count, remaining).unwrap();
+        count = result.0;
+    }
+    *count -= 1;
     WaitStatus::WAIT_OBJECT_0.0
 }
 
@@ -514,5 +649,221 @@ mod tests {
 
         assert_eq!(STILL_ACTIVE, 259);
         assert_eq!(TLS_OUT_OF_INDEXES, 0xFFFF_FFFF);
+    }
+
+    // ── Mutex waitable tests ─────────────────────────────────────
+
+    fn make_mutex(initially_owned: bool) -> MutexWaitable {
+        let (owner, count) = if initially_owned {
+            (Some(thread::current().id()), 1)
+        } else {
+            (None, 0)
+        };
+        MutexWaitable {
+            inner: Arc::new(MutexInner {
+                state: Mutex::new(MutexState { owner, count }),
+                condvar: Condvar::new(),
+            }),
+        }
+    }
+
+    #[test]
+    fn mutex_unowned_acquires_immediately() {
+        let m = make_mutex(false);
+        let w = Waitable::Mutex(m);
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
+    }
+
+    #[test]
+    fn mutex_owned_by_self_is_recursive() {
+        let m = make_mutex(true); // owned by current thread
+        let w = Waitable::Mutex(m.clone());
+        // Second acquire on same thread should succeed (recursive).
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
+        // Count should now be 2.
+        let state = m.inner.state.lock().unwrap();
+        assert_eq!(state.count, 2);
+    }
+
+    #[test]
+    fn mutex_owned_by_other_thread_times_out() {
+        let m = make_mutex(false);
+
+        // Acquire from another thread and hold it.
+        let inner = Arc::clone(&m.inner);
+        let barrier = Arc::new((Mutex::new(false), Condvar::new()));
+        let barrier2 = Arc::clone(&barrier);
+
+        let _holder = std::thread::spawn(move || {
+            {
+                let mut state = inner.state.lock().unwrap();
+                state.owner = Some(thread::current().id());
+                state.count = 1;
+            }
+            // Signal that we've acquired.
+            let (lock, cvar) = &*barrier2;
+            *lock.lock().unwrap() = true;
+            cvar.notify_all();
+            // Hold for a while.
+            std::thread::sleep(Duration::from_millis(200));
+            {
+                let mut state = inner.state.lock().unwrap();
+                state.owner = None;
+                state.count = 0;
+            }
+            inner.condvar.notify_one();
+        });
+
+        // Wait for the other thread to acquire.
+        let (lock, cvar) = &*barrier;
+        let mut acquired = lock.lock().unwrap();
+        while !*acquired {
+            acquired = cvar.wait(acquired).unwrap();
+        }
+
+        // Now try to acquire with a short timeout — should fail.
+        let w = Waitable::Mutex(m);
+        assert_eq!(wait_on(&w, 10), WaitStatus::WAIT_TIMEOUT.0);
+    }
+
+    #[test]
+    fn mutex_wait_succeeds_when_released_by_other_thread() {
+        let m = make_mutex(false);
+        let inner = Arc::clone(&m.inner);
+
+        // Acquire from another thread, then release after a brief hold.
+        let child = std::thread::spawn(move || {
+            {
+                let mut state = inner.state.lock().unwrap();
+                state.owner = Some(thread::current().id());
+                state.count = 1;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+            {
+                let mut state = inner.state.lock().unwrap();
+                state.owner = None;
+                state.count = 0;
+            }
+            inner.condvar.notify_one();
+        });
+        child.join().unwrap();
+
+        let w = Waitable::Mutex(m);
+        assert_eq!(wait_on(&w, 1000), WaitStatus::WAIT_OBJECT_0.0);
+    }
+
+    #[test]
+    fn mutex_release_decrements_count() {
+        let m = make_mutex(true); // count = 1
+        let w = Waitable::Mutex(m.clone());
+
+        // Recursive acquire → count = 2.
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
+        assert_eq!(m.inner.state.lock().unwrap().count, 2);
+
+        // Simulate one release.
+        {
+            let mut state = m.inner.state.lock().unwrap();
+            state.count -= 1;
+        }
+        assert_eq!(m.inner.state.lock().unwrap().count, 1);
+
+        // Still owned.
+        assert!(m.inner.state.lock().unwrap().owner.is_some());
+    }
+
+    // ── Semaphore waitable tests ─────────────────────────────────
+
+    fn make_semaphore(initial: i32, max: i32) -> SemaphoreWaitable {
+        SemaphoreWaitable {
+            inner: Arc::new(SemaphoreInner {
+                count: Mutex::new(initial),
+                max_count: max,
+                condvar: Condvar::new(),
+            }),
+        }
+    }
+
+    #[test]
+    fn semaphore_with_count_acquires_immediately() {
+        let s = make_semaphore(3, 5);
+        let w = Waitable::Semaphore(s.clone());
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
+        assert_eq!(*s.inner.count.lock().unwrap(), 2);
+    }
+
+    #[test]
+    fn semaphore_zero_count_times_out() {
+        let s = make_semaphore(0, 5);
+        let w = Waitable::Semaphore(s);
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
+    }
+
+    #[test]
+    fn semaphore_drains_to_zero() {
+        let s = make_semaphore(2, 5);
+        let w = Waitable::Semaphore(s.clone());
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
+        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
+        assert_eq!(*s.inner.count.lock().unwrap(), 0);
+    }
+
+    #[test]
+    fn semaphore_release_wakes_waiter() {
+        let s = make_semaphore(0, 5);
+        let inner = Arc::clone(&s.inner);
+
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(20));
+            *inner.count.lock().unwrap() += 1;
+            inner.condvar.notify_one();
+        });
+
+        let w = Waitable::Semaphore(s);
+        assert_eq!(wait_on(&w, 1000), WaitStatus::WAIT_OBJECT_0.0);
+    }
+
+    #[test]
+    fn semaphore_timeout_when_never_released() {
+        let s = make_semaphore(0, 5);
+        let w = Waitable::Semaphore(s);
+        let start = Instant::now();
+        assert_eq!(wait_on(&w, 50), WaitStatus::WAIT_TIMEOUT.0);
+        assert!(start.elapsed() >= Duration::from_millis(40));
+        assert!(start.elapsed() < Duration::from_millis(200));
+    }
+
+    #[test]
+    fn semaphore_multiple_releases_wake_multiple_waiters() {
+        let s = make_semaphore(0, 10);
+        let inner = Arc::clone(&s.inner);
+
+        // Spawn 3 waiters.
+        let handles: Vec<_> = (0..3)
+            .map(|_| {
+                let s2 = s.clone();
+                std::thread::spawn(move || {
+                    let w = Waitable::Semaphore(s2);
+                    wait_on(&w, 2000)
+                })
+            })
+            .collect();
+
+        // Give threads time to start waiting.
+        std::thread::sleep(Duration::from_millis(30));
+
+        // Release 3 at once.
+        {
+            let mut count = inner.count.lock().unwrap();
+            *count += 3;
+        }
+        for _ in 0..3 {
+            inner.condvar.notify_one();
+        }
+
+        for h in handles {
+            assert_eq!(h.join().unwrap(), WaitStatus::WAIT_OBJECT_0.0);
+        }
     }
 }
