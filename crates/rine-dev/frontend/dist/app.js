@@ -46,164 +46,6 @@ document.querySelectorAll('.tab').forEach(btn => {
 // ── Hex helper ─────────────────────────────────────
 function hex(n) { return '0x' + BigInt(n).toString(16).toUpperCase(); }
 
-function toBigInt(n) {
-  try {
-    return typeof n === 'bigint' ? n : BigInt(n);
-  } catch {
-    return 0n;
-  }
-}
-
-function formatBytesHuman(n) {
-  const units = ['bytes', 'Kb', 'Mb', 'Gb', 'Tb', 'Pb'];
-  let value = Number(toBigInt(n));
-  if (!Number.isFinite(value) || value < 0) value = 0;
-
-  let unitIndex = 0;
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-
-  if (unitIndex === 0) {
-    return `${Math.round(value)} bytes`;
-  }
-
-  const digits = value >= 10 ? 1 : 2;
-  return `${value.toFixed(digits)} ${units[unitIndex]}`;
-}
-
-function formatBytesGrouped(n) {
-  const bytes = toBigInt(n);
-  return bytes.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-function formatBytesDetailed(n) {
-  const bytes = toBigInt(n);
-  return `${formatBytesGrouped(bytes)} bytes, ${formatBytesHuman(bytes)}`;
-}
-
-function formatBytesWithParens(n) {
-  const bytes = toBigInt(n);
-  return `${formatBytesGrouped(bytes)} bytes (${formatBytesHuman(bytes)})`;
-}
-
-function buildMemoryDumpData() {
-  const status = state.exited == null
-    ? 'running'
-    : (state.exitCode == null ? 'crashed_or_disconnected' : 'exited');
-
-  const regions = state.memory_regions
-    .slice()
-    .sort((a, b) => Number(a.address) - Number(b.address))
-    .map(r => ({
-      address: r.address,
-      address_hex: hex(r.address),
-      size: r.size,
-      size_hex: hex(r.size),
-      size_human: formatBytesHuman(r.size),
-      source: r.source,
-      status: r.freed ? 'Freed' : 'Active',
-      freed: !!r.freed,
-    }));
-
-  return {
-    generated_at: new Date().toISOString(),
-    process_status: status,
-    process_exit_code: state.exitCode,
-    memory_summary: {
-      current: {
-        value: state.memory_current_usage,
-        hex: hex(state.memory_current_usage),
-        human: formatBytesDetailed(state.memory_current_usage),
-      },
-      peak: {
-        value: state.memory_peak_usage,
-        hex: hex(state.memory_peak_usage),
-        human: formatBytesDetailed(state.memory_peak_usage),
-      },
-      total_allocated: {
-        value: state.memory_total_allocated,
-        hex: hex(state.memory_total_allocated),
-        human: formatBytesDetailed(state.memory_total_allocated),
-      },
-      total_freed: {
-        value: state.memory_total_freed,
-        hex: hex(state.memory_total_freed),
-        human: formatBytesDetailed(state.memory_total_freed),
-      },
-      region_count: {
-        active: regions.filter(r => !r.freed).length,
-        total: regions.length,
-      },
-    },
-    regions,
-  };
-}
-
-function buildMemoryTextDump() {
-  const dump = buildMemoryDumpData();
-  const lines = [];
-  lines.push('RINE MEMORY MAP DUMP');
-  lines.push(`Generated: ${dump.generated_at}`);
-  lines.push(`Status: ${dump.process_status}`);
-  lines.push(`Exit Code: ${dump.process_exit_code == null ? 'n/a' : dump.process_exit_code}`);
-  lines.push('');
-  lines.push('Summary');
-  lines.push(`Current: ${dump.memory_summary.current.human}`);
-  lines.push(`Peak: ${dump.memory_summary.peak.human}`);
-  lines.push(`Total Allocated: ${dump.memory_summary.total_allocated.human}`);
-  lines.push(`Total Freed: ${dump.memory_summary.total_freed.human}`);
-  lines.push(`Regions: ${dump.memory_summary.region_count.active} active / ${dump.memory_summary.region_count.total} total`);
-  lines.push('');
-  lines.push('Memory Regions');
-  lines.push('Address | Size | Source | Status');
-  lines.push('------- | ---- | ------ | ------');
-
-  for (const region of dump.regions) {
-    lines.push(`${region.address_hex} | ${formatBytesGrouped(region.size)} bytes (${region.size_human}) | ${region.source} | ${region.status}`);
-  }
-
-  return lines.join('\n');
-}
-
-function memoryDumpTimestamp() {
-  return new Date().toISOString().replace(/[:]/g, '-').replace(/\..+$/, '');
-}
-
-async function saveMemoryDumpWithDialog(suggestedName, content) {
-  try {
-    const savedPath = await invoke('save_memory_dump', {
-      suggestedName,
-      content,
-    });
-    if (!savedPath) {
-      return;
-    }
-    const note = document.getElementById('memory-final-note');
-    if (note) {
-      note.textContent = `Memory dump saved to ${savedPath}`;
-    }
-  } catch (err) {
-    console.error('Failed to save memory dump:', err);
-  }
-}
-
-async function exportMemoryJson() {
-  const dump = buildMemoryDumpData();
-  await saveMemoryDumpWithDialog(
-    `rine-memory-map-${memoryDumpTimestamp()}.json`,
-    JSON.stringify(dump, null, 2)
-  );
-}
-
-async function exportMemoryText() {
-  await saveMemoryDumpWithDialog(
-    `rine-memory-map-${memoryDumpTimestamp()}.txt`,
-    buildMemoryTextDump()
-  );
-}
-
 // ── Rendering ─────────────────────────────────────
 function renderPeInfo(pe) {
   const el = document.getElementById('pe-info');
@@ -276,321 +118,6 @@ function renderSections(sections) {
   }
   html += '</tbody></table>';
   el.innerHTML = html;
-}
-
-function renderImportTable(imp) {
-  const tbody = document.getElementById('import-tbody');
-  let rows = [];
-  for (const dll of imp.summaries) {
-    for (const name of dll.resolved_names) {
-      rows.push({ dll: dll.dll_name, name, stub: false });
-    }
-    for (const name of dll.stubbed_names) {
-      rows.push({ dll: dll.dll_name, name, stub: true });
-    }
-  }
-
-  // Sort: stubs first, then alphabetical
-  rows.sort((a, b) => {
-    if (a.stub !== b.stub) return a.stub ? -1 : 1;
-    return a.dll.localeCompare(b.dll) || a.name.localeCompare(b.name);
-  });
-
-  // Store for filtering
-  window._importRows = rows;
-  applyImportFilter();
-}
-
-function applyImportFilter() {
-  const rows = window._importRows || [];
-  const filterText = (document.getElementById('import-filter').value || '').toLowerCase();
-  const stubsOnly = document.getElementById('import-stubs-only').checked;
-  const tbody = document.getElementById('import-tbody');
-
-  const filtered = rows.filter(r => {
-    if (stubsOnly && !r.stub) return false;
-    if (filterText) {
-      return r.dll.toLowerCase().includes(filterText) ||
-             r.name.toLowerCase().includes(filterText);
-    }
-    return true;
-  });
-
-  tbody.innerHTML = filtered.map(r =>
-    `<tr>
-      <td>${esc(r.dll)}</td>
-      <td>${esc(r.name)}</td>
-      <td class="${r.stub ? 'status-stub' : 'status-resolved'}">${r.stub ? 'Stub' : 'OK'}</td>
-    </tr>`
-  ).join('') || '<tr><td colspan="3" class="placeholder">No matching imports</td></tr>';
-}
-
-// ── Files table ──────────────────────────────────
-function renderFilesTable() {
-  const tbody = document.getElementById('file-tbody');
-  const filterText = (document.getElementById('file-filter').value || '').toLowerCase();
-  const hideClosed = document.getElementById('file-hide-closed').checked;
-
-  // Only show File-type handles (threads shown in Threads tab)
-  const filtered = state.handles.filter(h => {
-    if (h.kind !== 'File') return false;
-    if (hideClosed && h.closed) return false;
-    if (filterText) {
-      return h.detail.toLowerCase().includes(filterText) ||
-             String(h.handle).includes(filterText);
-    }
-    return true;
-  });
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" class="placeholder">No matching files</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(h =>
-    `<tr class="${h.closed ? 'row-closed' : ''}">
-      <td>${hex(h.handle)}</td>
-      <td>${esc(h.detail)}</td>
-      <td class="${h.closed ? 'status-closed' : 'status-open'}">${h.closed ? 'Closed' : 'Open'}</td>
-    </tr>`
-  ).join('');
-}
-
-// ── Mutexes table ──────────────────────────────────
-function renderMutexesTable() {
-  const tbody = document.getElementById('mutex-tbody');
-  const filterText = (document.getElementById('mutex-filter').value || '').toLowerCase();
-  const hideClosed = document.getElementById('mutex-hide-closed').checked;
-
-  // Only show Mutex-type handles
-  const filtered = state.handles.filter(h => {
-    if (h.kind !== 'Mutex') return false;
-    if (hideClosed && h.closed) return false;
-    if (filterText) {
-      return h.detail.toLowerCase().includes(filterText) ||
-             String(h.handle).includes(filterText);
-    }
-    return true;
-  });
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" class="placeholder">No matching mutexes</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(h =>
-    `<tr class="${h.closed ? 'row-closed' : ''}">
-      <td>${hex(h.handle)}</td>
-      <td>${esc(h.detail)}</td>
-      <td class="${h.closed ? 'status-closed' : 'status-open'}">${h.closed ? 'Closed' : 'Open'}</td>
-    </tr>`
-  ).join('');
-}
-
-// ── Threads table ──────────────────────────────────
-function renderThreadsTable() {
-  const tbody = document.getElementById('thread-tbody');
-  const filterText = (document.getElementById('thread-filter').value || '').toLowerCase();
-
-  const filtered = state.threads.filter(t => {
-    if (filterText) {
-      return String(t.thread_id).includes(filterText) ||
-             hex(t.entry_point).toLowerCase().includes(filterText);
-    }
-    return true;
-  });
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="placeholder">No matching threads</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(t => {
-    const exited = t.exit_code != null;
-    return `<tr>
-      <td>${t.thread_id}</td>
-      <td>${hex(t.handle)}</td>
-      <td>${hex(t.entry_point)}</td>
-      <td class="${exited ? 'status-exited' : 'status-running'}">${exited ? 'Exited' : 'Running'}</td>
-      <td>${exited ? t.exit_code : '—'}</td>
-    </tr>`;
-  }).join('');
-}
-
-// ── Memory table ──────────────────────────────────
-function renderMemorySummary() {
-  const el = document.getElementById('memory-summary');
-  const activeRegions = state.memory_regions.filter(r => !r.freed).length;
-
-  if (state.memory_regions.length === 0) {
-    el.innerHTML = '<div class="placeholder">No memory activity yet…</div>';
-    return;
-  }
-
-  el.innerHTML = [
-    `<div class="memory-stat"><span class="memory-stat-label">Current Usage</span><span class="memory-stat-value">${formatBytesWithParens(state.memory_current_usage)}</span></div>`,
-    `<div class="memory-stat"><span class="memory-stat-label">Peak Usage</span><span class="memory-stat-value">${formatBytesWithParens(state.memory_peak_usage)}</span></div>`,
-    `<div class="memory-stat"><span class="memory-stat-label">Total Allocated</span><span class="memory-stat-value">${formatBytesWithParens(state.memory_total_allocated)}</span></div>`,
-    `<div class="memory-stat"><span class="memory-stat-label">Total Freed</span><span class="memory-stat-value">${formatBytesWithParens(state.memory_total_freed)}</span></div>`,
-    `<div class="memory-stat"><span class="memory-stat-label">Regions</span><span class="memory-stat-value">${activeRegions} active / ${state.memory_regions.length} total</span></div>`,
-  ].join('');
-}
-
-function renderMemoryTable() {
-  const tbody = document.getElementById('memory-tbody');
-  const filterText = (document.getElementById('memory-filter').value || '').toLowerCase();
-  const activeOnly = document.getElementById('memory-active-only').checked;
-
-  const rows = state.memory_regions
-    .slice()
-    .sort((a, b) => Number(a.address) - Number(b.address))
-    .filter(r => {
-      if (activeOnly && r.freed) return false;
-      if (!filterText) return true;
-      return (
-        hex(r.address).toLowerCase().includes(filterText)
-        || hex(r.size).toLowerCase().includes(filterText)
-        || String(r.source || '').toLowerCase().includes(filterText)
-      );
-    });
-
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="placeholder">No matching memory regions</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = rows.map(r =>
-    `<tr class="${r.freed ? 'row-closed' : ''}">
-      <td>${hex(r.address)}</td>
-      <td>${formatBytesWithParens(r.size)}</td>
-      <td>${esc(r.source)}</td>
-      <td class="${r.freed ? 'status-closed' : 'status-open'}">${r.freed ? 'Freed' : 'Active'}</td>
-    </tr>`
-  ).join('');
-}
-
-function renderFinalMemoryMapping() {
-  const wrap = document.getElementById('memory-final-wrap');
-  const title = document.getElementById('memory-final-title');
-  const note = document.getElementById('memory-final-note');
-
-  if (state.exited == null) {
-    wrap.hidden = true;
-    return;
-  }
-
-  const crashed = state.exitCode == null;
-  title.textContent = crashed ? 'Crash/Disconnect Memory Mapping' : 'Final Memory Mapping';
-  note.textContent = crashed
-    ? 'Process disconnected unexpectedly. This snapshot shows the last known complete memory map.'
-    : `Process exited with code ${state.exitCode}. Snapshot frozen at exit.`;
-  wrap.hidden = false;
-}
-
-function renderWindowTree() {
-  const treeWrap = document.querySelector('#tab-windows .tree-wrap');
-  const filterText = (document.getElementById('window-filter')?.value || '').trim().toLowerCase();
-  const hideDestroyed = !!document.getElementById('window-hide-destroyed')?.checked;
-  
-  if (state.windows.length === 0) {
-    treeWrap.innerHTML = '<div class="placeholder">No windows created yet</div>';
-    return;
-  }
-
-  const windowsByParent = new Map();
-  for (const w of state.windows) {
-    const parent = w.parent || 0;
-    if (!windowsByParent.has(parent)) windowsByParent.set(parent, []);
-    windowsByParent.get(parent).push(w);
-  }
-
-  const matchesSelf = (w) => {
-    if (hideDestroyed && w.destroyed) return false;
-    if (!filterText) return true;
-    return (
-      String(w.hwnd).toLowerCase().includes(filterText)
-      || hex(w.hwnd).toLowerCase().includes(filterText)
-      || String(w.title || '').toLowerCase().includes(filterText)
-      || String(w.class_name || '').toLowerCase().includes(filterText)
-    );
-  };
-
-  const visibleCache = new Map();
-  function isVisible(w) {
-    if (visibleCache.has(w.hwnd)) return visibleCache.get(w.hwnd);
-    const children = windowsByParent.get(w.hwnd) || [];
-    const visible = matchesSelf(w) || children.some(isVisible);
-    visibleCache.set(w.hwnd, visible);
-    return visible;
-  }
-
-  const rootWindows = (windowsByParent.get(0) || []).filter(isVisible);
-
-  if (rootWindows.length === 0) {
-    treeWrap.innerHTML = '<div class="placeholder">No matching windows</div>';
-    return;
-  }
-  
-  function buildTreeNode(window) {
-    const isExpanded = expandedWindows.has(window.hwnd);
-    const children = (windowsByParent.get(window.hwnd) || []).filter(isVisible);
-    const hasChildren = children.length > 0;
-    const statusClass = window.destroyed ? 'status-exited' : 'status-running';
-    
-    let html = `<div class="tree-node">`;
-    
-    // Expand/collapse button (only if has children)
-    if (hasChildren) {
-      html += `<span class="tree-expand" data-hwnd="${window.hwnd}">${isExpanded ? '▼' : '▶'}</span>`;
-    } else {
-      html += `<span class="tree-expand-space"></span>`;
-    }
-    
-    // Window info
-    html += `<span class="tree-hwnd">${hex(window.hwnd)}</span>`;
-    html += `<span class="tree-title">${escapeHtml(window.title || '(no title)')}</span>`;
-    html += `<span class="tree-class">${escapeHtml(window.class_name || '(no class)')}</span>`;
-    html += `<span class="tree-status ${statusClass}">${window.destroyed ? 'Destroyed' : 'Active'}</span>`;
-    html += `</div>`;
-    
-    // Render children if expanded
-    if (hasChildren && isExpanded) {
-      html += `<div class="tree-children">`;
-      children.forEach(child => {
-        html += buildTreeNode(child);
-      });
-      html += `</div>`;
-    } else if (hasChildren) {
-      html += `<div class="tree-children collapsed">`;
-      children.forEach(child => {
-        html += buildTreeNode(child);
-      });
-      html += `</div>`;
-    }
-    
-    return html;
-  }
-
-  // Render all root windows
-  treeWrap.innerHTML = rootWindows.map(w => buildTreeNode(w)).join('');
-  
-  // Attach click handlers for expand/collapse
-  treeWrap.querySelectorAll('.tree-expand').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const hwnd = parseInt(btn.dataset.hwnd);
-      if (expandedWindows.has(hwnd)) {
-        expandedWindows.delete(hwnd);
-      } else {
-        expandedWindows.add(hwnd);
-      }
-      renderWindowTree();
-    });
-  });
-}
-
-function escapeHtml(text) {
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
 function addEventEntry(event) {
@@ -744,22 +271,8 @@ function handleEvent(event) {
       state.handles.push({ handle: event.handle, kind: event.kind, detail: event.detail, closed: false });
       renderFilesTable();
       renderMutexesTable();
-      // If it's a window handle, also add to windows array
       if (event.kind === 'Window') {
-        try {
-          // Parse detail as JSON: {hwnd, title, class_name, parent}
-          const winInfo = JSON.parse(event.detail);
-          state.windows.push({
-            hwnd: winInfo.hwnd || event.handle,
-            title: winInfo.title || '',
-            class_name: winInfo.class_name || '',
-            parent: winInfo.parent || 0,
-            destroyed: false
-          });
-          renderWindowTree();
-        } catch (e) {
-          console.warn('Failed to parse window info:', event.detail, e);
-        }
+        handleWindowCreatedFromHandleEvent(event);
       }
       break;
     case 'HandleClosed': {
@@ -767,13 +280,8 @@ function handleEvent(event) {
       if (h) h.closed = true;
       renderFilesTable();
       renderMutexesTable();
-      // If it's a window handle, mark as destroyed
       if (h && h.kind === 'Window') {
-        const w = state.windows.find(w => w.hwnd === event.handle && !w.destroyed);
-        if (w) {
-          w.destroyed = true;
-          renderWindowTree();
-        }
+        handleWindowClosedFromHandleEvent(event);
       }
       break;
     }
@@ -793,34 +301,9 @@ function handleEvent(event) {
       state.tls_slots = state.tls_slots.filter(i => i !== event.index);
       break;
     case 'MemoryAllocated':
-      state.memory_regions.push({
-        address: event.address,
-        size: event.size,
-        source: event.source,
-        freed: false,
-      });
-      state.memory_total_allocated += event.size;
-      state.memory_current_usage += event.size;
-      state.memory_peak_usage = Math.max(state.memory_peak_usage, state.memory_current_usage);
-      renderMemorySummary();
-      renderMemoryTable();
+    case 'MemoryFreed':
+      handleMemoryEvent(event);
       break;
-    case 'MemoryFreed': {
-      let freedSize = event.size;
-      for (let i = state.memory_regions.length - 1; i >= 0; i--) {
-        const region = state.memory_regions[i];
-        if (!region.freed && region.address === event.address) {
-          region.freed = true;
-          freedSize = region.size;
-          break;
-        }
-      }
-      state.memory_total_freed += freedSize;
-      state.memory_current_usage = Math.max(0, state.memory_current_usage - freedSize);
-      renderMemorySummary();
-      renderMemoryTable();
-      break;
-    }
     case 'OutputData':
       if (event.stream === 'Stdout') {
         state.stdout += event.data;
@@ -862,19 +345,12 @@ for (const btn of document.querySelectorAll('.output-tab')) {
 }
 
 // Filter listeners
-document.getElementById('import-filter').addEventListener('input', applyImportFilter);
-document.getElementById('import-stubs-only').addEventListener('change', applyImportFilter);
-document.getElementById('file-filter').addEventListener('input', renderFilesTable);
-document.getElementById('file-hide-closed').addEventListener('change', renderFilesTable);
-document.getElementById('thread-filter').addEventListener('input', renderThreadsTable);
-document.getElementById('memory-filter').addEventListener('input', renderMemoryTable);
-document.getElementById('memory-active-only').addEventListener('change', renderMemoryTable);
-document.getElementById('memory-export-json').addEventListener('click', exportMemoryJson);
-document.getElementById('memory-export-text').addEventListener('click', exportMemoryText);
-document.getElementById('mutex-filter').addEventListener('input', renderMutexesTable);
-document.getElementById('mutex-hide-closed').addEventListener('change', renderMutexesTable);
-document.getElementById('window-filter').addEventListener('input', renderWindowTree);
-document.getElementById('window-hide-destroyed').addEventListener('change', renderWindowTree);
+bindImportsUi();
+bindFilesUi();
+bindThreadsUi();
+bindMemoryUi();
+bindMutexesUi();
+bindWindowsUi();
 document.getElementById('event-filter').addEventListener('input', () => {
   const filterText = document.getElementById('event-filter').value.toLowerCase();
   document.querySelectorAll('#event-log .event-entry').forEach(div => {
@@ -898,47 +374,12 @@ invoke('get_state').then(snap => {
     state.handles = snap.handles;
     renderFilesTable();
     renderMutexesTable();
-    state.windows = snap.handles
-      .filter(h => h.kind === 'Window')
-      .map(h => {
-        try {
-          const winInfo = JSON.parse(h.detail || '{}');
-          return {
-            hwnd: winInfo.hwnd || h.handle,
-            title: winInfo.title || '',
-            class_name: winInfo.class_name || '',
-            parent: winInfo.parent || 0,
-            destroyed: !!h.closed
-          };
-        } catch {
-          return {
-            hwnd: h.handle,
-            title: '',
-            class_name: '',
-            parent: 0,
-            destroyed: !!h.closed
-          };
-        }
-      });
+    hydrateWindowsFromHandles(snap.handles);
     renderWindowTree();
   }
   if (snap.threads && snap.threads.length) { state.threads = snap.threads; renderThreadsTable(); }
   if (snap.tls_slots && snap.tls_slots.length) { state.tls_slots = snap.tls_slots; }
-  if (snap.memory_regions && snap.memory_regions.length) {
-    state.memory_regions = snap.memory_regions;
-  }
-  if (typeof snap.memory_current_usage === 'number') {
-    state.memory_current_usage = snap.memory_current_usage;
-  }
-  if (typeof snap.memory_peak_usage === 'number') {
-    state.memory_peak_usage = snap.memory_peak_usage;
-  }
-  if (typeof snap.memory_total_allocated === 'number') {
-    state.memory_total_allocated = snap.memory_total_allocated;
-  }
-  if (typeof snap.memory_total_freed === 'number') {
-    state.memory_total_freed = snap.memory_total_freed;
-  }
+  hydrateMemoryState(snap);
   renderMemorySummary();
   renderMemoryTable();
   updateStatusBar();
