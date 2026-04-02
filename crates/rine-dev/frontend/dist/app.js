@@ -149,31 +149,31 @@ function applyImportFilter() {
   ).join('') || '<tr><td colspan="3" class="placeholder">No matching imports</td></tr>';
 }
 
-// ── Handles table ──────────────────────────────────
-function renderHandlesTable() {
-  const tbody = document.getElementById('handle-tbody');
-  const filterText = (document.getElementById('handle-filter').value || '').toLowerCase();
-  const hideClosed = document.getElementById('handle-hide-closed').checked;
+// ── Files table ──────────────────────────────────
+function renderFilesTable() {
+  const tbody = document.getElementById('file-tbody');
+  const filterText = (document.getElementById('file-filter').value || '').toLowerCase();
+  const hideClosed = document.getElementById('file-hide-closed').checked;
 
+  // Only show File-type handles (threads shown in Threads tab)
   const filtered = state.handles.filter(h => {
+    if (h.kind !== 'File') return false;
     if (hideClosed && h.closed) return false;
     if (filterText) {
-      return h.kind.toLowerCase().includes(filterText) ||
-             h.detail.toLowerCase().includes(filterText) ||
+      return h.detail.toLowerCase().includes(filterText) ||
              String(h.handle).includes(filterText);
     }
     return true;
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="placeholder">No matching handles</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="placeholder">No matching files</td></tr>';
     return;
   }
 
   tbody.innerHTML = filtered.map(h =>
     `<tr class="${h.closed ? 'row-closed' : ''}">
       <td>${hex(h.handle)}</td>
-      <td>${esc(h.kind)}</td>
       <td>${esc(h.detail)}</td>
       <td class="${h.closed ? 'status-closed' : 'status-open'}">${h.closed ? 'Closed' : 'Open'}</td>
     </tr>`
@@ -350,12 +350,12 @@ function handleEvent(event) {
       break;
     case 'HandleCreated':
       state.handles.push({ handle: event.handle, kind: event.kind, detail: event.detail, closed: false });
-      renderHandlesTable();
+      renderFilesTable();
       break;
     case 'HandleClosed':
       { const h = state.handles.find(h => h.handle === event.handle && !h.closed);
         if (h) h.closed = true; }
-      renderHandlesTable();
+      renderFilesTable();
       break;
     case 'ThreadCreated':
       state.threads.push({ handle: event.handle, thread_id: event.thread_id, entry_point: event.entry_point, exit_code: null });
@@ -413,8 +413,8 @@ for (const btn of document.querySelectorAll('.output-tab')) {
 // Filter listeners
 document.getElementById('import-filter').addEventListener('input', applyImportFilter);
 document.getElementById('import-stubs-only').addEventListener('change', applyImportFilter);
-document.getElementById('handle-filter').addEventListener('input', renderHandlesTable);
-document.getElementById('handle-hide-closed').addEventListener('change', renderHandlesTable);
+document.getElementById('file-filter').addEventListener('input', renderFilesTable);
+document.getElementById('file-hide-closed').addEventListener('change', renderFilesTable);
 document.getElementById('thread-filter').addEventListener('input', renderThreadsTable);
 document.getElementById('event-filter').addEventListener('input', () => {
   const filterText = document.getElementById('event-filter').value.toLowerCase();

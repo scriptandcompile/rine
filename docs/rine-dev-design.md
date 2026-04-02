@@ -271,7 +271,7 @@ Single window, tabbed layout. Default size: 1200x800, resizable.
 ┌─────────────────────────────────────────────────────────────┐
 │  rine-dev ─ myapp.exe                              [─][□][×]│
 ├────────┬──────────┬─────────┬──────────┬────────────────────┤
-│Overview│ Imports  │ Handles │ Threads  │ Events             │
+│Overview│ Imports  │ Files   │ Threads  │ Events             │
 ├────────┴──────────┴─────────┴──────────┴────────────────────┤
 │                                                             │
 │  (Tab content area — see panels below)                      │
@@ -310,18 +310,18 @@ Table with columns:
 - Sort by call count to find hot functions
 - Color-coded: green for implemented, red for stubs, orange for stubs-that-were-called (problems)
 
-#### 3. Handles
+#### 3. Files
 
-Live table of open handles:
+Live table of open file handles:
 
-| Handle | Type | Detail | Opened At |
-|--------|------|--------|-----------|
-| 0x1000 | File | C:\Users\user\test.txt | 0.012s |
-| 0x1004 | Event | manual-reset, signaled | 0.045s |
-| 0x1008 | Thread | tid=2, entry=0x14000A000 | 0.050s |
+| Handle | Path | Opened At | Status |
+|--------|------|-----------|--------|
+| 0x1000 | C:\Users\user\test.txt | 0.012s | Open |
+| 0x1004 | C:\Windows\System32\kernel32.dll | 0.003s | Closed |
 
+- Shows only File-type handles (threads shown in Threads tab, other handle types in future tabs)
 - Grayed-out rows for closed handles (toggle to show/hide)
-- Click handle for full detail view
+- Future tabs can be added for Sockets, Events, Mutexes, Registry, etc.
 
 #### 4. Threads
 
