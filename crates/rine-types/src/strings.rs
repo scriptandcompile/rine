@@ -88,7 +88,7 @@ pub unsafe fn read_wstr(ptr: *const u16) -> Option<String> {
 ///
 /// # Safety
 /// `buf` must be null or point to at least `buf_size` writable bytes.
-pub unsafe fn write_ansi(buf: *mut u8, buf_size: u32, value: &str) -> u32 {
+pub unsafe fn write_cstr(buf: *mut u8, buf_size: u32, value: &str) -> u32 {
     let needed = value.len() as u32 + 1; // +1 for null terminator
     if buf.is_null() || buf_size < needed {
         return needed;
@@ -108,7 +108,7 @@ pub unsafe fn write_ansi(buf: *mut u8, buf_size: u32, value: &str) -> u32 {
 ///
 /// # Safety
 /// `buf` must be null or point to at least `buf_size` writable u16 elements.
-pub unsafe fn write_wide(buf: *mut u16, buf_size: u32, value: &str) -> u32 {
+pub unsafe fn write_wstr(buf: *mut u16, buf_size: u32, value: &str) -> u32 {
     let encoded: Vec<u16> = value.encode_utf16().collect();
     let needed = encoded.len() as u32 + 1;
     if buf.is_null() || buf_size < needed {
@@ -155,50 +155,50 @@ mod tests {
         assert_eq!(unsafe { read_wstr(s.as_ptr()) }, Some("hello".into()));
     }
 
-    // ── write_ansi ───────────────────────────────────────────────
+    // ── write_cstr ───────────────────────────────────────────────
 
     #[test]
-    fn write_ansi_fits() {
+    fn write_cstr_fits() {
         let mut buf = [0u8; 16];
-        let n = unsafe { write_ansi(buf.as_mut_ptr(), 16, "hello") };
+        let n = unsafe { write_cstr(buf.as_mut_ptr(), 16, "hello") };
         assert_eq!(n, 5);
         assert_eq!(&buf[..6], b"hello\0");
     }
 
     #[test]
-    fn write_ansi_too_small() {
+    fn write_cstr_too_small() {
         let mut buf = [0u8; 4];
-        let n = unsafe { write_ansi(buf.as_mut_ptr(), 4, "hello") };
+        let n = unsafe { write_cstr(buf.as_mut_ptr(), 4, "hello") };
         assert_eq!(n, 6); // required size including null
     }
 
     #[test]
-    fn write_ansi_null_buf() {
-        let n = unsafe { write_ansi(std::ptr::null_mut(), 0, "hello") };
+    fn write_cstr_null_buf() {
+        let n = unsafe { write_cstr(std::ptr::null_mut(), 0, "hello") };
         assert_eq!(n, 6);
     }
 
-    // ── write_wide ───────────────────────────────────────────────
+    // ── write_wstr ───────────────────────────────────────────────
 
     #[test]
-    fn write_wide_fits() {
+    fn write_wstr_fits() {
         let mut buf = [0u16; 16];
-        let n = unsafe { write_wide(buf.as_mut_ptr(), 16, "hello") };
+        let n = unsafe { write_wstr(buf.as_mut_ptr(), 16, "hello") };
         assert_eq!(n, 5);
         let expected: Vec<u16> = "hello".encode_utf16().chain(std::iter::once(0)).collect();
         assert_eq!(&buf[..6], &expected[..]);
     }
 
     #[test]
-    fn write_wide_too_small() {
+    fn write_wstr_too_small() {
         let mut buf = [0u16; 4];
-        let n = unsafe { write_wide(buf.as_mut_ptr(), 4, "hello") };
+        let n = unsafe { write_wstr(buf.as_mut_ptr(), 4, "hello") };
         assert_eq!(n, 6);
     }
 
     #[test]
-    fn write_wide_null_buf() {
-        let n = unsafe { write_wide(std::ptr::null_mut(), 0, "hello") };
+    fn write_wstr_null_buf() {
+        let n = unsafe { write_wstr(std::ptr::null_mut(), 0, "hello") };
         assert_eq!(n, 6);
     }
 }
