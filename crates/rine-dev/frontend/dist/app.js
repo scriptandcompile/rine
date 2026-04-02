@@ -28,6 +28,8 @@ let state = {
   memory_peak_usage: 0,
   memory_total_allocated: 0,
   memory_total_freed: 0,
+  memory_snapshot: null,
+  memory_snapshot_meta: null,
 };
 let events = [];
 let startTime = Date.now();
@@ -163,6 +165,9 @@ function addEventEntry(event) {
       break;
     case 'MemoryFreed':
       detail = `address=${hex(event.address)}  size=${formatBytesWithParens(event.size)}  source=${event.source}`;
+      break;
+    case 'MemorySnapshotReady':
+      detail = `regions=${event.region_count}  bytes=${formatBytesWithParens(event.total_bytes)}  json=${event.json_path}`;
       break;
     default:
       detail = JSON.stringify(event);
@@ -302,6 +307,7 @@ function handleEvent(event) {
       break;
     case 'MemoryAllocated':
     case 'MemoryFreed':
+    case 'MemorySnapshotReady':
       handleMemoryEvent(event);
       break;
     case 'OutputData':

@@ -64,6 +64,12 @@ pub enum DevEvent {
         size: u64,
         source: String,
     },
+    MemorySnapshotReady {
+        json_path: String,
+        bin_path: String,
+        region_count: usize,
+        total_bytes: u64,
+    },
     // ── Lifecycle ────────────────────────────────────────────────
     ProcessExited {
         exit_code: i32,

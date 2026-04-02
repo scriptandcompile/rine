@@ -1,6 +1,15 @@
 use std::path::Path;
+#[cfg(feature = "dev")]
+use std::{
+    collections::HashMap,
+    io::Write,
+    sync::{LazyLock, Mutex},
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use rine_dlls::DllRegistry;
+#[cfg(feature = "dev")]
+use serde::Serialize;
 use tracing::info;
 
 use rine64_advapi32::Advapi32Plugin;
@@ -55,6 +64,144 @@ fn dev_shutdown() {
 static DEV_SENDER: std::sync::OnceLock<std::sync::Mutex<rine_channel::DevSender>> =
     std::sync::OnceLock::new();
 
+#[cfg(feature = "dev")]
+#[derive(Debug, Clone)]
+struct TrackedMemoryRegion {
+    address: u64,
+    size: u64,
+    source: String,
+}
+
+#[cfg(feature = "dev")]
+static MEMORY_REGIONS: LazyLock<Mutex<HashMap<u64, TrackedMemoryRegion>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+#[cfg(feature = "dev")]
+#[derive(Debug, Serialize)]
+struct SnapshotRegion {
+    address: u64,
+    size: u64,
+    source: String,
+    file_offset: u64,
+}
+
+#[cfg(feature = "dev")]
+#[derive(Debug, Serialize)]
+struct SnapshotManifest {
+    format: String,
+    pid: u32,
+    created_unix_ms: u128,
+    region_count: usize,
+    total_bytes: u64,
+    regions: Vec<SnapshotRegion>,
+}
+
+#[cfg(feature = "dev")]
+fn track_memory_alloc(address: u64, size: u64, source: &str) {
+    if address == 0 || size == 0 {
+        return;
+    }
+    MEMORY_REGIONS.lock().unwrap().insert(
+        address,
+        TrackedMemoryRegion {
+            address,
+            size,
+            source: source.to_owned(),
+        },
+    );
+}
+
+#[cfg(feature = "dev")]
+fn track_memory_free(address: u64) {
+    MEMORY_REGIONS.lock().unwrap().remove(&address);
+}
+
+#[cfg(feature = "dev")]
+fn write_memory_snapshot_files() -> Option<(String, String, usize, u64)> {
+    let regions: Vec<TrackedMemoryRegion> = {
+        let guard = MEMORY_REGIONS.lock().ok()?;
+        let mut items = guard.values().cloned().collect::<Vec<_>>();
+        items.sort_by_key(|r| r.address);
+        items
+    };
+
+    if regions.is_empty() {
+        return None;
+    }
+
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .ok()?
+        .as_millis();
+    let pid = std::process::id();
+    let out_dir = std::env::temp_dir().join(format!("rine-memory-snapshot-{pid}-{ts}"));
+    std::fs::create_dir_all(&out_dir).ok()?;
+
+    let bin_path = out_dir.join("snapshot.bin");
+    let json_path = out_dir.join("snapshot.json");
+
+    let mut bin_file = std::fs::File::create(&bin_path).ok()?;
+    let mut manifest_regions = Vec::with_capacity(regions.len());
+    let mut offset = 0u64;
+
+    for region in regions {
+        if region.size == 0 {
+            continue;
+        }
+
+        let size = region.size as usize;
+        // SAFETY: Regions are tracked from successful alloc events and are expected
+        // to remain valid while marked active.
+        let bytes = unsafe { std::slice::from_raw_parts(region.address as *const u8, size) };
+        if bin_file.write_all(bytes).is_err() {
+            continue;
+        }
+
+        manifest_regions.push(SnapshotRegion {
+            address: region.address,
+            size: region.size,
+            source: region.source,
+            file_offset: offset,
+        });
+        offset = offset.saturating_add(region.size);
+    }
+
+    if manifest_regions.is_empty() {
+        return None;
+    }
+
+    let manifest = SnapshotManifest {
+        format: "rine-memory-snapshot-v1".to_owned(),
+        pid,
+        created_unix_ms: ts,
+        region_count: manifest_regions.len(),
+        total_bytes: offset,
+        regions: manifest_regions,
+    };
+
+    let json = serde_json::to_vec_pretty(&manifest).ok()?;
+    std::fs::write(&json_path, json).ok()?;
+
+    Some((
+        json_path.to_string_lossy().into_owned(),
+        bin_path.to_string_lossy().into_owned(),
+        manifest.region_count,
+        manifest.total_bytes,
+    ))
+}
+
+#[cfg(feature = "dev")]
+fn emit_memory_snapshot_ready() {
+    if let Some((json_path, bin_path, region_count, total_bytes)) = write_memory_snapshot_files() {
+        dev_send_event(&rine_channel::DevEvent::MemorySnapshotReady {
+            json_path,
+            bin_path,
+            region_count,
+            total_bytes,
+        });
+    }
+}
+
 /// Bridge between the [`rine_types::dev_hooks::DevHook`] trait and the
 /// dev channel.  Installed as a global hook so that DLL implementations
 /// (kernel32, advapi32, …) can emit handle/thread/TLS events without
@@ -100,6 +247,7 @@ impl rine_types::dev_hooks::DevHook for ChannelDevHook {
     }
 
     fn on_memory_allocated(&self, address: u64, size: u64, source: &str) {
+        track_memory_alloc(address, size, source);
         dev_send_event(&rine_channel::DevEvent::MemoryAllocated {
             address,
             size,
@@ -108,6 +256,7 @@ impl rine_types::dev_hooks::DevHook for ChannelDevHook {
     }
 
     fn on_memory_freed(&self, address: u64, size: u64, source: &str) {
+        track_memory_free(address);
         dev_send_event(&rine_channel::DevEvent::MemoryFreed {
             address,
             size,
@@ -116,6 +265,7 @@ impl rine_types::dev_hooks::DevHook for ChannelDevHook {
     }
 
     fn on_process_exiting(&self, exit_code: i32) {
+        emit_memory_snapshot_ready();
         dev_send_event(&rine_channel::DevEvent::ProcessExited { exit_code });
         dev_shutdown();
     }
@@ -219,6 +369,12 @@ pub fn run(
         size: image.size() as u64,
         source: "PE Image".to_owned(),
     });
+    #[cfg(feature = "dev")]
+    track_memory_alloc(
+        image.base().as_usize() as u64,
+        image.size() as u64,
+        "PE Image",
+    );
 
     // 3. Resolve imports (write function pointers into the IAT).
     let registry = DllRegistry::from_plugins(&[
@@ -284,6 +440,8 @@ pub fn run(
     // ProcessExited + shutdown are normally handled by ExitProcess
     // (via the DevHook).  This is a fallback for PEs that return from
     // their entry point instead of calling ExitProcess.
+    #[cfg(feature = "dev")]
+    emit_memory_snapshot_ready();
     dev_emit!(rine_channel::DevEvent::ProcessExited { exit_code });
     #[cfg(feature = "dev")]
     dev_shutdown();

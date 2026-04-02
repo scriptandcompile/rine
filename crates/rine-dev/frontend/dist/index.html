@@ -112,37 +112,55 @@
 
     <!-- Memory Tab -->
     <section id="tab-memory" class="tab-content">
-      <div id="memory-summary" class="memory-summary">
-        <div class="placeholder">No memory activity yet…</div>
+      <div class="memory-subtabs">
+        <button class="memory-subtab active" data-memory-tab="summary" type="button">Summary</button>
+        <button class="memory-subtab" data-memory-tab="snapshot" type="button">Snapshot</button>
       </div>
-      <div class="toolbar">
-        <input type="text" id="memory-filter" placeholder="Filter by source or address…">
-        <label class="filter-label">
-          <input type="checkbox" id="memory-active-only"> Active only
-        </label>
-        <div class="memory-actions">
-          <button id="memory-export-json" class="memory-action-btn" type="button">Export JSON</button>
-          <button id="memory-export-text" class="memory-action-btn" type="button">Export Text</button>
+
+      <div id="memory-panel-summary" class="memory-panel active">
+        <div id="memory-summary" class="memory-summary">
+          <div class="placeholder">No memory activity yet…</div>
+        </div>
+        <div class="toolbar">
+          <input type="text" id="memory-filter" placeholder="Filter by source or address…">
+          <label class="filter-label">
+            <input type="checkbox" id="memory-active-only"> Active only
+          </label>
+          <div class="memory-actions">
+            <button id="memory-export-json" class="memory-action-btn" type="button">Export JSON</button>
+            <button id="memory-export-text" class="memory-action-btn" type="button">Export Text</button>
+          </div>
+        </div>
+        <div class="table-wrap memory-table-wrap">
+          <table id="memory-table">
+            <thead>
+              <tr>
+                <th>Address</th>
+                <th>Size</th>
+                <th>Source</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="memory-tbody">
+              <tr><td colspan="4" class="placeholder">No memory regions tracked yet…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
-      <div class="table-wrap memory-table-wrap">
-        <table id="memory-table">
-          <thead>
-            <tr>
-              <th>Address</th>
-              <th>Size</th>
-              <th>Source</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="memory-tbody">
-            <tr><td colspan="4" class="placeholder">No memory regions tracked yet…</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="memory-final-wrap" class="memory-final-wrap" hidden>
-        <h3 id="memory-final-title">Final Memory Mapping</h3>
-        <p id="memory-final-note" class="memory-final-note"></p>
+
+      <div id="memory-panel-snapshot" class="memory-panel">
+        <div id="memory-final-wrap" class="memory-final-wrap" hidden>
+          <h3 id="memory-final-title">Final Memory Mapping</h3>
+          <p id="memory-final-note" class="memory-final-note"></p>
+          <div id="memory-snapshot-viewer" class="memory-snapshot-viewer" hidden>
+            <div class="toolbar memory-snapshot-toolbar">
+              <div class="memory-select-wrap">
+                <select id="memory-snapshot-region"></select>
+              </div>
+            </div>
+            <pre id="memory-hex-view" class="memory-hex-view"></pre>
+          </div>
+        </div>
       </div>
     </section>
 

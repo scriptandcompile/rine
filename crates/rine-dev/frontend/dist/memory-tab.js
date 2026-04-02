@@ -220,10 +220,106 @@ function renderFinalMemoryMapping() {
 
   const crashed = state.exitCode == null;
   title.textContent = crashed ? 'Crash/Disconnect Memory Mapping' : 'Final Memory Mapping';
-  note.textContent = crashed
+  if (!note.textContent || !note.textContent.startsWith('Memory dump saved to ')) {
+    note.textContent = crashed
     ? 'Process disconnected unexpectedly. This snapshot shows the last known complete memory map.'
     : `Process exited with code ${state.exitCode}. Snapshot frozen at exit.`;
+  }
   wrap.hidden = false;
+}
+
+function formatSnapshotRegionLabel(region, index) {
+  const source = region.source || 'Unknown';
+  return `${index + 1}. ${hex(region.address)} | ${formatBytesWithParens(region.size)} | ${source}`;
+}
+
+function renderHexLines(bytes, startAddress) {
+  const lines = [];
+  const width = 16;
+  for (let i = 0; i < bytes.length; i += width) {
+    const chunk = bytes.slice(i, i + width);
+    const addr = hex(startAddress + i);
+    const hexCols = Array.from(chunk).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    const ascii = Array.from(chunk)
+      .map(b => (b >= 32 && b <= 126 ? String.fromCharCode(b) : '.'))
+      .join('');
+    lines.push(`${addr.padEnd(14)}  ${hexCols.padEnd(47)}  |${ascii}|`);
+  }
+  return lines.join('\n');
+}
+
+async function loadSnapshotMetaAndRegions() {
+  if (!state.memory_snapshot || !state.memory_snapshot.json_path) {
+    return;
+  }
+
+  try {
+    const meta = await invoke('load_memory_snapshot_meta', {
+      jsonPath: state.memory_snapshot.json_path,
+    });
+    state.memory_snapshot_meta = meta;
+
+    const viewer = document.getElementById('memory-snapshot-viewer');
+    const regionSelect = document.getElementById('memory-snapshot-region');
+    const hexView = document.getElementById('memory-hex-view');
+    const regions = Array.isArray(meta.regions) ? meta.regions : [];
+
+    regionSelect.innerHTML = regions.map((r, i) =>
+      `<option value="${i}">${esc(formatSnapshotRegionLabel(r, i))}</option>`
+    ).join('');
+
+    if (regions.length > 0) {
+      viewer.hidden = false;
+      regionSelect.value = '0';
+      loadSnapshotHexChunk();
+    } else {
+      viewer.hidden = true;
+      hexView.textContent = 'No snapshot regions available.';
+    }
+  } catch (err) {
+    console.error('Failed to load snapshot metadata:', err);
+  }
+}
+
+async function loadSnapshotHexChunk() {
+  const hexView = document.getElementById('memory-hex-view');
+  const regionSelect = document.getElementById('memory-snapshot-region');
+
+  if (!state.memory_snapshot_meta || !Array.isArray(state.memory_snapshot_meta.regions)) {
+    hexView.textContent = 'No snapshot metadata loaded.';
+    return;
+  }
+
+  const idx = Number(regionSelect.value || 0);
+  const region = state.memory_snapshot_meta.regions[idx];
+  if (!region) {
+    hexView.textContent = 'No region selected.';
+    return;
+  }
+
+  const readLength = Math.max(0, Number(region.size || 0));
+  if (readLength <= 0) {
+    hexView.textContent = 'Region is empty.';
+    return;
+  }
+
+  try {
+    const chunk = await invoke('read_memory_snapshot_chunk', {
+      binPath: state.memory_snapshot.bin_path,
+      offset: Number(region.file_offset || 0),
+      length: readLength,
+    });
+
+    hexView.textContent = [
+      `Region: ${hex(region.address)} (${formatBytesWithParens(region.size)})`,
+      `Source: ${region.source || 'Unknown'}`,
+      '',
+      renderHexLines(chunk, Number(region.address || 0)),
+    ].join('\n');
+  } catch (err) {
+    console.error('Failed to read snapshot chunk:', err);
+    hexView.textContent = `Failed to read snapshot chunk: ${err}`;
+  }
 }
 
 function handleMemoryEvent(event) {
@@ -257,6 +353,20 @@ function handleMemoryEvent(event) {
       renderMemoryTable();
       return true;
     }
+    case 'MemorySnapshotReady':
+      state.memory_snapshot = {
+        json_path: event.json_path,
+        bin_path: event.bin_path,
+        region_count: event.region_count,
+        total_bytes: event.total_bytes,
+      };
+      renderFinalMemoryMapping();
+      const note = document.getElementById('memory-final-note');
+      if (note) {
+        note.textContent = `Snapshot captured: ${event.region_count} regions, ${formatBytesWithParens(event.total_bytes)}.`;
+      }
+      loadSnapshotMetaAndRegions();
+      return true;
     default:
       return false;
   }
@@ -278,11 +388,27 @@ function hydrateMemoryState(snap) {
   if (typeof snap.memory_total_freed === 'number') {
     state.memory_total_freed = snap.memory_total_freed;
   }
+  if (snap.memory_snapshot) {
+    state.memory_snapshot = snap.memory_snapshot;
+    loadSnapshotMetaAndRegions();
+  }
 }
 
 function bindMemoryUi() {
+  document.querySelectorAll('.memory-subtab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.memory-subtab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.memory-panel').forEach(panel => panel.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`memory-panel-${btn.dataset.memoryTab}`).classList.add('active');
+    });
+  });
+
   document.getElementById('memory-filter').addEventListener('input', renderMemoryTable);
   document.getElementById('memory-active-only').addEventListener('change', renderMemoryTable);
   document.getElementById('memory-export-json').addEventListener('click', exportMemoryJson);
   document.getElementById('memory-export-text').addEventListener('click', exportMemoryText);
+  document.getElementById('memory-snapshot-region').addEventListener('change', () => {
+    loadSnapshotHexChunk();
+  });
 }

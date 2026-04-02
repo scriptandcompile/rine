@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::io::BufRead;
+use std::io::{BufRead, Read, Seek};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
@@ -29,6 +29,33 @@ fn save_memory_dump(suggested_name: String, content: String) -> Result<Option<St
 
     std::fs::write(&path, content).map_err(|e| format!("failed to write file: {e}"))?;
     Ok(Some(path.to_string_lossy().into_owned()))
+}
+
+#[tauri::command]
+fn load_memory_snapshot_meta(json_path: String) -> Result<serde_json::Value, String> {
+    let json = std::fs::read_to_string(&json_path)
+        .map_err(|e| format!("failed to read snapshot metadata: {e}"))?;
+    serde_json::from_str::<serde_json::Value>(&json)
+        .map_err(|e| format!("failed to parse snapshot metadata: {e}"))
+}
+
+#[tauri::command]
+fn read_memory_snapshot_chunk(
+    bin_path: String,
+    offset: u64,
+    length: usize,
+) -> Result<Vec<u8>, String> {
+    let mut file = std::fs::File::open(&bin_path)
+        .map_err(|e| format!("failed to open snapshot binary: {e}"))?;
+    file.seek(std::io::SeekFrom::Start(offset))
+        .map_err(|e| format!("failed to seek snapshot binary: {e}"))?;
+
+    let mut buf = vec![0u8; length];
+    let read = file
+        .read(&mut buf)
+        .map_err(|e| format!("failed to read snapshot binary: {e}"))?;
+    buf.truncate(read);
+    Ok(buf)
 }
 
 /// Parse CLI args, returning (socket_path, exe_path).
@@ -130,7 +157,12 @@ fn main() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_state, save_memory_dump])
+        .invoke_handler(tauri::generate_handler![
+            get_state,
+            save_memory_dump,
+            load_memory_snapshot_meta,
+            read_memory_snapshot_chunk
+        ])
         .run(tauri::generate_context!())
         .expect("error while running rine-dev");
 }
@@ -339,6 +371,19 @@ fn apply_event(snap: &mut StateSnapshot, event: &DevEvent) {
 
             snap.memory_total_freed = snap.memory_total_freed.saturating_add(freed_size);
             snap.memory_current_usage = snap.memory_current_usage.saturating_sub(freed_size);
+        }
+        DevEvent::MemorySnapshotReady {
+            json_path,
+            bin_path,
+            region_count,
+            total_bytes,
+        } => {
+            snap.memory_snapshot = Some(rine_dev_lib::MemorySnapshotInfo {
+                json_path: json_path.clone(),
+                bin_path: bin_path.clone(),
+                region_count: *region_count,
+                total_bytes: *total_bytes,
+            });
         }
     }
 }

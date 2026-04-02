@@ -14,6 +14,7 @@ pub struct StateSnapshot {
     pub memory_peak_usage: u64,
     pub memory_total_allocated: u64,
     pub memory_total_freed: u64,
+    pub memory_snapshot: Option<MemorySnapshotInfo>,
     pub exited: Option<i32>,
     pub stdout: String,
     pub stderr: String,
@@ -68,4 +69,12 @@ pub struct MemoryRegionInfo {
     pub size: u64,
     pub source: String,
     pub freed: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MemorySnapshotInfo {
+    pub json_path: String,
+    pub bin_path: String,
+    pub region_count: usize,
+    pub total_bytes: u64,
 }
