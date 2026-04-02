@@ -11,9 +11,10 @@ const { listen, invoke } = (function() {
 })();
 
 // ── State ──────────────────────────────────────────
-let state = { pe: null, config: null, imports: null, exited: null, exitCode: null, stdout: '', stderr: '', handles: [], threads: [], tls_slots: [] };
+let state = { pe: null, config: null, imports: null, exited: null, exitCode: null, stdout: '', stderr: '', handles: [], threads: [], tls_slots: [], windows: [] };
 let events = [];
 let startTime = Date.now();
+let expandedWindows = new Set(); // Track expanded window nodes
 
 // ── Tabs ───────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(btn => {
@@ -241,6 +242,112 @@ function renderThreadsTable() {
   }).join('');
 }
 
+function renderWindowTree() {
+  const treeWrap = document.querySelector('#tab-windows .tree-wrap');
+  const filterText = (document.getElementById('window-filter')?.value || '').trim().toLowerCase();
+  const hideDestroyed = !!document.getElementById('window-hide-destroyed')?.checked;
+  
+  if (state.windows.length === 0) {
+    treeWrap.innerHTML = '<div class="placeholder">No windows created yet</div>';
+    return;
+  }
+
+  const windowsByParent = new Map();
+  for (const w of state.windows) {
+    const parent = w.parent || 0;
+    if (!windowsByParent.has(parent)) windowsByParent.set(parent, []);
+    windowsByParent.get(parent).push(w);
+  }
+
+  const matchesSelf = (w) => {
+    if (hideDestroyed && w.destroyed) return false;
+    if (!filterText) return true;
+    return (
+      String(w.hwnd).toLowerCase().includes(filterText)
+      || hex(w.hwnd).toLowerCase().includes(filterText)
+      || String(w.title || '').toLowerCase().includes(filterText)
+      || String(w.class_name || '').toLowerCase().includes(filterText)
+    );
+  };
+
+  const visibleCache = new Map();
+  function isVisible(w) {
+    if (visibleCache.has(w.hwnd)) return visibleCache.get(w.hwnd);
+    const children = windowsByParent.get(w.hwnd) || [];
+    const visible = matchesSelf(w) || children.some(isVisible);
+    visibleCache.set(w.hwnd, visible);
+    return visible;
+  }
+
+  const rootWindows = (windowsByParent.get(0) || []).filter(isVisible);
+
+  if (rootWindows.length === 0) {
+    treeWrap.innerHTML = '<div class="placeholder">No matching windows</div>';
+    return;
+  }
+  
+  function buildTreeNode(window) {
+    const isExpanded = expandedWindows.has(window.hwnd);
+    const children = (windowsByParent.get(window.hwnd) || []).filter(isVisible);
+    const hasChildren = children.length > 0;
+    const statusClass = window.destroyed ? 'status-exited' : 'status-running';
+    
+    let html = `<div class="tree-node">`;
+    
+    // Expand/collapse button (only if has children)
+    if (hasChildren) {
+      html += `<span class="tree-expand" data-hwnd="${window.hwnd}">${isExpanded ? '▼' : '▶'}</span>`;
+    } else {
+      html += `<span class="tree-expand-space"></span>`;
+    }
+    
+    // Window info
+    html += `<span class="tree-hwnd">${hex(window.hwnd)}</span>`;
+    html += `<span class="tree-title">${escapeHtml(window.title || '(no title)')}</span>`;
+    html += `<span class="tree-class">${escapeHtml(window.class_name || '(no class)')}</span>`;
+    html += `<span class="tree-status ${statusClass}">${window.destroyed ? 'Destroyed' : 'Active'}</span>`;
+    html += `</div>`;
+    
+    // Render children if expanded
+    if (hasChildren && isExpanded) {
+      html += `<div class="tree-children">`;
+      children.forEach(child => {
+        html += buildTreeNode(child);
+      });
+      html += `</div>`;
+    } else if (hasChildren) {
+      html += `<div class="tree-children collapsed">`;
+      children.forEach(child => {
+        html += buildTreeNode(child);
+      });
+      html += `</div>`;
+    }
+    
+    return html;
+  }
+
+  // Render all root windows
+  treeWrap.innerHTML = rootWindows.map(w => buildTreeNode(w)).join('');
+  
+  // Attach click handlers for expand/collapse
+  treeWrap.querySelectorAll('.tree-expand').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const hwnd = parseInt(btn.dataset.hwnd);
+      if (expandedWindows.has(hwnd)) {
+        expandedWindows.delete(hwnd);
+      } else {
+        expandedWindows.add(hwnd);
+      }
+      renderWindowTree();
+    });
+  });
+}
+
+function escapeHtml(text) {
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
 function addEventEntry(event) {
   const log = document.getElementById('event-log');
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(3);
@@ -386,13 +493,39 @@ function handleEvent(event) {
       state.handles.push({ handle: event.handle, kind: event.kind, detail: event.detail, closed: false });
       renderFilesTable();
       renderMutexesTable();
+      // If it's a window handle, also add to windows array
+      if (event.kind === 'Window') {
+        try {
+          // Parse detail as JSON: {hwnd, title, class_name, parent}
+          const winInfo = JSON.parse(event.detail);
+          state.windows.push({
+            hwnd: winInfo.hwnd || event.handle,
+            title: winInfo.title || '',
+            class_name: winInfo.class_name || '',
+            parent: winInfo.parent || 0,
+            destroyed: false
+          });
+          renderWindowTree();
+        } catch (e) {
+          console.warn('Failed to parse window info:', event.detail, e);
+        }
+      }
       break;
-    case 'HandleClosed':
-      { const h = state.handles.find(h => h.handle === event.handle && !h.closed);
-        if (h) h.closed = true; }
+    case 'HandleClosed': {
+      const h = state.handles.find(h => h.handle === event.handle && !h.closed);
+      if (h) h.closed = true;
       renderFilesTable();
       renderMutexesTable();
+      // If it's a window handle, mark as destroyed
+      if (h && h.kind === 'Window') {
+        const w = state.windows.find(w => w.hwnd === event.handle && !w.destroyed);
+        if (w) {
+          w.destroyed = true;
+          renderWindowTree();
+        }
+      }
       break;
+    }
     case 'ThreadCreated':
       state.threads.push({ handle: event.handle, thread_id: event.thread_id, entry_point: event.entry_point, exit_code: null });
       renderThreadsTable();
@@ -454,6 +587,8 @@ document.getElementById('file-hide-closed').addEventListener('change', renderFil
 document.getElementById('thread-filter').addEventListener('input', renderThreadsTable);
 document.getElementById('mutex-filter').addEventListener('input', renderMutexesTable);
 document.getElementById('mutex-hide-closed').addEventListener('change', renderMutexesTable);
+document.getElementById('window-filter').addEventListener('input', renderWindowTree);
+document.getElementById('window-hide-destroyed').addEventListener('change', renderWindowTree);
 document.getElementById('event-filter').addEventListener('input', () => {
   const filterText = document.getElementById('event-filter').value.toLowerCase();
   document.querySelectorAll('#event-log .event-entry').forEach(div => {
@@ -477,6 +612,29 @@ invoke('get_state').then(snap => {
     state.handles = snap.handles;
     renderFilesTable();
     renderMutexesTable();
+    state.windows = snap.handles
+      .filter(h => h.kind === 'Window')
+      .map(h => {
+        try {
+          const winInfo = JSON.parse(h.detail || '{}');
+          return {
+            hwnd: winInfo.hwnd || h.handle,
+            title: winInfo.title || '',
+            class_name: winInfo.class_name || '',
+            parent: winInfo.parent || 0,
+            destroyed: !!h.closed
+          };
+        } catch {
+          return {
+            hwnd: h.handle,
+            title: '',
+            class_name: '',
+            parent: 0,
+            destroyed: !!h.closed
+          };
+        }
+      });
+    renderWindowTree();
   }
   if (snap.threads && snap.threads.length) { state.threads = snap.threads; renderThreadsTable(); }
   if (snap.tls_slots && snap.tls_slots.length) { state.tls_slots = snap.tls_slots; }

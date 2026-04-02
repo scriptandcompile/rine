@@ -121,6 +121,18 @@ pub unsafe fn write_wstr(buf: *mut u16, buf_size: u32, value: &str) -> u32 {
     encoded.len() as u32
 }
 
+/// Escape a string for safe embedding in JSON string values.
+///
+/// This escapes backslash, double quote, and common control characters.
+pub fn json_escape(input: &str) -> String {
+    input
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
+        .replace('\t', "\\t")
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -200,5 +212,13 @@ mod tests {
     fn write_wstr_null_buf() {
         let n = unsafe { write_wstr(std::ptr::null_mut(), 0, "hello") };
         assert_eq!(n, 6);
+    }
+
+    // ── json_escape ─────────────────────────────────────────────
+
+    #[test]
+    fn json_escape_escapes_specials() {
+        let s = "a\\\"\n\r\tb";
+        assert_eq!(json_escape(s), "a\\\\\\\"\\n\\r\\tb");
     }
 }

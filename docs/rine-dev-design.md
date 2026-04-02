@@ -268,20 +268,20 @@ macro_rules! dev_emit {
 Single window, tabbed layout. Default size: 1200x800, resizable.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  rine-dev ─ myapp.exe                              [─][□][×]│
-├────────┬──────────┬─────────┬──────────┬─────────┬──────────┤
-│Overview│ Imports  │ Files   │ Threads  │ Mutexes │ Events   │
-├────────┴──────────┴─────────┴──────────┴─────────┴──────────┤
-│                                                             │
-│  (Tab content area — see panels below)                      │
-│                                                             │
-│                                                             │
-│                                                             │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│ Status: Running │ Handles: 14 │ Threads: 3 │ Stubs hit: 2  │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│  rine-dev ─ myapp.exe                                       [─][□][×]│
+├────────┬──────────┬─────────┬──────────┬─────────┬──────────┬────────┤
+│Overview│ Imports  │ Files   │ Threads  │ Mutexes │ Windows  │ Events │
+├────────┴──────────┴─────────┴──────────┴─────────┴──────────┴────────┤
+│                                                                      │
+│  (Tab content area — see panels below)                               │
+│                                                                      │
+│                                                                      │
+│                                                                      │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────┤
+│ Status: Running │ Handles: 14 │ Threads: 3 │ Stubs hit: 2  │         │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Panels
@@ -345,7 +345,25 @@ Live table of open mutex handles:
 - Grayed-out rows for closed handles (toggle to show/hide)
 - Displays mutex name/identifier from detail field
 
-#### 6. Events (Log)
+#### 6. Windows
+
+Tree view of window hierarchy:
+
+```
+▼ HWND 0x2000: "MyApp Window" [TestWindowClass]
+  ├─ HWND 0x2004: "Button" [BUTTON]
+  ├─ HWND 0x2008: "Edit Control" [EDIT]
+  └▼ HWND 0x200C: "Panel" [Panel]
+     ├─ HWND 0x2010: "Label" [STATIC]
+     └─ HWND 0x2014: "Checkbox" [BUTTON]
+```
+
+- Tree layout showing parent-child relationships
+- Shows HWND, window title, and class name
+- Expandable/collapsible nodes
+- Destroyed windows shown grayed out
+
+#### 7. Events (Log)
 
 Chronological stream of all DevEvents, filterable by category:
 

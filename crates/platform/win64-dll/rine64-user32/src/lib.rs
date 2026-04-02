@@ -1,7 +1,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use rine_dlls::{DllPlugin, Export, as_win_api};
-use rine_types::strings::{read_cstr, read_wstr};
+use rine_types::strings::{json_escape, read_cstr, read_wstr};
 use rine_types::windows::*;
 
 pub struct User32Plugin;
@@ -173,6 +173,8 @@ unsafe extern "win64" fn create_window_ex_a(
 ) -> usize {
     let class_name_str = read_cstr(class_name).unwrap_or_default();
     let window_title = read_cstr(window_name).unwrap_or_default();
+    let escaped_class_name = json_escape(&class_name_str);
+    let escaped_window_title = json_escape(&window_title);
 
     // Look up the window class
     let class = match WINDOW_CLASS_REGISTRY.get(&class_name_str) {
@@ -207,6 +209,15 @@ unsafe extern "win64" fn create_window_ex_a(
 
     let hwnd = WINDOW_MANAGER.create_window(state);
 
+    let detail = format!(
+        r#"{{"hwnd":{},"title":"{}","class_name":"{}","parent":{}}}"#,
+        hwnd.as_raw(),
+        escaped_window_title,
+        escaped_class_name,
+        parent,
+    );
+    rine_types::dev_notify!(on_handle_created(hwnd.as_raw() as i64, "Window", &detail));
+
     // TODO: Call WndProc with WM_CREATE
     // TODO: Actually create a window with X11/Wayland backend
 
@@ -230,6 +241,8 @@ unsafe extern "win64" fn create_window_ex_w(
 ) -> usize {
     let class_name_str = read_wstr(class_name).unwrap_or_default();
     let window_title = read_wstr(window_name).unwrap_or_default();
+    let escaped_class_name = json_escape(&class_name_str);
+    let escaped_window_title = json_escape(&window_title);
 
     // For simplicity, we'll duplicate the logic here
     let class = match WINDOW_CLASS_REGISTRY.get(&class_name_str) {
@@ -263,6 +276,16 @@ unsafe extern "win64" fn create_window_ex_w(
     };
 
     let hwnd = WINDOW_MANAGER.create_window(state);
+
+    let detail = format!(
+        r#"{{"hwnd":{},"title":"{}","class_name":"{}","parent":{}}}"#,
+        hwnd.as_raw(),
+        escaped_window_title,
+        escaped_class_name,
+        parent,
+    );
+    rine_types::dev_notify!(on_handle_created(hwnd.as_raw() as i64, "Window", &detail));
+
     hwnd.as_raw()
 }
 
@@ -274,6 +297,7 @@ unsafe extern "win64" fn destroy_window(hwnd: usize) -> i32 {
     // TODO: Actually destroy the X11/Wayland window
 
     if WINDOW_MANAGER.destroy_window(hwnd) {
+        rine_types::dev_notify!(on_handle_closed(hwnd.as_raw() as i64));
         1
     } else {
         0

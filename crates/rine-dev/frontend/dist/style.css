@@ -277,6 +277,75 @@ body {
 .status-exited { color: var(--warning); }
 tr.row-closed td { opacity: 0.5; }
 
+/* Window tree */
+.tree-wrap {
+  flex: 1;
+  overflow-y: auto;
+}
+.window-tree {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px;
+}
+.tree-node {
+  padding: 3px 0;
+  cursor: pointer;
+  user-select: none;
+}
+.tree-node-content {
+  display: flex;
+  align-items: center;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.tree-node-content:hover {
+  background: var(--bg-hover);
+}
+.tree-expand {
+  width: 16px;
+  display: inline-block;
+  text-align: center;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+.tree-expand.expandable {
+  cursor: pointer;
+}
+.tree-expand.expanded::before {
+  content: '▼';
+}
+.tree-expand.collapsed::before {
+  content: '▶';
+}
+.tree-hwnd {
+  color: var(--accent);
+  margin-right: 8px;
+}
+.tree-title {
+  color: var(--text);
+  margin-right: 8px;
+}
+.tree-class {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.tree-status {
+  margin-left: 10px;
+}
+.tree-children {
+  padding-left: 20px;
+}
+.tree-children.collapsed {
+  display: none;
+}
+.tree-node.destroyed {
+  opacity: 0.4;
+}
+.tree-node.destroyed .tree-title,
+.tree-node.destroyed .tree-class {
+  text-decoration: line-through;
+}
+
 /* Events log */
 .event-log {
   flex: 1;
