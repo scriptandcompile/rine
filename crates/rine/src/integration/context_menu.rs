@@ -11,8 +11,9 @@
 //! - **Nemo (Cinnamon)**: A `.nemo_action` file in
 //!   `~/.local/share/nemo/actions/` that adds a MIME-filtered right-click action.
 //!
-//! All entries launch `rine --config <exe>` (or `rine-config <exe>` when the
-//! Tauri config editor is available).
+//! Two actions are installed per environment:
+//! - **Configure with rine** — launches `rine --config <exe>`.
+//! - **Dev dashboard** — launches `rine --dev <exe>`.
 
 use std::fmt;
 use std::fs;
@@ -42,13 +43,19 @@ fn xdg_data_home() -> Result<PathBuf, ContextMenuError> {
 
 struct Paths {
     /// Freedesktop .desktop file for "Configure with rine" action.
-    desktop_file: PathBuf,
-    /// Nautilus script.
-    nautilus_script: PathBuf,
-    /// Dolphin/KDE service menu.
+    configure_desktop: PathBuf,
+    /// Freedesktop .desktop file for "Dev dashboard" action.
+    dev_desktop: PathBuf,
+    /// Nautilus "configure" script.
+    nautilus_configure: PathBuf,
+    /// Nautilus "dev" script.
+    nautilus_dev: PathBuf,
+    /// Dolphin/KDE service menu (single file with both actions).
     dolphin_service: PathBuf,
-    /// Nemo action file.
-    nemo_action: PathBuf,
+    /// Nemo "configure" action file.
+    nemo_configure: PathBuf,
+    /// Nemo "dev" action file.
+    nemo_dev: PathBuf,
     /// Parent directories (for create_dir_all).
     applications_dir: PathBuf,
     nautilus_scripts_dir: PathBuf,
@@ -65,10 +72,13 @@ impl Paths {
         let nemo_actions_dir = data.join("nemo/actions");
 
         Ok(Self {
-            desktop_file: applications_dir.join("rine-configure.desktop"),
-            nautilus_script: nautilus_scripts_dir.join("rine Settings"),
-            dolphin_service: dolphin_services_dir.join("rine-configure.desktop"),
-            nemo_action: nemo_actions_dir.join("rine-configure.nemo_action"),
+            configure_desktop: applications_dir.join("rine-configure.desktop"),
+            dev_desktop: applications_dir.join("rine-dev.desktop"),
+            nautilus_configure: nautilus_scripts_dir.join("rine Settings"),
+            nautilus_dev: nautilus_scripts_dir.join("rine Dev Dashboard"),
+            dolphin_service: dolphin_services_dir.join("rine.desktop"),
+            nemo_configure: nemo_actions_dir.join("rine-configure.nemo_action"),
+            nemo_dev: nemo_actions_dir.join("rine-dev.nemo_action"),
             applications_dir,
             nautilus_scripts_dir,
             dolphin_services_dir,
@@ -99,11 +109,28 @@ fn configure_desktop_entry(interpreter: &Path) -> String {
     )
 }
 
-/// Shell script for the Nautilus Scripts menu.
+/// Freedesktop `.desktop` file for the dev dashboard action.
+fn dev_desktop_entry(interpreter: &Path) -> String {
+    format!(
+        "[Desktop Entry]\n\
+         Type=Application\n\
+         Name=Dev dashboard (rine)\n\
+         Comment=Launch the rine developer dashboard for this Windows executable\n\
+         Exec={interpreter} --dev %f\n\
+         Terminal=false\n\
+         NoDisplay=true\n\
+         MimeType=application/x-dosexec;application/x-ms-dos-executable;\n\
+         Categories=Development;\n\
+         Icon=utilities-terminal\n",
+        interpreter = interpreter.display(),
+    )
+}
+
+/// Shell script for the Nautilus Scripts menu (configure).
 ///
 /// `$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS` contains newline-separated paths of
 /// selected files. We take the first one.
-fn nautilus_script_content(interpreter: &Path) -> String {
+fn nautilus_configure_content(interpreter: &Path) -> String {
     format!(
         "#!/bin/sh\n\
          # rine — right-click \"rine Settings\" for .exe files\n\
@@ -114,36 +141,65 @@ fn nautilus_script_content(interpreter: &Path) -> String {
     )
 }
 
+/// Shell script for the Nautilus Scripts menu (dev dashboard).
+fn nautilus_dev_content(interpreter: &Path) -> String {
+    format!(
+        "#!/bin/sh\n\
+         # rine — right-click \"rine Dev Dashboard\" for .exe files\n\
+         exe=\"$(echo \"$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS\" | head -n1)\"\n\
+         [ -z \"$exe\" ] && exit 1\n\
+         exec {interpreter} --dev \"$exe\"\n",
+        interpreter = interpreter.display(),
+    )
+}
+
 /// KDE/Dolphin ServiceMenu `.desktop` file.
 ///
 /// Appears as a top-level right-click action on `.exe` files.
+/// Contains both "configure" and "dev dashboard" actions under a rine submenu.
 fn dolphin_service_content(interpreter: &Path) -> String {
     format!(
         "[Desktop Entry]\n\
          Type=Service\n\
          MimeType=application/x-dosexec;application/x-ms-dos-executable;\n\
-         Actions=configure\n\
+         Actions=configure;dev\n\
          X-KDE-Submenu=rine\n\
          \n\
          [Desktop Action configure]\n\
-         Name=Configure with rine\n\
+         Name=Configure\n\
          Icon=preferences-system\n\
-         Exec={interpreter} --config %f\n",
+         Exec={interpreter} --config %f\n\
+         \n\
+         [Desktop Action dev]\n\
+         Name=Dev dashboard\n\
+         Icon=utilities-terminal\n\
+         Exec={interpreter} --dev %f\n",
         interpreter = interpreter.display(),
     )
 }
 
-/// Nemo (Cinnamon) action file.
-///
-/// `.nemo_action` files support MIME-type filtering, so the action only
-/// appears on `.exe` files without needing a Scripts submenu.
-fn nemo_action_content(interpreter: &Path) -> String {
+/// Nemo (Cinnamon) "configure" action file.
+fn nemo_configure_content(interpreter: &Path) -> String {
     format!(
         "[Nemo Action]\n\
          Name=Configure with rine\n\
          Comment=Open rine settings for this Windows executable\n\
          Exec={interpreter} --config %F\n\
          Icon-Name=preferences-system\n\
+         Selection=s\n\
+         Mimetypes=application/x-dosexec;application/x-ms-dos-executable;\n",
+        interpreter = interpreter.display(),
+    )
+}
+
+/// Nemo (Cinnamon) "dev dashboard" action file.
+fn nemo_dev_content(interpreter: &Path) -> String {
+    format!(
+        "[Nemo Action]\n\
+         Name=Dev dashboard (rine)\n\
+         Comment=Launch the rine developer dashboard for this Windows executable\n\
+         Exec={interpreter} --dev %F\n\
+         Icon-Name=utilities-terminal\n\
          Selection=s\n\
          Mimetypes=application/x-dosexec;application/x-ms-dos-executable;\n",
         interpreter = interpreter.display(),
@@ -167,18 +223,24 @@ fn update_desktop_database(applications_dir: &Path) {
 /// Summary of which context-menu integrations are installed.
 #[derive(Debug)]
 pub struct ContextMenuStatus {
-    pub desktop_file: Option<PathBuf>,
-    pub nautilus_script: Option<PathBuf>,
+    pub configure_desktop: Option<PathBuf>,
+    pub dev_desktop: Option<PathBuf>,
+    pub nautilus_configure: Option<PathBuf>,
+    pub nautilus_dev: Option<PathBuf>,
     pub dolphin_service: Option<PathBuf>,
-    pub nemo_action: Option<PathBuf>,
+    pub nemo_configure: Option<PathBuf>,
+    pub nemo_dev: Option<PathBuf>,
 }
 
 impl ContextMenuStatus {
     pub fn is_installed(&self) -> bool {
-        self.desktop_file.is_some()
-            || self.nautilus_script.is_some()
+        self.configure_desktop.is_some()
+            || self.dev_desktop.is_some()
+            || self.nautilus_configure.is_some()
+            || self.nautilus_dev.is_some()
             || self.dolphin_service.is_some()
-            || self.nemo_action.is_some()
+            || self.nemo_configure.is_some()
+            || self.nemo_dev.is_some()
     }
 }
 
@@ -188,17 +250,26 @@ impl fmt::Display for ContextMenuStatus {
             return write!(f, "not installed");
         }
         write!(f, "installed")?;
-        if let Some(ref p) = self.desktop_file {
-            write!(f, "\n  desktop action: {}", p.display())?;
+        if let Some(ref p) = self.configure_desktop {
+            write!(f, "\n  desktop (configure): {}", p.display())?;
         }
-        if let Some(ref p) = self.nautilus_script {
-            write!(f, "\n  nautilus script: {}", p.display())?;
+        if let Some(ref p) = self.dev_desktop {
+            write!(f, "\n  desktop (dev):       {}", p.display())?;
+        }
+        if let Some(ref p) = self.nautilus_configure {
+            write!(f, "\n  nautilus (configure): {}", p.display())?;
+        }
+        if let Some(ref p) = self.nautilus_dev {
+            write!(f, "\n  nautilus (dev):       {}", p.display())?;
         }
         if let Some(ref p) = self.dolphin_service {
-            write!(f, "\n  dolphin service: {}", p.display())?;
+            write!(f, "\n  dolphin service:      {}", p.display())?;
         }
-        if let Some(ref p) = self.nemo_action {
-            write!(f, "\n  nemo action: {}", p.display())?;
+        if let Some(ref p) = self.nemo_configure {
+            write!(f, "\n  nemo (configure): {}", p.display())?;
+        }
+        if let Some(ref p) = self.nemo_dev {
+            write!(f, "\n  nemo (dev):       {}", p.display())?;
         }
         Ok(())
     }
@@ -209,16 +280,25 @@ pub fn status() -> Result<ContextMenuStatus, ContextMenuError> {
     let paths = Paths::new()?;
 
     Ok(ContextMenuStatus {
-        desktop_file: paths.desktop_file.exists().then_some(paths.desktop_file),
-        nautilus_script: paths
-            .nautilus_script
+        configure_desktop: paths
+            .configure_desktop
             .exists()
-            .then_some(paths.nautilus_script),
+            .then_some(paths.configure_desktop),
+        dev_desktop: paths.dev_desktop.exists().then_some(paths.dev_desktop),
+        nautilus_configure: paths
+            .nautilus_configure
+            .exists()
+            .then_some(paths.nautilus_configure),
+        nautilus_dev: paths.nautilus_dev.exists().then_some(paths.nautilus_dev),
         dolphin_service: paths
             .dolphin_service
             .exists()
             .then_some(paths.dolphin_service),
-        nemo_action: paths.nemo_action.exists().then_some(paths.nemo_action),
+        nemo_configure: paths
+            .nemo_configure
+            .exists()
+            .then_some(paths.nemo_configure),
+        nemo_dev: paths.nemo_dev.exists().then_some(paths.nemo_dev),
     })
 }
 
@@ -234,17 +314,23 @@ pub fn install(interpreter_override: Option<&Path>) -> Result<ContextMenuStatus,
         None => std::env::current_exe().map_err(ContextMenuError::NoSelfPath)?,
     };
 
-    // -- Freedesktop .desktop action (always) --------------------------------
+    // -- Freedesktop .desktop actions (always) --------------------------------
     fs::create_dir_all(&paths.applications_dir)?;
-    fs::write(&paths.desktop_file, configure_desktop_entry(&interpreter))?;
+    fs::write(
+        &paths.configure_desktop,
+        configure_desktop_entry(&interpreter),
+    )?;
+    fs::write(&paths.dev_desktop, dev_desktop_entry(&interpreter))?;
 
-    // -- Nautilus script ------------------------------------------------------
+    // -- Nautilus scripts -----------------------------------------------------
     fs::create_dir_all(&paths.nautilus_scripts_dir)?;
     fs::write(
-        &paths.nautilus_script,
-        nautilus_script_content(&interpreter),
+        &paths.nautilus_configure,
+        nautilus_configure_content(&interpreter),
     )?;
-    fs::set_permissions(&paths.nautilus_script, fs::Permissions::from_mode(0o755))?;
+    fs::set_permissions(&paths.nautilus_configure, fs::Permissions::from_mode(0o755))?;
+    fs::write(&paths.nautilus_dev, nautilus_dev_content(&interpreter))?;
+    fs::set_permissions(&paths.nautilus_dev, fs::Permissions::from_mode(0o755))?;
 
     // -- Dolphin service menu -------------------------------------------------
     fs::create_dir_all(&paths.dolphin_services_dir)?;
@@ -253,9 +339,10 @@ pub fn install(interpreter_override: Option<&Path>) -> Result<ContextMenuStatus,
         dolphin_service_content(&interpreter),
     )?;
 
-    // -- Nemo action ----------------------------------------------------------
+    // -- Nemo actions ---------------------------------------------------------
     fs::create_dir_all(&paths.nemo_actions_dir)?;
-    fs::write(&paths.nemo_action, nemo_action_content(&interpreter))?;
+    fs::write(&paths.nemo_configure, nemo_configure_content(&interpreter))?;
+    fs::write(&paths.nemo_dev, nemo_dev_content(&interpreter))?;
 
     // -- Refresh --------------------------------------------------------------
     update_desktop_database(&paths.applications_dir);
@@ -267,26 +354,33 @@ pub fn install(interpreter_override: Option<&Path>) -> Result<ContextMenuStatus,
 pub fn uninstall() -> Result<(), ContextMenuError> {
     let paths = Paths::new()?;
 
-    let has_any = paths.desktop_file.exists()
-        || paths.nautilus_script.exists()
-        || paths.dolphin_service.exists()
-        || paths.nemo_action.exists();
+    let all_files: &[&Path] = &[
+        &paths.configure_desktop,
+        &paths.dev_desktop,
+        &paths.nautilus_configure,
+        &paths.nautilus_dev,
+        &paths.dolphin_service,
+        &paths.nemo_configure,
+        &paths.nemo_dev,
+    ];
 
-    if !has_any {
+    if !all_files.iter().any(|p| p.exists()) {
         return Err(ContextMenuError::NotInstalled);
     }
 
-    if paths.desktop_file.exists() {
-        fs::remove_file(&paths.desktop_file)?;
+    for path in all_files {
+        if path.exists() {
+            fs::remove_file(path)?;
+        }
     }
-    if paths.nautilus_script.exists() {
-        fs::remove_file(&paths.nautilus_script)?;
-    }
-    if paths.dolphin_service.exists() {
-        fs::remove_file(&paths.dolphin_service)?;
-    }
-    if paths.nemo_action.exists() {
-        fs::remove_file(&paths.nemo_action)?;
+
+    // Also clean up the old file names from before the dev action was added.
+    let legacy: &[&str] = &["rine-configure.desktop"];
+    for name in legacy {
+        let old = paths.dolphin_services_dir.join(name);
+        if old.exists() {
+            let _ = fs::remove_file(old);
+        }
     }
 
     update_desktop_database(&paths.applications_dir);
