@@ -17,6 +17,7 @@
       <button class="tab active" data-tab="overview">Overview</button>
       <button class="tab" data-tab="imports">Imports</button>
       <button class="tab" data-tab="files">Files</button>
+      <button class="tab" data-tab="memory">Memory</button>
       <button class="tab" data-tab="threads">Threads</button>
       <button class="tab" data-tab="mutexes">Mutexes</button>
       <button class="tab" data-tab="windows">Windows</button>
@@ -106,6 +107,42 @@
             <tr><td colspan="3" class="placeholder">No files yet…</td></tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- Memory Tab -->
+    <section id="tab-memory" class="tab-content">
+      <div id="memory-summary" class="memory-summary">
+        <div class="placeholder">No memory activity yet…</div>
+      </div>
+      <div class="toolbar">
+        <input type="text" id="memory-filter" placeholder="Filter by source or address…">
+        <label class="filter-label">
+          <input type="checkbox" id="memory-active-only"> Active only
+        </label>
+        <div class="memory-actions">
+          <button id="memory-export-json" class="memory-action-btn" type="button">Export JSON</button>
+          <button id="memory-export-text" class="memory-action-btn" type="button">Export Text</button>
+        </div>
+      </div>
+      <div class="table-wrap memory-table-wrap">
+        <table id="memory-table">
+          <thead>
+            <tr>
+              <th>Address</th>
+              <th>Size</th>
+              <th>Source</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="memory-tbody">
+            <tr><td colspan="4" class="placeholder">No memory regions tracked yet…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="memory-final-wrap" class="memory-final-wrap" hidden>
+        <h3 id="memory-final-title">Final Memory Mapping</h3>
+        <p id="memory-final-note" class="memory-final-note"></p>
       </div>
     </section>
 

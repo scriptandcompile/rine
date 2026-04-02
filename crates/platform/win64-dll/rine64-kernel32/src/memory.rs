@@ -98,6 +98,7 @@ pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
                 if let Ok(layout) = Layout::from_size_align(size, align) {
                     unsafe { std::alloc::dealloc(addr as *mut u8, layout) };
                 }
+                rine_types::dev_notify!(on_memory_freed(addr as u64, size as u64, "HeapDestroy"));
             }
             WinBool::TRUE
         }
@@ -150,6 +151,8 @@ fn heap_alloc_inner(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
             .insert(ptr as usize, (size, align));
     });
 
+    rine_types::dev_notify!(on_memory_allocated(ptr as u64, size as u64, "HeapAlloc"));
+
     ptr
 }
 
@@ -170,6 +173,7 @@ pub unsafe extern "win64" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut
             if let Ok(layout) = Layout::from_size_align(size, align) {
                 unsafe { std::alloc::dealloc(ptr, layout) };
             }
+            rine_types::dev_notify!(on_memory_freed(ptr as u64, size as u64, "HeapFree"));
             WinBool::TRUE
         }
         _ => WinBool::FALSE,
@@ -229,6 +233,13 @@ pub unsafe extern "win64" fn HeapReAlloc(
         allocs.remove(&(ptr as usize));
         allocs.insert(new_ptr as usize, (actual_new_size, old_align));
     });
+
+    rine_types::dev_notify!(on_memory_freed(ptr as u64, old_size as u64, "HeapReAlloc"));
+    rine_types::dev_notify!(on_memory_allocated(
+        new_ptr as u64,
+        actual_new_size as u64,
+        "HeapReAlloc"
+    ));
 
     new_ptr
 }
@@ -298,6 +309,12 @@ pub unsafe extern "win64" fn VirtualAlloc(
         .unwrap()
         .insert(ptr as usize, alloc_size);
 
+    rine_types::dev_notify!(on_memory_allocated(
+        ptr as u64,
+        alloc_size as u64,
+        "VirtualAlloc"
+    ));
+
     ptr
 }
 
@@ -321,6 +338,13 @@ pub unsafe extern "win64" fn VirtualFree(
         };
 
         let result = unsafe { libc::munmap(address.cast(), region_size) };
+        if result == 0 {
+            rine_types::dev_notify!(on_memory_freed(
+                address as u64,
+                region_size as u64,
+                "VirtualFree"
+            ));
+        }
         return if result == 0 {
             WinBool::TRUE
         } else {

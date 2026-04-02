@@ -54,6 +54,16 @@ pub enum DevEvent {
     TlsFreed {
         index: u32,
     },
+    MemoryAllocated {
+        address: u64,
+        size: u64,
+        source: String,
+    },
+    MemoryFreed {
+        address: u64,
+        size: u64,
+        source: String,
+    },
     // ── Lifecycle ────────────────────────────────────────────────
     ProcessExited {
         exit_code: i32,

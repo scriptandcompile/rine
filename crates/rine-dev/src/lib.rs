@@ -9,6 +9,11 @@ pub struct StateSnapshot {
     pub handles: Vec<HandleInfo>,
     pub threads: Vec<ThreadInfo>,
     pub tls_slots: Vec<u32>,
+    pub memory_regions: Vec<MemoryRegionInfo>,
+    pub memory_current_usage: u64,
+    pub memory_peak_usage: u64,
+    pub memory_total_allocated: u64,
+    pub memory_total_freed: u64,
     pub exited: Option<i32>,
     pub stdout: String,
     pub stderr: String,
@@ -54,4 +59,13 @@ pub struct ThreadInfo {
     pub thread_id: u32,
     pub entry_point: u64,
     pub exit_code: Option<u32>,
+}
+
+/// A tracked memory region.
+#[derive(Debug, Clone, Serialize)]
+pub struct MemoryRegionInfo {
+    pub address: u64,
+    pub size: u64,
+    pub source: String,
+    pub freed: bool,
 }

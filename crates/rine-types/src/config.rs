@@ -253,7 +253,7 @@ mod tests {
         let cfg = AppConfig::default();
         let toml_str = toml::to_string_pretty(&cfg).unwrap();
         let parsed: AppConfig = toml::from_str(&toml_str).unwrap();
-        assert_eq!(parsed.filesystem.case_insensitive, true);
+        assert!(parsed.filesystem.case_insensitive);
         assert!(parsed.filesystem.drives.is_empty());
         assert_eq!(parsed.windows_version, WindowsVersion::Win11);
         assert!(parsed.dll.search_order.is_empty());

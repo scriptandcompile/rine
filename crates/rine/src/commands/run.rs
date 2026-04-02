@@ -99,6 +99,22 @@ impl rine_types::dev_hooks::DevHook for ChannelDevHook {
         dev_send_event(&rine_channel::DevEvent::TlsFreed { index });
     }
 
+    fn on_memory_allocated(&self, address: u64, size: u64, source: &str) {
+        dev_send_event(&rine_channel::DevEvent::MemoryAllocated {
+            address,
+            size,
+            source: source.to_owned(),
+        });
+    }
+
+    fn on_memory_freed(&self, address: u64, size: u64, source: &str) {
+        dev_send_event(&rine_channel::DevEvent::MemoryFreed {
+            address,
+            size,
+            source: source.to_owned(),
+        });
+    }
+
     fn on_process_exiting(&self, exit_code: i32) {
         dev_send_event(&rine_channel::DevEvent::ProcessExited { exit_code });
         dev_shutdown();
@@ -196,6 +212,12 @@ pub fn run(
                 }
             })
             .collect(),
+    });
+
+    dev_emit!(rine_channel::DevEvent::MemoryAllocated {
+        address: image.base().as_usize() as u64,
+        size: image.size() as u64,
+        source: "PE Image".to_owned(),
     });
 
     // 3. Resolve imports (write function pointers into the IAT).

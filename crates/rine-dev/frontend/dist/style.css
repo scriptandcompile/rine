@@ -246,14 +246,16 @@ body {
 /* Files, Threads & Mutexes tables */
 #file-table,
 #thread-table,
-#mutex-table {
+#mutex-table,
+#memory-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 #file-table th,
 #thread-table th,
-#mutex-table th {
+#mutex-table th,
+#memory-table th {
   position: sticky;
   top: 0;
   background: var(--bg);
@@ -265,7 +267,8 @@ body {
 }
 #file-table td,
 #thread-table td,
-#mutex-table td {
+#mutex-table td,
+#memory-table td {
   padding: 4px 10px;
   border-bottom: 1px solid var(--border);
   font-family: var(--mono);
@@ -276,6 +279,74 @@ body {
 .status-running { color: var(--success); }
 .status-exited { color: var(--warning); }
 tr.row-closed td { opacity: 0.5; }
+
+/* Memory tab */
+.memory-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.memory-stat {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  padding: 8px 10px;
+}
+.memory-stat-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.memory-stat-value {
+  display: block;
+  margin-top: 3px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.memory-table-wrap {
+  min-height: 220px;
+}
+.memory-actions {
+  display: flex;
+  gap: 8px;
+}
+.memory-action-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.memory-action-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.memory-final-wrap {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warning);
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+.memory-final-wrap h3 {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--warning);
+  margin-bottom: 4px;
+}
+.memory-final-note {
+  color: var(--text-muted);
+  font-size: 12px;
+}
 
 /* Window tree */
 .tree-wrap {

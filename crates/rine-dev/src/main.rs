@@ -16,6 +16,21 @@ fn get_state(state: State<'_, AppState>) -> StateSnapshot {
     state.0.lock().unwrap().clone()
 }
 
+#[tauri::command]
+fn save_memory_dump(suggested_name: String, content: String) -> Result<Option<String>, String> {
+    let path = rfd::FileDialog::new()
+        .set_title("Save Memory Dump")
+        .set_file_name(&suggested_name)
+        .save_file();
+
+    let Some(path) = path else {
+        return Ok(None);
+    };
+
+    std::fs::write(&path, content).map_err(|e| format!("failed to write file: {e}"))?;
+    Ok(Some(path.to_string_lossy().into_owned()))
+}
+
 /// Parse CLI args, returning (socket_path, exe_path).
 fn parse_args() -> (Option<String>, Option<String>) {
     let args: Vec<String> = std::env::args().collect();
@@ -115,7 +130,7 @@ fn main() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_state])
+        .invoke_handler(tauri::generate_handler![get_state, save_memory_dump])
         .run(tauri::generate_context!())
         .expect("error while running rine-dev");
 }
@@ -290,6 +305,40 @@ fn apply_event(snap: &mut StateSnapshot, event: &DevEvent) {
         }
         DevEvent::TlsFreed { index } => {
             snap.tls_slots.retain(|i| i != index);
+        }
+        DevEvent::MemoryAllocated {
+            address,
+            size,
+            source,
+        } => {
+            snap.memory_regions.push(rine_dev_lib::MemoryRegionInfo {
+                address: *address,
+                size: *size,
+                source: source.clone(),
+                freed: false,
+            });
+            snap.memory_total_allocated = snap.memory_total_allocated.saturating_add(*size);
+            snap.memory_current_usage = snap.memory_current_usage.saturating_add(*size);
+            snap.memory_peak_usage = snap.memory_peak_usage.max(snap.memory_current_usage);
+        }
+        DevEvent::MemoryFreed {
+            address,
+            size,
+            source: _,
+        } => {
+            let mut freed_size = *size;
+            if let Some(region) = snap
+                .memory_regions
+                .iter_mut()
+                .rev()
+                .find(|r| r.address == *address && !r.freed)
+            {
+                region.freed = true;
+                freed_size = region.size;
+            }
+
+            snap.memory_total_freed = snap.memory_total_freed.saturating_add(freed_size);
+            snap.memory_current_usage = snap.memory_current_usage.saturating_sub(freed_size);
         }
     }
 }

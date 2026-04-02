@@ -24,6 +24,10 @@ pub trait DevHook: Send + Sync {
     fn on_tls_allocated(&self, index: u32);
     /// A TLS slot was freed.
     fn on_tls_freed(&self, index: u32);
+    /// A memory region was allocated.
+    fn on_memory_allocated(&self, address: u64, size: u64, source: &str);
+    /// A memory region was freed.
+    fn on_memory_freed(&self, address: u64, size: u64, source: &str);
     /// The process is about to exit.  Implementations should flush any
     /// buffered events and shut down the channel.
     fn on_process_exiting(&self, exit_code: i32);
