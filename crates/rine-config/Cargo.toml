@@ -15,12 +15,12 @@ path = "src/main.rs"
 
 [build-dependencies]
 rine-frontend-common = { workspace = true }
-tauri-build = { version = "2", features = [] }
+tauri-build = { workspace = true }
 
 [dependencies]
 rine-types = { workspace = true, features = ["config"] }
-rfd = "0.15"
+rfd = { workspace = true }
 serde = { workspace = true }
-serde_json = "1"
+serde_json = { workspace = true }
 toml = { workspace = true }
-tauri = { version = "2", features = [] }
+tauri = { workspace = true }

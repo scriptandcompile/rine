@@ -15,11 +15,11 @@ path = "src/main.rs"
 
 [build-dependencies]
 rine-frontend-common = { workspace = true }
-tauri-build = { version = "2", features = [] }
+tauri-build = { workspace = true }
 
 [dependencies]
 rine-channel = { path = "../rine-channel" }
-rfd = "0.14"
+rfd = { workspace = true }
 serde = { workspace = true }
-serde_json = "1"
-tauri = { version = "2", features = [] }
+serde_json = { workspace = true }
+tauri = { workspace = true }
