@@ -18,6 +18,7 @@
       <button class="tab" data-tab="imports">Imports</button>
       <button class="tab" data-tab="files">Files</button>
       <button class="tab" data-tab="threads">Threads</button>
+      <button class="tab" data-tab="mutexes">Mutexes</button>
       <button class="tab" data-tab="events">Events</button>
       <button class="tab" data-tab="output">Output</button>
     </nav>
@@ -125,6 +126,30 @@
           </thead>
           <tbody id="thread-tbody">
             <tr><td colspan="5" class="placeholder">No threads yet…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Mutexes Tab -->
+    <section id="tab-mutexes" class="tab-content">
+      <div class="toolbar">
+        <input type="text" id="mutex-filter" placeholder="Filter by name…">
+        <label class="filter-label">
+          <input type="checkbox" id="mutex-hide-closed"> Hide closed
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table id="mutex-table">
+          <thead>
+            <tr>
+              <th>Handle</th>
+              <th>Name</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="mutex-tbody">
+            <tr><td colspan="3" class="placeholder">No mutexes yet…</td></tr>
           </tbody>
         </table>
       </div>

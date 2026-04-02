@@ -238,35 +238,37 @@ pub unsafe extern "win64" fn ResetEvent(event_handle: isize) -> WinBool {
 
 // ── Mutexes ──────────────────────────────────────────────────────
 
-/// CreateMutexA — create a named or unnamed mutex object (name ignored).
+/// CreateMutexA — create a named or unnamed mutex object.
 ///
 /// ```c
 /// HANDLE CreateMutexA(
 ///     LPSECURITY_ATTRIBUTES lpMutexAttributes,  // rcx (ignored)
 ///     BOOL  bInitialOwner,                       // rdx
-///     LPCSTR lpName                              // r8 (ignored)
+///     LPCSTR lpName                              // r8
 /// );
 /// ```
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn CreateMutexA(
     _security_attrs: usize,
     initial_owner: WinBool,
-    _name: *const u8,
+    name: *const u8,
 ) -> isize {
-    create_mutex_impl(initial_owner, "CreateMutexA")
+    let name_str = unsafe { rine_types::strings::read_cstr(name) };
+    create_mutex_impl(initial_owner, name_str, "CreateMutexA")
 }
 
-/// CreateMutexW — wide-string variant (name ignored).
+/// CreateMutexW — wide-string variant.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn CreateMutexW(
     _security_attrs: usize,
     initial_owner: WinBool,
-    _name: *const u16,
+    name: *const u16,
 ) -> isize {
-    create_mutex_impl(initial_owner, "CreateMutexW")
+    let name_str = unsafe { rine_types::strings::read_wstr(name) };
+    create_mutex_impl(initial_owner, name_str, "CreateMutexW")
 }
 
-fn create_mutex_impl(initial_owner: WinBool, tag: &str) -> isize {
+fn create_mutex_impl(initial_owner: WinBool, name: Option<String>, tag: &str) -> isize {
     let (owner, count) = if initial_owner.is_true() {
         (Some(std::thread::current().id()), 1)
     } else {
@@ -280,16 +282,16 @@ fn create_mutex_impl(initial_owner: WinBool, tag: &str) -> isize {
         }),
     };
     let h = handle_table().insert(HandleEntry::Mutex(waitable));
-    debug!(?h, tag);
-    rine_types::dev_notify!(on_handle_created(
-        h.as_raw() as i64,
-        "Mutex",
-        if initial_owner.is_true() {
-            "initially-owned"
-        } else {
-            "unowned"
-        }
-    ));
+
+    let detail = match (name.as_deref(), initial_owner.is_true()) {
+        (Some(n), true) => format!("{} (initially-owned)", n),
+        (Some(n), false) => n.to_owned(),
+        (None, true) => "(unnamed, initially-owned)".to_owned(),
+        (None, false) => "(unnamed)".to_owned(),
+    };
+
+    debug!(?h, tag, name = ?name);
+    rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "Mutex", &detail));
     h.as_raw()
 }
 

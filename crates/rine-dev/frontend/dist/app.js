@@ -180,6 +180,37 @@ function renderFilesTable() {
   ).join('');
 }
 
+// ── Mutexes table ──────────────────────────────────
+function renderMutexesTable() {
+  const tbody = document.getElementById('mutex-tbody');
+  const filterText = (document.getElementById('mutex-filter').value || '').toLowerCase();
+  const hideClosed = document.getElementById('mutex-hide-closed').checked;
+
+  // Only show Mutex-type handles
+  const filtered = state.handles.filter(h => {
+    if (h.kind !== 'Mutex') return false;
+    if (hideClosed && h.closed) return false;
+    if (filterText) {
+      return h.detail.toLowerCase().includes(filterText) ||
+             String(h.handle).includes(filterText);
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="placeholder">No matching mutexes</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(h =>
+    `<tr class="${h.closed ? 'row-closed' : ''}">
+      <td>${hex(h.handle)}</td>
+      <td>${esc(h.detail)}</td>
+      <td class="${h.closed ? 'status-closed' : 'status-open'}">${h.closed ? 'Closed' : 'Open'}</td>
+    </tr>`
+  ).join('');
+}
+
 // ── Threads table ──────────────────────────────────
 function renderThreadsTable() {
   const tbody = document.getElementById('thread-tbody');
@@ -270,12 +301,12 @@ function updateStatusBar() {
   const el = document.getElementById('stat-status');
   if (state.exited != null) {
     el.textContent = state.exitCode != null
-      ? (state.exitCode === 0 ? 'Status: exited - success' : `Status: exited - code ${state.exitCode}`)
+      ? (state.exitCode === 0 ? 'Status: exit - success (0)' : `Status: exited - code ${state.exitCode}`)
       : 'Status: exited';
   } else if (state.pe) {
     el.textContent = 'Status: running';
   } else {
-    el.textContent = 'Status: waiting';
+    el.textContent = 'Status: waiting for rine';
   }
 
   if (state.imports) {
@@ -306,12 +337,15 @@ function updateStatusBadge() {
   const badge = document.getElementById('status-badge');
   if (state.exited != null) {
     badge.textContent = state.exitCode != null
-      ? (state.exitCode === 0 ? 'exited - success' : `exited - code ${state.exitCode}`)
+      ? (state.exitCode === 0 ? 'exit - success (0)' : `exited - code ${state.exitCode}`)
       : 'exited';
     badge.className = state.exitCode === 0 ? 'badge badge-exited-ok' : 'badge badge-exited';
   } else if (state.pe) {
     badge.textContent = 'running';
     badge.className = 'badge badge-running';
+  } else {
+    badge.textContent = 'waiting for rine…';
+    badge.className = 'badge badge-waiting';
   }
 }
 
@@ -351,11 +385,13 @@ function handleEvent(event) {
     case 'HandleCreated':
       state.handles.push({ handle: event.handle, kind: event.kind, detail: event.detail, closed: false });
       renderFilesTable();
+      renderMutexesTable();
       break;
     case 'HandleClosed':
       { const h = state.handles.find(h => h.handle === event.handle && !h.closed);
         if (h) h.closed = true; }
       renderFilesTable();
+      renderMutexesTable();
       break;
     case 'ThreadCreated':
       state.threads.push({ handle: event.handle, thread_id: event.thread_id, entry_point: event.entry_point, exit_code: null });
@@ -416,6 +452,8 @@ document.getElementById('import-stubs-only').addEventListener('change', applyImp
 document.getElementById('file-filter').addEventListener('input', renderFilesTable);
 document.getElementById('file-hide-closed').addEventListener('change', renderFilesTable);
 document.getElementById('thread-filter').addEventListener('input', renderThreadsTable);
+document.getElementById('mutex-filter').addEventListener('input', renderMutexesTable);
+document.getElementById('mutex-hide-closed').addEventListener('change', renderMutexesTable);
 document.getElementById('event-filter').addEventListener('input', () => {
   const filterText = document.getElementById('event-filter').value.toLowerCase();
   document.querySelectorAll('#event-log .event-entry').forEach(div => {
@@ -433,9 +471,13 @@ invoke('get_state').then(snap => {
     state.exited = true;
     state.exitCode = snap.exited === -1 ? null : snap.exited;
   }
-  if (snap.stdout) { state.stdout = snap.stdout; renderOutput('stdout', state.stdout); }
+  if (snap.stdout) { state.stdout = snap.stdout; renderOutput('stdout',state.stdout); }
   if (snap.stderr) { state.stderr = snap.stderr; renderOutput('stderr', state.stderr); }
-  if (snap.handles && snap.handles.length) { state.handles = snap.handles; renderHandlesTable(); }
+  if (snap.handles && snap.handles.length) { 
+    state.handles = snap.handles;
+    renderFilesTable();
+    renderMutexesTable();
+  }
   if (snap.threads && snap.threads.length) { state.threads = snap.threads; renderThreadsTable(); }
   if (snap.tls_slots && snap.tls_slots.length) { state.tls_slots = snap.tls_slots; }
   updateStatusBar();

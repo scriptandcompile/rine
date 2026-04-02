@@ -243,15 +243,17 @@ body {
 .status-resolved { color: var(--success); }
 .status-stub { color: var(--danger); }
 
-/* Handle & Thread tables */
-#handle-table,
-#thread-table {
+/* Files, Threads & Mutexes tables */
+#file-table,
+#thread-table,
+#mutex-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
-#handle-table th,
-#thread-table th {
+#file-table th,
+#thread-table th,
+#mutex-table th {
   position: sticky;
   top: 0;
   background: var(--bg);
@@ -261,8 +263,9 @@ body {
   padding: 6px 10px;
   border-bottom: 1px solid var(--border);
 }
-#handle-table td,
-#thread-table td {
+#file-table td,
+#thread-table td,
+#mutex-table td {
   padding: 4px 10px;
   border-bottom: 1px solid var(--border);
   font-family: var(--mono);

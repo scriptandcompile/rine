@@ -270,9 +270,9 @@ Single window, tabbed layout. Default size: 1200x800, resizable.
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  rine-dev ─ myapp.exe                              [─][□][×]│
-├────────┬──────────┬─────────┬──────────┬────────────────────┤
-│Overview│ Imports  │ Files   │ Threads  │ Events             │
-├────────┴──────────┴─────────┴──────────┴────────────────────┤
+├────────┬──────────┬─────────┬──────────┬─────────┬──────────┤
+│Overview│ Imports  │ Files   │ Threads  │ Mutexes │ Events   │
+├────────┴──────────┴─────────┴──────────┴─────────┴──────────┤
 │                                                             │
 │  (Tab content area — see panels below)                      │
 │                                                             │
@@ -321,18 +321,31 @@ Live table of open file handles:
 
 - Shows only File-type handles (threads shown in Threads tab, other handle types in future tabs)
 - Grayed-out rows for closed handles (toggle to show/hide)
-- Future tabs can be added for Sockets, Events, Mutexes, Registry, etc.
+- Future tabs can be added for Sockets, Events, Registry, etc.
 
 #### 4. Threads
 
 | Thread ID | Handle | Entry Point | Status | Exit Code |
-|-----------|--------|-------------|--------|-----------|
+|-----------|--------|-------------|-----------|-----------|
 | 1 (main) | — | 0x140001000 | Running | — |
 | 2 | 0x1008 | 0x14000A000 | Exited | 0 |
 
 - TLS slot usage per thread
 
-#### 5. Events (Log)
+#### 5. Mutexes
+
+Live table of open mutex handles:
+
+| Handle | Name | Status |
+|--------|------|--------|
+| 0x2000 | MyAppMutex | Open |
+| 0x2004 | GlobalMutex | Closed |
+
+- Shows only Mutex-type handles
+- Grayed-out rows for closed handles (toggle to show/hide)
+- Displays mutex name/identifier from detail field
+
+#### 6. Events (Log)
 
 Chronological stream of all DevEvents, filterable by category:
 
