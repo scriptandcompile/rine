@@ -70,13 +70,20 @@ pub unsafe extern "win64" fn HeapCreate(
         allocations: Mutex::new(HashMap::new()),
         flags: options,
     };
-    handle_table().insert(HandleEntry::Heap(heap)).as_raw()
+    let h = handle_table().insert(HandleEntry::Heap(heap));
+    rine_types::dev_notify!(on_handle_created(
+        h.as_raw() as i64,
+        "Heap",
+        &format!("flags={options:#x}")
+    ));
+    h.as_raw()
 }
 
 /// HeapDestroy — destroy a private heap.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
     let handle = Handle::from_raw(heap_handle);
+    rine_types::dev_notify!(on_handle_closed(heap_handle as i64));
 
     // Don't allow destroying the default process heap.
     if heap_handle == DEFAULT_HEAP.as_raw() {

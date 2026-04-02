@@ -121,6 +121,11 @@ fn create_file_impl(win_path: &str, desired_access: u32, creation_disposition: u
 
     let h = handle_table().insert(HandleEntry::File(fd));
     tracing::debug!(handle = ?h, fd, path = %linux_path.display(), "CreateFile: opened");
+    rine_types::dev_notify!(on_handle_created(
+        h.as_raw() as i64,
+        "File",
+        &linux_path.display().to_string()
+    ));
     h.as_raw()
 }
 
@@ -197,6 +202,7 @@ pub unsafe extern "win64" fn WriteFile(
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
     let handle = Handle::from_raw(object);
+    rine_types::dev_notify!(on_handle_closed(object as i64));
 
     match handle_table().remove(handle) {
         Some(HandleEntry::File(fd)) => {
@@ -325,6 +331,7 @@ pub unsafe extern "win64" fn FindFirstFileA(
     unsafe { core::ptr::write(find_data, Win32FindDataA::from_entry(&entries[0])) };
 
     let h = handle_table().insert(HandleEntry::FindData(FindDataState { entries, cursor: 1 }));
+    rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "FindData", &path_str));
     h.as_raw()
 }
 
@@ -361,6 +368,7 @@ pub unsafe extern "win64" fn FindFirstFileW(
     unsafe { core::ptr::write(find_data, Win32FindDataW::from_entry(&entries[0])) };
 
     let h = handle_table().insert(HandleEntry::FindData(FindDataState { entries, cursor: 1 }));
+    rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "FindData", &path_str));
     h.as_raw()
 }
 

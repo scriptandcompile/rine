@@ -96,8 +96,13 @@ fn reg_open_key_impl(hkey: isize, sub_key: &str, result_key: *mut isize) -> u32 
     // Create a handle for this opened key.
     let handle = handle_table().insert(HandleEntry::RegistryKey(RegistryKeyState {
         root,
-        path: full_path,
+        path: full_path.clone(),
     }));
+    rine_types::dev_notify!(on_handle_created(
+        handle.as_raw() as i64,
+        "RegistryKey",
+        &full_path
+    ));
 
     unsafe { *result_key = handle.as_raw() };
     ERROR_SUCCESS
@@ -160,8 +165,13 @@ fn reg_create_key_impl(hkey: isize, sub_key: &str, result_key: *mut isize) -> u3
 
     let handle = handle_table().insert(HandleEntry::RegistryKey(RegistryKeyState {
         root,
-        path: full_path,
+        path: full_path.clone(),
     }));
+    rine_types::dev_notify!(on_handle_created(
+        handle.as_raw() as i64,
+        "RegistryKey",
+        &full_path
+    ));
 
     unsafe { *result_key = handle.as_raw() };
     ERROR_SUCCESS

@@ -248,5 +248,48 @@ fn apply_event(snap: &mut StateSnapshot, event: &DevEvent) {
             OutputStream::Stdout => snap.stdout.push_str(data),
             OutputStream::Stderr => snap.stderr.push_str(data),
         },
+        DevEvent::HandleCreated {
+            handle,
+            kind,
+            detail,
+        } => {
+            snap.handles.push(rine_dev_lib::HandleInfo {
+                handle: *handle,
+                kind: kind.clone(),
+                detail: detail.clone(),
+                closed: false,
+            });
+        }
+        DevEvent::HandleClosed { handle } => {
+            if let Some(h) = snap.handles.iter_mut().find(|h| h.handle == *handle) {
+                h.closed = true;
+            }
+        }
+        DevEvent::ThreadCreated {
+            handle,
+            thread_id,
+            entry_point,
+        } => {
+            snap.threads.push(rine_dev_lib::ThreadInfo {
+                handle: *handle,
+                thread_id: *thread_id,
+                entry_point: *entry_point,
+                exit_code: None,
+            });
+        }
+        DevEvent::ThreadExited {
+            thread_id,
+            exit_code,
+        } => {
+            if let Some(t) = snap.threads.iter_mut().find(|t| t.thread_id == *thread_id) {
+                t.exit_code = Some(*exit_code);
+            }
+        }
+        DevEvent::TlsAllocated { index } => {
+            snap.tls_slots.push(*index);
+        }
+        DevEvent::TlsFreed { index } => {
+            snap.tls_slots.retain(|i| i != index);
+        }
     }
 }

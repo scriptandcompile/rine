@@ -11,7 +11,7 @@ const { listen, invoke } = (function() {
 })();
 
 // ── State ──────────────────────────────────────────
-let state = { pe: null, config: null, imports: null, exited: null, exitCode: null, stdout: '', stderr: '' };
+let state = { pe: null, config: null, imports: null, exited: null, exitCode: null, stdout: '', stderr: '', handles: [], threads: [], tls_slots: [] };
 let events = [];
 let startTime = Date.now();
 
@@ -149,6 +149,67 @@ function applyImportFilter() {
   ).join('') || '<tr><td colspan="3" class="placeholder">No matching imports</td></tr>';
 }
 
+// ── Handles table ──────────────────────────────────
+function renderHandlesTable() {
+  const tbody = document.getElementById('handle-tbody');
+  const filterText = (document.getElementById('handle-filter').value || '').toLowerCase();
+  const hideClosed = document.getElementById('handle-hide-closed').checked;
+
+  const filtered = state.handles.filter(h => {
+    if (hideClosed && h.closed) return false;
+    if (filterText) {
+      return h.kind.toLowerCase().includes(filterText) ||
+             h.detail.toLowerCase().includes(filterText) ||
+             String(h.handle).includes(filterText);
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="placeholder">No matching handles</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(h =>
+    `<tr class="${h.closed ? 'row-closed' : ''}">
+      <td>${hex(h.handle)}</td>
+      <td>${esc(h.kind)}</td>
+      <td>${esc(h.detail)}</td>
+      <td class="${h.closed ? 'status-closed' : 'status-open'}">${h.closed ? 'Closed' : 'Open'}</td>
+    </tr>`
+  ).join('');
+}
+
+// ── Threads table ──────────────────────────────────
+function renderThreadsTable() {
+  const tbody = document.getElementById('thread-tbody');
+  const filterText = (document.getElementById('thread-filter').value || '').toLowerCase();
+
+  const filtered = state.threads.filter(t => {
+    if (filterText) {
+      return String(t.thread_id).includes(filterText) ||
+             hex(t.entry_point).toLowerCase().includes(filterText);
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="placeholder">No matching threads</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(t => {
+    const exited = t.exit_code != null;
+    return `<tr>
+      <td>${t.thread_id}</td>
+      <td>${hex(t.handle)}</td>
+      <td>${hex(t.entry_point)}</td>
+      <td class="${exited ? 'status-exited' : 'status-running'}">${exited ? 'Exited' : 'Running'}</td>
+      <td>${exited ? t.exit_code : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
 function addEventEntry(event) {
   const log = document.getElementById('event-log');
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(3);
@@ -168,6 +229,24 @@ function addEventEntry(event) {
       break;
     case 'ProcessExited':
       detail = `exit_code=${event.exit_code}`;
+      break;
+    case 'HandleCreated':
+      detail = `handle=${hex(event.handle)}  type=${event.kind}  detail=${event.detail}`;
+      break;
+    case 'HandleClosed':
+      detail = `handle=${hex(event.handle)}`;
+      break;
+    case 'ThreadCreated':
+      detail = `tid=${event.thread_id}  handle=${hex(event.handle)}  entry=${hex(event.entry_point)}`;
+      break;
+    case 'ThreadExited':
+      detail = `tid=${event.thread_id}  exit_code=${event.exit_code}`;
+      break;
+    case 'TlsAllocated':
+      detail = `index=${event.index}`;
+      break;
+    case 'TlsFreed':
+      detail = `index=${event.index}`;
       break;
     default:
       detail = JSON.stringify(event);
@@ -207,6 +286,14 @@ function updateStatusBar() {
     document.getElementById('stat-sections').textContent =
       `Sections: ${state.pe.sections.length}`;
   }
+
+  const openHandles = state.handles.filter(h => !h.closed).length;
+  document.getElementById('stat-handles').textContent =
+    `Handles: ${openHandles} open / ${state.handles.length} total`;
+
+  const runningThreads = state.threads.filter(t => t.exit_code == null).length;
+  document.getElementById('stat-threads').textContent =
+    `Threads: ${runningThreads} running / ${state.threads.length} total`;
 }
 
 function renderOutput(stream, text) {
@@ -261,6 +348,30 @@ function handleEvent(event) {
       state.exited = true;
       state.exitCode = event.exit_code;
       break;
+    case 'HandleCreated':
+      state.handles.push({ handle: event.handle, kind: event.kind, detail: event.detail, closed: false });
+      renderHandlesTable();
+      break;
+    case 'HandleClosed':
+      { const h = state.handles.find(h => h.handle === event.handle && !h.closed);
+        if (h) h.closed = true; }
+      renderHandlesTable();
+      break;
+    case 'ThreadCreated':
+      state.threads.push({ handle: event.handle, thread_id: event.thread_id, entry_point: event.entry_point, exit_code: null });
+      renderThreadsTable();
+      break;
+    case 'ThreadExited':
+      { const t = state.threads.find(t => t.thread_id === event.thread_id && t.exit_code == null);
+        if (t) t.exit_code = event.exit_code; }
+      renderThreadsTable();
+      break;
+    case 'TlsAllocated':
+      state.tls_slots.push(event.index);
+      break;
+    case 'TlsFreed':
+      state.tls_slots = state.tls_slots.filter(i => i !== event.index);
+      break;
     case 'OutputData':
       if (event.stream === 'Stdout') {
         state.stdout += event.data;
@@ -302,6 +413,9 @@ for (const btn of document.querySelectorAll('.output-tab')) {
 // Filter listeners
 document.getElementById('import-filter').addEventListener('input', applyImportFilter);
 document.getElementById('import-stubs-only').addEventListener('change', applyImportFilter);
+document.getElementById('handle-filter').addEventListener('input', renderHandlesTable);
+document.getElementById('handle-hide-closed').addEventListener('change', renderHandlesTable);
+document.getElementById('thread-filter').addEventListener('input', renderThreadsTable);
 document.getElementById('event-filter').addEventListener('input', () => {
   const filterText = document.getElementById('event-filter').value.toLowerCase();
   document.querySelectorAll('#event-log .event-entry').forEach(div => {
@@ -321,6 +435,9 @@ invoke('get_state').then(snap => {
   }
   if (snap.stdout) { state.stdout = snap.stdout; renderOutput('stdout', state.stdout); }
   if (snap.stderr) { state.stderr = snap.stderr; renderOutput('stderr', state.stderr); }
+  if (snap.handles && snap.handles.length) { state.handles = snap.handles; renderHandlesTable(); }
+  if (snap.threads && snap.threads.length) { state.threads = snap.threads; renderThreadsTable(); }
+  if (snap.tls_slots && snap.tls_slots.length) { state.tls_slots = snap.tls_slots; }
   updateStatusBar();
   updateStatusBadge();
 }).catch(() => {});

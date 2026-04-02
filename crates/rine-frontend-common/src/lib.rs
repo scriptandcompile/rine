@@ -14,13 +14,13 @@ pub const ASSETS: &[(&str, &str)] = &[("ansi.js", ANSI_JS)];
 /// Call this from your Tauri crate's `build.rs` **before** `tauri_build::build()`.
 ///
 /// ```no_run
+///
 /// // build.rs
-/// fn main() {
-///     rine_frontend_common::install_assets("frontend/dist");
-///     tauri_build::build();
-/// }
+///
+/// rine_frontend_common::install_assets("frontend/dist");
+/// tauri_build::build();
 /// ```
-pub fn install_assets(dest_dir: &str) {
+pub fn install_assets(_dest_dir: &str) {
     let out = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("crate has parent dir");
@@ -49,7 +49,10 @@ pub fn install_assets_to(manifest_dir: &str, dest_dir: &str) {
         };
         if needs_write {
             std::fs::write(&path, contents).unwrap_or_else(|e| {
-                panic!("failed to write shared asset {name} to {}: {e}", path.display())
+                panic!(
+                    "failed to write shared asset {name} to {}: {e}",
+                    path.display()
+                )
             });
         }
     }

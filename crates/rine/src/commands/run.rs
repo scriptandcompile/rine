@@ -21,12 +21,71 @@ use crate::subsys;
 
 /// Conditionally emits a dev event. Compiles to nothing without the `dev` feature.
 macro_rules! dev_emit {
-    ($channel:expr, $event:expr) => {
+    ($event:expr) => {
         #[cfg(feature = "dev")]
-        if let Some(ch) = $channel.as_mut() {
-            let _ = ch.send(&$event);
-        }
+        dev_send_event(&$event);
     };
+}
+
+/// Send a lifecycle DevEvent through the shared sender.
+#[cfg(feature = "dev")]
+fn dev_send_event(event: &rine_channel::DevEvent) {
+    if let Some(sender) = DEV_SENDER.get()
+        && let Ok(mut s) = sender.lock()
+    {
+        let _ = s.send(event);
+    }
+}
+
+/// Single shared sender used by both the ChannelDevHook (handle/thread
+/// events from DLL code) and the `dev_emit!` macro (lifecycle events).
+#[cfg(feature = "dev")]
+static DEV_SENDER: std::sync::OnceLock<std::sync::Mutex<rine_channel::DevSender>> =
+    std::sync::OnceLock::new();
+
+/// Bridge between the [`rine_types::dev_hooks::DevHook`] trait and the
+/// dev channel.  Installed as a global hook so that DLL implementations
+/// (kernel32, advapi32, …) can emit handle/thread/TLS events without
+/// depending on `rine-channel` directly.
+#[cfg(feature = "dev")]
+struct ChannelDevHook;
+
+#[cfg(feature = "dev")]
+impl rine_types::dev_hooks::DevHook for ChannelDevHook {
+    fn on_handle_created(&self, handle: i64, kind: &str, detail: &str) {
+        dev_send_event(&rine_channel::DevEvent::HandleCreated {
+            handle,
+            kind: kind.to_owned(),
+            detail: detail.to_owned(),
+        });
+    }
+
+    fn on_handle_closed(&self, handle: i64) {
+        dev_send_event(&rine_channel::DevEvent::HandleClosed { handle });
+    }
+
+    fn on_thread_created(&self, handle: i64, thread_id: u32, entry_point: u64) {
+        dev_send_event(&rine_channel::DevEvent::ThreadCreated {
+            handle,
+            thread_id,
+            entry_point,
+        });
+    }
+
+    fn on_thread_exited(&self, thread_id: u32, exit_code: u32) {
+        dev_send_event(&rine_channel::DevEvent::ThreadExited {
+            thread_id,
+            exit_code,
+        });
+    }
+
+    fn on_tls_allocated(&self, index: u32) {
+        dev_send_event(&rine_channel::DevEvent::TlsAllocated { index });
+    }
+
+    fn on_tls_freed(&self, index: u32) {
+        dev_send_event(&rine_channel::DevEvent::TlsFreed { index });
+    }
 }
 
 pub fn run(
@@ -36,20 +95,20 @@ pub fn run(
     info!(exe = %exe_path.display(), "loading PE");
 
     // ── Dev channel setup ──────────────────────────────────────────
-    #[cfg(feature = "dev")]
-    let mut dev_channel: Option<rine_channel::DevSender> = None;
     #[cfg(not(feature = "dev"))]
     let _dev_channel: Option<()> = None;
 
     // If RINE_DEV_SOCKET is set, rine-dev spawned us as a child process.
-    // Connect to its socket so we can send structured events (PeLoaded, etc.).
-    // stdout/stderr are already piped by rine-dev — no capture needed here.
+    // Connect to its socket so we can send structured events (PeLoaded, etc.)
+    // and install the global DevHook so DLL implementations can emit
+    // handle/thread/TLS events.
     #[cfg(feature = "dev")]
     if let Ok(socket_path) = std::env::var("RINE_DEV_SOCKET") {
         match rine_channel::DevSender::connect(std::path::Path::new(&socket_path)) {
             Ok(sender) => {
                 info!("connected to rine-dev dashboard");
-                dev_channel = Some(sender);
+                let _ = DEV_SENDER.set(std::sync::Mutex::new(sender));
+                let _ = rine_types::dev_hooks::set_dev_hook(Box::new(ChannelDevHook));
             }
             Err(e) => {
                 tracing::warn!("failed to connect to rine-dev: {e}");
@@ -66,18 +125,15 @@ pub fn run(
         "app config loaded"
     );
 
-    dev_emit!(
-        dev_channel,
-        rine_channel::DevEvent::ConfigLoaded {
-            config_path: mgr.config_path(exe_path).display().to_string(),
-            windows_version: app_config.windows_version.to_string(),
-            environment_overrides: app_config
-                .environment
-                .iter()
-                .map(|(k, v)| (k.clone(), v.clone()))
-                .collect(),
-        }
-    );
+    dev_emit!(rine_channel::DevEvent::ConfigLoaded {
+        config_path: mgr.config_path(exe_path).display().to_string(),
+        windows_version: app_config.windows_version.to_string(),
+        environment_overrides: app_config
+            .environment
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect(),
+    });
 
     // Inject environment overrides from the config.
     for (key, value) in &app_config.environment {
@@ -102,31 +158,28 @@ pub fn run(
         "image loaded"
     );
 
-    dev_emit!(
-        dev_channel,
-        rine_channel::DevEvent::PeLoaded {
-            exe_path: exe_path.display().to_string(),
-            image_base: image.base().as_usize() as u64,
-            image_size: image.size() as u64,
-            entry_rva: parsed.pe.entry as u64,
-            relocation_delta: image.base().as_usize() as i64 - parsed.pe.image_base as i64,
-            sections: parsed
-                .pe
-                .sections
-                .iter()
-                .map(|s| {
-                    rine_channel::SectionInfo {
-                        name: String::from_utf8_lossy(&s.name)
-                            .trim_end_matches('\0')
-                            .to_string(),
-                        virtual_address: s.virtual_address as u64,
-                        virtual_size: s.virtual_size as u64,
-                        characteristics: s.characteristics,
-                    }
-                })
-                .collect(),
-        }
-    );
+    dev_emit!(rine_channel::DevEvent::PeLoaded {
+        exe_path: exe_path.display().to_string(),
+        image_base: image.base().as_usize() as u64,
+        image_size: image.size() as u64,
+        entry_rva: parsed.pe.entry as u64,
+        relocation_delta: image.base().as_usize() as i64 - parsed.pe.image_base as i64,
+        sections: parsed
+            .pe
+            .sections
+            .iter()
+            .map(|s| {
+                rine_channel::SectionInfo {
+                    name: String::from_utf8_lossy(&s.name)
+                        .trim_end_matches('\0')
+                        .to_string(),
+                    virtual_address: s.virtual_address as u64,
+                    virtual_size: s.virtual_size as u64,
+                    characteristics: s.characteristics,
+                }
+            })
+            .collect(),
+    });
 
     // 3. Resolve imports (write function pointers into the IAT).
     let registry = DllRegistry::from_plugins(&[
@@ -155,26 +208,23 @@ pub fn run(
         }
     }
 
-    dev_emit!(
-        dev_channel,
-        rine_channel::DevEvent::ImportsResolved {
-            summaries: report
-                .dll_summaries
-                .iter()
-                .map(|d| {
-                    rine_channel::DllSummary {
-                        dll_name: d.dll_name.clone(),
-                        resolved: d.resolved,
-                        stubbed: d.stubbed,
-                        resolved_names: d.resolved_names.clone(),
-                        stubbed_names: d.stubbed_names.clone(),
-                    }
-                })
-                .collect(),
-            total_resolved: report.total_resolved,
-            total_stubbed: report.total_stubbed,
-        }
-    );
+    dev_emit!(rine_channel::DevEvent::ImportsResolved {
+        summaries: report
+            .dll_summaries
+            .iter()
+            .map(|d| {
+                rine_channel::DllSummary {
+                    dll_name: d.dll_name.clone(),
+                    resolved: d.resolved,
+                    stubbed: d.stubbed,
+                    resolved_names: d.resolved_names.clone(),
+                    stubbed_names: d.stubbed_names.clone(),
+                }
+            })
+            .collect(),
+        total_resolved: report.total_resolved,
+        total_stubbed: report.total_stubbed,
+    });
 
     // Also attempt delay-load imports (currently just warns if present).
     let _ = resolver::resolve_delay_imports(&image, &parsed.pe, &registry);
@@ -192,12 +242,7 @@ pub fn run(
     // 6. Execute the PE entry point.
     let exit_code = crate::loader::entry::execute(&image, &parsed)?;
 
-    dev_emit!(
-        dev_channel,
-        rine_channel::DevEvent::ProcessExited {
-            exit_code: exit_code,
-        }
-    );
+    dev_emit!(rine_channel::DevEvent::ProcessExited { exit_code });
 
     std::process::exit(exit_code);
 }

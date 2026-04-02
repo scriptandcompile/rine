@@ -158,6 +158,15 @@ pub unsafe extern "win64" fn CreateEventA(
     };
     let h = handle_table().insert(HandleEntry::Event(waitable));
     debug!(?h, "CreateEventA");
+    rine_types::dev_notify!(on_handle_created(
+        h.as_raw() as i64,
+        "Event",
+        if manual_reset.is_true() {
+            "manual-reset"
+        } else {
+            "auto-reset"
+        }
+    ));
     h.as_raw()
 }
 
@@ -178,6 +187,15 @@ pub unsafe extern "win64" fn CreateEventW(
     };
     let h = handle_table().insert(HandleEntry::Event(waitable));
     debug!(?h, "CreateEventW");
+    rine_types::dev_notify!(on_handle_created(
+        h.as_raw() as i64,
+        "Event",
+        if manual_reset.is_true() {
+            "manual-reset"
+        } else {
+            "auto-reset"
+        }
+    ));
     h.as_raw()
 }
 
@@ -263,6 +281,15 @@ fn create_mutex_impl(initial_owner: WinBool, tag: &str) -> isize {
     };
     let h = handle_table().insert(HandleEntry::Mutex(waitable));
     debug!(?h, tag);
+    rine_types::dev_notify!(on_handle_created(
+        h.as_raw() as i64,
+        "Mutex",
+        if initial_owner.is_true() {
+            "initially-owned"
+        } else {
+            "unowned"
+        }
+    ));
     h.as_raw()
 }
 
@@ -347,6 +374,11 @@ fn create_semaphore_impl(initial_count: i32, maximum_count: i32, tag: &str) -> i
     };
     let h = handle_table().insert(HandleEntry::Semaphore(waitable));
     debug!(?h, tag);
+    rine_types::dev_notify!(on_handle_created(
+        h.as_raw() as i64,
+        "Semaphore",
+        &format!("initial={initial_count}, max={maximum_count}")
+    ));
     h.as_raw()
 }
 

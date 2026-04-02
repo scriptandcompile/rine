@@ -16,6 +16,8 @@
     <nav class="tabs">
       <button class="tab active" data-tab="overview">Overview</button>
       <button class="tab" data-tab="imports">Imports</button>
+      <button class="tab" data-tab="handles">Handles</button>
+      <button class="tab" data-tab="threads">Threads</button>
       <button class="tab" data-tab="events">Events</button>
       <button class="tab" data-tab="output">Output</button>
     </nav>
@@ -81,6 +83,54 @@
       </div>
     </section>
 
+    <!-- Handles Tab -->
+    <section id="tab-handles" class="tab-content">
+      <div class="toolbar">
+        <input type="text" id="handle-filter" placeholder="Filter by type or detail…">
+        <label class="filter-label">
+          <input type="checkbox" id="handle-hide-closed"> Hide closed
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table id="handle-table">
+          <thead>
+            <tr>
+              <th>Handle</th>
+              <th>Type</th>
+              <th>Detail</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="handle-tbody">
+            <tr><td colspan="4" class="placeholder">No handles yet…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Threads Tab -->
+    <section id="tab-threads" class="tab-content">
+      <div class="toolbar">
+        <input type="text" id="thread-filter" placeholder="Filter threads…">
+      </div>
+      <div class="table-wrap">
+        <table id="thread-table">
+          <thead>
+            <tr>
+              <th>TID</th>
+              <th>Handle</th>
+              <th>Entry Point</th>
+              <th>Status</th>
+              <th>Exit Code</th>
+            </tr>
+          </thead>
+          <tbody id="thread-tbody">
+            <tr><td colspan="5" class="placeholder">No threads yet…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- Events Tab -->
     <section id="tab-events" class="tab-content">
       <div class="toolbar">
@@ -106,6 +156,8 @@
       <span id="stat-status">Status: waiting</span>
       <span id="stat-imports">Imports: —</span>
       <span id="stat-sections">Sections: —</span>
+      <span id="stat-handles">Handles: —</span>
+      <span id="stat-threads">Threads: —</span>
     </footer>
   </div>
 

@@ -104,8 +104,31 @@ pub unsafe extern "win64" fn CreateThread(
     let exit_code = Arc::new(AtomicU32::new(STILL_ACTIVE));
     let completed = Arc::new((Mutex::new(false), Condvar::new()));
 
-    let exit_code_child = Arc::clone(&exit_code);
-    let completed_child = Arc::clone(&completed);
+    // Allocate tid before spawn so the closure can capture it.
+    let tid = NEXT_THREAD_ID.fetch_add(1, Ordering::Relaxed);
+
+    // Insert the handle and fire dev notifications BEFORE spawning, so
+    // ThreadCreated is always sent before the child can fire ThreadExited.
+    let waitable = ThreadWaitable {
+        exit_code: Arc::clone(&exit_code),
+        completed: Arc::clone(&completed),
+    };
+    let h = handle_table().insert(HandleEntry::Thread(waitable));
+    debug!(?h, tid, "created thread");
+    rine_types::dev_notify!(on_handle_created(
+        h.as_raw() as i64,
+        "Thread",
+        &format!("tid={tid}")
+    ));
+    rine_types::dev_notify!(on_thread_created(
+        h.as_raw() as i64,
+        tid,
+        start_address as u64
+    ));
+
+    if !thread_id_out.is_null() {
+        unsafe { ptr::write(thread_id_out, tid) };
+    }
 
     let result = std::thread::Builder::new().spawn(move || {
         // TEB setup for this thread.
@@ -116,35 +139,26 @@ pub unsafe extern "win64" fn CreateThread(
         let code = unsafe { start_fn(parameter) };
 
         // Record exit code and wake any waiters.
-        exit_code_child.store(code, Ordering::Release);
-        let (lock, cvar) = &*completed_child;
+        exit_code.store(code, Ordering::Release);
+        let (lock, cvar) = &*completed;
         *lock.lock().unwrap() = true;
         cvar.notify_all();
 
+        rine_types::dev_notify!(on_thread_exited(tid, code));
         debug!(exit_code = code, "child thread exited");
     });
 
     match result {
-        Ok(handle) => {
-            let tid = NEXT_THREAD_ID.fetch_add(1, Ordering::Relaxed);
-            if !thread_id_out.is_null() {
-                unsafe { ptr::write(thread_id_out, tid) };
-            }
-
+        Ok(join_handle) => {
             // The JoinHandle is dropped (detached).  We track the thread
             // exclusively through the Arc-backed waitable state.
-            drop(handle);
-
-            let waitable = ThreadWaitable {
-                exit_code,
-                completed,
-            };
-            let h = handle_table().insert(HandleEntry::Thread(waitable));
-            debug!(?h, tid, "created thread");
+            drop(join_handle);
             h.as_raw()
         }
         Err(e) => {
             warn!("CreateThread: spawn failed: {e}");
+            // Clean up the handle we pre-registered.
+            handle_table().remove(h);
             INVALID_HANDLE_VALUE.as_raw()
         }
     }
@@ -158,6 +172,7 @@ pub unsafe extern "win64" fn TlsAlloc() -> u32 {
     match threading::tls_alloc() {
         Some(idx) => {
             debug!(index = idx, "TlsAlloc");
+            rine_types::dev_notify!(on_tls_allocated(idx));
             idx
         }
         None => {
@@ -171,6 +186,7 @@ pub unsafe extern "win64" fn TlsAlloc() -> u32 {
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn TlsFree(tls_index: u32) -> WinBool {
     if threading::tls_free(tls_index) {
+        rine_types::dev_notify!(on_tls_freed(tls_index));
         WinBool::TRUE
     } else {
         WinBool::FALSE

@@ -308,6 +308,17 @@ fn do_create_process(
     let proc_handle = handle_table().insert(HandleEntry::Process(waitable.clone()));
     let thread_handle = handle_table().insert(HandleEntry::Process(waitable));
 
+    rine_types::dev_notify!(on_handle_created(
+        proc_handle.as_raw() as i64,
+        "Process",
+        &format!("pid={pid}, exe={exe_path}")
+    ));
+    rine_types::dev_notify!(on_handle_created(
+        thread_handle.as_raw() as i64,
+        "Process",
+        &format!("pid={pid}, primary thread handle")
+    ));
+
     if !proc_info.is_null() {
         unsafe {
             (*proc_info).process = proc_handle.as_raw();

@@ -30,6 +30,31 @@ pub enum DevEvent {
         total_resolved: usize,
         total_stubbed: usize,
     },
+    // ── Handle & thread tracking (phase 2) ───────────────────────
+    HandleCreated {
+        handle: i64,
+        kind: String,
+        detail: String,
+    },
+    HandleClosed {
+        handle: i64,
+    },
+    ThreadCreated {
+        handle: i64,
+        thread_id: u32,
+        entry_point: u64,
+    },
+    ThreadExited {
+        thread_id: u32,
+        exit_code: u32,
+    },
+    TlsAllocated {
+        index: u32,
+    },
+    TlsFreed {
+        index: u32,
+    },
+    // ── Lifecycle ────────────────────────────────────────────────
     ProcessExited {
         exit_code: i32,
     },

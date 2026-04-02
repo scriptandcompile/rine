@@ -243,6 +243,37 @@ body {
 .status-resolved { color: var(--success); }
 .status-stub { color: var(--danger); }
 
+/* Handle & Thread tables */
+#handle-table,
+#thread-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+#handle-table th,
+#thread-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+#handle-table td,
+#thread-table td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.status-open { color: var(--success); }
+.status-closed { color: var(--text-muted); }
+.status-running { color: var(--success); }
+.status-exited { color: var(--warning); }
+tr.row-closed td { opacity: 0.5; }
+
 /* Events log */
 .event-log {
   flex: 1;
