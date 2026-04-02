@@ -7,6 +7,7 @@ pub mod os;
 pub mod registry;
 pub mod strings;
 pub mod threading;
+pub mod windows;
 
 #[cfg(feature = "config")]
 pub mod config;

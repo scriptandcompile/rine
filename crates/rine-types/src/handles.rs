@@ -17,6 +17,7 @@ use crate::registry::RegistryKeyState;
 use crate::threading::{
     EventWaitable, MutexWaitable, ProcessWaitable, SemaphoreWaitable, ThreadWaitable, Waitable,
 };
+use crate::windows::Hwnd;
 
 // ---------------------------------------------------------------------------
 // Heap state (for HeapCreate handles)
@@ -152,6 +153,8 @@ pub enum HandleEntry {
     Heap(HeapState),
     /// A registry key opened by `RegOpenKeyEx` / `RegCreateKeyEx`.
     RegistryKey(RegistryKeyState),
+    /// A window created by `CreateWindow`.
+    Window(Hwnd),
 }
 
 /// State kept for an active `FindFirstFile`/`FindNextFile` session.
@@ -288,6 +291,16 @@ impl HandleTable {
         let inner = self.inner.lock().unwrap();
         match inner.map.get(&h.as_raw()) {
             Some(HandleEntry::RegistryKey(state)) => Some(f(state)),
+            _ => None,
+        }
+    }
+
+    /// Get the HWND for a window handle.
+    /// Returns `None` if the handle doesn't exist or isn't a Window handle.
+    pub fn get_hwnd(&self, h: Handle) -> Option<Hwnd> {
+        let inner = self.inner.lock().unwrap();
+        match inner.map.get(&h.as_raw()) {
+            Some(HandleEntry::Window(hwnd)) => Some(*hwnd),
             _ => None,
         }
     }

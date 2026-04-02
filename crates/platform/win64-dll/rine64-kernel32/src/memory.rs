@@ -101,6 +101,10 @@ pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
             }
             WinBool::TRUE
         }
+        Some(HandleEntry::Window(_)) => {
+            // Window handles should not be destroyed via HeapDestroy.
+            WinBool::FALSE
+        }
         Some(other) => {
             // Put it back — wasn't a heap handle.
             handle_table().insert(other);

@@ -6,7 +6,7 @@ use std::sync::OnceLock;
 
 use rine_types::environment;
 use rine_types::errors::WinBool;
-use rine_types::strings::{read_cstr, read_wstr, write_ansi, write_wide};
+use rine_types::strings::{read_cstr, read_wstr, write_cstr, write_wstr};
 use tracing::debug;
 
 // ---------------------------------------------------------------------------
@@ -36,7 +36,7 @@ pub unsafe extern "win64" fn GetEnvironmentVariableA(
     debug!(name = %var_name, "GetEnvironmentVariableA");
 
     match environment::get_var(&var_name) {
-        Some(val) => unsafe { write_ansi(buffer, size, &val) },
+        Some(val) => unsafe { write_cstr(buffer, size, &val) },
         None => 0,
     }
 }
@@ -60,7 +60,7 @@ pub unsafe extern "win64" fn GetEnvironmentVariableW(
     debug!(name = %var_name, "GetEnvironmentVariableW");
 
     match environment::get_var(&var_name) {
-        Some(val) => unsafe { write_wide(buffer, size, &val) },
+        Some(val) => unsafe { write_wstr(buffer, size, &val) },
         None => 0,
     }
 }

@@ -225,6 +225,10 @@ pub unsafe extern "win64" fn NtClose(object_handle: isize) -> u32 {
         Some(HandleEntry::Semaphore(_)) => NtStatus::SUCCESS.0,
         Some(HandleEntry::Heap(_)) => NtStatus::SUCCESS.0,
         Some(HandleEntry::RegistryKey(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::Window(_)) => {
+            // Window handles should not be closed via NtClose.
+            NtStatus::INVALID_HANDLE.0
+        }
         None => {
             tracing::warn!(handle = object_handle, "NtClose: unknown handle");
             NtStatus::INVALID_HANDLE.0

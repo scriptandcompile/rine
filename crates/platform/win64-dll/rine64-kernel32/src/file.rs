@@ -223,6 +223,11 @@ pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
         Some(HandleEntry::Semaphore(_)) => WinBool::TRUE,
         Some(HandleEntry::Heap(_)) => WinBool::TRUE,
         Some(HandleEntry::RegistryKey(_)) => WinBool::TRUE,
+        Some(HandleEntry::Window(_)) => {
+            // Window handles are managed by user32, not kernel32.
+            // They should not be closed via CloseHandle.
+            WinBool::FALSE
+        }
         None => {
             tracing::warn!(?handle, "CloseHandle: unknown handle");
             WinBool::FALSE
