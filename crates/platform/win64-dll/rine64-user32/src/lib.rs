@@ -59,7 +59,7 @@ impl DllPlugin for User32Plugin {
 // ---------------------------------------------------------------------------
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn register_class_a(wc: *const WndClassExA) -> u16 {
+unsafe extern "win64" fn register_class_a(wc: *const WndClassExA) -> u16 {
     if wc.is_null() {
         return 0;
     }
@@ -91,7 +91,7 @@ unsafe extern "C" fn register_class_a(wc: *const WndClassExA) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn register_class_w(wc: *const WndClassExW) -> u16 {
+unsafe extern "win64" fn register_class_w(wc: *const WndClassExW) -> u16 {
     if wc.is_null() {
         return 0;
     }
@@ -123,17 +123,17 @@ unsafe extern "C" fn register_class_w(wc: *const WndClassExW) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn register_class_ex_a(wc: *const WndClassExA) -> u16 {
+unsafe extern "win64" fn register_class_ex_a(wc: *const WndClassExA) -> u16 {
     register_class_a(wc)
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn register_class_ex_w(wc: *const WndClassExW) -> u16 {
+unsafe extern "win64" fn register_class_ex_w(wc: *const WndClassExW) -> u16 {
     register_class_w(wc)
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn unregister_class_a(class_name: *const u8, _h_instance: usize) -> i32 {
+unsafe extern "win64" fn unregister_class_a(class_name: *const u8, _h_instance: usize) -> i32 {
     let name = read_cstr(class_name).unwrap_or_default();
     if WINDOW_CLASS_REGISTRY.unregister(&name) {
         1
@@ -143,7 +143,7 @@ unsafe extern "C" fn unregister_class_a(class_name: *const u8, _h_instance: usiz
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn unregister_class_w(class_name: *const u16, _h_instance: usize) -> i32 {
+unsafe extern "win64" fn unregister_class_w(class_name: *const u16, _h_instance: usize) -> i32 {
     let name = read_wstr(class_name).unwrap_or_default();
     if WINDOW_CLASS_REGISTRY.unregister(&name) {
         1
@@ -157,7 +157,7 @@ unsafe extern "C" fn unregister_class_w(class_name: *const u16, _h_instance: usi
 // ---------------------------------------------------------------------------
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn create_window_ex_a(
+unsafe extern "win64" fn create_window_ex_a(
     ex_style: u32,
     class_name: *const u8,
     window_name: *const u8,
@@ -214,7 +214,7 @@ unsafe extern "C" fn create_window_ex_a(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn create_window_ex_w(
+unsafe extern "win64" fn create_window_ex_w(
     ex_style: u32,
     class_name: *const u16,
     window_name: *const u16,
@@ -267,7 +267,7 @@ unsafe extern "C" fn create_window_ex_w(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn destroy_window(hwnd: usize) -> i32 {
+unsafe extern "win64" fn destroy_window(hwnd: usize) -> i32 {
     let hwnd = Hwnd::from_raw(hwnd);
 
     // TODO: Call WndProc with WM_DESTROY
@@ -285,7 +285,7 @@ unsafe extern "C" fn destroy_window(hwnd: usize) -> i32 {
 // ---------------------------------------------------------------------------
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn show_window(hwnd: usize, cmd_show: i32) -> i32 {
+unsafe extern "win64" fn show_window(hwnd: usize, cmd_show: i32) -> i32 {
     let hwnd = Hwnd::from_raw(hwnd);
 
     // Get the old visibility state and update based on command
@@ -322,7 +322,7 @@ unsafe extern "C" fn show_window(hwnd: usize, cmd_show: i32) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn update_window(_hwnd: usize) -> i32 {
+unsafe extern "win64" fn update_window(_hwnd: usize) -> i32 {
     // TODO: Force a WM_PAINT message and process it immediately
     // For now, just succeed
     1
@@ -333,7 +333,7 @@ unsafe extern "C" fn update_window(_hwnd: usize) -> i32 {
 // ---------------------------------------------------------------------------
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn get_message_a(
+unsafe extern "win64" fn get_message_a(
     msg: *mut Msg,
     _hwnd: usize,
     _msg_filter_min: u32,
@@ -353,7 +353,7 @@ unsafe extern "C" fn get_message_a(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn get_message_w(
+unsafe extern "win64" fn get_message_w(
     msg: *mut Msg,
     hwnd: usize,
     msg_filter_min: u32,
@@ -363,7 +363,7 @@ unsafe extern "C" fn get_message_w(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn peek_message_a(
+unsafe extern "win64" fn peek_message_a(
     msg: *mut Msg,
     _hwnd: usize,
     _msg_filter_min: u32,
@@ -386,7 +386,7 @@ unsafe extern "C" fn peek_message_a(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn peek_message_w(
+unsafe extern "win64" fn peek_message_w(
     msg: *mut Msg,
     hwnd: usize,
     msg_filter_min: u32,
@@ -397,7 +397,7 @@ unsafe extern "C" fn peek_message_w(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn translate_message(_msg: *const Msg) -> i32 {
+unsafe extern "win64" fn translate_message(_msg: *const Msg) -> i32 {
     // In a full implementation, this would translate virtual-key messages
     // (WM_KEYDOWN, WM_KEYUP) into character messages (WM_CHAR).
     // For now, just return success.
@@ -405,7 +405,7 @@ unsafe extern "C" fn translate_message(_msg: *const Msg) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn dispatch_message_a(msg: *const Msg) -> isize {
+unsafe extern "win64" fn dispatch_message_a(msg: *const Msg) -> isize {
     if msg.is_null() {
         return 0;
     }
@@ -423,27 +423,31 @@ unsafe extern "C" fn dispatch_message_a(msg: *const Msg) -> isize {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn dispatch_message_w(msg: *const Msg) -> isize {
+unsafe extern "win64" fn dispatch_message_w(msg: *const Msg) -> isize {
     dispatch_message_a(msg)
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn post_quit_message(exit_code: i32) {
+unsafe extern "win64" fn post_quit_message(exit_code: i32) {
     THREAD_MESSAGE_QUEUE.with(|queue| {
         queue.post_quit(exit_code);
     });
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn post_message_a(hwnd: usize, msg: u32, w_param: usize, l_param: isize) -> i32 {
+unsafe extern "win64" fn post_message_a(
+    hwnd: usize,
+    msg: u32,
+    w_param: usize,
+    l_param: isize,
+) -> i32 {
     let message = Msg {
         hwnd: Hwnd::from_raw(hwnd),
         message: msg,
         w_param,
         l_param,
         time: 0, // TODO: GetTickCount
-        pt_x: 0,
-        pt_y: 0,
+        pt: Point { x: 0, y: 0 },
     };
 
     THREAD_MESSAGE_QUEUE.with(|queue| {
@@ -454,12 +458,17 @@ unsafe extern "C" fn post_message_a(hwnd: usize, msg: u32, w_param: usize, l_par
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn post_message_w(hwnd: usize, msg: u32, w_param: usize, l_param: isize) -> i32 {
+unsafe extern "win64" fn post_message_w(
+    hwnd: usize,
+    msg: u32,
+    w_param: usize,
+    l_param: isize,
+) -> i32 {
     post_message_a(hwnd, msg, w_param, l_param)
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn send_message_a(
+unsafe extern "win64" fn send_message_a(
     hwnd: usize,
     msg: u32,
     w_param: usize,
@@ -478,7 +487,7 @@ unsafe extern "C" fn send_message_a(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn send_message_w(
+unsafe extern "win64" fn send_message_w(
     hwnd: usize,
     msg: u32,
     w_param: usize,
@@ -488,7 +497,7 @@ unsafe extern "C" fn send_message_w(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn def_window_proc_a(
+unsafe extern "win64" fn def_window_proc_a(
     _hwnd: usize,
     _msg: u32,
     _w_param: usize,
@@ -501,7 +510,7 @@ unsafe extern "C" fn def_window_proc_a(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn def_window_proc_w(
+unsafe extern "win64" fn def_window_proc_w(
     hwnd: usize,
     msg: u32,
     w_param: usize,
@@ -515,7 +524,7 @@ unsafe extern "C" fn def_window_proc_w(
 // ---------------------------------------------------------------------------
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn set_window_text_a(hwnd: usize, text: *const u8) -> i32 {
+unsafe extern "win64" fn set_window_text_a(hwnd: usize, text: *const u8) -> i32 {
     let hwnd = Hwnd::from_raw(hwnd);
     let text_str = read_cstr(text).unwrap_or_default();
 
@@ -529,7 +538,7 @@ unsafe extern "C" fn set_window_text_a(hwnd: usize, text: *const u8) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn set_window_text_w(hwnd: usize, text: *const u16) -> i32 {
+unsafe extern "win64" fn set_window_text_w(hwnd: usize, text: *const u16) -> i32 {
     let hwnd = Hwnd::from_raw(hwnd);
     let text_str = read_wstr(text).unwrap_or_default();
 
@@ -541,7 +550,7 @@ unsafe extern "C" fn set_window_text_w(hwnd: usize, text: *const u16) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn get_window_text_a(hwnd: usize, buffer: *mut u8, max_count: i32) -> i32 {
+unsafe extern "win64" fn get_window_text_a(hwnd: usize, buffer: *mut u8, max_count: i32) -> i32 {
     if buffer.is_null() || max_count <= 0 {
         return 0;
     }
@@ -563,7 +572,7 @@ unsafe extern "C" fn get_window_text_a(hwnd: usize, buffer: *mut u8, max_count: 
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn get_window_text_w(hwnd: usize, buffer: *mut u16, max_count: i32) -> i32 {
+unsafe extern "win64" fn get_window_text_w(hwnd: usize, buffer: *mut u16, max_count: i32) -> i32 {
     if buffer.is_null() || max_count <= 0 {
         return 0;
     }
@@ -585,7 +594,7 @@ unsafe extern "C" fn get_window_text_w(hwnd: usize, buffer: *mut u16, max_count:
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn get_window_text_length_a(hwnd: usize) -> i32 {
+unsafe extern "win64" fn get_window_text_length_a(hwnd: usize) -> i32 {
     let hwnd = Hwnd::from_raw(hwnd);
 
     match WINDOW_MANAGER.get_window(hwnd) {
@@ -595,7 +604,7 @@ unsafe extern "C" fn get_window_text_length_a(hwnd: usize) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn get_window_text_length_w(hwnd: usize) -> i32 {
+unsafe extern "win64" fn get_window_text_length_w(hwnd: usize) -> i32 {
     let hwnd = Hwnd::from_raw(hwnd);
 
     match WINDOW_MANAGER.get_window(hwnd) {

@@ -378,8 +378,15 @@ pub struct Msg {
     pub w_param: usize,
     pub l_param: isize,
     pub time: u32,
-    pub pt_x: i32,
-    pub pt_y: i32,
+    pub pt: Point,
+}
+
+/// The Windows POINT structure.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Point {
+    pub x: i32,
+    pub y: i32,
 }
 
 // ---------------------------------------------------------------------------
@@ -438,13 +445,6 @@ pub struct Rect {
 // ---------------------------------------------------------------------------
 // POINT structure
 // ---------------------------------------------------------------------------
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Point {
-    pub x: i32,
-    pub y: i32,
-}
 
 // ---------------------------------------------------------------------------
 // Window Class Storage
@@ -631,10 +631,10 @@ impl MessageQueue {
                 return false;
             }
 
-            // Check for pending messages
+            // Check for pending messages - retrieve from front of queue (FIFO)
             let mut messages = self.messages.lock().unwrap();
-            if let Some(m) = messages.pop() {
-                *msg = m;
+            if !messages.is_empty() {
+                *msg = messages.remove(0);
                 return true;
             }
 
@@ -653,16 +653,16 @@ impl MessageQueue {
         }
 
         let mut messages = self.messages.lock().unwrap();
-        if let Some(m) = if remove {
-            messages.pop()
-        } else {
-            messages.last().copied()
-        } {
-            *msg = m;
-            true
-        } else {
-            false
+        if messages.is_empty() {
+            return false;
         }
+
+        // Treat messages as a FIFO queue: read/remove from the front
+        *msg = messages[0];
+        if remove {
+            messages.remove(0);
+        }
+        true
     }
 }
 
@@ -686,4 +686,281 @@ pub static WINDOW_MANAGER: LazyLock<Arc<WindowManager>> =
 
 thread_local! {
     pub static THREAD_MESSAGE_QUEUE: MessageQueue = MessageQueue::new();
+}
+
+// ---------------------------------------------------------------------------
+// Unit Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── Hwnd ──────────────────────────────────────────────────────
+
+    #[test]
+    fn hwnd_null() {
+        assert!(Hwnd::NULL.is_null());
+        assert_eq!(Hwnd::NULL.as_raw(), 0);
+    }
+
+    #[test]
+    fn hwnd_from_raw() {
+        let hwnd = Hwnd::from_raw(0x1234);
+        assert_eq!(hwnd.as_raw(), 0x1234);
+        assert!(!hwnd.is_null());
+    }
+
+    // ── WindowClassRegistry ────────────────────────────────────────
+
+    #[test]
+    fn window_class_register_and_get() {
+        let registry = WindowClassRegistry::new();
+        let class = WindowClass {
+            name: "TestClass".into(),
+            style: class_style::CS_HREDRAW | class_style::CS_VREDRAW,
+            wnd_proc: 0x1000,
+            cls_extra: 0,
+            wnd_extra: 0,
+            instance: 0,
+            icon: 0,
+            cursor: 0,
+            background: 0,
+            menu_name: None,
+            icon_sm: 0,
+        };
+
+        registry.register("TestClass".into(), class.clone());
+        let retrieved = registry.get("TestClass").unwrap();
+        assert_eq!(retrieved.name, "TestClass");
+        assert_eq!(
+            retrieved.style,
+            class_style::CS_HREDRAW | class_style::CS_VREDRAW
+        );
+        assert_eq!(retrieved.wnd_proc, 0x1000);
+    }
+
+    #[test]
+    fn window_class_get_nonexistent() {
+        let registry = WindowClassRegistry::new();
+        assert!(registry.get("NonExistent").is_none());
+    }
+
+    #[test]
+    fn window_class_unregister() {
+        let registry = WindowClassRegistry::new();
+        let class = WindowClass {
+            name: "TempClass".into(),
+            style: 0,
+            wnd_proc: 0x2000,
+            cls_extra: 0,
+            wnd_extra: 0,
+            instance: 0,
+            icon: 0,
+            cursor: 0,
+            background: 0,
+            menu_name: None,
+            icon_sm: 0,
+        };
+
+        registry.register("TempClass".into(), class);
+        assert!(registry.get("TempClass").is_some());
+
+        assert!(registry.unregister("TempClass"));
+        assert!(registry.get("TempClass").is_none());
+        assert!(!registry.unregister("TempClass")); // Second unregister fails
+    }
+
+    // ── WindowManager ──────────────────────────────────────────────
+
+    #[test]
+    fn window_manager_create_window() {
+        let manager = WindowManager::new();
+        let state = WindowState {
+            hwnd: Hwnd::NULL,
+            class_name: "TestClass".into(),
+            title: "Test Window".into(),
+            style: window_style::WS_OVERLAPPEDWINDOW,
+            ex_style: 0,
+            rect: Rect {
+                left: 100,
+                top: 100,
+                right: 500,
+                bottom: 400,
+            },
+            client_rect: Rect {
+                left: 0,
+                top: 0,
+                right: 400,
+                bottom: 300,
+            },
+            parent: Hwnd::NULL,
+            visible: true,
+            enabled: true,
+            wnd_proc: 0x3000,
+            user_data: 0,
+        };
+
+        let hwnd = manager.create_window(state);
+        assert!(!hwnd.is_null());
+
+        let retrieved = manager.get_window(hwnd).unwrap();
+        assert_eq!(retrieved.title, "Test Window");
+        assert_eq!(retrieved.class_name, "TestClass");
+        assert_eq!(retrieved.wnd_proc, 0x3000);
+    }
+
+    #[test]
+    fn window_manager_update_window() {
+        let manager = WindowManager::new();
+        let state = WindowState {
+            hwnd: Hwnd::NULL,
+            class_name: "TestClass".into(),
+            title: "Original".into(),
+            style: window_style::WS_OVERLAPPEDWINDOW,
+            ex_style: 0,
+            rect: Rect::default(),
+            client_rect: Rect::default(),
+            parent: Hwnd::NULL,
+            visible: false,
+            enabled: true,
+            wnd_proc: 0,
+            user_data: 0,
+        };
+
+        let hwnd = manager.create_window(state);
+
+        let updated = manager.update_window(hwnd, |state| {
+            state.title = "Updated".into();
+            state.visible = true;
+        });
+        assert!(updated);
+
+        let retrieved = manager.get_window(hwnd).unwrap();
+        assert_eq!(retrieved.title, "Updated");
+        assert!(retrieved.visible);
+    }
+
+    #[test]
+    fn window_manager_destroy_window() {
+        let manager = WindowManager::new();
+        let state = WindowState {
+            hwnd: Hwnd::NULL,
+            class_name: "TestClass".into(),
+            title: "Temp".into(),
+            style: 0,
+            ex_style: 0,
+            rect: Rect::default(),
+            client_rect: Rect::default(),
+            parent: Hwnd::NULL,
+            visible: false,
+            enabled: true,
+            wnd_proc: 0,
+            user_data: 0,
+        };
+
+        let hwnd = manager.create_window(state);
+        assert!(manager.get_window(hwnd).is_some());
+
+        assert!(manager.destroy_window(hwnd));
+        assert!(manager.get_window(hwnd).is_none());
+        assert!(!manager.destroy_window(hwnd)); // Second destroy fails
+    }
+
+    // ── MessageQueue ───────────────────────────────────────────────
+
+    #[test]
+    fn message_queue_post_and_peek() {
+        let queue = MessageQueue::new();
+        let msg = Msg {
+            hwnd: Hwnd::from_raw(0x1000),
+            message: window_message::WM_PAINT,
+            w_param: 0,
+            l_param: 0,
+            time: 1000,
+            pt: Point { x: 10, y: 20 },
+        };
+
+        queue.post_message(msg);
+
+        let mut retrieved = Msg {
+            hwnd: Hwnd::NULL,
+            message: 0,
+            w_param: 0,
+            l_param: 0,
+            time: 0,
+            pt: Point { x: 0, y: 0 },
+        };
+
+        assert!(queue.peek_message(&mut retrieved, false)); // Don't remove
+        assert_eq!(retrieved.message, window_message::WM_PAINT);
+        assert_eq!(retrieved.hwnd.as_raw(), 0x1000);
+
+        assert!(queue.peek_message(&mut retrieved, true)); // Remove
+        assert!(!queue.peek_message(&mut retrieved, false)); // Now empty
+    }
+
+    #[test]
+    fn message_queue_post_quit() {
+        let queue = MessageQueue::new();
+        queue.post_quit(42);
+
+        let mut msg = Msg {
+            hwnd: Hwnd::NULL,
+            message: 0,
+            w_param: 0,
+            l_param: 0,
+            time: 0,
+            pt: Point { x: 0, y: 0 },
+        };
+
+        assert!(queue.peek_message(&mut msg, false));
+        assert_eq!(msg.message, window_message::WM_QUIT);
+        assert_eq!(msg.w_param, 42);
+    }
+
+    // ── Window Styles & Constants ──────────────────────────────────
+
+    #[test]
+    fn window_style_overlapped_window() {
+        let style = window_style::WS_OVERLAPPEDWINDOW;
+        assert!(style & window_style::WS_CAPTION != 0);
+        assert!(style & window_style::WS_SYSMENU != 0);
+        assert!(style & window_style::WS_THICKFRAME != 0);
+    }
+
+    #[test]
+    fn show_window_constants() {
+        assert_eq!(show_window::SW_HIDE, 0);
+        assert_eq!(show_window::SW_SHOWNORMAL, 1);
+        assert_eq!(show_window::SW_NORMAL, 1);
+        assert_eq!(show_window::SW_SHOW, 5);
+    }
+
+    #[test]
+    fn window_messages() {
+        assert_eq!(window_message::WM_CREATE, 0x0001);
+        assert_eq!(window_message::WM_DESTROY, 0x0002);
+        assert_eq!(window_message::WM_PAINT, 0x000F);
+        assert_eq!(window_message::WM_QUIT, 0x0012);
+        assert_eq!(window_message::WM_CLOSE, 0x0010);
+    }
+
+    // ── Rect & Point ───────────────────────────────────────────────
+
+    #[test]
+    fn rect_default() {
+        let rect = Rect::default();
+        assert_eq!(rect.left, 0);
+        assert_eq!(rect.top, 0);
+        assert_eq!(rect.right, 0);
+        assert_eq!(rect.bottom, 0);
+    }
+
+    #[test]
+    fn point_default() {
+        let point = Point::default();
+        assert_eq!(point.x, 0);
+        assert_eq!(point.y, 0);
+    }
 }
