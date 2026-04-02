@@ -9,7 +9,7 @@ mod subsys;
 
 use std::process::ExitCode;
 
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 use tracing::error;
 
 use crate::cli::Cli;
@@ -21,7 +21,10 @@ fn main() -> ExitCode {
         .with_writer(std::io::stderr)
         .init();
 
-    let cli = Cli::parse();
+    let cli = match Cli::try_parse() {
+        Ok(cli) => cli,
+        Err(e) => e.exit(),
+    };
 
     // Handle binfmt_misc commands (no exe_path required).
     if cli.binfmt_status {
@@ -53,8 +56,7 @@ fn main() -> ExitCode {
     }
 
     let Some(ref exe_path) = cli.exe_path else {
-        error!("no .exe path provided");
-        eprintln!("Usage: rine <EXE_PATH> [EXE_ARGS]...");
+        let _ = Cli::command().print_help();
         return ExitCode::FAILURE;
     };
 

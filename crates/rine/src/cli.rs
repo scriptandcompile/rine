@@ -6,7 +6,12 @@ use clap::Parser;
 
 /// rine — Windows PE executable loader for Linux.
 #[derive(Parser, Debug)]
-#[command(name = "rine", version, about)]
+#[command(
+    name = "rine",
+    version,
+    about,
+    override_usage = "rine [OPTIONS] <EXE_PATH> [EXE_ARGS]...\n       rine <--install-binfmt | --uninstall-binfmt | --binfmt-status>\n       rine <--install-desktop | --uninstall-desktop | --desktop-status>\n       rine <--install-context-menu | --uninstall-context-menu | --context-menu-status>"
+)]
 pub struct Cli {
     /// Path to the Windows .exe to run.
     pub exe_path: Option<PathBuf>,
