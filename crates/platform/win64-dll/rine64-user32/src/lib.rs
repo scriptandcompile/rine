@@ -288,7 +288,13 @@ unsafe extern "C" fn destroy_window(hwnd: usize) -> i32 {
 unsafe extern "C" fn show_window(hwnd: usize, cmd_show: i32) -> i32 {
     let hwnd = Hwnd::from_raw(hwnd);
 
-    let was_visible = WINDOW_MANAGER.update_window(hwnd, |state| {
+    // Get the old visibility state and update based on command
+    let was_visible = WINDOW_MANAGER
+        .get_window(hwnd)
+        .map(|state| state.visible)
+        .unwrap_or(false);
+
+    WINDOW_MANAGER.update_window(hwnd, |state| {
         match cmd_show {
             show_window::SW_HIDE => state.visible = false,
             show_window::SW_SHOWNORMAL | show_window::SW_SHOW | show_window::SW_SHOWDEFAULT => {
