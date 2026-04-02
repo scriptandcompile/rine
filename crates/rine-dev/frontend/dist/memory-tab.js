@@ -233,19 +233,138 @@ function formatSnapshotRegionLabel(region, index) {
   return `${index + 1}. ${hex(region.address)} | ${formatBytesWithParens(region.size)} | ${source}`;
 }
 
-function renderHexLines(bytes, startAddress) {
-  const lines = [];
+const SNAPSHOT_MAX_RENDER_BYTES = 2048;
+const snapshotHexSelection = {
+  mode: null,
+  offset: null,
+  lineStart: null,
+  lineEnd: null,
+};
+
+function resetSnapshotHexSelection() {
+  snapshotHexSelection.mode = null;
+  snapshotHexSelection.offset = null;
+  snapshotHexSelection.lineStart = null;
+  snapshotHexSelection.lineEnd = null;
+}
+
+function escapeHtmlChar(ch) {
+  if (ch === '&') return '&amp;';
+  if (ch === '<') return '&lt;';
+  if (ch === '>') return '&gt;';
+  return ch;
+}
+
+function renderSnapshotGridHtml(bytes, startAddress) {
+  const rows = [];
   const width = 16;
   for (let i = 0; i < bytes.length; i += width) {
     const chunk = bytes.slice(i, i + width);
-    const addr = hex(startAddress + i);
-    const hexCols = Array.from(chunk).map(b => b.toString(16).padStart(2, '0')).join(' ');
-    const ascii = Array.from(chunk)
-      .map(b => (b >= 32 && b <= 126 ? String.fromCharCode(b) : '.'))
-      .join('');
-    lines.push(`${addr.padEnd(14)}  ${hexCols.padEnd(47)}  |${ascii}|`);
+    const lineStart = i;
+    const lineEnd = i + chunk.length - 1;
+    const address = hex(startAddress + i);
+    const hexCells = [];
+    const asciiCells = [];
+
+    for (let j = 0; j < width; j += 1) {
+      if (j < chunk.length) {
+        const byte = chunk[j];
+        const offset = i + j;
+        const printable = byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.';
+        hexCells.push(`<span class="memory-byte-cell" data-byte-offset="${offset}">${byte.toString(16).padStart(2, '0')}</span>`);
+        asciiCells.push(`<span class="memory-byte-cell" data-byte-offset="${offset}">${escapeHtmlChar(printable)}</span>`);
+      } else {
+        hexCells.push('<span class="memory-byte-cell memory-byte-empty">&nbsp;&nbsp;</span>');
+        asciiCells.push('<span class="memory-byte-cell memory-byte-empty">&nbsp;</span>');
+      }
+    }
+
+    rows.push(`
+      <div class="memory-hex-row" data-line-start="${lineStart}" data-line-end="${lineEnd}">
+        <div class="memory-addr-cell" data-line-start="${lineStart}" data-line-end="${lineEnd}">${address}</div>
+        <div class="memory-hex-cells">${hexCells.join(' ')}</div>
+        <div class="memory-ascii-cells">${asciiCells.join('')}</div>
+        <div class="memory-reserved-space"></div>
+      </div>
+    `);
   }
-  return lines.join('\n');
+
+  return `
+    <div class="memory-hex-grid">
+      <div class="memory-hex-header">
+        <div>Address</div>
+        <div>Hex Data</div>
+        <div>ASCII</div>
+        <div></div>
+      </div>
+      <div class="memory-hex-rows">
+        ${rows.join('')}
+      </div>
+    </div>
+  `;
+}
+
+function applySnapshotSelectionClasses() {
+  const hexView = document.getElementById('memory-hex-view');
+  if (!hexView) return;
+
+  hexView.querySelectorAll('.memory-byte-selected, .memory-line-selected, .memory-addr-selected').forEach(el => {
+    el.classList.remove('memory-byte-selected', 'memory-line-selected', 'memory-addr-selected');
+  });
+
+  if (snapshotHexSelection.mode === 'byte' && snapshotHexSelection.offset != null) {
+    const offset = String(snapshotHexSelection.offset);
+    hexView.querySelectorAll(`[data-byte-offset="${offset}"]`).forEach(el => {
+      el.classList.add('memory-byte-selected');
+    });
+    return;
+  }
+
+  if (snapshotHexSelection.mode === 'line' && snapshotHexSelection.lineStart != null && snapshotHexSelection.lineEnd != null) {
+    const start = snapshotHexSelection.lineStart;
+    const end = snapshotHexSelection.lineEnd;
+    hexView.querySelectorAll('[data-byte-offset]').forEach(el => {
+      const value = Number(el.dataset.byteOffset);
+      if (value >= start && value <= end) {
+        el.classList.add('memory-line-selected');
+      }
+    });
+
+    hexView.querySelectorAll('.memory-addr-cell').forEach(el => {
+      const rowStart = Number(el.dataset.lineStart);
+      const rowEnd = Number(el.dataset.lineEnd);
+      if (rowStart === start && rowEnd === end) {
+        el.classList.add('memory-addr-selected');
+      }
+    });
+  }
+}
+
+function handleSnapshotHexClick(event) {
+  const rawTarget = event.target;
+  const target = rawTarget instanceof HTMLElement
+    ? rawTarget
+    : (rawTarget && rawTarget.parentElement instanceof HTMLElement ? rawTarget.parentElement : null);
+  if (!target) return;
+
+  const addr = target.closest('.memory-addr-cell');
+  if (addr instanceof HTMLElement) {
+    snapshotHexSelection.mode = 'line';
+    snapshotHexSelection.offset = null;
+    snapshotHexSelection.lineStart = Number(addr.dataset.lineStart);
+    snapshotHexSelection.lineEnd = Number(addr.dataset.lineEnd);
+    applySnapshotSelectionClasses();
+    return;
+  }
+
+  const byte = target.closest('.memory-byte-cell[data-byte-offset]');
+  if (byte instanceof HTMLElement) {
+    snapshotHexSelection.mode = 'byte';
+    snapshotHexSelection.offset = Number(byte.dataset.byteOffset);
+    snapshotHexSelection.lineStart = null;
+    snapshotHexSelection.lineEnd = null;
+    applySnapshotSelectionClasses();
+  }
 }
 
 async function loadSnapshotMetaAndRegions() {
@@ -293,32 +412,61 @@ async function loadSnapshotHexChunk() {
   const idx = Number(regionSelect.value || 0);
   const region = state.memory_snapshot_meta.regions[idx];
   if (!region) {
-    hexView.textContent = 'No region selected.';
+    hexView.innerHTML = '<div class="memory-hex-empty">No region selected.</div>';
+    resetSnapshotHexSelection();
     return;
   }
 
-  const readLength = Math.max(0, Number(region.size || 0));
-  if (readLength <= 0) {
-    hexView.textContent = 'Region is empty.';
+  const totalLength = Math.max(0, Number(region.size || 0));
+  if (totalLength <= 0) {
+    hexView.innerHTML = '<div class="memory-hex-empty">Region is empty.</div>';
+    resetSnapshotHexSelection();
     return;
   }
+
+  const displayLength = Math.min(totalLength, SNAPSHOT_MAX_RENDER_BYTES);
+  const truncated = totalLength > displayLength;
+  resetSnapshotHexSelection();
+  hexView.innerHTML = '<div class="memory-hex-empty">Loading snapshot preview…</div>';
 
   try {
     const chunk = await invoke('read_memory_snapshot_chunk', {
       binPath: state.memory_snapshot.bin_path,
       offset: Number(region.file_offset || 0),
-      length: readLength,
+      length: displayLength,
     });
 
-    hexView.textContent = [
-      `Region: ${hex(region.address)} (${formatBytesWithParens(region.size)})`,
-      `Source: ${region.source || 'Unknown'}`,
-      '',
-      renderHexLines(chunk, Number(region.address || 0)),
-    ].join('\n');
+    const metaCard = `
+      <div class="memory-info-card">
+        <div class="memory-info-item">
+          <span class="memory-info-label">Region:</span>
+          <span class="memory-info-value">${esc(hex(region.address))}</span>
+        </div>
+        <div class="memory-info-item">
+          <span class="memory-info-label">Size:</span>
+          <span class="memory-info-value">${esc(formatBytesWithParens(region.size))}</span>
+        </div>
+        <div class="memory-info-item">
+          <span class="memory-info-label">Source:</span>
+          <span class="memory-info-value">${esc(region.source || 'Unknown')}</span>
+        </div>
+        ${truncated ? `<div class="memory-info-note">Previewing ${esc(formatBytesGrouped(displayLength))} of ${esc(formatBytesGrouped(totalLength))} bytes to keep the viewer responsive.</div>` : ''}
+      </div>
+    `;
+    const viewer = document.getElementById('memory-snapshot-viewer');
+    const toolbar = viewer.querySelector('.memory-snapshot-toolbar');
+    const metaPlaceholder = viewer.querySelector('.memory-info-card') || null;
+    if (metaPlaceholder) {
+      metaPlaceholder.remove();
+    }
+    if (toolbar) {
+      toolbar.insertAdjacentHTML('afterend', metaCard);
+    }
+
+    hexView.innerHTML = renderSnapshotGridHtml(chunk, Number(region.address || 0));
   } catch (err) {
     console.error('Failed to read snapshot chunk:', err);
-    hexView.textContent = `Failed to read snapshot chunk: ${err}`;
+    hexView.innerHTML = `<div class="memory-hex-empty">Failed to read snapshot chunk: ${esc(String(err))}</div>`;
   }
 }
 
@@ -411,4 +559,5 @@ function bindMemoryUi() {
   document.getElementById('memory-snapshot-region').addEventListener('change', () => {
     loadSnapshotHexChunk();
   });
+  document.getElementById('memory-hex-view').addEventListener('click', handleSnapshotHexClick);
 }
