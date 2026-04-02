@@ -13,10 +13,7 @@ pub const ASSETS: &[(&str, &str)] = &[("ansi.js", ANSI_JS)];
 ///
 /// Call this from your Tauri crate's `build.rs` **before** `tauri_build::build()`.
 ///
-/// ```no_run
-///
-/// // build.rs
-///
+/// ```ignore
 /// rine_frontend_common::install_assets("frontend/dist");
 /// tauri_build::build();
 /// ```

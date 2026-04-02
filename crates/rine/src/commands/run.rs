@@ -37,6 +37,18 @@ fn dev_send_event(event: &rine_channel::DevEvent) {
     }
 }
 
+/// Shut down the dev channel cleanly so all buffered events reach
+/// rine-dev before the process exits.
+#[cfg(feature = "dev")]
+fn dev_shutdown() {
+    if let Some(sender) = DEV_SENDER.get() {
+        // Take the sender out of the mutex and drop it, closing the socket.
+        if let Ok(mut guard) = sender.lock() {
+            guard.shutdown();
+        }
+    }
+}
+
 /// Single shared sender used by both the ChannelDevHook (handle/thread
 /// events from DLL code) and the `dev_emit!` macro (lifecycle events).
 #[cfg(feature = "dev")]
@@ -85,6 +97,11 @@ impl rine_types::dev_hooks::DevHook for ChannelDevHook {
 
     fn on_tls_freed(&self, index: u32) {
         dev_send_event(&rine_channel::DevEvent::TlsFreed { index });
+    }
+
+    fn on_process_exiting(&self, exit_code: i32) {
+        dev_send_event(&rine_channel::DevEvent::ProcessExited { exit_code });
+        dev_shutdown();
     }
 }
 
@@ -242,7 +259,12 @@ pub fn run(
     // 6. Execute the PE entry point.
     let exit_code = crate::loader::entry::execute(&image, &parsed)?;
 
+    // ProcessExited + shutdown are normally handled by ExitProcess
+    // (via the DevHook).  This is a fallback for PEs that return from
+    // their entry point instead of calling ExitProcess.
     dev_emit!(rine_channel::DevEvent::ProcessExited { exit_code });
+    #[cfg(feature = "dev")]
+    dev_shutdown();
 
     std::process::exit(exit_code);
 }

@@ -6,6 +6,7 @@
 /// Does not return.
 pub unsafe extern "win64" fn exit(code: core::ffi::c_int) {
     tracing::debug!(code, "msvcrt::exit");
+    rine_types::dev_notify!(on_process_exiting(code));
     std::process::exit(code);
 }
 

@@ -44,4 +44,10 @@ impl DevSender {
         self.stream.write_all(&json)?;
         self.stream.flush()
     }
+
+    /// Shut down the write half of the socket so the receiver sees a
+    /// clean EOF after reading all buffered data.
+    pub fn shutdown(&mut self) {
+        let _ = self.stream.shutdown(std::net::Shutdown::Write);
+    }
 }

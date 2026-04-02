@@ -140,11 +140,16 @@ pub unsafe extern "win64" fn CreateThread(
 
         // Record exit code and wake any waiters.
         exit_code.store(code, Ordering::Release);
+
+        // Fire dev notification BEFORE waking waiters.  Otherwise the
+        // parent can wake, proceed to exit the process, and kill this
+        // thread before the ThreadExited event is sent.
+        rine_types::dev_notify!(on_thread_exited(tid, code));
+
         let (lock, cvar) = &*completed;
         *lock.lock().unwrap() = true;
         cvar.notify_all();
 
-        rine_types::dev_notify!(on_thread_exited(tid, code));
         debug!(exit_code = code, "child thread exited");
     });
 

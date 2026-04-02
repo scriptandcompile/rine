@@ -24,6 +24,9 @@ pub trait DevHook: Send + Sync {
     fn on_tls_allocated(&self, index: u32);
     /// A TLS slot was freed.
     fn on_tls_freed(&self, index: u32);
+    /// The process is about to exit.  Implementations should flush any
+    /// buffered events and shut down the channel.
+    fn on_process_exiting(&self, exit_code: i32);
 }
 
 static DEV_HOOK: OnceLock<Box<dyn DevHook>> = OnceLock::new();
