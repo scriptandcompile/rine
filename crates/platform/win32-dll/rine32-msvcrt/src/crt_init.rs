@@ -1,0 +1,76 @@
+//! MSVCRT C runtime initialization: __getmainargs, _initterm, _initterm_e.
+
+use rine_common_msvcrt::{cached_main_args, run_initterm, run_initterm_e};
+
+/// __getmainargs — MSVCRT CRT argument initialization.
+///
+/// Populates `*p_argc`, `*p_argv`, and `*p_envp` with the program's
+/// command-line arguments and environment. Called early in the CRT
+/// startup sequence before `main()`.
+///
+/// # Safety
+/// All pointer arguments must be valid for writes or null.
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn __getmainargs(
+    p_argc: *mut i32,
+    p_argv: *mut *mut *mut i8,
+    p_envp: *mut *mut *mut i8,
+    _do_wildcard: i32,
+    _start_info: *mut core::ffi::c_void,
+) -> i32 {
+    tracing::trace!("msvcrt::__getmainargs");
+    let args = cached_main_args();
+
+    if !p_argc.is_null() {
+        unsafe { *p_argc = args.argc() };
+    }
+    if !p_argv.is_null() {
+        unsafe { *p_argv = args.argv_ptr() };
+    }
+    if !p_envp.is_null() {
+        unsafe { *p_envp = args.envp_ptr() };
+    }
+
+    0 // success
+}
+
+/// _initterm — call a table of `void (*)(void)` initializer pointers.
+///
+/// Iterates from `start` to `end` (exclusive), calling each non-null
+/// function pointer. Used by the CRT to run static constructors and
+/// other pre-main initializers.
+///
+/// # Safety
+/// `start` and `end` must delimit a valid array of function pointers
+/// (or null entries).
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _initterm(
+    start: *const Option<unsafe extern "C" fn()>,
+    end: *const Option<unsafe extern "C" fn()>,
+) {
+    unsafe {
+        run_initterm(start, end, |func| {
+            func();
+        });
+    }
+}
+
+/// _initterm_e — call a table of `int (*)(void)` initializer pointers with error handling.
+///
+/// Like `_initterm`, but each function returns an `int` status code.
+/// If any initializer returns non-zero, iteration stops and that code is returned.
+///
+/// # Safety
+/// `start` and `end` must delimit a valid array of function pointers
+/// (or null entries).
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _initterm_e(
+    start: *const Option<unsafe extern "C" fn() -> i32>,
+    end: *const Option<unsafe extern "C" fn() -> i32>,
+) -> i32 {
+    let result = unsafe { run_initterm_e(start, end, |func| func()) };
+    if result != 0 {
+        tracing::warn!(result, "msvcrt::_initterm_e: initializer failed");
+    }
+    result
+}
