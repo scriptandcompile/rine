@@ -3,6 +3,10 @@ use std::process::ExitCode;
 
 use clap::{CommandFactory, Parser};
 use goblin::Object;
+use rine_dlls::DllRegistry;
+use rine32_kernel32::Kernel32Plugin32;
+use rine32_msvcrt::{CrtForwarderPlugin32, MsvcrtPlugin32};
+use rine32_ntdll::NtdllPlugin32;
 use thiserror::Error;
 use tracing::{error, info};
 
@@ -82,9 +86,17 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     let resolved = resolve_exe_path(exe_path);
     ensure_pe32(&resolved)?;
 
+    let registry = DllRegistry::from_plugins(&[
+        &Kernel32Plugin32,
+        &MsvcrtPlugin32,
+        &CrtForwarderPlugin32,
+        &NtdllPlugin32,
+    ]);
+
     info!(
         exe = %resolved.display(),
         arg_count = exe_args.len(),
+        known_dlls = registry.known_dlls().len(),
         "validated 32-bit executable"
     );
 

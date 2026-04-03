@@ -17,6 +17,9 @@ members = [
     "crates/platform/win64-dll/rine64-comdlg32",
     "crates/platform/win64-dll/rine64-user32",
     "crates/platform/win64-dll/rine64-ws2_32",
+    "crates/platform/win32-dll/rine32-kernel32",
+    "crates/platform/win32-dll/rine32-msvcrt",
+    "crates/platform/win32-dll/rine32-ntdll",
 ]
 
 [workspace.package]
@@ -37,6 +40,9 @@ rine64-gdi32 = { path = "crates/platform/win64-dll/rine64-gdi32" }
 rine64-comdlg32 = { path = "crates/platform/win64-dll/rine64-comdlg32" }
 rine64-user32 = { path = "crates/platform/win64-dll/rine64-user32" }
 rine64-ws2_32 = { path = "crates/platform/win64-dll/rine64-ws2_32" }
+rine32-kernel32 = { path = "crates/platform/win32-dll/rine32-kernel32" }
+rine32-msvcrt = { path = "crates/platform/win32-dll/rine32-msvcrt" }
+rine32-ntdll = { path = "crates/platform/win32-dll/rine32-ntdll" }
 goblin = "0.10.5"
 nix = { version = "0.31.2", features = ["mman", "signal", "fs", "process"] }
 libc = "0.2.184"

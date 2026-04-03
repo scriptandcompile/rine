@@ -3385,9 +3385,37 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "goblin",
+ "rine-dlls",
+ "rine32-kernel32",
+ "rine32-msvcrt",
+ "rine32-ntdll",
  "thiserror 2.0.18",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "rine32-kernel32"
+version = "0.1.0"
+dependencies = [
+ "rine-dlls",
+ "tracing",
+]
+
+[[package]]
+name = "rine32-msvcrt"
+version = "0.1.0"
+dependencies = [
+ "rine-dlls",
+ "tracing",
+]
+
+[[package]]
+name = "rine32-ntdll"
+version = "0.1.0"
+dependencies = [
+ "rine-dlls",
+ "tracing",
 ]
 
 [[package]]

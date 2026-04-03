@@ -1,0 +1,10 @@
+[package]
+name = "rine32-msvcrt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Win32 msvcrt export plugin scaffold"
+
+[dependencies]
+rine-dlls = { workspace = true }
+tracing = { workspace = true }
