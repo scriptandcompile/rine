@@ -385,5 +385,42 @@ fn apply_event(snap: &mut StateSnapshot, event: &DevEvent) {
                 total_bytes: *total_bytes,
             });
         }
+        DevEvent::DialogOpened {
+            api,
+            theme,
+            native_backend,
+            windows_theme,
+        } => {
+            snap.dialog_calls.push(rine_dev_lib::DialogCallInfo {
+                phase: "opened".to_owned(),
+                api: api.clone(),
+                theme: theme.clone(),
+                native_backend: native_backend.clone(),
+                windows_theme: windows_theme.clone(),
+                success: None,
+                error_code: None,
+                selected_path: None,
+            });
+        }
+        DevEvent::DialogResult {
+            api,
+            theme,
+            native_backend,
+            windows_theme,
+            success,
+            error_code,
+            selected_path,
+        } => {
+            snap.dialog_calls.push(rine_dev_lib::DialogCallInfo {
+                phase: "result".to_owned(),
+                api: api.clone(),
+                theme: theme.clone(),
+                native_backend: native_backend.clone(),
+                windows_theme: windows_theme.clone(),
+                success: Some(*success),
+                error_code: Some(*error_code),
+                selected_path: selected_path.clone(),
+            });
+        }
     }
 }

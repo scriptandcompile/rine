@@ -70,6 +70,21 @@ pub enum DevEvent {
         region_count: usize,
         total_bytes: u64,
     },
+    DialogOpened {
+        api: String,
+        theme: String,
+        native_backend: String,
+        windows_theme: String,
+    },
+    DialogResult {
+        api: String,
+        theme: String,
+        native_backend: String,
+        windows_theme: String,
+        success: bool,
+        error_code: u32,
+        selected_path: Option<String>,
+    },
     // ── Lifecycle ────────────────────────────────────────────────
     ProcessExited {
         exit_code: i32,

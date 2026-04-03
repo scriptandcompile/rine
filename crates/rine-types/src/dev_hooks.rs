@@ -7,6 +7,27 @@
 
 use std::sync::OnceLock;
 
+/// Telemetry payload for opening a common-dialog API call.
+#[derive(Debug, Clone, Copy)]
+pub struct DialogOpenTelemetry<'a> {
+    pub api: &'a str,
+    pub theme: &'a str,
+    pub native_backend: &'a str,
+    pub windows_theme: &'a str,
+}
+
+/// Telemetry payload for the result of a common-dialog API call.
+#[derive(Debug, Clone, Copy)]
+pub struct DialogResultTelemetry<'a> {
+    pub api: &'a str,
+    pub theme: &'a str,
+    pub native_backend: &'a str,
+    pub windows_theme: &'a str,
+    pub success: bool,
+    pub error_code: u32,
+    pub selected_path: Option<&'a str>,
+}
+
 /// Trait implemented by the dev-channel bridge in `rine`.
 ///
 /// All methods take `&self` — implementations must use interior
@@ -28,6 +49,10 @@ pub trait DevHook: Send + Sync {
     fn on_memory_allocated(&self, address: u64, size: u64, source: &str);
     /// A memory region was freed.
     fn on_memory_freed(&self, address: u64, size: u64, source: &str);
+    /// A common-dialog API call was opened/requested.
+    fn on_dialog_opened(&self, opened: DialogOpenTelemetry<'_>);
+    /// A common-dialog API call completed.
+    fn on_dialog_result(&self, result: DialogResultTelemetry<'_>);
     /// The process is about to exit.  Implementations should flush any
     /// buffered events and shut down the channel.
     fn on_process_exiting(&self, exit_code: i32);

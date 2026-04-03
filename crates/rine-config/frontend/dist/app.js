@@ -188,9 +188,8 @@ function setupButtons() {
       windows_version: "win11",
       dll: { search_order: [], force_stub: [] },
       dialogs: {
-        default_mode: "auto",
+        theme: "native",
         native_backend: "auto",
-        emulated_theme: "windows_version",
       },
       environment: {},
     };

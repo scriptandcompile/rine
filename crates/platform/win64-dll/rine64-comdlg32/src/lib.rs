@@ -5,6 +5,8 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use std::path::PathBuf;
 
 use rine_dlls::{DllPlugin, Export, as_win_api};
+use rine_types::dev_hooks::{DialogOpenTelemetry, DialogResultTelemetry};
+use rine_types::dev_notify;
 use rine_types::strings::{read_cstr, read_wstr, write_cstr, write_wstr};
 
 pub struct Comdlg32Plugin;
@@ -90,9 +92,9 @@ struct OpenFileNameW {
 }
 
 #[derive(Clone, Copy)]
-enum DialogMode {
+enum DialogTheme {
     Native,
-    Emulated,
+    Windows,
 }
 
 #[derive(Clone, Copy)]
@@ -101,14 +103,77 @@ enum DialogKind {
     Save,
 }
 
-fn current_mode() -> DialogMode {
-    match std::env::var("RINE_DIALOG_MODE") {
-        Ok(v) if v.eq_ignore_ascii_case("emulated") => DialogMode::Emulated,
-        Ok(v) if v.eq_ignore_ascii_case("native") || v.eq_ignore_ascii_case("auto") => {
-            DialogMode::Native
+fn current_theme() -> DialogTheme {
+    if let Ok(v) = std::env::var("RINE_DIALOG_THEME") {
+        if v.eq_ignore_ascii_case("windows") || v.eq_ignore_ascii_case("emulated") {
+            return DialogTheme::Windows;
         }
-        _ => DialogMode::Native,
+        return DialogTheme::Native;
     }
+
+    // Backward compatibility for older env key.
+    match std::env::var("RINE_DIALOG_MODE") {
+        Ok(v) if v.eq_ignore_ascii_case("emulated") || v.eq_ignore_ascii_case("windows") => {
+            DialogTheme::Windows
+        }
+        _ => DialogTheme::Native,
+    }
+}
+
+fn current_native_backend() -> &'static str {
+    match std::env::var("RINE_DIALOG_NATIVE_BACKEND") {
+        Ok(v) if v.eq_ignore_ascii_case("gtk") => "gtk",
+        Ok(v) if v.eq_ignore_ascii_case("kde") => "kde",
+        Ok(v) if v.eq_ignore_ascii_case("portal") || v.eq_ignore_ascii_case("auto") => "portal",
+        _ => "portal",
+    }
+}
+
+fn current_emulated_theme() -> &'static str {
+    match std::env::var("RINE_DIALOG_EMULATED_THEME") {
+        Ok(v) if v.eq_ignore_ascii_case("xp") => "xp",
+        Ok(v) if v.eq_ignore_ascii_case("win7") => "win7",
+        Ok(v) if v.eq_ignore_ascii_case("win10") => "win10",
+        Ok(v) if v.eq_ignore_ascii_case("win11") => "win11",
+        Ok(v) if v.eq_ignore_ascii_case("windows_version") || v.eq_ignore_ascii_case("auto") => {
+            "windows_version"
+        }
+        _ => "windows_version",
+    }
+}
+
+fn theme_label(theme: DialogTheme) -> &'static str {
+    match theme {
+        DialogTheme::Native => "native",
+        DialogTheme::Windows => "windows",
+    }
+}
+
+fn emit_dialog_opened(api: &str, theme: DialogTheme) {
+    dev_notify!(on_dialog_opened(DialogOpenTelemetry {
+        api,
+        theme: theme_label(theme),
+        native_backend: current_native_backend(),
+        windows_theme: current_emulated_theme(),
+    }));
+}
+
+fn emit_dialog_result(
+    api: &str,
+    theme: DialogTheme,
+    success: bool,
+    error_code: u32,
+    selected: Option<&str>,
+) {
+    dev_notify!(on_dialog_result(DialogResultTelemetry {
+        api,
+        theme: theme_label(theme),
+        native_backend: current_native_backend(),
+        windows_theme: current_emulated_theme(),
+        success,
+        error_code,
+        selected_path: selected,
+    }));
 }
 
 fn pick_path(
@@ -177,19 +242,29 @@ unsafe extern "win64" fn comm_dlg_extended_error() -> u32 {
 }
 
 unsafe fn run_a_dialog(ofn: *mut OpenFileNameA, kind: DialogKind) -> i32 {
+    let api_name = match kind {
+        DialogKind::Open => "GetOpenFileNameA",
+        DialogKind::Save => "GetSaveFileNameA",
+    };
+    let theme = current_theme();
+    emit_dialog_opened(api_name, theme);
+
     if ofn.is_null() {
         LAST_ERROR.store(CDERR_INITIALIZATION, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, CDERR_INITIALIZATION, None);
         return 0;
     }
     // SAFETY: Pointer is checked for null above.
     let ofn = unsafe { &mut *ofn };
     if (ofn.lStructSize as usize) < core::mem::size_of::<OpenFileNameA>() {
         LAST_ERROR.store(CDERR_INITIALIZATION, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, CDERR_INITIALIZATION, None);
         return 0;
     }
 
-    if matches!(current_mode(), DialogMode::Emulated) {
+    if matches!(theme, DialogTheme::Windows) {
         LAST_ERROR.store(CDERR_DIALOGFAILURE, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, CDERR_DIALOGFAILURE, None);
         return 0;
     }
 
@@ -199,12 +274,14 @@ unsafe fn run_a_dialog(ofn: *mut OpenFileNameA, kind: DialogKind) -> i32 {
     });
     let Some(path) = chosen else {
         LAST_ERROR.store(0, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, 0, None);
         return 0;
     };
     let path = path.to_string_lossy().into_owned();
 
     if ofn.lpstrFile.is_null() || ofn.nMaxFile == 0 {
         LAST_ERROR.store(CDERR_INITIALIZATION, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, CDERR_INITIALIZATION, None);
         return 0;
     }
 
@@ -212,6 +289,7 @@ unsafe fn run_a_dialog(ofn: *mut OpenFileNameA, kind: DialogKind) -> i32 {
     let written = unsafe { write_cstr(ofn.lpstrFile.cast(), ofn.nMaxFile, &path) };
     if written + 1 > ofn.nMaxFile {
         LAST_ERROR.store(FNERR_BUFFERTOOSMALL, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, FNERR_BUFFERTOOSMALL, None);
         return 0;
     }
 
@@ -219,23 +297,34 @@ unsafe fn run_a_dialog(ofn: *mut OpenFileNameA, kind: DialogKind) -> i32 {
     ofn.nFileOffset = off;
     ofn.nFileExtension = ext;
     LAST_ERROR.store(0, Ordering::Relaxed);
+    emit_dialog_result(api_name, theme, true, 0, Some(&path));
     1
 }
 
 unsafe fn run_w_dialog(ofn: *mut OpenFileNameW, kind: DialogKind) -> i32 {
+    let api_name = match kind {
+        DialogKind::Open => "GetOpenFileNameW",
+        DialogKind::Save => "GetSaveFileNameW",
+    };
+    let theme = current_theme();
+    emit_dialog_opened(api_name, theme);
+
     if ofn.is_null() {
         LAST_ERROR.store(CDERR_INITIALIZATION, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, CDERR_INITIALIZATION, None);
         return 0;
     }
     // SAFETY: Pointer is checked for null above.
     let ofn = unsafe { &mut *ofn };
     if (ofn.lStructSize as usize) < core::mem::size_of::<OpenFileNameW>() {
         LAST_ERROR.store(CDERR_INITIALIZATION, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, CDERR_INITIALIZATION, None);
         return 0;
     }
 
-    if matches!(current_mode(), DialogMode::Emulated) {
+    if matches!(theme, DialogTheme::Windows) {
         LAST_ERROR.store(CDERR_DIALOGFAILURE, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, CDERR_DIALOGFAILURE, None);
         return 0;
     }
 
@@ -245,12 +334,14 @@ unsafe fn run_w_dialog(ofn: *mut OpenFileNameW, kind: DialogKind) -> i32 {
     });
     let Some(path) = chosen else {
         LAST_ERROR.store(0, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, 0, None);
         return 0;
     };
     let path = path.to_string_lossy().into_owned();
 
     if ofn.lpstrFile.is_null() || ofn.nMaxFile == 0 {
         LAST_ERROR.store(CDERR_INITIALIZATION, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, CDERR_INITIALIZATION, None);
         return 0;
     }
 
@@ -258,6 +349,7 @@ unsafe fn run_w_dialog(ofn: *mut OpenFileNameW, kind: DialogKind) -> i32 {
     let written = unsafe { write_wstr(ofn.lpstrFile, ofn.nMaxFile, &path) };
     if written + 1 > ofn.nMaxFile {
         LAST_ERROR.store(FNERR_BUFFERTOOSMALL, Ordering::Relaxed);
+        emit_dialog_result(api_name, theme, false, FNERR_BUFFERTOOSMALL, None);
         return 0;
     }
 
@@ -265,6 +357,7 @@ unsafe fn run_w_dialog(ofn: *mut OpenFileNameW, kind: DialogKind) -> i32 {
     ofn.nFileOffset = off;
     ofn.nFileExtension = ext;
     LAST_ERROR.store(0, Ordering::Relaxed);
+    emit_dialog_result(api_name, theme, true, 0, Some(&path));
     1
 }
 

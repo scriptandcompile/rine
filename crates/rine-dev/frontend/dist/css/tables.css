@@ -28,6 +28,7 @@
 #thread-table,
 #mutex-table,
 #gdi-table,
+#dialog-table,
 #memory-table {
   width: 100%;
   border-collapse: collapse;
@@ -37,6 +38,7 @@
 #thread-table th,
 #mutex-table th,
 #gdi-table th,
+#dialog-table th,
 #memory-table th {
   position: sticky;
   top: 0;
@@ -51,6 +53,7 @@
 #thread-table td,
 #mutex-table td,
 #gdi-table td,
+#dialog-table td,
 #memory-table td {
   padding: 4px 10px;
   border-bottom: 1px solid var(--border);

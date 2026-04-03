@@ -470,7 +470,7 @@ fn test_dialog_basic_emulated_mode() {
     let output = run_rine_with_env(
         &fixture("dialog_basic"),
         &[],
-        &[("RINE_DIALOG_MODE", "emulated")],
+        &[("RINE_DIALOG_THEME", "windows")],
     );
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -497,7 +497,7 @@ fn test_dialog_small_buffer_error() {
         &fixture("dialog_small_buffer"),
         &[],
         &[
-            ("RINE_DIALOG_MODE", "native"),
+            ("RINE_DIALOG_THEME", "native"),
             (
                 "RINE_DIALOG_TEST_PATH",
                 "C:/rine/tests/this_path_is_too_long_for_tiny_buffer.exe",

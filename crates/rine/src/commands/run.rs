@@ -272,6 +272,27 @@ impl rine_types::dev_hooks::DevHook for ChannelDevHook {
         });
     }
 
+    fn on_dialog_opened(&self, opened: rine_types::dev_hooks::DialogOpenTelemetry<'_>) {
+        dev_send_event(&rine_channel::DevEvent::DialogOpened {
+            api: opened.api.to_owned(),
+            theme: opened.theme.to_owned(),
+            native_backend: opened.native_backend.to_owned(),
+            windows_theme: opened.windows_theme.to_owned(),
+        });
+    }
+
+    fn on_dialog_result(&self, result: rine_types::dev_hooks::DialogResultTelemetry<'_>) {
+        dev_send_event(&rine_channel::DevEvent::DialogResult {
+            api: result.api.to_owned(),
+            theme: result.theme.to_owned(),
+            native_backend: result.native_backend.to_owned(),
+            windows_theme: result.windows_theme.to_owned(),
+            success: result.success,
+            error_code: result.error_code,
+            selected_path: result.selected_path.map(str::to_owned),
+        });
+    }
+
     fn on_process_exiting(&self, exit_code: i32) {
         emit_memory_snapshot_ready();
         dev_send_event(&rine_channel::DevEvent::ProcessExited { exit_code });
@@ -443,22 +464,33 @@ pub fn run(
     subsys::dialogs::init_policy(app_config.dialogs.clone(), app_config.windows_version);
     if let Some(policy) = subsys::dialogs::policy() {
         info!(
-            mode = ?policy.mode,
+            theme = ?policy.theme,
             native_backend = ?policy.native_backend,
-            emulated_theme = ?policy.emulated_theme,
+            windows_theme = ?policy.windows_theme,
             desktop = ?policy.desktop,
             "dialog policy initialized"
         );
 
         // SAFETY: still single-threaded before PE entry.
-        set_var_if_absent("RINE_DIALOG_MODE", subsys::dialogs::mode_env(policy.mode));
+        set_var_if_absent(
+            "RINE_DIALOG_THEME",
+            subsys::dialogs::dialog_theme_env(policy.theme),
+        );
+        // Backward compatibility for in-flight integrations.
+        set_var_if_absent(
+            "RINE_DIALOG_MODE",
+            match policy.theme {
+                rine_types::config::DialogTheme::Native => "native",
+                rine_types::config::DialogTheme::Windows => "emulated",
+            },
+        );
         set_var_if_absent(
             "RINE_DIALOG_NATIVE_BACKEND",
             subsys::dialogs::native_backend_env(policy.native_backend),
         );
         set_var_if_absent(
             "RINE_DIALOG_EMULATED_THEME",
-            subsys::dialogs::theme_env(policy.emulated_theme),
+            subsys::dialogs::windows_theme_env(policy.windows_theme),
         );
     }
 

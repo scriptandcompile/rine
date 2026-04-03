@@ -258,17 +258,16 @@
     - Initial API target: `GetOpenFileNameA/W`, `GetSaveFileNameA/W`, `CommDlgExtendedError`.
 
 - **Backend abstraction**
-    - Implement a dialog backend service with two modes: `Native` and `Emulated`.
-    - Native mode should prefer XDG portals first for GNOME/KDE parity; fallback backend selection can be DE-specific when portal access is unavailable.
-    - Emulated mode should render Win32-style dialogs through the existing `user32` window/message infrastructure.
+    - Implement a dialog backend service with two themes: `native` and `windows`.
+    - `native` should use platform dialogs (prefer XDG portals for GNOME/KDE parity).
+    - `windows` should use emulated Win32-style dialogs through existing `user32` window/message infrastructure.
 
 - **Config model (out-of-box + tweakable)**
     - Extend per-app config with a dialog section:
-        - `default_mode = "auto" | "native" | "emulated"`
+        - `theme = "native" | "windows"`
         - `native_backend = "auto" | "portal" | "gtk" | "kde"`
-        - `emulated_theme = "auto" | "windows_version" | "xp" | "win7" | "win10" | "win11"`
-        - Optional per-Windows-version overrides keyed from `windows_version`.
-    - Keep `auto` as default to preserve out-of-the-box behavior while allowing app-specific overrides.
+    - Default to `theme = "native"` for out-of-the-box platform integration.
+    - When `theme = "windows"`, style should be resolved from the configured `windows_version`.
 
 - **Policy resolution flow**
     - Resolve the effective dialog policy early in startup (alongside config and Windows-version setup).
@@ -276,19 +275,19 @@
     - Expose the resolved mode/backend in dev events/logs for diagnostics.
 
 - **Config editor updates**
-    - Add a Dialog tab in `rine-config` to edit mode, native backend preference, and emulated theme/version overrides.
+    - Add a Dialog tab in `rine-config` to edit theme and native backend preference.
     - Ensure reset/default state includes dialog fields so they are never silently dropped.
 
 - **Compatibility integration**
-    - Support profile-driven dialog overrides via `rine-compat` so known-problem apps can force native/emulated behavior or specific theme/version combinations.
+    - Support profile-driven dialog overrides via `rine-compat` so known-problem apps can force `native` or `windows` theme selection.
 
 - **Test plan**
     - Add integration fixtures that exercise open/save/cancel flows through `comdlg32` APIs.
-    - Validate both native and emulated modes, including fallback behavior when portal/native backend is unavailable.
-    - Add regression coverage for per-version override resolution.
+    - Validate both `native` and `windows` themes, including fallback behavior when portal/native backend is unavailable.
+    - Add regression coverage for Windows-version-driven emulated style resolution.
 
 - **Rollout order**
-    - MVP: native portal-backed open/save + config toggle (`auto/native/emulated`).
+    - MVP: native portal-backed open/save + config toggle (`native/windows`).
     - Next: emulated Windows-style dialogs with theme selection.
     - Next: richer controls via `comctl32` and profile-driven app-specific overrides.
 

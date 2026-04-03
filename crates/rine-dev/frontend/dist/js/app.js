@@ -23,6 +23,7 @@ let state = {
   threads: [],
   tls_slots: [],
   windows: [],
+  dialog_calls: [],
   memory_regions: [],
   memory_current_usage: 0,
   memory_peak_usage: 0,
@@ -169,6 +170,12 @@ function addEventEntry(event) {
     case 'MemorySnapshotReady':
       detail = `regions=${event.region_count}  bytes=${formatBytesWithParens(event.total_bytes)}  json=${event.json_path}`;
       break;
+    case 'DialogOpened':
+      detail = `api=${event.api}  theme=${event.theme}  backend=${event.native_backend}  windows_style=${event.windows_theme}`;
+      break;
+    case 'DialogResult':
+      detail = `api=${event.api}  theme=${event.theme}  backend=${event.native_backend}  windows_style=${event.windows_theme}  success=${event.success}  error=0x${Number(event.error_code).toString(16).toUpperCase()}${event.selected_path ? `  path=${event.selected_path}` : ''}`;
+      break;
     default:
       detail = JSON.stringify(event);
   }
@@ -312,6 +319,32 @@ function handleEvent(event) {
     case 'MemorySnapshotReady':
       handleMemoryEvent(event);
       break;
+    case 'DialogOpened':
+      state.dialog_calls.push({
+        phase: 'opened',
+        api: event.api,
+        theme: event.theme,
+        native_backend: event.native_backend,
+        windows_theme: event.windows_theme,
+        success: null,
+        error_code: null,
+        selected_path: null,
+      });
+      renderDialogTable();
+      break;
+    case 'DialogResult':
+      state.dialog_calls.push({
+        phase: 'result',
+        api: event.api,
+        theme: event.theme,
+        native_backend: event.native_backend,
+        windows_theme: event.windows_theme,
+        success: event.success,
+        error_code: event.error_code,
+        selected_path: event.selected_path,
+      });
+      renderDialogTable();
+      break;
     case 'OutputData':
       if (event.stream === 'Stdout') {
         state.stdout += event.data;
@@ -360,6 +393,7 @@ bindMemoryUi();
 bindMutexesUi();
 bindWindowsUi();
 bindGdiUi();
+bindDialogUi();
 document.getElementById('event-filter').addEventListener('input', () => {
   const filterText = document.getElementById('event-filter').value.toLowerCase();
   document.querySelectorAll('#event-log .event-entry').forEach(div => {
@@ -389,6 +423,10 @@ invoke('get_state').then(snap => {
   }
   if (snap.threads && snap.threads.length) { state.threads = snap.threads; renderThreadsTable(); }
   if (snap.tls_slots && snap.tls_slots.length) { state.tls_slots = snap.tls_slots; }
+  if (snap.dialog_calls && snap.dialog_calls.length) {
+    state.dialog_calls = snap.dialog_calls;
+    renderDialogTable();
+  }
   hydrateMemoryState(snap);
   renderMemorySummary();
   renderMemoryTable();

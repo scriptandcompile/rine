@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 use rine_types::config::{
-    DialogConfig, DialogMode, EmulatedDialogTheme, NativeDialogBackend, WindowsVersion,
+    DialogConfig, DialogTheme, EmulatedDialogTheme, NativeDialogBackend, WindowsVersion,
 };
 
 static DIALOG_POLICY: OnceLock<ResolvedDialogPolicy> = OnceLock::new();
@@ -15,9 +15,9 @@ pub enum DesktopEnvironment {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ResolvedDialogPolicy {
-    pub mode: DialogMode,
+    pub theme: DialogTheme,
     pub native_backend: NativeDialogBackend,
-    pub emulated_theme: EmulatedDialogTheme,
+    pub windows_theme: EmulatedDialogTheme,
     pub desktop: DesktopEnvironment,
 }
 
@@ -36,16 +36,6 @@ fn detect_desktop() -> DesktopEnvironment {
     DesktopEnvironment::Other
 }
 
-fn resolve_mode(mode: DialogMode) -> DialogMode {
-    match mode {
-        DialogMode::Auto => {
-            // Default to native dialogs for out-of-the-box DE integration.
-            DialogMode::Native
-        }
-        explicit => explicit,
-    }
-}
-
 fn resolve_native_backend(
     backend: NativeDialogBackend,
     desktop: DesktopEnvironment,
@@ -61,18 +51,12 @@ fn resolve_native_backend(
     }
 }
 
-fn resolve_emulated_theme(
-    theme: EmulatedDialogTheme,
-    windows_version: WindowsVersion,
-) -> EmulatedDialogTheme {
-    match theme {
-        EmulatedDialogTheme::WindowsVersion | EmulatedDialogTheme::Auto => match windows_version {
-            WindowsVersion::WinXP => EmulatedDialogTheme::Xp,
-            WindowsVersion::Win7 => EmulatedDialogTheme::Win7,
-            WindowsVersion::Win10 => EmulatedDialogTheme::Win10,
-            WindowsVersion::Win11 => EmulatedDialogTheme::Win11,
-        },
-        explicit => explicit,
+fn resolve_emulated_theme(windows_version: WindowsVersion) -> EmulatedDialogTheme {
+    match windows_version {
+        WindowsVersion::WinXP => EmulatedDialogTheme::Xp,
+        WindowsVersion::Win7 => EmulatedDialogTheme::Win7,
+        WindowsVersion::Win10 => EmulatedDialogTheme::Win10,
+        WindowsVersion::Win11 => EmulatedDialogTheme::Win11,
     }
 }
 
@@ -80,9 +64,9 @@ fn resolve_emulated_theme(
 pub fn init_policy(cfg: DialogConfig, windows_version: WindowsVersion) {
     let desktop = detect_desktop();
     let resolved = ResolvedDialogPolicy {
-        mode: resolve_mode(cfg.default_mode),
+        theme: cfg.theme,
         native_backend: resolve_native_backend(cfg.native_backend, desktop),
-        emulated_theme: resolve_emulated_theme(cfg.emulated_theme, windows_version),
+        windows_theme: resolve_emulated_theme(windows_version),
         desktop,
     };
     let _ = DIALOG_POLICY.set(resolved);
@@ -93,11 +77,10 @@ pub fn policy() -> Option<&'static ResolvedDialogPolicy> {
     DIALOG_POLICY.get()
 }
 
-pub fn mode_env(mode: DialogMode) -> &'static str {
-    match mode {
-        DialogMode::Auto => "auto",
-        DialogMode::Native => "native",
-        DialogMode::Emulated => "emulated",
+pub fn dialog_theme_env(theme: DialogTheme) -> &'static str {
+    match theme {
+        DialogTheme::Native => "native",
+        DialogTheme::Windows => "windows",
     }
 }
 
@@ -110,7 +93,7 @@ pub fn native_backend_env(backend: NativeDialogBackend) -> &'static str {
     }
 }
 
-pub fn theme_env(theme: EmulatedDialogTheme) -> &'static str {
+pub fn windows_theme_env(theme: EmulatedDialogTheme) -> &'static str {
     match theme {
         EmulatedDialogTheme::Auto => "auto",
         EmulatedDialogTheme::Xp => "xp",
@@ -128,18 +111,12 @@ mod tests {
     #[test]
     fn resolves_windows_version_theme() {
         assert_eq!(
-            resolve_emulated_theme(EmulatedDialogTheme::WindowsVersion, WindowsVersion::Win11),
+            resolve_emulated_theme(WindowsVersion::Win11),
             EmulatedDialogTheme::Win11
         );
         assert_eq!(
-            resolve_emulated_theme(EmulatedDialogTheme::WindowsVersion, WindowsVersion::WinXP),
+            resolve_emulated_theme(WindowsVersion::WinXP),
             EmulatedDialogTheme::Xp
         );
-    }
-
-    #[test]
-    fn auto_mode_prefers_native() {
-        assert_eq!(resolve_mode(DialogMode::Auto), DialogMode::Native);
-        assert_eq!(resolve_mode(DialogMode::Emulated), DialogMode::Emulated);
     }
 }

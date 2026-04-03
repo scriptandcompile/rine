@@ -15,6 +15,7 @@ pub struct StateSnapshot {
     pub memory_total_allocated: u64,
     pub memory_total_freed: u64,
     pub memory_snapshot: Option<MemorySnapshotInfo>,
+    pub dialog_calls: Vec<DialogCallInfo>,
     pub exited: Option<i32>,
     pub stdout: String,
     pub stderr: String,
@@ -77,4 +78,16 @@ pub struct MemorySnapshotInfo {
     pub bin_path: String,
     pub region_count: usize,
     pub total_bytes: u64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DialogCallInfo {
+    pub phase: String,
+    pub api: String,
+    pub theme: String,
+    pub native_backend: String,
+    pub windows_theme: String,
+    pub success: Option<bool>,
+    pub error_code: Option<u32>,
+    pub selected_path: Option<String>,
 }
