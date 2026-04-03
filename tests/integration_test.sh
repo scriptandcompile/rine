@@ -11,6 +11,7 @@ STATUS_ONLY=0
 AUTO_REBUILD=1
 X86_MODE="full"
 ARCH="all"
+RINE32_HELPER="$REPO_ROOT/target/i686-unknown-linux-gnu/debug/rine32"
 
 assert_unique_fixture_names() {
     local duplicates
@@ -131,15 +132,21 @@ run_selected_tests() {
             RINE_FIXTURE_ARCH=x64 cargo test -p rine --test integration
             ;;
         x86)
+            echo "Building 32-bit helper runtime..."
+            cargo build -p rine32 --target i686-unknown-linux-gnu
+
             echo "Running full integration tests with x86 fixtures..."
-            RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration
+            RINE_RINE32_HELPER="$RINE32_HELPER" RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration
             ;;
         all)
             echo "Running integration tests with x64 fixtures..."
             RINE_FIXTURE_ARCH=x64 cargo test -p rine --test integration
 
+            echo "Building 32-bit helper runtime..."
+            cargo build -p rine32 --target i686-unknown-linux-gnu
+
             echo "Running full integration tests with x86 fixtures..."
-            RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration
+            RINE_RINE32_HELPER="$RINE32_HELPER" RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration
             ;;
         *)
             echo "error: unknown arch '$ARCH' (expected: x64, x86, all)" >&2

@@ -48,6 +48,13 @@ fn fixture_path_for_arch(name: &str, arch: &str) -> PathBuf {
         .join(format!("{name}.exe"))
 }
 
+fn helper_path_for_x86() -> Option<PathBuf> {
+    let candidate = workspace_root()
+        .join("target/i686-unknown-linux-gnu/debug")
+        .join("rine32");
+    candidate.exists().then_some(candidate)
+}
+
 pub fn run_rine(fixture_path: &Path, extra_args: &[&str]) -> Output {
     let rine = env!("CARGO_BIN_EXE_rine");
     let mut cmd = Command::new(rine);
@@ -56,6 +63,12 @@ pub fn run_rine(fixture_path: &Path, extra_args: &[&str]) -> Output {
         cmd.arg(arg);
     }
     cmd.env("RUST_LOG", "off");
+    if fixture_arch() == "x86"
+        && std::env::var_os("RINE_RINE32_HELPER").is_none()
+        && let Some(helper) = helper_path_for_x86()
+    {
+        cmd.env("RINE_RINE32_HELPER", helper);
+    }
     cmd.output().expect("failed to execute rine")
 }
 
@@ -71,6 +84,12 @@ pub fn run_rine_with_env(
         cmd.arg(arg);
     }
     cmd.env("RUST_LOG", "off");
+    if fixture_arch() == "x86"
+        && std::env::var_os("RINE_RINE32_HELPER").is_none()
+        && let Some(helper) = helper_path_for_x86()
+    {
+        cmd.env("RINE_RINE32_HELPER", helper);
+    }
     for (k, v) in envs {
         cmd.env(k, v);
     }
