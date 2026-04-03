@@ -22,6 +22,7 @@ use rine32_comdlg32::Comdlg32Plugin32;
 use rine32_kernel32::Kernel32Plugin32;
 use rine32_msvcrt::{CrtForwarderPlugin32, MsvcrtPlugin32};
 use rine32_ntdll::NtdllPlugin32;
+use rine32_user32::User32Plugin32;
 use thiserror::Error;
 use tracing::{error, info, warn};
 
@@ -177,6 +178,7 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     let registry = DllRegistry::from_plugins(&[
         &Kernel32Plugin32,
         &Comdlg32Plugin32,
+        &User32Plugin32,
         &MsvcrtPlugin32,
         &CrtForwarderPlugin32,
         &NtdllPlugin32,

@@ -1,5 +1,10 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
+#[cfg(not(target_pointer_width = "32"))]
+compile_error!(
+    "crate `rine32-user32` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
+);
+
 use rine_dlls::{DllPlugin, Export, as_win_api};
 
 mod class_registration;
@@ -7,9 +12,9 @@ mod message_queue;
 mod window_lifecycle;
 mod window_text;
 
-pub struct User32Plugin;
+pub struct User32Plugin32;
 
-impl DllPlugin for User32Plugin {
+impl DllPlugin for User32Plugin32 {
     fn dll_names(&self) -> &[&str] {
         &["user32.dll"]
     }

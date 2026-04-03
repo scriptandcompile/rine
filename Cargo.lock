@@ -3344,6 +3344,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rine-common-user32"
+version = "0.1.0"
+dependencies = [
+ "rine-types",
+ "winit",
+]
+
+[[package]]
 name = "rine-config"
 version = "0.1.0"
 dependencies = [
@@ -3432,6 +3440,7 @@ dependencies = [
  "rine32-kernel32",
  "rine32-msvcrt",
  "rine32-ntdll",
+ "rine32-user32",
  "thiserror 2.0.18",
  "tracing",
  "tracing-subscriber",
@@ -3474,6 +3483,15 @@ version = "0.1.0"
 dependencies = [
  "rine-dlls",
  "tracing",
+]
+
+[[package]]
+name = "rine32-user32"
+version = "0.1.0"
+dependencies = [
+ "rine-common-user32",
+ "rine-dlls",
+ "rine-types",
 ]
 
 [[package]]
@@ -3542,6 +3560,7 @@ dependencies = [
 name = "rine64-user32"
 version = "0.1.0"
 dependencies = [
+ "rine-common-user32",
  "rine-dlls",
  "rine-types",
  "winit",

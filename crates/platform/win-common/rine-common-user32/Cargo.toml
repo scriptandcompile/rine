@@ -1,12 +1,10 @@
 [package]
-name = "rine64-user32"
+name = "rine-common-user32"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "user32.dll implementation for rine"
+description = "Shared architecture-neutral user32 logic for rine"
 
 [dependencies]
-rine-dlls = { workspace = true }
 rine-types = { workspace = true }
-rine-common-user32 = { workspace = true }
 winit = "0.28.7"

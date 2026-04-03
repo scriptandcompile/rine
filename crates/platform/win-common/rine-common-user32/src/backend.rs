@@ -1,3 +1,9 @@
+//! Winit-based native window backend for user32.
+//!
+//! Manages host OS windows via winit, bridging between the emulated Windows
+//! window state (stored in rine-types globals) and actual screen windows.
+//! Shared by both 32-bit and 64-bit user32 wrappers.
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -9,7 +15,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::platform::run_return::EventLoopExtRunReturn;
 use winit::window::{Window, WindowBuilder, WindowId};
 
-fn user32_debug_enabled() -> bool {
+pub fn user32_debug_enabled() -> bool {
     static ENABLED: OnceLock<bool> = OnceLock::new();
     *ENABLED.get_or_init(|| {
         std::env::var("RINE_USER32_DEBUG")
@@ -18,7 +24,7 @@ fn user32_debug_enabled() -> bool {
     })
 }
 
-fn debug_log(msg: impl AsRef<str>) {
+pub fn debug_log_backend(msg: impl AsRef<str>) {
     if user32_debug_enabled() {
         eprintln!("[user32/backend] {}", msg.as_ref());
     }
@@ -57,7 +63,7 @@ impl WinitBackend {
         let id = window.id();
         self.reverse.insert(id, hwnd);
         self.windows.insert(hwnd, window);
-        debug_log(format!(
+        debug_log_backend(format!(
             "create_window hwnd={:#x} title=\"{}\" visible={}",
             hwnd.as_raw(),
             state.title,
@@ -69,7 +75,7 @@ impl WinitBackend {
     fn destroy_window(&mut self, hwnd: Hwnd) {
         if let Some(window) = self.windows.remove(&hwnd) {
             self.reverse.remove(&window.id());
-            debug_log(format!("destroy_window hwnd={:#x}", hwnd.as_raw()));
+            debug_log_backend(format!("destroy_window hwnd={:#x}", hwnd.as_raw()));
         }
     }
 
@@ -107,7 +113,7 @@ impl WinitBackend {
 
                     match event {
                         WindowEvent::CloseRequested => {
-                            debug_log(format!(
+                            debug_log_backend(format!(
                                 "winit CloseRequested hwnd={:#x} -> WM_CLOSE",
                                 hwnd.as_raw()
                             ));
@@ -211,27 +217,27 @@ fn with_backend<R>(f: impl FnOnce(&mut WinitBackend) -> R) -> Option<R> {
     })
 }
 
-pub(crate) fn create_native_window(hwnd: Hwnd, state: &WindowState) {
+pub fn create_native_window(hwnd: Hwnd, state: &WindowState) {
     let _ = with_backend(|backend| backend.create_window(hwnd, state));
 }
 
-pub(crate) fn destroy_native_window(hwnd: Hwnd) {
+pub fn destroy_native_window(hwnd: Hwnd) {
     let _ = with_backend(|backend| backend.destroy_window(hwnd));
 }
 
-pub(crate) fn set_native_visibility(hwnd: Hwnd, visible: bool) {
+pub fn set_native_visibility(hwnd: Hwnd, visible: bool) {
     let _ = with_backend(|backend| backend.set_visible(hwnd, visible));
 }
 
-pub(crate) fn set_native_title(hwnd: Hwnd, title: &str) {
+pub fn set_native_title(hwnd: Hwnd, title: &str) {
     let _ = with_backend(|backend| backend.set_title(hwnd, title));
 }
 
-pub(crate) fn request_native_redraw(hwnd: Hwnd) {
+pub fn request_native_redraw(hwnd: Hwnd) {
     let _ = with_backend(|backend| backend.request_redraw(hwnd));
 }
 
-pub(crate) fn pump_backend_messages() {
+pub fn pump_backend_messages() {
     let messages = with_backend(|backend| backend.pump_messages()).unwrap_or_default();
     if messages.is_empty() {
         return;
@@ -239,7 +245,7 @@ pub(crate) fn pump_backend_messages() {
 
     if user32_debug_enabled() {
         for message in &messages {
-            debug_log(format!(
+            debug_log_backend(format!(
                 "queue_post hwnd={:#x} msg={:#06x}",
                 message.hwnd.as_raw(),
                 message.message

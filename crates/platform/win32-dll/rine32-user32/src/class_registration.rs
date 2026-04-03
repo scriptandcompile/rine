@@ -1,9 +1,9 @@
-use rine_common_user32::{register_class, unregister_class};
+use rine_common_user32 as common;
 use rine_types::strings::{read_cstr, read_wstr};
 use rine_types::windows::*;
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn register_class_a(wc: *const WndClassExA) -> u16 {
+pub(crate) unsafe extern "C" fn register_class_a(wc: *const WndClassExA) -> u16 {
     if wc.is_null() {
         return 0;
     }
@@ -23,11 +23,11 @@ pub(crate) unsafe extern "win64" fn register_class_a(wc: *const WndClassExA) -> 
         menu_name,
         icon_sm: wc.h_icon_sm,
     };
-    register_class(class_name, class)
+    common::register_class(class_name, class)
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn register_class_w(wc: *const WndClassExW) -> u16 {
+pub(crate) unsafe extern "C" fn register_class_w(wc: *const WndClassExW) -> u16 {
     if wc.is_null() {
         return 0;
     }
@@ -47,33 +47,33 @@ pub(crate) unsafe extern "win64" fn register_class_w(wc: *const WndClassExW) -> 
         menu_name,
         icon_sm: wc.h_icon_sm,
     };
-    register_class(class_name, class)
+    common::register_class(class_name, class)
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn register_class_ex_a(wc: *const WndClassExA) -> u16 {
+pub(crate) unsafe extern "C" fn register_class_ex_a(wc: *const WndClassExA) -> u16 {
     register_class_a(wc)
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn register_class_ex_w(wc: *const WndClassExW) -> u16 {
+pub(crate) unsafe extern "C" fn register_class_ex_w(wc: *const WndClassExW) -> u16 {
     register_class_w(wc)
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn unregister_class_a(
+pub(crate) unsafe extern "C" fn unregister_class_a(
     class_name: *const u8,
     _h_instance: usize,
 ) -> i32 {
     let name = read_cstr(class_name).unwrap_or_default();
-    unregister_class(&name)
+    common::unregister_class(&name)
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn unregister_class_w(
+pub(crate) unsafe extern "C" fn unregister_class_w(
     class_name: *const u16,
     _h_instance: usize,
 ) -> i32 {
     let name = read_wstr(class_name).unwrap_or_default();
-    unregister_class(&name)
+    common::unregister_class(&name)
 }
