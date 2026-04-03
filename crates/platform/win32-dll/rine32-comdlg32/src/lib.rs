@@ -320,23 +320,31 @@ unsafe fn run_a_dialog(ofn: *mut OpenFileNameA, kind: DialogKind) -> i32 {
         DialogKind::Open => "GetOpenFileNameA",
         DialogKind::Save => "GetSaveFileNameA",
     };
-    let adapter = if ofn.is_null() {
-        None
-    } else {
-        // SAFETY: pointer is checked for null above.
-        Some(OpenFileNameAAdapter {
-            ofn: unsafe { &mut *ofn },
-        })
-    };
+    if ofn.is_null() {
+        return run_dialog_flow::<OpenFileNameAAdapter<'_>, _, _, _>(
+            api_name,
+            kind,
+            None::<OpenFileNameAAdapter<'_>>,
+            pick_path,
+            emit_dialog_opened,
+            emit_dialog_result,
+        );
+    }
 
-    run_dialog_flow(
+    // x86 PE callers may provide only byte alignment for the struct address.
+    // Read/write it using unaligned operations and work on an aligned local copy.
+    let mut local = unsafe { core::ptr::read_unaligned(ofn) };
+    let adapter = Some(OpenFileNameAAdapter { ofn: &mut local });
+    let result = run_dialog_flow(
         api_name,
         kind,
         adapter,
         pick_path,
         emit_dialog_opened,
         emit_dialog_result,
-    )
+    );
+    unsafe { core::ptr::write_unaligned(ofn, local) };
+    result
 }
 
 unsafe fn run_w_dialog(ofn: *mut OpenFileNameW, kind: DialogKind) -> i32 {
@@ -344,23 +352,31 @@ unsafe fn run_w_dialog(ofn: *mut OpenFileNameW, kind: DialogKind) -> i32 {
         DialogKind::Open => "GetOpenFileNameW",
         DialogKind::Save => "GetSaveFileNameW",
     };
-    let adapter = if ofn.is_null() {
-        None
-    } else {
-        // SAFETY: pointer is checked for null above.
-        Some(OpenFileNameWAdapter {
-            ofn: unsafe { &mut *ofn },
-        })
-    };
+    if ofn.is_null() {
+        return run_dialog_flow::<OpenFileNameWAdapter<'_>, _, _, _>(
+            api_name,
+            kind,
+            None::<OpenFileNameWAdapter<'_>>,
+            pick_path,
+            emit_dialog_opened,
+            emit_dialog_result,
+        );
+    }
 
-    run_dialog_flow(
+    // x86 PE callers may provide only byte alignment for the struct address.
+    // Read/write it using unaligned operations and work on an aligned local copy.
+    let mut local = unsafe { core::ptr::read_unaligned(ofn) };
+    let adapter = Some(OpenFileNameWAdapter { ofn: &mut local });
+    let result = run_dialog_flow(
         api_name,
         kind,
         adapter,
         pick_path,
         emit_dialog_opened,
         emit_dialog_result,
-    )
+    );
+    unsafe { core::ptr::write_unaligned(ofn, local) };
+    result
 }
 
 struct OpenFileNameAAdapter<'a> {

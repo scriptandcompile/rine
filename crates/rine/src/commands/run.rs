@@ -453,12 +453,6 @@ pub enum DispatchError {
         helper: String,
         source: std::io::Error,
     },
-
-    #[error("32-bit runtime `{helper}` exited unsuccessfully ({status})")]
-    Failed {
-        helper: String,
-        status: std::process::ExitStatus,
-    },
 }
 
 fn dispatch_to_rine32(
@@ -492,7 +486,9 @@ fn dispatch_to_rine32(
         bridge.shutdown();
     }
 
-    Err(DispatchError::Failed { helper, status })
+    // Preserve the helper's exit semantics for x86 fixtures and real apps.
+    // If the helper terminated via signal, fall back to a generic failure code.
+    std::process::exit(status.code().unwrap_or(1))
 }
 
 fn resolve_rine32_helper_path() -> std::path::PathBuf {

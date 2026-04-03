@@ -24,6 +24,16 @@ pub fn user32_debug_enabled() -> bool {
     })
 }
 
+fn native_backend_enabled() -> bool {
+    static ENABLED: OnceLock<bool> = OnceLock::new();
+    *ENABLED.get_or_init(|| {
+        if let Ok(v) = std::env::var("RINE_USER32_NATIVE_BACKEND") {
+            return v == "1" || v.eq_ignore_ascii_case("true") || v.eq_ignore_ascii_case("yes");
+        }
+        cfg!(target_pointer_width = "64")
+    })
+}
+
 pub fn debug_log_backend(msg: impl AsRef<str>) {
     if user32_debug_enabled() {
         eprintln!("[user32/backend] {}", msg.as_ref());
@@ -206,6 +216,11 @@ thread_local! {
 }
 
 fn with_backend<R>(f: impl FnOnce(&mut WinitBackend) -> R) -> Option<R> {
+    if !native_backend_enabled() {
+        debug_log_backend("native backend disabled; using emulated user32 only");
+        return None;
+    }
+
     WINIT_BACKEND.with(|backend| {
         let mut backend = backend.borrow_mut();
         if backend.is_none() {

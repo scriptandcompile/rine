@@ -3,7 +3,7 @@ use rine_types::strings::{read_cstr, read_wstr};
 use rine_types::windows::*;
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn create_window_ex_a(
+pub(crate) unsafe extern "stdcall" fn create_window_ex_a(
     ex_style: u32,
     class_name: *const u8,
     window_name: *const u8,
@@ -33,7 +33,7 @@ pub(crate) unsafe extern "C" fn create_window_ex_a(
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn create_window_ex_w(
+pub(crate) unsafe extern "stdcall" fn create_window_ex_w(
     ex_style: u32,
     class_name: *const u16,
     window_name: *const u16,
@@ -63,21 +63,22 @@ pub(crate) unsafe extern "C" fn create_window_ex_w(
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn destroy_window(hwnd: usize) -> i32 {
+pub(crate) unsafe extern "stdcall" fn destroy_window(hwnd: usize) -> i32 {
     unsafe {
         common::destroy_window(hwnd, |proc_fn, h, msg, wp, lp| {
-            let f: extern "C" fn(usize, u32, usize, isize) -> isize = std::mem::transmute(proc_fn);
+            let f: extern "stdcall" fn(usize, u32, usize, isize) -> isize =
+                std::mem::transmute(proc_fn);
             f(h, msg, wp, lp)
         })
     }
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn show_window(hwnd: usize, cmd_show: i32) -> i32 {
+pub(crate) unsafe extern "stdcall" fn show_window(hwnd: usize, cmd_show: i32) -> i32 {
     common::show_window(hwnd, cmd_show)
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn update_window(hwnd: usize) -> i32 {
+pub(crate) unsafe extern "stdcall" fn update_window(hwnd: usize) -> i32 {
     common::update_window(hwnd)
 }
