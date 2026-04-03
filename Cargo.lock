@@ -3337,6 +3337,13 @@ name = "rine-common-comdlg32"
 version = "0.1.0"
 
 [[package]]
+name = "rine-common-gdi32"
+version = "0.1.0"
+dependencies = [
+ "rine-types",
+]
+
+[[package]]
 name = "rine-common-msvcrt"
 version = "0.1.0"
 dependencies = [
@@ -3437,6 +3444,7 @@ dependencies = [
  "rine-runtime-core",
  "rine-types",
  "rine32-comdlg32",
+ "rine32-gdi32",
  "rine32-kernel32",
  "rine32-msvcrt",
  "rine32-ntdll",
@@ -3454,6 +3462,15 @@ dependencies = [
  "rine-dlls",
  "rine-types",
  "tracing",
+]
+
+[[package]]
+name = "rine32-gdi32"
+version = "0.1.0"
+dependencies = [
+ "rine-common-gdi32",
+ "rine-dlls",
+ "rine-types",
 ]
 
 [[package]]
@@ -3517,6 +3534,7 @@ dependencies = [
 name = "rine64-gdi32"
 version = "0.1.0"
 dependencies = [
+ "rine-common-gdi32",
  "rine-dlls",
  "rine-types",
 ]

@@ -19,6 +19,7 @@ rine-types = { workspace = true, features = ["config"] }
 rine-runtime-core = { workspace = true }
 rine32-kernel32 = { workspace = true }
 rine32-comdlg32 = { workspace = true }
+rine32-gdi32 = { workspace = true }
 rine32-msvcrt = { workspace = true }
 rine32-ntdll = { workspace = true }
 rine32-user32 = { workspace = true }

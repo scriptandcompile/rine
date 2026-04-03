@@ -1,11 +1,17 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
+#[cfg(not(target_pointer_width = "32"))]
+compile_error!(
+    "crate `rine32-gdi32` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
+);
+
 use rine_dlls::{DllPlugin, Export, as_win_api};
+
 mod ops;
 
-pub struct Gdi32Plugin;
+pub struct Gdi32Plugin32;
 
-impl DllPlugin for Gdi32Plugin {
+impl DllPlugin for Gdi32Plugin32 {
     fn dll_names(&self) -> &[&str] {
         &["gdi32.dll"]
     }

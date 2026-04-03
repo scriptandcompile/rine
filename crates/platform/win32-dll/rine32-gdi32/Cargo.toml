@@ -1,9 +1,9 @@
 [package]
-name = "rine64-gdi32"
+name = "rine32-gdi32"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "gdi32.dll implementation for rine"
+description = "gdi32.dll implementation for rine32"
 
 [dependencies]
 rine-dlls = { workspace = true }

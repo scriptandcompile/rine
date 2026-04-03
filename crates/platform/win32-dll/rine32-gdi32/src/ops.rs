@@ -2,46 +2,46 @@ use rine_common_gdi32 as common;
 use rine_types::errors::WinBool;
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn create_compatible_dc(_hdc: usize) -> usize {
-    unsafe { common::create_compatible_dc(_hdc) }
+pub(crate) unsafe extern "stdcall" fn create_compatible_dc(hdc: usize) -> usize {
+    unsafe { common::create_compatible_dc(hdc) }
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn delete_dc(hdc: usize) -> WinBool {
+pub(crate) unsafe extern "stdcall" fn delete_dc(hdc: usize) -> WinBool {
     unsafe { common::delete_dc(hdc) }
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn create_compatible_bitmap(
-    _hdc: usize,
+pub(crate) unsafe extern "stdcall" fn create_compatible_bitmap(
+    hdc: usize,
     width: i32,
     height: i32,
 ) -> usize {
-    unsafe { common::create_compatible_bitmap(_hdc, width, height) }
+    unsafe { common::create_compatible_bitmap(hdc, width, height) }
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn create_solid_brush(color: u32) -> usize {
+pub(crate) unsafe extern "stdcall" fn create_solid_brush(color: u32) -> usize {
     unsafe { common::create_solid_brush(color) }
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn create_pen(_style: i32, _width: i32, color: u32) -> usize {
-    unsafe { common::create_pen(_style, _width, color) }
+pub(crate) unsafe extern "stdcall" fn create_pen(style: i32, width: i32, color: u32) -> usize {
+    unsafe { common::create_pen(style, width, color) }
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn select_object(hdc: usize, object: usize) -> usize {
+pub(crate) unsafe extern "stdcall" fn select_object(hdc: usize, object: usize) -> usize {
     unsafe { common::select_object(hdc, object) }
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn delete_object(object: usize) -> WinBool {
+pub(crate) unsafe extern "stdcall" fn delete_object(object: usize) -> WinBool {
     unsafe { common::delete_object(object) }
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn bit_blt(
+pub(crate) unsafe extern "stdcall" fn bit_blt(
     hdc_dest: usize,
     x_dest: i32,
     y_dest: i32,
@@ -56,7 +56,7 @@ pub(crate) unsafe extern "win64" fn bit_blt(
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn text_out_a(
+pub(crate) unsafe extern "stdcall" fn text_out_a(
     hdc: usize,
     x: i32,
     y: i32,
@@ -67,7 +67,7 @@ pub(crate) unsafe extern "win64" fn text_out_a(
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn text_out_w(
+pub(crate) unsafe extern "stdcall" fn text_out_w(
     hdc: usize,
     x: i32,
     y: i32,

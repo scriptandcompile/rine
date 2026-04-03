@@ -20,10 +20,12 @@ members = [
     "crates/platform/win64-dll/rine64-user32",
     "crates/platform/win64-dll/rine64-ws2_32",
     "crates/platform/win-common/rine-common-comdlg32",
+    "crates/platform/win-common/rine-common-gdi32",
     "crates/platform/win-common/rine-common-msvcrt",
     "crates/platform/win-common/rine-common-user32",
     "crates/platform/win32-dll/rine32-kernel32",
     "crates/platform/win32-dll/rine32-comdlg32",
+    "crates/platform/win32-dll/rine32-gdi32",
     "crates/platform/win32-dll/rine32-msvcrt",
     "crates/platform/win32-dll/rine32-ntdll",
     "crates/platform/win32-dll/rine32-user32",
@@ -67,10 +69,12 @@ rine64-comdlg32 = { path = "crates/platform/win64-dll/rine64-comdlg32" }
 rine64-user32 = { path = "crates/platform/win64-dll/rine64-user32" }
 rine64-ws2_32 = { path = "crates/platform/win64-dll/rine64-ws2_32" }
 rine-common-comdlg32 = { path = "crates/platform/win-common/rine-common-comdlg32" }
+rine-common-gdi32 = { path = "crates/platform/win-common/rine-common-gdi32" }
 rine-common-msvcrt = { path = "crates/platform/win-common/rine-common-msvcrt" }
 rine-common-user32 = { path = "crates/platform/win-common/rine-common-user32" }
 rine32-kernel32 = { path = "crates/platform/win32-dll/rine32-kernel32" }
 rine32-comdlg32 = { path = "crates/platform/win32-dll/rine32-comdlg32" }
+rine32-gdi32 = { path = "crates/platform/win32-dll/rine32-gdi32" }
 rine32-msvcrt = { path = "crates/platform/win32-dll/rine32-msvcrt" }
 rine32-ntdll = { path = "crates/platform/win32-dll/rine32-ntdll" }
 rine32-user32 = { path = "crates/platform/win32-dll/rine32-user32" }

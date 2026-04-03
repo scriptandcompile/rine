@@ -19,6 +19,7 @@ use rine_types::config::{
 };
 use rine_types::os::{VersionInfo, set_version};
 use rine32_comdlg32::Comdlg32Plugin32;
+use rine32_gdi32::Gdi32Plugin32;
 use rine32_kernel32::Kernel32Plugin32;
 use rine32_msvcrt::{CrtForwarderPlugin32, MsvcrtPlugin32};
 use rine32_ntdll::NtdllPlugin32;
@@ -178,6 +179,7 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     let registry = DllRegistry::from_plugins(&[
         &Kernel32Plugin32,
         &Comdlg32Plugin32,
+        &Gdi32Plugin32,
         &User32Plugin32,
         &MsvcrtPlugin32,
         &CrtForwarderPlugin32,
