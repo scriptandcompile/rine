@@ -247,6 +247,7 @@ body {
 #file-table,
 #thread-table,
 #mutex-table,
+#gdi-table,
 #memory-table {
   width: 100%;
   border-collapse: collapse;
@@ -255,6 +256,7 @@ body {
 #file-table th,
 #thread-table th,
 #mutex-table th,
+#gdi-table th,
 #memory-table th {
   position: sticky;
   top: 0;
@@ -268,6 +270,7 @@ body {
 #file-table td,
 #thread-table td,
 #mutex-table td,
+#gdi-table td,
 #memory-table td {
   padding: 4px 10px;
   border-bottom: 1px solid var(--border);

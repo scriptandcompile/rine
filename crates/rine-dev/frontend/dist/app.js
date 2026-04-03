@@ -276,6 +276,7 @@ function handleEvent(event) {
       state.handles.push({ handle: event.handle, kind: event.kind, detail: event.detail, closed: false });
       renderFilesTable();
       renderMutexesTable();
+      renderGdiTable();
       if (event.kind === 'Window') {
         handleWindowCreatedFromHandleEvent(event);
       }
@@ -285,6 +286,7 @@ function handleEvent(event) {
       if (h) h.closed = true;
       renderFilesTable();
       renderMutexesTable();
+      renderGdiTable();
       if (h && h.kind === 'Window') {
         handleWindowClosedFromHandleEvent(event);
       }
@@ -357,6 +359,7 @@ bindThreadsUi();
 bindMemoryUi();
 bindMutexesUi();
 bindWindowsUi();
+bindGdiUi();
 document.getElementById('event-filter').addEventListener('input', () => {
   const filterText = document.getElementById('event-filter').value.toLowerCase();
   document.querySelectorAll('#event-log .event-entry').forEach(div => {
@@ -380,6 +383,7 @@ invoke('get_state').then(snap => {
     state.handles = snap.handles;
     renderFilesTable();
     renderMutexesTable();
+    renderGdiTable();
     hydrateWindowsFromHandles(snap.handles);
     renderWindowTree();
   }

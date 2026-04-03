@@ -26,7 +26,7 @@ for src in "$SRC_DIR"/*.c; do
     name="$(basename "$src" .c)"
     exe="$BIN_DIR/${name}.exe"
     echo "  CC  $name.c -> $name.exe"
-    if "$CC" -o "$exe" "$src" -O1 -static -mconsole 2>&1; then
+    if "$CC" -o "$exe" "$src" -O1 -static -mconsole -lgdi32 2>&1; then
         count=$((count + 1))
     else
         echo "  FAIL: $name.c" >&2

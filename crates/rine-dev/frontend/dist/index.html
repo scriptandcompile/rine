@@ -21,6 +21,7 @@
       <button class="tab" data-tab="threads">Threads</button>
       <button class="tab" data-tab="mutexes">Mutexes</button>
       <button class="tab" data-tab="windows">Windows</button>
+      <button class="tab" data-tab="gdi">GDI</button>
       <button class="tab" data-tab="events">Events</button>
       <button class="tab" data-tab="output">Output</button>
     </nav>
@@ -226,6 +227,31 @@
       </div>
     </section>
 
+    <!-- GDI Tab -->
+    <section id="tab-gdi" class="tab-content">
+      <div class="toolbar">
+        <input type="text" id="gdi-filter" placeholder="Filter by kind, handle, or detail…">
+        <label class="filter-label">
+          <input type="checkbox" id="gdi-hide-closed"> Hide closed
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table id="gdi-table">
+          <thead>
+            <tr>
+              <th>Handle</th>
+              <th>Kind</th>
+              <th>Detail</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="gdi-tbody">
+            <tr><td colspan="4" class="placeholder">No GDI objects yet…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <!--Events Tab -->
     <section id="tab-events" class="tab-content">
       <div class="toolbar">
@@ -263,6 +289,7 @@
   <script src="threads-tab.js"></script>
   <script src="mutexes-tab.js"></script>
   <script src="windows-tab.js"></script>
+  <script src="gdi-tab.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

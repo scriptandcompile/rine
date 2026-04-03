@@ -7,6 +7,34 @@ use crate::text::draw_text;
 
 pub(crate) const SRCCOPY: u32 = 0x00CC0020;
 
+fn bitmap_bytes(bitmap: &Bitmap) -> u64 {
+    (bitmap.pixels.len() * std::mem::size_of::<u32>()) as u64
+}
+
+fn notify_bitmap_alloc(handle: usize, bitmap: &Bitmap) {
+    let detail = format!(
+        r#"{{"handle":{},"width":{},"height":{},"bytes":{}}}"#,
+        handle,
+        bitmap.width,
+        bitmap.height,
+        bitmap_bytes(bitmap)
+    );
+    rine_types::dev_notify!(on_handle_created(handle as i64, "GdiBitmap", &detail));
+    rine_types::dev_notify!(on_memory_allocated(
+        bitmap.pixels.as_ptr() as u64,
+        bitmap_bytes(bitmap),
+        "GDI Bitmap",
+    ));
+}
+
+fn notify_bitmap_free(bitmap: &Bitmap) {
+    rine_types::dev_notify!(on_memory_freed(
+        bitmap.pixels.as_ptr() as u64,
+        bitmap_bytes(bitmap),
+        "GDI Bitmap",
+    ));
+}
+
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn create_compatible_dc(_hdc: usize) -> usize {
     let mut state = gdi_state().lock().unwrap();
@@ -17,12 +45,15 @@ pub(crate) unsafe extern "win64" fn create_compatible_dc(_hdc: usize) -> usize {
     let default_bitmap_handle = alloc_handle();
     dc.selected_bitmap = Some(default_bitmap_handle);
     dc.owned_objects.push(default_bitmap_handle);
-    state.objects.insert(
-        default_bitmap_handle,
-        GdiObject::Bitmap(Bitmap::new(1, 1).unwrap()),
-    );
+    let default_bitmap = Bitmap::new(1, 1).unwrap();
+    notify_bitmap_alloc(default_bitmap_handle, &default_bitmap);
+    state
+        .objects
+        .insert(default_bitmap_handle, GdiObject::Bitmap(default_bitmap));
 
     state.dcs.insert(dc_handle, dc);
+    let detail = format!(r#"{{"hdc":{}}}"#, dc_handle);
+    rine_types::dev_notify!(on_handle_created(dc_handle as i64, "GdiDc", &detail));
     dc_handle
 }
 
@@ -34,9 +65,15 @@ pub(crate) unsafe extern "win64" fn delete_dc(hdc: usize) -> WinBool {
     };
 
     for object in dc.owned_objects {
-        state.objects.remove(&object);
+        if let Some(gdi_object) = state.objects.remove(&object) {
+            if let GdiObject::Bitmap(bitmap) = &gdi_object {
+                notify_bitmap_free(bitmap);
+            }
+            rine_types::dev_notify!(on_handle_closed(object as i64));
+        }
     }
 
+    rine_types::dev_notify!(on_handle_closed(hdc as i64));
     WinBool::TRUE
 }
 
@@ -52,6 +89,7 @@ pub(crate) unsafe extern "win64" fn create_compatible_bitmap(
 
     let mut state = gdi_state().lock().unwrap();
     let handle = alloc_handle();
+    notify_bitmap_alloc(handle, &bitmap);
     state.objects.insert(handle, GdiObject::Bitmap(bitmap));
     handle
 }
@@ -60,6 +98,12 @@ pub(crate) unsafe extern "win64" fn create_compatible_bitmap(
 pub(crate) unsafe extern "win64" fn create_solid_brush(color: u32) -> usize {
     let mut state = gdi_state().lock().unwrap();
     let handle = alloc_handle();
+    let detail = format!(
+        r##"{{"handle":{},"color":"#{:06X}"}}"##,
+        handle,
+        color & 0x00FF_FFFF
+    );
+    rine_types::dev_notify!(on_handle_created(handle as i64, "GdiBrush", &detail));
     state
         .objects
         .insert(handle, GdiObject::Brush(Brush { color }));
@@ -70,6 +114,14 @@ pub(crate) unsafe extern "win64" fn create_solid_brush(color: u32) -> usize {
 pub(crate) unsafe extern "win64" fn create_pen(_style: i32, _width: i32, color: u32) -> usize {
     let mut state = gdi_state().lock().unwrap();
     let handle = alloc_handle();
+    let detail = format!(
+        r##"{{"handle":{},"style":{},"width":{},"color":"#{:06X}"}}"##,
+        handle,
+        _style,
+        _width,
+        color & 0x00FF_FFFF
+    );
+    rine_types::dev_notify!(on_handle_created(handle as i64, "GdiPen", &detail));
     state.objects.insert(handle, GdiObject::Pen(Pen { color }));
     handle
 }
@@ -121,7 +173,11 @@ pub(crate) unsafe extern "win64" fn delete_object(object: usize) -> WinBool {
         return WinBool::FALSE;
     }
 
-    if state.objects.remove(&object).is_some() {
+    if let Some(gdi_object) = state.objects.remove(&object) {
+        if let GdiObject::Bitmap(bitmap) = &gdi_object {
+            notify_bitmap_free(bitmap);
+        }
+        rine_types::dev_notify!(on_handle_closed(object as i64));
         WinBool::TRUE
     } else {
         WinBool::FALSE
