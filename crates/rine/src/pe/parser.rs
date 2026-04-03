@@ -14,11 +14,7 @@ pub enum PeFormat {
 
 impl PeFormat {
     pub fn from_pe(pe: &PE) -> Self {
-        if pe.is_64 {
-            Self::Pe32Plus
-        } else {
-            Self::Pe32
-        }
+        if pe.is_64 { Self::Pe32Plus } else { Self::Pe32 }
     }
 }
 

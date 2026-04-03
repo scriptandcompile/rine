@@ -298,16 +298,10 @@ fn apply_relocations(
             let rva = block_rva.add(offset);
 
             let applied = match pe_format {
-                PeFormat::Pe32Plus => apply_relocation_pe32_plus(
-                    base,
-                    delta,
-                    image_size,
-                    reloc_type,
-                    rva,
-                )?,
-                PeFormat::Pe32 => {
-                    apply_relocation_pe32(base, delta, image_size, reloc_type, rva)?
+                PeFormat::Pe32Plus => {
+                    apply_relocation_pe32_plus(base, delta, image_size, reloc_type, rva)?
                 }
+                PeFormat::Pe32 => apply_relocation_pe32(base, delta, image_size, reloc_type, rva)?,
             };
 
             if applied {

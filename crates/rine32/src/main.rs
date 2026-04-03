@@ -4,12 +4,12 @@ use std::process::ExitCode;
 use clap::{CommandFactory, Parser};
 use goblin::Object;
 use rine_dlls::DllRegistry;
-use rine32_kernel32::Kernel32Plugin32;
-use rine32_msvcrt::{CrtForwarderPlugin32, MsvcrtPlugin32};
-use rine32_ntdll::NtdllPlugin32;
 use rine_types::config::{
     AppConfig, ConfigError, DialogTheme, EmulatedDialogTheme, NativeDialogBackend, WindowsVersion,
 };
+use rine32_kernel32::Kernel32Plugin32;
+use rine32_msvcrt::{CrtForwarderPlugin32, MsvcrtPlugin32};
+use rine32_ntdll::NtdllPlugin32;
 use thiserror::Error;
 use tracing::{error, info};
 
@@ -238,8 +238,14 @@ fn apply_dialog_policy_env(cfg: &AppConfig) {
             DialogTheme::Windows => "emulated",
         },
     );
-    set_var_if_absent("RINE_DIALOG_NATIVE_BACKEND", native_backend_env(native_backend));
-    set_var_if_absent("RINE_DIALOG_EMULATED_THEME", windows_theme_env(windows_theme));
+    set_var_if_absent(
+        "RINE_DIALOG_NATIVE_BACKEND",
+        native_backend_env(native_backend),
+    );
+    set_var_if_absent(
+        "RINE_DIALOG_EMULATED_THEME",
+        windows_theme_env(windows_theme),
+    );
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

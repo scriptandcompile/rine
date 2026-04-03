@@ -113,3 +113,65 @@ pub fn detect_architecture(path: &Path) -> Result<PeArchitecture, ProbeError> {
         other => PeArchitecture::Unsupported(other),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn unique_temp_dir() -> PathBuf {
+        let ts = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("rine-probe-test-{ts}"));
+        std::fs::create_dir_all(&dir).expect("failed to create temp dir");
+        dir
+    }
+
+    fn write_minimal_pe(path: &Path, machine: u16) {
+        let mut bytes = vec![0u8; 0x90];
+        bytes[0..2].copy_from_slice(&DOS_MAGIC);
+        bytes[0x3c..0x40].copy_from_slice(&(0x80u32).to_le_bytes());
+        bytes[0x80..0x84].copy_from_slice(&PE_SIGNATURE);
+        bytes[0x84..0x86].copy_from_slice(&machine.to_le_bytes());
+        std::fs::write(path, bytes).expect("failed to write minimal pe");
+    }
+
+    #[test]
+    fn detects_x86_machine() {
+        let dir = unique_temp_dir();
+        let pe_path = dir.join("x86.exe");
+        write_minimal_pe(&pe_path, IMAGE_FILE_MACHINE_I386);
+
+        let arch = detect_architecture(&pe_path).expect("x86 probe should succeed");
+        assert_eq!(arch, PeArchitecture::X86);
+
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn detects_x64_machine() {
+        let dir = unique_temp_dir();
+        let pe_path = dir.join("x64.exe");
+        write_minimal_pe(&pe_path, IMAGE_FILE_MACHINE_AMD64);
+
+        let arch = detect_architecture(&pe_path).expect("x64 probe should succeed");
+        assert_eq!(arch, PeArchitecture::X64);
+
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn resolves_missing_extension_to_exe() {
+        let dir = unique_temp_dir();
+        let with_ext = dir.join("sample.exe");
+        let no_ext = dir.join("sample");
+        write_minimal_pe(&with_ext, IMAGE_FILE_MACHINE_I386);
+
+        let arch = detect_architecture(&no_ext).expect("probe should resolve .exe fallback");
+        assert_eq!(arch, PeArchitecture::X86);
+
+        let _ = std::fs::remove_dir_all(dir);
+    }
+}

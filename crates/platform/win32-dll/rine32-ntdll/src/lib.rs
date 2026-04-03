@@ -1,4 +1,4 @@
-use rine_dlls::{as_win_api, DllPlugin, Export};
+use rine_dlls::{DllPlugin, Export, as_win_api};
 
 pub struct NtdllPlugin32;
 

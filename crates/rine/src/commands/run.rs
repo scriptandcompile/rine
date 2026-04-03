@@ -587,27 +587,59 @@ fn dispatch_to_rine32(
     exe_path: &Path,
     #[allow(unused)] cli: &Cli,
 ) -> Result<std::convert::Infallible, DispatchError> {
-    let helper_path = std::env::current_exe()
-        .ok()
-        .and_then(|p| {
-            let sibling = p.with_file_name("rine32");
-            sibling.is_file().then_some(sibling)
-        })
-        .unwrap_or_else(|| std::path::PathBuf::from("rine32"));
+    let helper_path = resolve_rine32_helper_path();
     let helper = helper_path.display().to_string();
 
-    let status = Command::new(&helper_path)
-        .arg(exe_path)
-        .args(&cli.exe_args)
-        .status()
-        .map_err(|source| DispatchError::Spawn {
+    let status = spawn_rine32(&helper_path, exe_path, &cli.exe_args).map_err(|source| {
+        DispatchError::Spawn {
             helper: helper.clone(),
             source,
-        })?;
+        }
+    })?;
 
     if status.success() {
         std::process::exit(0);
     }
 
     Err(DispatchError::Failed { helper, status })
+}
+
+fn resolve_rine32_helper_path() -> std::path::PathBuf {
+    if let Some(explicit) = std::env::var_os("RINE_RINE32_HELPER") {
+        return explicit.into();
+    }
+
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| {
+            let sibling = p.with_file_name("rine32");
+            sibling.is_file().then_some(sibling)
+        })
+        .unwrap_or_else(|| std::path::PathBuf::from("rine32"))
+}
+
+fn spawn_rine32(
+    helper_path: &Path,
+    exe_path: &Path,
+    exe_args: &[String],
+) -> Result<std::process::ExitStatus, std::io::Error> {
+    Command::new(helper_path)
+        .arg(exe_path)
+        .args(exe_args)
+        .status()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn spawn_rine32_returns_error_for_missing_helper() {
+        let helper = Path::new("/definitely/missing/rine32-helper-binary");
+        let exe = Path::new("/tmp/fake-x86.exe");
+        let args: Vec<String> = vec!["arg1".to_string()];
+
+        let result = spawn_rine32(helper, exe, &args);
+        assert!(result.is_err(), "missing helper should fail to spawn");
+    }
 }
