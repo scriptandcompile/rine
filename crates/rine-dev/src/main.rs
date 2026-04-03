@@ -167,24 +167,27 @@ fn main() {
         .expect("error while running rine-dev");
 }
 
-/// Spawn rine as a child process with `--dev`, piping stdout/stderr.
+/// Spawn a runtime child process, piping stdout/stderr.
 fn spawn_rine_child(
     rine_bin: &std::path::Path,
     exe_path: &str,
     socket_path: &str,
     handle: &tauri::AppHandle,
 ) {
-    let mut child = match Command::new(rine_bin)
-        .env("RINE_DEV_SOCKET", socket_path)
-        .arg("--dev")
-        .arg(exe_path)
+    let mut cmd = Command::new(rine_bin);
+    cmd.env("RINE_DEV_SOCKET", socket_path)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()
-    {
+        .arg("--dev")
+        .arg(exe_path);
+
+    let mut child = match cmd.spawn() {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("rine-dev: failed to spawn rine: {e}");
+            eprintln!(
+                "rine-dev: failed to spawn rine ({}): {e}",
+                rine_bin.display()
+            );
             return;
         }
     };

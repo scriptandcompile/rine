@@ -295,7 +295,6 @@ impl DialogAdapter for OpenFileNameWAdapter<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn offsets_are_computed() {

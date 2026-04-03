@@ -2,14 +2,18 @@
 
 use core::ffi::{c_char, c_void};
 use std::path::PathBuf;
+use std::process::Command;
+use std::sync::OnceLock;
 
 use rine_common_comdlg32::{
-    DialogAdapter, DialogErrorCode, DialogKind, DialogPolicy, last_error, run_dialog_flow,
+    DialogAdapter, DialogErrorCode, DialogKind, DialogPolicy, last_error, resolve_dialog_policy,
+    run_dialog_flow,
 };
 use rine_dlls::{DllPlugin, Export, as_win_api};
 use rine_types::dev_hooks::{DialogOpenTelemetry, DialogResultTelemetry};
 use rine_types::dev_notify;
 use rine_types::strings::{read_cstr, read_wstr, write_cstr, write_wstr};
+use tracing::warn;
 
 #[cfg(not(target_pointer_width = "32"))]
 compile_error!(
@@ -17,6 +21,8 @@ compile_error!(
 );
 
 pub struct Comdlg32Plugin32;
+
+static BACKEND_MISSING_WARNED: OnceLock<()> = OnceLock::new();
 
 impl DllPlugin for Comdlg32Plugin32 {
     fn dll_names(&self) -> &[&str] {
@@ -137,21 +143,127 @@ fn pick_path(
         return Some(PathBuf::from(path));
     }
 
-    let mut dialog = rfd::FileDialog::new();
-    if let Some(title) = title {
-        dialog = dialog.set_title(&title);
+    if let Some(path) = pick_with_zenity(kind, title.as_deref(), initial_dir.as_deref()) {
+        return Some(path);
     }
-    if let Some(dir) = initial_dir {
-        let path = PathBuf::from(dir);
-        if path.is_dir() {
-            dialog = dialog.set_directory(path);
+
+    if let Some(path) = pick_with_kdialog(kind, title.as_deref(), initial_dir.as_deref()) {
+        return Some(path);
+    }
+
+    emit_backend_missing_warning_once();
+    None
+}
+
+fn emit_backend_missing_warning_once() {
+    if BACKEND_MISSING_WARNED.set(()).is_err() {
+        return;
+    }
+
+    warn!(
+        "win32 dialog backend unavailable: neither `zenity` nor `kdialog` could be used; \
+         install one of them for 32-bit file picker dialogs"
+    );
+
+    let policy = resolve_dialog_policy();
+    let fields = rine_common_comdlg32::telemetry::build_result_fields(
+        "DialogBackendProbe",
+        policy,
+        false,
+        DialogErrorCode::CderrDialogFailure as u32,
+        None,
+    );
+    dev_notify!(on_dialog_result(DialogResultTelemetry {
+        api: fields.api,
+        theme: fields.theme,
+        native_backend: fields.native_backend,
+        windows_theme: fields.windows_theme,
+        success: fields.success,
+        error_code: fields.error_code,
+        selected_path: fields.selected_path.as_deref(),
+    }));
+}
+
+/// Attempt to pick a file path using `zenity`. Returns `None` if `zenity` is not available or the dialog fails/is cancelled.
+///
+/// We use 'zenity' on GTK desktops when in 32-bit mode since the 'rfd' crate does not support 32-bit Linux targets, and
+/// 'zenity' is a widely-available native dialog tool that works well in this scenario.
+fn pick_with_zenity(
+    kind: DialogKind,
+    title: Option<&str>,
+    initial_dir: Option<&str>,
+) -> Option<PathBuf> {
+    let mut cmd = Command::new("zenity");
+    cmd.arg("--file-selection");
+
+    if matches!(kind, DialogKind::Save) {
+        cmd.arg("--save").arg("--confirm-overwrite");
+    }
+
+    if let Some(title) = title
+        && !title.is_empty()
+    {
+        cmd.arg("--title").arg(title);
+    }
+
+    if let Some(dir) = initial_dir
+        && !dir.is_empty()
+    {
+        cmd.arg("--filename").arg(format!("{dir}/"));
+    }
+
+    let output = cmd.output().ok()?;
+    if !output.status.success() {
+        return None;
+    }
+
+    let selected = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+    if selected.is_empty() {
+        return None;
+    }
+
+    Some(PathBuf::from(selected))
+}
+
+/// Attempt to pick a file path using `kdialog`. Returns `None` if `kdialog` is not available or the dialog fails/is cancelled.
+///
+/// We use 'kdialog' on KDE desktops when in 32-bit mode since the 'rfd' crate does not support 32-bit Linux targets, and
+/// 'kdialog' is a widely-available native dialog tool that works well in this scenario.
+fn pick_with_kdialog(
+    kind: DialogKind,
+    title: Option<&str>,
+    initial_dir: Option<&str>,
+) -> Option<PathBuf> {
+    let mut cmd = Command::new("kdialog");
+
+    match kind {
+        DialogKind::Open => {
+            cmd.arg("--getopenfilename");
+        }
+        DialogKind::Save => {
+            cmd.arg("--getsavefilename");
         }
     }
 
-    match kind {
-        DialogKind::Open => dialog.pick_file(),
-        DialogKind::Save => dialog.save_file(),
+    cmd.arg(initial_dir.unwrap_or("."));
+
+    if let Some(title) = title
+        && !title.is_empty()
+    {
+        cmd.arg("--title").arg(title);
     }
+
+    let output = cmd.output().ok()?;
+    if !output.status.success() {
+        return None;
+    }
+
+    let selected = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+    if selected.is_empty() {
+        return None;
+    }
+
+    Some(PathBuf::from(selected))
 }
 
 unsafe extern "C" fn get_open_file_name_a(open_file_name: *mut c_void) -> i32 {

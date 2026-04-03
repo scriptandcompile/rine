@@ -308,27 +308,13 @@ pub fn run(
 ) -> Result<std::convert::Infallible, RunError> {
     info!(exe = %exe_path.display(), "loading PE");
 
-    // Route by PE machine type so users can keep using `rine <exe>`.
-    let arch = detect_architecture(exe_path).map_err(RunError::Probe)?;
-    info!(
-        architecture = arch.machine_name(),
-        "detected PE architecture"
-    );
-    if let PeArchitecture::X86 = arch {
-        return dispatch_to_rine32(exe_path, cli).map_err(RunError::Dispatch);
-    }
-    if let PeArchitecture::Unsupported(machine) = arch {
-        return Err(RunError::UnsupportedMachine(machine));
-    }
-
     // ── Dev channel setup ──────────────────────────────────────────
     #[cfg(not(feature = "dev"))]
     let _dev_channel: Option<()> = None;
 
     // If RINE_DEV_SOCKET is set, rine-dev spawned us as a child process.
-    // Connect to its socket so we can send structured events (PeLoaded, etc.)
-    // and install the global DevHook so DLL implementations can emit
-    // handle/thread/TLS events.
+    // Connect immediately so dashboard state is live even when we dispatch
+    // early (for example, forwarding x86 executables to rine32).
     #[cfg(feature = "dev")]
     if let Ok(socket_path) = std::env::var("RINE_DEV_SOCKET") {
         match rine_channel::DevSender::connect(std::path::Path::new(&socket_path)) {
@@ -341,6 +327,31 @@ pub fn run(
                 tracing::warn!("failed to connect to rine-dev: {e}");
             }
         }
+    }
+
+    // Route by PE machine type so users can keep using `rine <exe>`.
+    let arch = detect_architecture(exe_path).map_err(RunError::Probe)?;
+    info!(
+        architecture = arch.machine_name(),
+        "detected PE architecture"
+    );
+    if let PeArchitecture::X86 = arch {
+        // x86 executables are executed by the helper runtime (`rine32`). Emit
+        // a synthetic PE lifecycle event so the dashboard can show progress
+        // instead of remaining in the initial waiting state.
+        dev_emit!(rine_channel::DevEvent::PeLoaded {
+            exe_path: exe_path.display().to_string(),
+            architecture: "32-bit (PE32 / x86) via rine32 dispatch".to_owned(),
+            image_base: 0,
+            image_size: 0,
+            entry_rva: 0,
+            relocation_delta: 0,
+            sections: Vec::new(),
+        });
+        return dispatch_to_rine32(exe_path, cli).map_err(RunError::Dispatch);
+    }
+    if let PeArchitecture::Unsupported(machine) = arch {
+        return Err(RunError::UnsupportedMachine(machine));
     }
 
     // 0. Load per-app configuration.
@@ -598,7 +609,19 @@ fn dispatch_to_rine32(
     })?;
 
     if status.success() {
+        #[cfg(feature = "dev")]
+        {
+            dev_emit!(rine_channel::DevEvent::ProcessExited { exit_code: 0 });
+            dev_shutdown();
+        }
         std::process::exit(0);
+    }
+
+    #[cfg(feature = "dev")]
+    {
+        let code = status.code().unwrap_or(-1);
+        dev_emit!(rine_channel::DevEvent::ProcessExited { exit_code: code });
+        dev_shutdown();
     }
 
     Err(DispatchError::Failed { helper, status })

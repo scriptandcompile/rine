@@ -137,6 +137,12 @@ where
     let (off, ext) = update_offsets(&path);
     adapter.set_name_offsets(off, ext);
     set_last_error(DialogErrorCode::None);
-    emit_result(api_name, policy, true, DialogErrorCode::None as u32, Some(&path));
+    emit_result(
+        api_name,
+        policy,
+        true,
+        DialogErrorCode::None as u32,
+        Some(&path),
+    );
     1
 }

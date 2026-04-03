@@ -9,4 +9,4 @@ description = "Win32 comdlg32 export plugin scaffold"
 rine-dlls = { workspace = true }
 rine-types = { workspace = true }
 rine-common-comdlg32 = { workspace = true }
-rfd = { workspace = true }
+tracing = { workspace = true }
