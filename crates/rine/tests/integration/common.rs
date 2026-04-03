@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+pub const DEFAULT_FIXTURE_ARCH: &str = "x64";
+
 pub fn workspace_root() -> PathBuf {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     manifest
@@ -12,15 +14,38 @@ pub fn workspace_root() -> PathBuf {
 }
 
 pub fn fixture(name: &str) -> PathBuf {
-    let exe = workspace_root()
-        .join("tests/fixtures/bin")
-        .join(format!("{name}.exe"));
-    assert!(
-        exe.exists(),
-        "fixture not found: {}\nRun `tests/build_fixtures.sh` to build.",
-        exe.display()
+    let arch = fixture_arch();
+    if let Some(exe) = try_fixture(name) {
+        return exe;
+    }
+
+    let candidate = fixture_path_for_arch(name, arch);
+    panic!(
+        "fixture not found for arch `{arch}`: {}\nRun `tests/build_fixtures.sh` to build fixtures.",
+        candidate.display()
     );
-    exe
+}
+
+pub fn try_fixture(name: &str) -> Option<PathBuf> {
+    let arch = fixture_arch();
+    let candidate = fixture_path_for_arch(name, arch);
+    candidate.exists().then_some(candidate)
+}
+
+pub fn fixture_arch() -> &'static str {
+    match std::env::var("RINE_FIXTURE_ARCH") {
+        Ok(value) if value.eq_ignore_ascii_case("x86") => "x86",
+        Ok(value) if value.eq_ignore_ascii_case("x64") => "x64",
+        Ok(value) => panic!("unsupported RINE_FIXTURE_ARCH `{value}`; expected `x64` or `x86`"),
+        Err(_) => DEFAULT_FIXTURE_ARCH,
+    }
+}
+
+fn fixture_path_for_arch(name: &str, arch: &str) -> PathBuf {
+    workspace_root()
+        .join("tests/fixtures/bin")
+        .join(arch)
+        .join(format!("{name}.exe"))
 }
 
 pub fn run_rine(fixture_path: &Path, extra_args: &[&str]) -> Output {

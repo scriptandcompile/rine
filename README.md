@@ -215,17 +215,21 @@ crates/
 ## Testing
 
 ```bash
-# Install MinGW cross-compiler (Debian/Ubuntu)
-sudo apt install gcc-mingw-w64-x86-64
+# Install MinGW cross-compilers (Debian/Ubuntu)
+sudo apt install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
 
-# Build test fixtures (.c → .exe)
+# Build test fixtures (.c -> .exe) for x64 + x86
 ./tests/build_fixtures.sh
 
 # Run the test suite
 cargo test
+
+# Run integration tests against x86 fixtures
+RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration dispatch::x86_
 ```
 
-Test fixtures are C programs in `tests/fixtures/src/` compiled to PE executables. Tests cover console I/O, memory allocation, string operations, threading, synchronization, exit codes, and more.
+Test fixtures are C programs in `tests/fixtures/src/` compiled to PE executables in `tests/fixtures/bin/x64/` and `tests/fixtures/bin/x86/`.
+By default, integration tests use `x64` fixtures; set `RINE_FIXTURE_ARCH=x86` to target x86 fixture binaries.
 
 ## Roadmap
 

@@ -38,8 +38,15 @@ jobs:
       - name: Unit tests (rine bin)
         run: cargo test -p rine --bin rine
 
-      - name: Integration tests
+      - name: Integration tests (x64 fixtures)
+        env:
+          RINE_FIXTURE_ARCH: x64
         run: cargo test -p rine --test integration
+
+      - name: Integration tests (x86 fixture dispatch)
+        env:
+          RINE_FIXTURE_ARCH: x86
+        run: cargo test -p rine --test integration dispatch::x86_
 
   test-rine32:
     runs-on: ubuntu-latest
