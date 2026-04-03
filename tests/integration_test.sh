@@ -9,7 +9,7 @@ BIN_DIR="$REPO_ROOT/tests/fixtures/bin"
 
 STATUS_ONLY=0
 AUTO_REBUILD=1
-X86_MODE="dispatch"
+X86_MODE="full"
 ARCH="all"
 
 assert_unique_fixture_names() {
@@ -38,7 +38,7 @@ Options:
     all|x64|x86   Restrict status/build/test work to specific fixture arch (default: all)
   --status-only   Only report fixture status; do not build or run tests
   --no-rebuild    Fail if fixtures are stale/missing instead of rebuilding
-  --x86-full      Run the full x86 integration suite instead of dispatch::x86_
+    --x86-full      Run the full x86 integration suite (default)
   -h, --help      Show this help
 EOF
 }
@@ -131,25 +131,15 @@ run_selected_tests() {
             RINE_FIXTURE_ARCH=x64 cargo test -p rine --test integration
             ;;
         x86)
-            if [[ "$X86_MODE" == "full" ]]; then
-                echo "Running full integration tests with x86 fixtures..."
-                RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration
-            else
-                echo "Running x86 dispatch integration tests (dispatch::x86_)..."
-                RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration dispatch::x86_
-            fi
+            echo "Running full integration tests with x86 fixtures..."
+            RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration
             ;;
         all)
             echo "Running integration tests with x64 fixtures..."
             RINE_FIXTURE_ARCH=x64 cargo test -p rine --test integration
 
-            if [[ "$X86_MODE" == "full" ]]; then
-                echo "Running full integration tests with x86 fixtures..."
-                RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration
-            else
-                echo "Running x86 dispatch integration tests (dispatch::x86_)..."
-                RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration dispatch::x86_
-            fi
+            echo "Running full integration tests with x86 fixtures..."
+            RINE_FIXTURE_ARCH=x86 cargo test -p rine --test integration
             ;;
         *)
             echo "error: unknown arch '$ARCH' (expected: x64, x86, all)" >&2
