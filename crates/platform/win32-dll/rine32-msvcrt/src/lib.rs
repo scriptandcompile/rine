@@ -2,8 +2,9 @@ use std::ffi::c_void;
 use std::sync::LazyLock;
 
 use rine_common_msvcrt::{
-    AllocationTracker, cached_main_args, commode_ptr, fmode_ptr, initenv_ptr, run_initterm,
-    run_initterm_e,
+    AllocationTracker, abort_process, amsg_exit, c_specific_handler_result, cached_main_args,
+    commode_ptr, errno_location, fake_iob_32_ptr, fmode_ptr, initenv_ptr, lock, onexit,
+    run_initterm, run_initterm_e, set_app_type, set_usermatherr, signal_default, unlock,
 };
 use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
 
@@ -20,14 +21,6 @@ win32_stub!(puts, "msvcrt");
 win32_stub!(fprintf, "msvcrt");
 win32_stub!(vfprintf, "msvcrt");
 win32_stub!(fwrite, "msvcrt");
-
-static FAKE_IOB: LazyLock<Box<[u8; 96]>> = LazyLock::new(|| {
-    let mut buf = Box::new([0u8; 96]);
-    buf[0..4].copy_from_slice(&0i32.to_ne_bytes());
-    buf[32..36].copy_from_slice(&1i32.to_ne_bytes());
-    buf[64..68].copy_from_slice(&2i32.to_ne_bytes());
-    buf
-});
 
 static CRT_ALLOCATIONS: LazyLock<AllocationTracker> = LazyLock::new(AllocationTracker::new);
 
@@ -90,10 +83,14 @@ pub unsafe extern "C" fn _initterm_e(
 }
 
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn __set_app_type(_app_type: i32) {}
+pub unsafe extern "C" fn __set_app_type(app_type: i32) {
+    set_app_type(app_type);
+}
 
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn __setusermatherr(_handler: usize) {}
+pub unsafe extern "C" fn __setusermatherr(handler: usize) {
+    set_usermatherr(handler);
+}
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "C" fn __C_specific_handler(
@@ -102,44 +99,47 @@ pub unsafe extern "C" fn __C_specific_handler(
     _context_record: usize,
     _dispatcher_context: usize,
 ) -> i32 {
-    1
+    c_specific_handler_result()
 }
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn __iob_func() -> *mut u8 {
-    FAKE_IOB.as_ptr() as *mut u8
+    fake_iob_32_ptr()
 }
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn _onexit(func: usize) -> usize {
-    func
+    onexit(func)
 }
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn _amsg_exit(msg_num: i32) {
-    eprintln!("rine: msvcrt runtime error (msg_num={msg_num})");
-    std::process::abort();
+    amsg_exit(msg_num)
 }
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn abort() {
-    std::process::abort();
+    abort_process()
 }
 
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn signal(_sig: i32, _handler: usize) -> usize {
-    0
+pub unsafe extern "C" fn signal(sig: i32, handler: usize) -> usize {
+    signal_default(sig, handler)
 }
 
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn _lock(_locknum: i32) {}
+pub unsafe extern "C" fn _lock(locknum: i32) {
+    lock(locknum);
+}
 
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn _unlock(_locknum: i32) {}
+pub unsafe extern "C" fn _unlock(locknum: i32) {
+    unlock(locknum);
+}
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn _errno() -> *mut i32 {
-    unsafe { libc::__errno_location() }
+    errno_location()
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
@@ -267,7 +267,7 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("__p__commode", as_win_api!(__p__commode)),
             Export::Data("_commode", commode_ptr() as *const ()),
             Export::Data("_fmode", fmode_ptr() as *const ()),
-            Export::Data("_iob", FAKE_IOB.as_ptr() as *const ()),
+            Export::Data("_iob", fake_iob_32_ptr() as *const ()),
             Export::Data("__initenv", initenv_ptr() as *const ()),
             Export::Func("malloc", as_win_api!(malloc)),
             Export::Func("calloc", as_win_api!(calloc)),

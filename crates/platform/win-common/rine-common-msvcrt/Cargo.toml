@@ -6,3 +6,4 @@ license.workspace = true
 description = "Shared architecture-neutral msvcrt logic for rine"
 
 [dependencies]
+libc = { workspace = true }

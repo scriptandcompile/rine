@@ -3,22 +3,28 @@
 //! These are called by the MinGW CRT startup code before `main()` runs.
 //! Most are no-ops or minimal stubs for Phase 1.
 
-use rine_common_msvcrt::{commode_ptr, fmode_ptr, initenv_ptr};
+use rine_common_msvcrt::{
+    abort_process, amsg_exit, c_specific_handler_result, commode_ptr, errno_location,
+    fake_iob_64_ptr, fmode_ptr, initenv_ptr, lock, onexit, set_app_type, set_usermatherr,
+    signal_default, unlock,
+};
 
 /// __set_app_type — set the application type (console/GUI).
 ///
 /// No-op: rine always runs as a console application.
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "win64" fn __set_app_type(_app_type: i32) {
-    tracing::trace!("msvcrt::__set_app_type({_app_type})");
+pub unsafe extern "win64" fn __set_app_type(app_type: i32) {
+    tracing::trace!("msvcrt::__set_app_type({app_type})");
+    set_app_type(app_type);
 }
 
 /// __setusermatherr — register a custom math error handler.
 ///
 /// No-op: we don't support custom math error handlers.
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "win64" fn __setusermatherr(_handler: usize) {
+pub unsafe extern "win64" fn __setusermatherr(handler: usize) {
     tracing::trace!("msvcrt::__setusermatherr");
+    set_usermatherr(handler);
 }
 
 /// __C_specific_handler — SEH personality function for x64 Windows.
@@ -33,7 +39,7 @@ pub unsafe extern "win64" fn __C_specific_handler(
     _dispatcher_context: usize,
 ) -> i32 {
     tracing::warn!("msvcrt::__C_specific_handler called — exceptions not supported");
-    1 // ExceptionContinueSearch
+    c_specific_handler_result()
 }
 
 /// _commode — return a pointer to the commit mode variable.
@@ -72,23 +78,6 @@ pub fn initenv_data_ptr() -> *mut usize {
     initenv_ptr()
 }
 
-// Fake FILE table for __iob_func. Windows CRT __iob_func returns a pointer
-// to an array of three FILE structs (stdin, stdout, stderr). The MinGW CRT
-// uses these for stdio operations. We provide a minimal fake that stores
-// just enough to identify each stream.
-//
-// Windows FILE struct is 48 bytes; we allocate enough space for 3 entries.
-// Pre-initialized with fd markers: stdin=0, stdout=1, stderr=2 in the first
-// 4 bytes of each 48-byte entry.
-static FAKE_IOB: std::sync::LazyLock<Box<[u8; 144]>> = std::sync::LazyLock::new(|| {
-    let mut buf = Box::new([0u8; 144]);
-    // Write fd markers into the first 4 bytes of each FILE entry.
-    buf[0..4].copy_from_slice(&0i32.to_ne_bytes()); // stdin fd=0
-    buf[48..52].copy_from_slice(&1i32.to_ne_bytes()); // stdout fd=1
-    buf[96..100].copy_from_slice(&2i32.to_ne_bytes()); // stderr fd=2
-    buf
-});
-
 /// __iob_func — return pointer to the stdio FILE table.
 ///
 /// Returns a fake FILE table. The first 3 entries represent stdin (0),
@@ -96,7 +85,7 @@ static FAKE_IOB: std::sync::LazyLock<Box<[u8; 144]>> = std::sync::LazyLock::new(
 /// each entry so fwrite/fprintf can identify the stream.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
-    FAKE_IOB.as_ptr() as *mut u8
+    fake_iob_64_ptr()
 }
 
 /// _onexit — register a function to be called at exit.
@@ -106,21 +95,20 @@ pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
     tracing::trace!("msvcrt::_onexit");
-    func // return non-NULL to indicate success
+    onexit(func)
 }
 
 /// _amsg_exit — display a runtime error message and abort.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _amsg_exit(msg_num: i32) {
-    eprintln!("rine: msvcrt runtime error (msg_num={msg_num})");
-    std::process::abort();
+    amsg_exit(msg_num)
 }
 
 /// abort — abnormally terminate the process.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn abort() {
     tracing::debug!("msvcrt::abort");
-    std::process::abort();
+    abort_process()
 }
 
 /// signal — install a signal handler.
@@ -129,30 +117,34 @@ pub unsafe extern "win64" fn abort() {
 /// are rarely used in practice.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn signal(
-    _sig: i32,
-    _handler: usize, // void (*)(int)
+    sig: i32,
+    handler: usize, // void (*)(int)
 ) -> usize {
-    0 // SIG_DFL
+    signal_default(sig, handler)
 }
 
 /// _lock — acquire an internal CRT lock.
 ///
 /// No-op for single-threaded Phase 1.
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "win64" fn _lock(_locknum: i32) {}
+pub unsafe extern "win64" fn _lock(locknum: i32) {
+    lock(locknum);
+}
 
 /// _unlock — release an internal CRT lock.
 ///
 /// No-op for single-threaded Phase 1.
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "win64" fn _unlock(_locknum: i32) {}
+pub unsafe extern "win64" fn _unlock(locknum: i32) {
+    unlock(locknum);
+}
 
 /// _errno — return a pointer to the per-thread errno value.
 ///
 /// Returns a pointer to libc's errno, which is thread-local.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _errno() -> *mut i32 {
-    unsafe { libc::__errno_location() }
+    errno_location()
 }
 
 /// __p__environ — return a pointer to the environment variable array.
