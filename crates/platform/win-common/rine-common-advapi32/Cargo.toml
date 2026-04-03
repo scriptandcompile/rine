@@ -1,12 +1,10 @@
 [package]
-name = "rine64-advapi32"
+name = "rine-common-advapi32"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "advapi32.dll implementation for rine"
+description = "Shared architecture-neutral advapi32 logic for rine"
 
 [dependencies]
-rine-dlls = { workspace = true }
 rine-types = { workspace = true }
-rine-common-advapi32 = { workspace = true }
 tracing = { workspace = true }

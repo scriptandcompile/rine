@@ -52,7 +52,11 @@ pub(crate) unsafe extern "stdcall" fn bit_blt(
     y_src: i32,
     rop: u32,
 ) -> WinBool {
-    unsafe { common::bit_blt(hdc_dest, x_dest, y_dest, width, height, hdc_src, x_src, y_src, rop) }
+    unsafe {
+        common::bit_blt(
+            hdc_dest, x_dest, y_dest, width, height, hdc_src, x_src, y_src, rop,
+        )
+    }
 }
 
 #[unsafe(no_mangle)]

@@ -3333,6 +3333,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rine-common-advapi32"
+version = "0.1.0"
+dependencies = [
+ "rine-types",
+ "tracing",
+]
+
+[[package]]
 name = "rine-common-comdlg32"
 version = "0.1.0"
 
@@ -3443,6 +3451,7 @@ dependencies = [
  "rine-dlls",
  "rine-runtime-core",
  "rine-types",
+ "rine32-advapi32",
  "rine32-comdlg32",
  "rine32-gdi32",
  "rine32-kernel32",
@@ -3452,6 +3461,14 @@ dependencies = [
  "thiserror 2.0.18",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "rine32-advapi32"
+version = "0.1.0"
+dependencies = [
+ "rine-common-advapi32",
+ "rine-dlls",
 ]
 
 [[package]]
@@ -3515,6 +3532,7 @@ dependencies = [
 name = "rine64-advapi32"
 version = "0.1.0"
 dependencies = [
+ "rine-common-advapi32",
  "rine-dlls",
  "rine-types",
  "tracing",
