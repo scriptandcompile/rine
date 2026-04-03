@@ -24,6 +24,7 @@ pub struct StateSnapshot {
 #[derive(Debug, Clone, Serialize)]
 pub struct PeInfo {
     pub exe_path: String,
+    pub architecture: String,
     pub image_base: u64,
     pub image_size: u64,
     pub entry_rva: u64,

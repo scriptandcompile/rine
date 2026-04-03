@@ -7,6 +7,9 @@ use rine_dlls::DllRegistry;
 use rine32_kernel32::Kernel32Plugin32;
 use rine32_msvcrt::{CrtForwarderPlugin32, MsvcrtPlugin32};
 use rine32_ntdll::NtdllPlugin32;
+use rine_types::config::{
+    AppConfig, ConfigError, DialogTheme, EmulatedDialogTheme, NativeDialogBackend, WindowsVersion,
+};
 use thiserror::Error;
 use tracing::{error, info};
 
@@ -22,6 +25,10 @@ const IMAGE_FILE_MACHINE_I386: u16 = 0x014c;
 struct Cli {
     /// Path to the Windows .exe to run.
     exe_path: Option<PathBuf>,
+
+    /// Show or create the per-app config file instead of running the exe.
+    #[arg(long = "config")]
+    show_config: bool,
 
     /// Arguments to pass to the Windows executable.
     #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
@@ -48,6 +55,9 @@ enum Run32Error {
     #[error("`{path}` is not a 32-bit PE (machine=0x{machine:04x})")]
     NotPe32 { path: PathBuf, machine: u16 },
 
+    #[error("{0}")]
+    Config(#[from] ConfigError),
+
     #[error(
         "this rine32 binary was built for a non-32-bit host architecture ({host}); build rine32 for x86 Linux"
     )]
@@ -73,6 +83,10 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     };
 
+    if cli.show_config {
+        return show_config(&exe_path);
+    }
+
     match run(&exe_path, &cli.exe_args) {
         Ok(code) => ExitCode::from(code as u8),
         Err(e) => {
@@ -85,6 +99,20 @@ fn main() -> ExitCode {
 fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     let resolved = resolve_exe_path(exe_path);
     ensure_pe32(&resolved)?;
+    let app_config = rine_types::config::load_config(exe_path)?;
+
+    info!(
+        version = %app_config.windows_version,
+        config = %rine_types::config::config_path(exe_path).display(),
+        "app config loaded"
+    );
+
+    for (key, value) in &app_config.environment {
+        // SAFETY: invoked before PE execution while runtime is single-threaded.
+        unsafe { std::env::set_var(key, value) };
+    }
+
+    apply_dialog_policy_env(&app_config);
 
     let registry = DllRegistry::from_plugins(&[
         &Kernel32Plugin32,
@@ -144,4 +172,151 @@ fn ensure_pe32(path: &Path) -> Result<(), Run32Error> {
     }
 
     Ok(())
+}
+
+fn show_config(exe_path: &Path) -> ExitCode {
+    let cfg = match rine_types::config::load_config(exe_path) {
+        Ok(c) => c,
+        Err(e) => {
+            error!("{e}");
+            return ExitCode::FAILURE;
+        }
+    };
+
+    let path = rine_types::config::config_path(exe_path);
+    if !path.exists()
+        && let Err(e) = rine_types::config::save_config(exe_path, &cfg)
+    {
+        error!("{e}");
+        return ExitCode::FAILURE;
+    }
+
+    let abs_exe = exe_path
+        .canonicalize()
+        .unwrap_or_else(|_| exe_path.to_path_buf());
+
+    let config_bin = std::env::current_exe()
+        .ok()
+        .and_then(|p| {
+            let sibling = p.with_file_name("rine-config");
+            sibling.is_file().then_some(sibling)
+        })
+        .unwrap_or_else(|| PathBuf::from("rine-config"));
+
+    info!(
+        "launching {} for {}",
+        config_bin.display(),
+        abs_exe.display()
+    );
+
+    match std::process::Command::new(&config_bin)
+        .arg(abs_exe.as_os_str())
+        .spawn()
+    {
+        Ok(_) => ExitCode::SUCCESS,
+        Err(e) => {
+            error!(
+                "failed to launch rine-config ({}): {e}\n\
+                 hint: make sure rine-config is built (`cargo build -p rine-config`)",
+                config_bin.display()
+            );
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn apply_dialog_policy_env(cfg: &AppConfig) {
+    let desktop = detect_desktop();
+    let native_backend = resolve_native_backend(cfg.dialogs.native_backend, desktop);
+    let windows_theme = resolve_emulated_theme(cfg.windows_version);
+
+    set_var_if_absent("RINE_DIALOG_THEME", dialog_theme_env(cfg.dialogs.theme));
+    set_var_if_absent(
+        "RINE_DIALOG_MODE",
+        match cfg.dialogs.theme {
+            DialogTheme::Native => "native",
+            DialogTheme::Windows => "emulated",
+        },
+    );
+    set_var_if_absent("RINE_DIALOG_NATIVE_BACKEND", native_backend_env(native_backend));
+    set_var_if_absent("RINE_DIALOG_EMULATED_THEME", windows_theme_env(windows_theme));
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DesktopEnvironment {
+    Gnome,
+    Kde,
+    Other,
+}
+
+fn detect_desktop() -> DesktopEnvironment {
+    let desktop = std::env::var("XDG_CURRENT_DESKTOP")
+        .or_else(|_| std::env::var("DESKTOP_SESSION"))
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+
+    if desktop.contains("gnome") {
+        return DesktopEnvironment::Gnome;
+    }
+    if desktop.contains("kde") || std::env::var_os("KDE_FULL_SESSION").is_some() {
+        return DesktopEnvironment::Kde;
+    }
+    DesktopEnvironment::Other
+}
+
+fn resolve_native_backend(
+    backend: NativeDialogBackend,
+    desktop: DesktopEnvironment,
+) -> NativeDialogBackend {
+    match backend {
+        NativeDialogBackend::Auto => match desktop {
+            DesktopEnvironment::Gnome | DesktopEnvironment::Kde | DesktopEnvironment::Other => {
+                NativeDialogBackend::Portal
+            }
+        },
+        explicit => explicit,
+    }
+}
+
+fn resolve_emulated_theme(windows_version: WindowsVersion) -> EmulatedDialogTheme {
+    match windows_version {
+        WindowsVersion::WinXP => EmulatedDialogTheme::Xp,
+        WindowsVersion::Win7 => EmulatedDialogTheme::Win7,
+        WindowsVersion::Win10 => EmulatedDialogTheme::Win10,
+        WindowsVersion::Win11 => EmulatedDialogTheme::Win11,
+    }
+}
+
+fn dialog_theme_env(theme: DialogTheme) -> &'static str {
+    match theme {
+        DialogTheme::Native => "native",
+        DialogTheme::Windows => "windows",
+    }
+}
+
+fn native_backend_env(backend: NativeDialogBackend) -> &'static str {
+    match backend {
+        NativeDialogBackend::Auto => "auto",
+        NativeDialogBackend::Portal => "portal",
+        NativeDialogBackend::Gtk => "gtk",
+        NativeDialogBackend::Kde => "kde",
+    }
+}
+
+fn windows_theme_env(theme: EmulatedDialogTheme) -> &'static str {
+    match theme {
+        EmulatedDialogTheme::Auto => "auto",
+        EmulatedDialogTheme::Xp => "xp",
+        EmulatedDialogTheme::Win7 => "win7",
+        EmulatedDialogTheme::Win10 => "win10",
+        EmulatedDialogTheme::WindowsVersion => "windows_version",
+        EmulatedDialogTheme::Win11 => "win11",
+    }
+}
+
+fn set_var_if_absent(key: &str, value: &str) {
+    if std::env::var_os(key).is_none() {
+        // SAFETY: invoked before PE execution while runtime is single-threaded.
+        unsafe { std::env::set_var(key, value) };
+    }
 }

@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 pub enum DevEvent {
     PeLoaded {
         exe_path: String,
+        architecture: String,
         image_base: u64,
         image_size: u64,
         entry_rva: u64,

@@ -54,6 +54,7 @@ function renderPeInfo(pe) {
   const el = document.getElementById('pe-info');
   el.innerHTML = [
     kv('Executable', pe.exe_path),
+    kv('Architecture', pe.architecture || 'unknown'),
     kv('Image Base', hex(pe.image_base)),
     kv('Image Size', hex(pe.image_size)),
     kv('Entry RVA', hex(pe.entry_rva)),
@@ -132,7 +133,7 @@ function addEventEntry(event) {
   let detail = '';
   switch (event.type) {
     case 'PeLoaded':
-      detail = `base=${hex(event.image_base)}  size=${hex(event.image_size)}  sections=${event.sections.length}`;
+      detail = `arch=${event.architecture || 'unknown'}  base=${hex(event.image_base)}  size=${hex(event.image_size)}  sections=${event.sections.length}`;
       break;
     case 'ConfigLoaded':
       detail = `version=${event.windows_version}  overrides=${event.environment_overrides.length}`;

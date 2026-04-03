@@ -3386,6 +3386,7 @@ dependencies = [
  "clap",
  "goblin",
  "rine-dlls",
+ "rine-types",
  "rine32-kernel32",
  "rine32-msvcrt",
  "rine32-ntdll",

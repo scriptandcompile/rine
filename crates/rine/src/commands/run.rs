@@ -388,6 +388,11 @@ pub fn run(
 
     dev_emit!(rine_channel::DevEvent::PeLoaded {
         exe_path: exe_path.display().to_string(),
+        architecture: match parsed.format {
+            crate::pe::parser::PeFormat::Pe32 => "32-bit (PE32 / x86)",
+            crate::pe::parser::PeFormat::Pe32Plus => "64-bit (PE32+ / x64)",
+        }
+        .to_string(),
         image_base: image.base().as_usize() as u64,
         image_size: image.size() as u64,
         entry_rva: parsed.pe.entry as u64,

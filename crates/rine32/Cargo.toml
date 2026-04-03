@@ -12,6 +12,7 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 rine-dlls = { workspace = true }
+rine-types = { workspace = true, features = ["config"] }
 rine32-kernel32 = { workspace = true }
 rine32-msvcrt = { workspace = true }
 rine32-ntdll = { workspace = true }

@@ -251,6 +251,7 @@ fn apply_event(snap: &mut StateSnapshot, event: &DevEvent) {
     match event {
         DevEvent::PeLoaded {
             exe_path,
+            architecture,
             image_base,
             image_size,
             entry_rva,
@@ -259,6 +260,7 @@ fn apply_event(snap: &mut StateSnapshot, event: &DevEvent) {
         } => {
             snap.pe = Some(PeInfo {
                 exe_path: exe_path.clone(),
+                architecture: architecture.clone(),
                 image_base: *image_base,
                 image_size: *image_size,
                 entry_rva: *entry_rva,
