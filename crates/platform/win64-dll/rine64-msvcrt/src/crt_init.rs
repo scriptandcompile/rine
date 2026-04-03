@@ -1,6 +1,6 @@
 //! MSVCRT C runtime initialization: __getmainargs, _initterm, _initterm_e.
 
-use rine_common_msvcrt::cached_main_args;
+use rine_common_msvcrt::{cached_main_args, run_initterm, run_initterm_e};
 
 /// __getmainargs — MSVCRT CRT argument initialization.
 ///
@@ -47,14 +47,10 @@ pub unsafe extern "win64" fn _initterm(
     end: *const Option<unsafe extern "win64" fn()>,
 ) {
     tracing::trace!("msvcrt::_initterm");
-    if start.is_null() || end.is_null() || start >= end {
-        return;
-    }
-    let count = unsafe { end.offset_from(start) } as usize;
-    for i in 0..count {
-        if let Some(func) = unsafe { *start.add(i) } {
-            unsafe { func() };
-        }
+    unsafe {
+        run_initterm(start, end, |func| {
+            func();
+        });
     }
 }
 
@@ -70,20 +66,11 @@ pub unsafe extern "win64" fn _initterm_e(
     end: *const Option<unsafe extern "win64" fn() -> i32>,
 ) -> i32 {
     tracing::trace!("msvcrt::_initterm_e");
-    if start.is_null() || end.is_null() || start >= end {
-        return 0;
+    let result = unsafe { run_initterm_e(start, end, |func| func()) };
+    if result != 0 {
+        tracing::warn!(result, "msvcrt::_initterm_e: initializer failed");
     }
-    let count = unsafe { end.offset_from(start) } as usize;
-    for i in 0..count {
-        if let Some(func) = unsafe { *start.add(i) } {
-            let result = unsafe { func() };
-            if result != 0 {
-                tracing::warn!(result, index = i, "msvcrt::_initterm_e: initializer failed");
-                return result;
-            }
-        }
-    }
-    0
+    result
 }
 
 #[cfg(test)]
@@ -119,68 +106,10 @@ mod tests {
     }
 
     #[test]
-    fn initterm_calls_entries() {
-        use std::sync::atomic::{AtomicU32, Ordering};
-        static COUNTER: AtomicU32 = AtomicU32::new(0);
-
-        unsafe extern "win64" fn inc() {
-            COUNTER.fetch_add(1, Ordering::Relaxed);
-        }
-
-        let table: [Option<unsafe extern "win64" fn()>; 3] = [Some(inc), None, Some(inc)];
-
-        COUNTER.store(0, Ordering::Relaxed);
-        unsafe {
-            _initterm(table.as_ptr(), table.as_ptr().add(table.len()));
-        }
-        assert_eq!(COUNTER.load(Ordering::Relaxed), 2);
-    }
-
-    #[test]
     fn initterm_handles_null_range() {
         // Should be a no-op, not crash.
         unsafe {
             _initterm(std::ptr::null(), std::ptr::null());
         }
-    }
-
-    #[test]
-    fn initterm_e_stops_on_error() {
-        use std::sync::atomic::{AtomicU32, Ordering};
-        static COUNTER: AtomicU32 = AtomicU32::new(0);
-
-        unsafe extern "win64" fn ok() -> i32 {
-            COUNTER.fetch_add(1, Ordering::Relaxed);
-            0
-        }
-        unsafe extern "win64" fn fail() -> i32 {
-            COUNTER.fetch_add(1, Ordering::Relaxed);
-            42
-        }
-        unsafe extern "win64" fn unreachable_init() -> i32 {
-            COUNTER.fetch_add(100, Ordering::Relaxed);
-            0
-        }
-
-        let table: [Option<unsafe extern "win64" fn() -> i32>; 3] =
-            [Some(ok), Some(fail), Some(unreachable_init)];
-
-        COUNTER.store(0, Ordering::Relaxed);
-        let result = unsafe { _initterm_e(table.as_ptr(), table.as_ptr().add(table.len())) };
-        assert_eq!(result, 42);
-        // Only the first two should have been called.
-        assert_eq!(COUNTER.load(Ordering::Relaxed), 2);
-    }
-
-    #[test]
-    fn initterm_e_returns_zero_on_success() {
-        unsafe extern "win64" fn ok() -> i32 {
-            0
-        }
-
-        let table: [Option<unsafe extern "win64" fn() -> i32>; 2] = [Some(ok), Some(ok)];
-
-        let result = unsafe { _initterm_e(table.as_ptr(), table.as_ptr().add(table.len())) };
-        assert_eq!(result, 0);
     }
 }

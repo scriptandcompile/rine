@@ -2,7 +2,8 @@ use std::ffi::c_void;
 use std::sync::LazyLock;
 
 use rine_common_msvcrt::{
-    AllocationTracker, cached_main_args, commode_ptr, fmode_ptr, initenv_ptr,
+    AllocationTracker, cached_main_args, commode_ptr, fmode_ptr, initenv_ptr, run_initterm,
+    run_initterm_e,
 };
 use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
 
@@ -69,15 +70,10 @@ pub unsafe extern "C" fn _initterm(
     start: *const Option<unsafe extern "C" fn()>,
     end: *const Option<unsafe extern "C" fn()>,
 ) {
-    if start.is_null() || end.is_null() || start >= end {
-        return;
-    }
-
-    let count = unsafe { end.offset_from(start) } as usize;
-    for index in 0..count {
-        if let Some(func) = unsafe { *start.add(index) } {
-            unsafe { func() };
-        }
+    unsafe {
+        run_initterm(start, end, |func| {
+            func();
+        });
     }
 }
 
@@ -86,22 +82,11 @@ pub unsafe extern "C" fn _initterm_e(
     start: *const Option<unsafe extern "C" fn() -> i32>,
     end: *const Option<unsafe extern "C" fn() -> i32>,
 ) -> i32 {
-    if start.is_null() || end.is_null() || start >= end {
-        return 0;
+    let result = unsafe { run_initterm_e(start, end, |func| func()) };
+    if result != 0 {
+        tracing::warn!(result, "msvcrt::_initterm_e: initializer failed");
     }
-
-    let count = unsafe { end.offset_from(start) } as usize;
-    for index in 0..count {
-        if let Some(func) = unsafe { *start.add(index) } {
-            let result = unsafe { func() };
-            if result != 0 {
-                tracing::warn!(result, index, "msvcrt::_initterm_e: initializer failed");
-                return result;
-            }
-        }
-    }
-
-    0
+    result
 }
 
 #[allow(clippy::missing_safety_doc)]
