@@ -508,8 +508,8 @@ pub fn run(
     }
 
     // 5b. Set up fake Windows Thread Environment Block (TEB) so CRT code
-    //     that reads gs:0x30 doesn't segfault.
-    unsafe { subsys::threading::init_teb() };
+    //     that reads segment-based TEB fields doesn't fault.
+    unsafe { subsys::threading::init_teb_for_format(parsed.format)? };
 
     // 6. Execute the PE entry point.
     let exit_code = crate::loader::entry::execute(&image, &parsed)?;
@@ -549,6 +549,9 @@ pub enum RunError {
 
     #[error("{0}")]
     Resolver(#[from] crate::loader::resolver::ResolverError),
+
+    #[error("{0}")]
+    Threading(#[from] crate::subsys::threading::ThreadingError),
 
     #[error("{0}")]
     Entry(#[from] crate::loader::entry::EntryError),
