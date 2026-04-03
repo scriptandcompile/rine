@@ -1,37 +1,31 @@
-use rine_dlls::{DllPlugin, Export, as_win_api};
+use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
+
+#[cfg(not(target_pointer_width = "32"))]
+compile_error!(
+    "crate `rine32-kernel32` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
+);
 
 pub struct Kernel32Plugin32;
 
-macro_rules! win32_stub {
-    ($name:ident) => {
-        #[allow(non_snake_case)]
-        #[allow(clippy::missing_safety_doc)]
-        pub unsafe extern "win64" fn $name() -> u32 {
-            tracing::warn!(api = stringify!($name), "win32 kernel32 stub called");
-            0
-        }
-    };
-}
-
-win32_stub!(ExitProcess);
-win32_stub!(GetCommandLineA);
-win32_stub!(GetCommandLineW);
-win32_stub!(GetModuleHandleA);
-win32_stub!(GetModuleHandleW);
-win32_stub!(GetLastError);
-win32_stub!(CreateFileA);
-win32_stub!(CreateFileW);
-win32_stub!(ReadFile);
-win32_stub!(WriteFile);
-win32_stub!(CloseHandle);
-win32_stub!(GetStdHandle);
-win32_stub!(VirtualProtect);
-win32_stub!(VirtualQuery);
-win32_stub!(TlsAlloc);
-win32_stub!(TlsFree);
-win32_stub!(TlsGetValue);
-win32_stub!(TlsSetValue);
-win32_stub!(Sleep);
+win32_stub!(ExitProcess, "kernel32");
+win32_stub!(GetCommandLineA, "kernel32");
+win32_stub!(GetCommandLineW, "kernel32");
+win32_stub!(GetModuleHandleA, "kernel32");
+win32_stub!(GetModuleHandleW, "kernel32");
+win32_stub!(GetLastError, "kernel32");
+win32_stub!(CreateFileA, "kernel32");
+win32_stub!(CreateFileW, "kernel32");
+win32_stub!(ReadFile, "kernel32");
+win32_stub!(WriteFile, "kernel32");
+win32_stub!(CloseHandle, "kernel32");
+win32_stub!(GetStdHandle, "kernel32");
+win32_stub!(VirtualProtect, "kernel32");
+win32_stub!(VirtualQuery, "kernel32");
+win32_stub!(TlsAlloc, "kernel32");
+win32_stub!(TlsFree, "kernel32");
+win32_stub!(TlsGetValue, "kernel32");
+win32_stub!(TlsSetValue, "kernel32");
+win32_stub!(Sleep, "kernel32");
 
 impl DllPlugin for Kernel32Plugin32 {
     fn dll_names(&self) -> &[&str] {

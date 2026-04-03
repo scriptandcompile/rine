@@ -1,54 +1,48 @@
 use std::sync::OnceLock;
 
-use rine_dlls::{DllPlugin, Export, as_win_api};
+use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
+
+#[cfg(not(target_pointer_width = "32"))]
+compile_error!(
+    "crate `rine32-msvcrt` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
+);
 
 pub struct MsvcrtPlugin32;
 pub struct CrtForwarderPlugin32;
 
-macro_rules! win32_stub {
-    ($name:ident) => {
-        #[allow(non_snake_case)]
-        #[allow(clippy::missing_safety_doc)]
-        pub unsafe extern "win64" fn $name() -> u32 {
-            tracing::warn!(api = stringify!($name), "win32 msvcrt stub called");
-            0
-        }
-    };
-}
-
-win32_stub!(printf);
-win32_stub!(puts);
-win32_stub!(fprintf);
-win32_stub!(vfprintf);
-win32_stub!(fwrite);
-win32_stub!(exit);
-win32_stub!(_cexit);
-win32_stub!(__getmainargs);
-win32_stub!(_initterm);
-win32_stub!(_initterm_e);
-win32_stub!(__set_app_type);
-win32_stub!(__setusermatherr);
-win32_stub!(__C_specific_handler);
-win32_stub!(__iob_func);
-win32_stub!(_onexit);
-win32_stub!(_amsg_exit);
-win32_stub!(abort);
-win32_stub!(signal);
-win32_stub!(_lock);
-win32_stub!(_unlock);
-win32_stub!(_errno);
-win32_stub!(__p__environ);
-win32_stub!(__p__fmode);
-win32_stub!(__p__commode);
-win32_stub!(malloc);
-win32_stub!(calloc);
-win32_stub!(realloc);
-win32_stub!(free);
-win32_stub!(memcpy);
-win32_stub!(memset);
-win32_stub!(strlen);
-win32_stub!(strcmp);
-win32_stub!(strncmp);
+win32_stub!(printf, "msvcrt");
+win32_stub!(puts, "msvcrt");
+win32_stub!(fprintf, "msvcrt");
+win32_stub!(vfprintf, "msvcrt");
+win32_stub!(fwrite, "msvcrt");
+win32_stub!(exit, "msvcrt");
+win32_stub!(_cexit, "msvcrt");
+win32_stub!(__getmainargs, "msvcrt");
+win32_stub!(_initterm, "msvcrt");
+win32_stub!(_initterm_e, "msvcrt");
+win32_stub!(__set_app_type, "msvcrt");
+win32_stub!(__setusermatherr, "msvcrt");
+win32_stub!(__C_specific_handler, "msvcrt");
+win32_stub!(__iob_func, "msvcrt");
+win32_stub!(_onexit, "msvcrt");
+win32_stub!(_amsg_exit, "msvcrt");
+win32_stub!(abort, "msvcrt");
+win32_stub!(signal, "msvcrt");
+win32_stub!(_lock, "msvcrt");
+win32_stub!(_unlock, "msvcrt");
+win32_stub!(_errno, "msvcrt");
+win32_stub!(__p__environ, "msvcrt");
+win32_stub!(__p__fmode, "msvcrt");
+win32_stub!(__p__commode, "msvcrt");
+win32_stub!(malloc, "msvcrt");
+win32_stub!(calloc, "msvcrt");
+win32_stub!(realloc, "msvcrt");
+win32_stub!(free, "msvcrt");
+win32_stub!(memcpy, "msvcrt");
+win32_stub!(memset, "msvcrt");
+win32_stub!(strlen, "msvcrt");
+win32_stub!(strcmp, "msvcrt");
+win32_stub!(strncmp, "msvcrt");
 
 fn leaked_i32(initial: i32) -> *mut i32 {
     Box::into_raw(Box::new(initial))

@@ -1,6 +1,11 @@
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+#[cfg(not(target_pointer_width = "32"))]
+compile_error!(
+    "crate `rine32` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
+);
+
 use clap::{CommandFactory, Parser};
 use goblin::Object;
 use rine_dlls::DllRegistry;

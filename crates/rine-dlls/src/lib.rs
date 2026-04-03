@@ -42,6 +42,32 @@ pub trait DllPlugin {
     fn exports(&self) -> Vec<Export>;
 }
 
+/// Define a win32 DLL stub function with centralized ABI selection.
+///
+/// On 32-bit targets we use the native C ABI to keep win32 plugin crates
+/// buildable for i686 Linux. On non-32-bit targets we use `win64` so host
+/// builds remain compatible with existing function pointer types.
+#[macro_export]
+macro_rules! win32_stub {
+    ($name:ident, $target:literal) => {
+        #[cfg(target_pointer_width = "32")]
+        #[allow(non_snake_case)]
+        #[allow(clippy::missing_safety_doc)]
+        pub unsafe extern "C" fn $name() -> u32 {
+            tracing::warn!(api = stringify!($name), dll = $target, "win32 stub called");
+            0
+        }
+
+        #[cfg(not(target_pointer_width = "32"))]
+        #[allow(non_snake_case)]
+        #[allow(clippy::missing_safety_doc)]
+        pub unsafe extern "win64" fn $name() -> u32 {
+            tracing::warn!(api = stringify!($name), dll = $target, "win32 stub called");
+            0
+        }
+    };
+}
+
 /// Type-erase a function pointer to [`WinApiFunc`] for plugin registration.
 ///
 /// The PE code calls through the IAT with the correct Windows x64 calling

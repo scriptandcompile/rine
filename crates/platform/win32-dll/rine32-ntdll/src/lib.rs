@@ -1,26 +1,20 @@
-use rine_dlls::{DllPlugin, Export, as_win_api};
+use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
+
+#[cfg(not(target_pointer_width = "32"))]
+compile_error!(
+    "crate `rine32-ntdll` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
+);
 
 pub struct NtdllPlugin32;
 
-macro_rules! win32_stub {
-    ($name:ident) => {
-        #[allow(non_snake_case)]
-        #[allow(clippy::missing_safety_doc)]
-        pub unsafe extern "win64" fn $name() -> u32 {
-            tracing::warn!(api = stringify!($name), "win32 ntdll stub called");
-            0
-        }
-    };
-}
-
-win32_stub!(NtCreateFile);
-win32_stub!(NtReadFile);
-win32_stub!(NtWriteFile);
-win32_stub!(NtClose);
-win32_stub!(NtQueryInformationFile);
-win32_stub!(NtTerminateProcess);
-win32_stub!(RtlInitUnicodeString);
-win32_stub!(RtlGetVersion);
+win32_stub!(NtCreateFile, "ntdll");
+win32_stub!(NtReadFile, "ntdll");
+win32_stub!(NtWriteFile, "ntdll");
+win32_stub!(NtClose, "ntdll");
+win32_stub!(NtQueryInformationFile, "ntdll");
+win32_stub!(NtTerminateProcess, "ntdll");
+win32_stub!(RtlInitUnicodeString, "ntdll");
+win32_stub!(RtlGetVersion, "ntdll");
 
 impl DllPlugin for NtdllPlugin32 {
     fn dll_names(&self) -> &[&str] {

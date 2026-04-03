@@ -21,6 +21,23 @@ members = [
     "crates/platform/win32-dll/rine32-msvcrt",
     "crates/platform/win32-dll/rine32-ntdll",
 ]
+default-members = [
+    "crates/rine",
+    "crates/rine-dlls",
+    "crates/rine-types",
+    "crates/rine-config",
+    "crates/rine-channel",
+    "crates/rine-dev",
+    "crates/rine-frontend-common",
+    "crates/platform/win64-dll/rine64-kernel32",
+    "crates/platform/win64-dll/rine64-msvcrt",
+    "crates/platform/win64-dll/rine64-ntdll",
+    "crates/platform/win64-dll/rine64-advapi32",
+    "crates/platform/win64-dll/rine64-gdi32",
+    "crates/platform/win64-dll/rine64-comdlg32",
+    "crates/platform/win64-dll/rine64-user32",
+    "crates/platform/win64-dll/rine64-ws2_32",
+]
 
 [workspace.package]
 version = "0.1.0"

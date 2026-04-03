@@ -7,9 +7,15 @@ use crate::{DllPlugin, Export};
 
 /// A function pointer stored in the registry, castable to the appropriate signature.
 ///
-/// Uses `extern "win64"` because PE code calls through the IAT using
-/// the Windows x64 calling convention.
+/// Uses `extern "win64"` on x86_64 hosts because PE code calls through the
+/// IAT using the Windows x64 calling convention. On non-x86_64 builds we use
+/// a portable ABI to keep crates type-checkable while 32-bit runtime support
+/// is still in progress.
+#[cfg(target_arch = "x86_64")]
 pub type WinApiFunc = unsafe extern "win64" fn();
+
+#[cfg(not(target_arch = "x86_64"))]
+pub type WinApiFunc = unsafe extern "C" fn();
 
 /// Holds the function lookup tables for all reimplemented DLLs.
 ///
@@ -153,7 +159,14 @@ fn normalize_dll_name(name: &str) -> String {
 /// Default stub for unimplemented Windows API functions.
 /// Logs the call and aborts — this is intentionally noisy so missing
 /// implementations are immediately visible during development.
+#[cfg(target_arch = "x86_64")]
 unsafe extern "win64" fn stub_function() {
+    eprintln!("rine: called unimplemented Windows API stub — aborting");
+    std::process::abort();
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+unsafe extern "C" fn stub_function() {
     eprintln!("rine: called unimplemented Windows API stub — aborting");
     std::process::abort();
 }
@@ -171,7 +184,12 @@ mod tests {
         }
 
         fn exports(&self) -> Vec<Export> {
+            #[cfg(target_arch = "x86_64")]
             unsafe extern "win64" fn fake_func() {}
+
+            #[cfg(not(target_arch = "x86_64"))]
+            unsafe extern "C" fn fake_func() {}
+
             vec![
                 Export::Func("TestFunc", fake_func),
                 Export::Ordinal(42, fake_func),
