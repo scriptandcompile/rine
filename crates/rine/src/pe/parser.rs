@@ -6,6 +6,22 @@ use goblin::pe::characteristic;
 use memmap2::Mmap;
 use thiserror::Error;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PeFormat {
+    Pe32,
+    Pe32Plus,
+}
+
+impl PeFormat {
+    pub fn from_pe(pe: &PE) -> Self {
+        if pe.is_64 {
+            Self::Pe32Plus
+        } else {
+            Self::Pe32
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum PeError {
     #[error("failed to open file `{path}`: {source}")]
@@ -16,9 +32,6 @@ pub enum PeError {
 
     #[error("failed to parse PE: {0}")]
     Parse(#[from] goblin::error::Error),
-
-    #[error("not a PE64 (PE32+) binary — 32-bit PEs are not yet supported")]
-    Not64Bit,
 
     #[error("binary is a DLL, not an executable")]
     IsDll,
@@ -32,6 +45,7 @@ pub enum PeError {
 /// The `PE` borrows from the `Mmap`, so both must live together.
 pub struct ParsedPe {
     pub pe: PE<'static>,
+    pub format: PeFormat,
     // The mmap must be kept alive for the lifetime of `pe`.
     // Safety: `pe` borrows from `_mmap`. We ensure `_mmap` is never moved or
     // dropped before `pe` by keeping them in the same struct, with `_mmap`
@@ -44,7 +58,7 @@ impl ParsedPe {
     ///
     /// Validates:
     /// - The file is a valid PE binary (goblin handles this)
-    /// - It is PE32+ (64-bit)
+    /// - It is PE32 or PE32+
     /// - It is not a DLL
     /// - It has a non-zero entry point
     pub fn load(path: &Path) -> Result<Self, PeError> {
@@ -77,10 +91,15 @@ impl ParsedPe {
         // `_mmap` in `ParsedPe` and never expose the mmap to be dropped early.
         let bytes: &'static [u8] = unsafe { &*(mmap.as_ref() as *const [u8]) };
         let pe = PE::parse(bytes)?;
+        let format = PeFormat::from_pe(&pe);
 
         validate(&pe)?;
 
-        Ok(ParsedPe { pe, _mmap: mmap })
+        Ok(ParsedPe {
+            pe,
+            format,
+            _mmap: mmap,
+        })
     }
 
     /// Access the raw underlying file bytes (the mmap'd content).
@@ -91,10 +110,6 @@ impl ParsedPe {
 
 /// Validate that the parsed PE meets rine's requirements.
 fn validate(pe: &PE) -> Result<(), PeError> {
-    if !pe.is_64 {
-        return Err(PeError::Not64Bit);
-    }
-
     if characteristic::is_dll(pe.header.coff_header.characteristics) {
         return Err(PeError::IsDll);
     }
@@ -123,5 +138,13 @@ mod tests {
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/pe/parser.rs");
         let result = ParsedPe::load(&path);
         assert!(matches!(result, Err(PeError::Parse(_))));
+    }
+
+    #[test]
+    fn detects_pe32_plus_fixture_format() {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tests/fixtures/bin/hello_puts.exe");
+        let parsed = ParsedPe::load(&path).expect("fixture should parse");
+        assert_eq!(parsed.format, PeFormat::Pe32Plus);
     }
 }

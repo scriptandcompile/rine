@@ -368,6 +368,7 @@ pub fn run(
     // 1. Parse the PE file.
     let parsed = ParsedPe::load(exe_path)?;
     info!(
+        format = ?parsed.format,
         entry_rva = format_args!("{:#x}", parsed.pe.entry),
         image_base = format_args!("{:#x}", parsed.pe.image_base),
         sections = parsed.pe.sections.len(),
