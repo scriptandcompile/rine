@@ -251,6 +251,47 @@
     - File open/save dialogs → map to native Linux dialogs (via XDG portals)
     - Common controls (buttons, listboxes, treeviews) → custom rendering or GTK mapping
 
+### Implementation Notes (Dialogs)
+
+- **Runtime plugin surface**
+    - Add a `comdlg32` plugin crate in `crates/platform/win64-dll/` and register it in workspace + `rine` runtime plugin list.
+    - Initial API target: `GetOpenFileNameA/W`, `GetSaveFileNameA/W`, `CommDlgExtendedError`.
+
+- **Backend abstraction**
+    - Implement a dialog backend service with two modes: `Native` and `Emulated`.
+    - Native mode should prefer XDG portals first for GNOME/KDE parity; fallback backend selection can be DE-specific when portal access is unavailable.
+    - Emulated mode should render Win32-style dialogs through the existing `user32` window/message infrastructure.
+
+- **Config model (out-of-box + tweakable)**
+    - Extend per-app config with a dialog section:
+        - `default_mode = "auto" | "native" | "emulated"`
+        - `native_backend = "auto" | "portal" | "gtk" | "kde"`
+        - `emulated_theme = "auto" | "windows_version" | "xp" | "win7" | "win10" | "win11"`
+        - Optional per-Windows-version overrides keyed from `windows_version`.
+    - Keep `auto` as default to preserve out-of-the-box behavior while allowing app-specific overrides.
+
+- **Policy resolution flow**
+    - Resolve the effective dialog policy early in startup (alongside config and Windows-version setup).
+    - Merge layers in this order: defaults → per-app config → per-version override → runtime environment detection.
+    - Expose the resolved mode/backend in dev events/logs for diagnostics.
+
+- **Config editor updates**
+    - Add a Dialog tab in `rine-config` to edit mode, native backend preference, and emulated theme/version overrides.
+    - Ensure reset/default state includes dialog fields so they are never silently dropped.
+
+- **Compatibility integration**
+    - Support profile-driven dialog overrides via `rine-compat` so known-problem apps can force native/emulated behavior or specific theme/version combinations.
+
+- **Test plan**
+    - Add integration fixtures that exercise open/save/cancel flows through `comdlg32` APIs.
+    - Validate both native and emulated modes, including fallback behavior when portal/native backend is unavailable.
+    - Add regression coverage for per-version override resolution.
+
+- **Rollout order**
+    - MVP: native portal-backed open/save + config toggle (`auto/native/emulated`).
+    - Next: emulated Windows-style dialogs with theme selection.
+    - Next: richer controls via `comctl32` and profile-driven app-specific overrides.
+
 ### Verification
 - Run notepad.exe (or a minimal Win32 GUI app compiled with MinGW)
 - Window appears, responds to mouse/keyboard, repaints correctly
