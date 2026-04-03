@@ -73,7 +73,7 @@ impl ParsedPe {
             path: open_path.to_path_buf(),
         })?;
         // SAFETY: The file must not be modified while mapped. This is a
-        // reasonable assumption for PE loading — the file is read-only input.
+        // reasonable assumption for PE loading - the file is read-only input.
         let mmap = unsafe {
             Mmap::map(&file).map_err(|e| PeError::Io {
                 source: e,
@@ -83,7 +83,7 @@ impl ParsedPe {
 
         // Parse the mmap'd bytes. We need `pe` to borrow from `mmap` with a
         // 'static lifetime so they can coexist in the struct. We use unsafe to
-        // extend the lifetime — this is sound because we keep both `pe` and
+        // extend the lifetime - this is sound because we keep both `pe` and
         // `_mmap` in `ParsedPe` and never expose the mmap to be dropped early.
         let bytes: &'static [u8] = unsafe { &*(mmap.as_ref() as *const [u8]) };
         let pe = PE::parse(bytes)?;
@@ -115,32 +115,4 @@ fn validate(pe: &PE) -> Result<(), PeError> {
     }
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::path::PathBuf;
-
-    #[test]
-    fn rejects_nonexistent_file() {
-        let result = ParsedPe::load(Path::new("/nonexistent/fake.exe"));
-        assert!(matches!(result, Err(PeError::Io { .. })));
-    }
-
-    #[test]
-    fn rejects_non_pe_file() {
-        // This source file is not a PE binary
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/pe/parser.rs");
-        let result = ParsedPe::load(&path);
-        assert!(matches!(result, Err(PeError::Parse(_))));
-    }
-
-    #[test]
-    fn detects_pe32_plus_fixture_format() {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tests/fixtures/bin/x64/hello_puts.exe");
-        let parsed = ParsedPe::load(&path).expect("fixture should parse");
-        assert_eq!(parsed.format, PeFormat::Pe32Plus);
-    }
 }

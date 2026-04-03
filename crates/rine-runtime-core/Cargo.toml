@@ -1,0 +1,16 @@
+[package]
+name = "rine-runtime-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared PE parsing and loader runtime core for rine and rine32"
+
+[dependencies]
+rine-dlls = { workspace = true }
+rine-types = { workspace = true }
+goblin = { workspace = true }
+nix = { workspace = true }
+libc = { workspace = true }
+memmap2 = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }

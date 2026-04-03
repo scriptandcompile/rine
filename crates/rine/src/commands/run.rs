@@ -19,15 +19,15 @@ use rine64_gdi32::Gdi32Plugin;
 use rine64_kernel32::Kernel32Plugin;
 use rine64_msvcrt::{CrtForwarderPlugin, MsvcrtPlugin};
 use rine64_ntdll::NtdllPlugin;
+use rine_runtime_core::loader::{entry, memory::LoadedImage, resolver};
+use rine_runtime_core::loader::{entry::EntryError, memory::LoaderError, resolver::ResolverError};
+use rine_runtime_core::pe::parser::{ParsedPe, PeError, PeFormat};
 use rine64_user32::User32Plugin;
 use rine64_ws2_32::Ws2_32Plugin;
 
 use crate::cli::Cli;
 use crate::config::errors::ConfigError;
 use crate::config::manager::ConfigManager;
-use crate::loader::memory::LoadedImage;
-use crate::loader::resolver;
-use crate::pe::parser::ParsedPe;
 use crate::pe::probe::{PeArchitecture, ProbeError, detect_architecture};
 use crate::subsys;
 
@@ -400,8 +400,8 @@ pub fn run(
     dev_emit!(rine_channel::DevEvent::PeLoaded {
         exe_path: exe_path.display().to_string(),
         architecture: match parsed.format {
-            crate::pe::parser::PeFormat::Pe32 => "32-bit (PE32 / x86)",
-            crate::pe::parser::PeFormat::Pe32Plus => "64-bit (PE32+ / x64)",
+            PeFormat::Pe32 => "32-bit (PE32 / x86)",
+            PeFormat::Pe32Plus => "64-bit (PE32+ / x64)",
         }
         .to_string(),
         image_base: image.base().as_usize() as u64,
@@ -531,7 +531,7 @@ pub fn run(
     unsafe { subsys::threading::init_teb_for_format(parsed.format)? };
 
     // 6. Execute the PE entry point.
-    let exit_code = crate::loader::entry::execute(&image, &parsed)?;
+    let exit_code = entry::execute(&image, &parsed)?;
 
     // ProcessExited + shutdown are normally handled by ExitProcess
     // (via the DevHook).  This is a fallback for PEs that return from
@@ -561,19 +561,19 @@ pub enum RunError {
     Dispatch(#[from] DispatchError),
 
     #[error("{0}")]
-    Pe(#[from] crate::pe::parser::PeError),
+    Pe(#[from] PeError),
 
     #[error("{0}")]
-    Loader(#[from] crate::loader::memory::LoaderError),
+    Loader(#[from] LoaderError),
 
     #[error("{0}")]
-    Resolver(#[from] crate::loader::resolver::ResolverError),
+    Resolver(#[from] ResolverError),
 
     #[error("{0}")]
     Threading(#[from] crate::subsys::threading::ThreadingError),
 
     #[error("{0}")]
-    Entry(#[from] crate::loader::entry::EntryError),
+    Entry(#[from] EntryError),
 }
 
 #[derive(Debug, thiserror::Error)]

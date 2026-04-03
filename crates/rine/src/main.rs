@@ -3,7 +3,6 @@ mod commands;
 mod compat;
 mod config;
 mod integration;
-mod loader;
 mod pe;
 mod subsys;
 

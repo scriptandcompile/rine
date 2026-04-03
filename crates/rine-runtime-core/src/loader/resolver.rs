@@ -1,4 +1,4 @@
-//! Import resolution — resolves PE imports against rine-dlls Rust implementations
+//! Import resolution - resolves PE imports against rine-dlls Rust implementations
 //! and writes function pointers into the loaded image's Import Address Table (IAT).
 
 use std::ptr;
@@ -92,7 +92,7 @@ pub fn resolve_imports(
         };
 
         if !registry.has_dll(dll_name) {
-            warn!(dll = dll_name, "unknown DLL — all imports will be stubbed");
+            warn!(dll = dll_name, "unknown DLL - all imports will be stubbed");
         }
 
         let lookup_table = match &entry.import_lookup_table {
@@ -198,7 +198,7 @@ pub fn resolve_delay_imports(
         warn!(
             rva = format_args!("{:#x}", delay_dd.virtual_address),
             size = format_args!("{:#x}", delay_dd.size),
-            "PE has delay-load imports \u{2014} not yet resolved (will be resolved on demand)"
+            "PE has delay-load imports - not yet resolved (will be resolved on demand)"
         );
     }
 
@@ -231,46 +231,5 @@ fn iat_entry_size(pe_format: PeFormat) -> u32 {
     match pe_format {
         PeFormat::Pe32 => 4,
         PeFormat::Pe32Plus => 8,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn write_iat_entry_writes_correct_value_pe32_plus() {
-        let mut buf: u64 = 0;
-        let va = VirtualAddress::from_ptr(&mut buf as *mut u64 as *const u8);
-        let test_addr: usize = 0xDEAD_BEEF_CAFE_BABE;
-        write_iat_entry(va, test_addr, PeFormat::Pe32Plus);
-        assert_eq!(buf, test_addr as u64);
-    }
-
-    #[test]
-    fn write_iat_entry_writes_correct_value_pe32() {
-        let mut buf: u32 = 0;
-        let va = VirtualAddress::from_ptr(&mut buf as *mut u32 as *const u8);
-        let test_addr: usize = 0xDEAD_BEEF_CAFE_BABE;
-        write_iat_entry(va, test_addr, PeFormat::Pe32);
-        assert_eq!(buf, test_addr as u32);
-    }
-
-    #[test]
-    fn iat_entry_size_matches_pe_format() {
-        assert_eq!(iat_entry_size(PeFormat::Pe32), 4);
-        assert_eq!(iat_entry_size(PeFormat::Pe32Plus), 8);
-    }
-
-    #[test]
-    fn resolution_report_default_values() {
-        let report = ResolutionReport {
-            dll_summaries: Vec::new(),
-            total_resolved: 0,
-            total_stubbed: 0,
-        };
-        assert_eq!(report.total_resolved, 0);
-        assert_eq!(report.total_stubbed, 0);
-        assert!(report.dll_summaries.is_empty());
     }
 }

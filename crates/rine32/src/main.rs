@@ -9,6 +9,10 @@ compile_error!(
 use clap::{CommandFactory, Parser};
 use goblin::Object;
 use rine_dlls::DllRegistry;
+use rine_runtime_core::loader::{entry, memory, resolver};
+use rine_runtime_core::loader::{entry::EntryError, memory::LoaderError, resolver::ResolverError};
+use rine_runtime_core::pe::parser::{ParsedPe, PeError, PeFormat};
+use rine_types::os::{VersionInfo, set_version};
 use rine_types::config::{
     AppConfig, ConfigError, DialogTheme, EmulatedDialogTheme, NativeDialogBackend, WindowsVersion,
 };
@@ -17,7 +21,7 @@ use rine32_kernel32::Kernel32Plugin32;
 use rine32_msvcrt::{CrtForwarderPlugin32, MsvcrtPlugin32};
 use rine32_ntdll::NtdllPlugin32;
 use thiserror::Error;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 const IMAGE_FILE_MACHINE_I386: u16 = 0x014c;
 
@@ -64,13 +68,20 @@ enum Run32Error {
     #[error("{0}")]
     Config(#[from] ConfigError),
 
-    #[error(
-        "this rine32 binary was built for a non-32-bit host architecture ({host}); build rine32 for x86 Linux"
-    )]
-    WrongHost { host: &'static str },
+    #[error("{0}")]
+    Pe(#[from] PeError),
 
-    #[error("32-bit runtime loader is not implemented yet")]
-    NotImplemented,
+    #[error("{0}")]
+    Loader(#[from] LoaderError),
+
+    #[error("{0}")]
+    Resolver(#[from] ResolverError),
+
+    #[error("{0}")]
+    Entry(#[from] EntryError),
+
+    #[error("failed to initialize 32-bit thread environment block")]
+    TebInit,
 }
 
 fn main() -> ExitCode {
@@ -135,13 +146,104 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
         "validated 32-bit executable"
     );
 
-    if cfg!(target_pointer_width = "32") {
-        return Err(Run32Error::NotImplemented);
+    let parsed = ParsedPe::load(&resolved)?;
+    if parsed.format != PeFormat::Pe32 {
+        return Err(Run32Error::NotPe32 {
+            path: resolved,
+            machine: parsed.pe.header.coff_header.machine,
+        });
     }
 
-    Err(Run32Error::WrongHost {
-        host: std::env::consts::ARCH,
-    })
+    init_version_from_config(app_config.windows_version);
+
+    let image = memory::LoadedImage::load(&parsed)?;
+    let report = resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry)?;
+    info!(
+        resolved = report.total_resolved,
+        stubbed = report.total_stubbed,
+        "imports resolved"
+    );
+    for dll in &report.dll_summaries {
+        if !dll.stubbed_names.is_empty() {
+            warn!(
+                dll = dll.dll_name,
+                stubs = ?dll.stubbed_names,
+                "stubbed imports"
+            );
+        }
+    }
+
+    let _ = resolver::resolve_delay_imports(&image, &parsed.pe, &registry);
+    image.protect(&parsed.pe)?;
+
+    unsafe { init_teb_for_pe32().map_err(|_| Run32Error::TebInit)? };
+
+    let exit_code = entry::execute(&image, &parsed)?;
+    Ok(exit_code)
+}
+
+fn init_version_from_config(ver: WindowsVersion) {
+    let (major, minor, build) = ver.version_triple();
+
+    let (sp_major, sp_minor, csd) = match ver {
+        WindowsVersion::WinXP => (3, 0, "Service Pack 3"),
+        WindowsVersion::Win7 => (1, 0, "Service Pack 1"),
+        WindowsVersion::Win10 | WindowsVersion::Win11 => (0, 0, ""),
+    };
+
+    set_version(VersionInfo {
+        major,
+        minor,
+        build,
+        service_pack_major: sp_major,
+        service_pack_minor: sp_minor,
+        csd_version: csd.into(),
+    });
+}
+
+unsafe fn init_teb_for_pe32() -> Result<(), ()> {
+    // Allocate a fake TEB and PEB for CRT reads during startup.
+    const TEB_SIZE: usize = 0x1000;
+    const PEB_SIZE: usize = 0x1000;
+    const TEB_STACK_BASE: usize = 0x04;
+    const TEB_STACK_LIMIT: usize = 0x08;
+    const TEB_SELF: usize = 0x18;
+    const TEB_PEB: usize = 0x30;
+
+    let teb_layout = std::alloc::Layout::from_size_align(TEB_SIZE, 16).map_err(|_| ())?;
+    let peb_layout = std::alloc::Layout::from_size_align(PEB_SIZE, 16).map_err(|_| ())?;
+
+    let teb = unsafe { std::alloc::alloc_zeroed(teb_layout) };
+    if teb.is_null() {
+        return Err(());
+    }
+
+    let peb = unsafe { std::alloc::alloc_zeroed(peb_layout) };
+    if peb.is_null() {
+        return Err(());
+    }
+
+    #[cfg(target_arch = "x86")]
+    {
+        let stack_base: u32;
+        unsafe {
+            core::arch::asm!("mov {}, esp", out(reg) stack_base);
+        }
+        let stack_base = (stack_base + 0x100000) & !0xFFF;
+        let stack_limit = stack_base.saturating_sub(0x200000);
+
+        unsafe {
+            std::ptr::write(teb.add(TEB_STACK_BASE) as *mut u32, stack_base);
+            std::ptr::write(teb.add(TEB_STACK_LIMIT) as *mut u32, stack_limit);
+            std::ptr::write(teb.add(TEB_SELF) as *mut u32, teb as u32);
+            std::ptr::write(teb.add(TEB_PEB) as *mut u32, peb as u32);
+        }
+
+        return Ok(());
+    }
+
+    #[allow(unreachable_code)]
+    Err(())
 }
 
 fn resolve_exe_path(path: &Path) -> PathBuf {

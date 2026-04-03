@@ -7,10 +7,9 @@
 use std::alloc::{Layout, alloc_zeroed};
 use std::ptr;
 
+use rine_runtime_core::pe::parser::PeFormat;
 use thiserror::Error;
 use tracing::debug;
-
-use crate::pe::parser::PeFormat;
 
 /// Size of the fake TEB allocation. The real TEB is >0x1000 bytes;
 /// we allocate a full page so anything reading further fields gets zeroes.
