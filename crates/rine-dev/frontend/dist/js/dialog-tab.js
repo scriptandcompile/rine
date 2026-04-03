@@ -23,6 +23,8 @@ function renderPendingDialogCount(calls) {
   const el = document.getElementById('dialog-pending-count');
   const pending = countPendingDialogs(calls);
   el.textContent = `Pending dialogs: ${pending}`;
+  el.classList.toggle('pending-warning', pending > 0);
+  el.classList.toggle('pending-ok', pending === 0);
 }
 
 function renderDialogTable() {
