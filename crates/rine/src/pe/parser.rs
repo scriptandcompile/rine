@@ -139,7 +139,7 @@ mod tests {
     #[test]
     fn detects_pe32_plus_fixture_format() {
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tests/fixtures/bin/hello_puts.exe");
+            .join("../../tests/fixtures/bin/x64/hello_puts.exe");
         let parsed = ParsedPe::load(&path).expect("fixture should parse");
         assert_eq!(parsed.format, PeFormat::Pe32Plus);
     }

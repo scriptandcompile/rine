@@ -5,6 +5,8 @@
 #   ./build_fixtures.sh x64       # build only x64
 #   ./build_fixtures.sh x86       # build only x86
 #
+# Source files are discovered recursively under tests/fixtures/src/.
+#
 # Produces .exe files in:
 #   tests/fixtures/bin/x64/
 #   tests/fixtures/bin/x86/
@@ -17,6 +19,20 @@ BIN_DIR="$SCRIPT_DIR/fixtures/bin"
 CC_X64="${MINGW_CC_X64:-${MINGW_CC:-x86_64-w64-mingw32-gcc}}"
 CC_X86="${MINGW_CC_X86:-i686-w64-mingw32-gcc}"
 ARCH="${1:-all}"
+
+assert_unique_fixture_names() {
+    local duplicates
+    duplicates="$({ find "$SRC_DIR" -type f -name '*.c' -print0 | xargs -0 -n1 basename | sed 's/\.c$//' | sort | uniq -d; } || true)"
+
+    if [[ -n "$duplicates" ]]; then
+        echo "error: duplicate fixture source basenames detected under $SRC_DIR" >&2
+        echo "these would overwrite each other in tests/fixtures/bin:" >&2
+        while IFS= read -r name; do
+            [[ -n "$name" ]] && echo "  - ${name}.c" >&2
+        done <<< "$duplicates"
+        return 1
+    fi
+}
 
 build_arch() {
     local arch="$1"
@@ -47,7 +63,7 @@ build_arch() {
         name="$(basename "$src" .c)"
         exe="$out_dir/${name}.exe"
         echo "  CC  [$arch] $name.c -> $exe"
-        if "$cc" -o "$exe" "$src" -O1 -static -mconsole -lgdi32 -lcomdlg32 2>&1; then
+        if "$cc" -o "$exe" "$src" -I"$SRC_DIR" -O1 -static -mconsole -lgdi32 -lcomdlg32 2>&1; then
             count=$((count + 1))
         else
             echo "  FAIL: [$arch] $name.c" >&2
@@ -60,6 +76,7 @@ build_arch() {
 }
 
 mkdir -p "$BIN_DIR"
+assert_unique_fixture_names
 
 case "$ARCH" in
     x64)
