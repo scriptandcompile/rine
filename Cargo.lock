@@ -3392,7 +3392,9 @@ dependencies = [
 name = "rine64-comdlg32"
 version = "0.1.0"
 dependencies = [
+ "rfd",
  "rine-dlls",
+ "rine-types",
 ]
 
 [[package]]

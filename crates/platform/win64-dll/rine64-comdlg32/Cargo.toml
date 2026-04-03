@@ -7,3 +7,5 @@ description = "comdlg32.dll implementation for rine"
 
 [dependencies]
 rine-dlls = { workspace = true }
+rine-types = { workspace = true }
+rfd = { workspace = true }

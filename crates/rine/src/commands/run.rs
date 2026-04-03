@@ -29,6 +29,13 @@ use crate::loader::resolver;
 use crate::pe::parser::ParsedPe;
 use crate::subsys;
 
+fn set_var_if_absent(key: &str, value: &str) {
+    if std::env::var_os(key).is_none() {
+        // SAFETY: invoked before PE entry while runtime is still single-threaded.
+        unsafe { std::env::set_var(key, value) };
+    }
+}
+
 /// Conditionally emits a dev event. Compiles to nothing without the `dev` feature.
 macro_rules! dev_emit {
     ($event:expr) => {
@@ -433,13 +440,25 @@ pub fn run(
     subsys::version::init_version(app_config.windows_version);
 
     // 5aa. Initialize dialog policy from config.
-    subsys::dialogs::init_policy(app_config.dialogs.clone());
+    subsys::dialogs::init_policy(app_config.dialogs.clone(), app_config.windows_version);
     if let Some(policy) = subsys::dialogs::policy() {
         info!(
-            mode = ?policy.default_mode,
+            mode = ?policy.mode,
             native_backend = ?policy.native_backend,
             emulated_theme = ?policy.emulated_theme,
+            desktop = ?policy.desktop,
             "dialog policy initialized"
+        );
+
+        // SAFETY: still single-threaded before PE entry.
+        set_var_if_absent("RINE_DIALOG_MODE", subsys::dialogs::mode_env(policy.mode));
+        set_var_if_absent(
+            "RINE_DIALOG_NATIVE_BACKEND",
+            subsys::dialogs::native_backend_env(policy.native_backend),
+        );
+        set_var_if_absent(
+            "RINE_DIALOG_EMULATED_THEME",
+            subsys::dialogs::theme_env(policy.emulated_theme),
         );
     }
 
