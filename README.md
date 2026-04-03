@@ -54,8 +54,9 @@ rine loads x86_64 PE binaries directly into memory, resolves their imports again
 | `ntdll.dll` | Active | NtCreateFile, NtReadFile, NtWriteFile, NtClose, NtTerminateProcess |
 | `msvcrt.dll` | Active | printf, puts, malloc, free, exit, string ops, CRT init |
 | `advapi32.dll` | Stub | Registry access, security functions |
-| `gdi32.dll` | Stub | Graphics device interface |
-| `user32.dll` | Stub | Window management, message dispatching |
+| `comdlg32.dll` | Partial | GetOpenFileNameA/W, GetSaveFileNameA/W, CommDlgExtendedError |
+| `gdi32.dll` | Partial | Graphics device interface |
+| `user32.dll` | Partial | Window management, message dispatching |
 | `ws2_32.dll` | Stub | Winsock networking |
 
 ## Quick Start
