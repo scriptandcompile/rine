@@ -1,0 +1,64 @@
+/* Imports table */
+#import-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+#import-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+#import-table td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.status-resolved { color: var(--success); }
+.status-stub { color: var(--danger); }
+
+/* Files, Threads, Mutexes, GDI & Memory tables */
+#file-table,
+#thread-table,
+#mutex-table,
+#gdi-table,
+#memory-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+#file-table th,
+#thread-table th,
+#mutex-table th,
+#gdi-table th,
+#memory-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+#file-table td,
+#thread-table td,
+#mutex-table td,
+#gdi-table td,
+#memory-table td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.status-open { color: var(--success); }
+.status-closed { color: var(--text-muted); }
+.status-running { color: var(--success); }
+.status-exited { color: var(--warning); }
+tr.row-closed td { opacity: 0.5; }

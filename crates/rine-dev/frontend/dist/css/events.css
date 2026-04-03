@@ -1,0 +1,24 @@
+/* Events log */
+.event-log {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.event-entry {
+  padding: 2px 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.event-type {
+  color: var(--accent);
+  font-weight: 600;
+}
+.event-ts {
+  color: var(--text-muted);
+  margin-right: 6px;
+}

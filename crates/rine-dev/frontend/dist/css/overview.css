@@ -1,0 +1,46 @@
+/* Import stats bar */
+.import-bar {
+  display: flex;
+  height: 20px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.import-bar-resolved { background: var(--success); }
+.import-bar-stubbed  { background: var(--danger); }
+
+.import-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+}
+.import-legend span::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.legend-resolved::before { background: var(--success); }
+.legend-stubbed::before  { background: var(--danger); }
+
+/* Sections table */
+.sections-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.sections-table th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.sections-table td {
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
