@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::process::Command;
 #[cfg(feature = "dev")]
 use std::{
     collections::HashMap,
@@ -27,6 +28,7 @@ use crate::config::manager::ConfigManager;
 use crate::loader::memory::LoadedImage;
 use crate::loader::resolver;
 use crate::pe::parser::ParsedPe;
+use crate::pe::probe::{PeArchitecture, ProbeError, detect_architecture};
 use crate::subsys;
 
 fn set_var_if_absent(key: &str, value: &str) {
@@ -306,6 +308,16 @@ pub fn run(
 ) -> Result<std::convert::Infallible, RunError> {
     info!(exe = %exe_path.display(), "loading PE");
 
+    // Route by PE machine type so users can keep using `rine <exe>`.
+    let arch = detect_architecture(exe_path).map_err(RunError::Probe)?;
+    info!(architecture = arch.machine_name(), "detected PE architecture");
+    if let PeArchitecture::X86 = arch {
+        return dispatch_to_rine32(exe_path, cli).map_err(RunError::Dispatch);
+    }
+    if let PeArchitecture::Unsupported(machine) = arch {
+        return Err(RunError::UnsupportedMachine(machine));
+    }
+
     // ── Dev channel setup ──────────────────────────────────────────
     #[cfg(not(feature = "dev"))]
     let _dev_channel: Option<()> = None;
@@ -520,6 +532,15 @@ pub enum RunError {
     Config(#[source] ConfigError),
 
     #[error("{0}")]
+    Probe(#[from] ProbeError),
+
+    #[error("unsupported PE machine type: 0x{0:04x}")]
+    UnsupportedMachine(u16),
+
+    #[error("{0}")]
+    Dispatch(#[from] DispatchError),
+
+    #[error("{0}")]
     Pe(#[from] crate::pe::parser::PeError),
 
     #[error("{0}")]
@@ -530,4 +551,51 @@ pub enum RunError {
 
     #[error("{0}")]
     Entry(#[from] crate::loader::entry::EntryError),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum DispatchError {
+    #[error(
+        "detected a 32-bit executable, but failed to launch the 32-bit runtime `{helper}`: {source}\n\
+         hint: build/install the helper binary (for example: cargo build --bin rine32)"
+    )]
+    Spawn {
+        helper: String,
+        source: std::io::Error,
+    },
+
+    #[error("32-bit runtime `{helper}` exited unsuccessfully ({status})")]
+    Failed {
+        helper: String,
+        status: std::process::ExitStatus,
+    },
+}
+
+fn dispatch_to_rine32(
+    exe_path: &Path,
+    #[allow(unused)] cli: &Cli,
+) -> Result<std::convert::Infallible, DispatchError> {
+    let helper_path = std::env::current_exe()
+        .ok()
+        .and_then(|p| {
+            let sibling = p.with_file_name("rine32");
+            sibling.is_file().then_some(sibling)
+        })
+        .unwrap_or_else(|| std::path::PathBuf::from("rine32"));
+    let helper = helper_path.display().to_string();
+
+    let status = Command::new(&helper_path)
+        .arg(exe_path)
+        .args(&cli.exe_args)
+        .status()
+        .map_err(|source| DispatchError::Spawn {
+            helper: helper.clone(),
+            source,
+        })?;
+
+    if status.success() {
+        std::process::exit(0);
+    }
+
+    Err(DispatchError::Failed { helper, status })
 }

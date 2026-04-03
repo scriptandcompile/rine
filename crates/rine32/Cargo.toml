@@ -1,0 +1,13 @@
+[package]
+name = "rine32"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "32-bit Windows PE runtime launcher for rine"
+
+[dependencies]
+clap = { workspace = true }
+goblin = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

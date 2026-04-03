@@ -3380,6 +3380,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rine32"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "goblin",
+ "thiserror 2.0.18",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "rine64-advapi32"
 version = "0.1.0"
 dependencies = [
