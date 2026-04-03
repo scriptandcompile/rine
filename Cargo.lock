@@ -3331,6 +3331,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "rine-common-comdlg32"
+version = "0.1.0"
+
+[[package]]
 name = "rine-config"
 version = "0.1.0"
 dependencies = [
@@ -3387,12 +3391,23 @@ dependencies = [
  "goblin",
  "rine-dlls",
  "rine-types",
+ "rine32-comdlg32",
  "rine32-kernel32",
  "rine32-msvcrt",
  "rine32-ntdll",
  "thiserror 2.0.18",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "rine32-comdlg32"
+version = "0.1.0"
+dependencies = [
+ "rfd",
+ "rine-common-comdlg32",
+ "rine-dlls",
+ "rine-types",
 ]
 
 [[package]]
@@ -3433,6 +3448,7 @@ name = "rine64-comdlg32"
 version = "0.1.0"
 dependencies = [
  "rfd",
+ "rine-common-comdlg32",
  "rine-dlls",
  "rine-types",
 ]

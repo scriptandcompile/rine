@@ -1,0 +1,8 @@
+[package]
+name = "rine-common-comdlg32"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared architecture-neutral comdlg32 logic for rine"
+
+[dependencies]

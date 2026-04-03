@@ -1,9 +1,9 @@
 [package]
-name = "rine64-comdlg32"
+name = "rine32-comdlg32"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "comdlg32.dll implementation for rine"
+description = "Win32 comdlg32 export plugin scaffold"
 
 [dependencies]
 rine-dlls = { workspace = true }

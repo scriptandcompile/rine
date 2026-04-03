@@ -11,9 +11,14 @@ use rine_types::dev_hooks::{DialogOpenTelemetry, DialogResultTelemetry};
 use rine_types::dev_notify;
 use rine_types::strings::{read_cstr, read_wstr, write_cstr, write_wstr};
 
-pub struct Comdlg32Plugin;
+#[cfg(not(target_pointer_width = "32"))]
+compile_error!(
+    "crate `rine32-comdlg32` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
+);
 
-impl DllPlugin for Comdlg32Plugin {
+pub struct Comdlg32Plugin32;
+
+impl DllPlugin for Comdlg32Plugin32 {
     fn dll_names(&self) -> &[&str] {
         &["comdlg32.dll"]
     }
@@ -149,23 +154,23 @@ fn pick_path(
     }
 }
 
-unsafe extern "win64" fn get_open_file_name_a(open_file_name: *mut c_void) -> i32 {
+unsafe extern "C" fn get_open_file_name_a(open_file_name: *mut c_void) -> i32 {
     run_a_dialog(open_file_name as *mut OpenFileNameA, DialogKind::Open)
 }
 
-unsafe extern "win64" fn get_open_file_name_w(open_file_name: *mut c_void) -> i32 {
+unsafe extern "C" fn get_open_file_name_w(open_file_name: *mut c_void) -> i32 {
     run_w_dialog(open_file_name as *mut OpenFileNameW, DialogKind::Open)
 }
 
-unsafe extern "win64" fn get_save_file_name_a(open_file_name: *mut c_void) -> i32 {
+unsafe extern "C" fn get_save_file_name_a(open_file_name: *mut c_void) -> i32 {
     run_a_dialog(open_file_name as *mut OpenFileNameA, DialogKind::Save)
 }
 
-unsafe extern "win64" fn get_save_file_name_w(open_file_name: *mut c_void) -> i32 {
+unsafe extern "C" fn get_save_file_name_w(open_file_name: *mut c_void) -> i32 {
     run_w_dialog(open_file_name as *mut OpenFileNameW, DialogKind::Save)
 }
 
-unsafe extern "win64" fn comm_dlg_extended_error() -> u32 {
+unsafe extern "C" fn comm_dlg_extended_error() -> u32 {
     last_error()
 }
 
@@ -295,8 +300,6 @@ impl DialogAdapter for OpenFileNameWAdapter<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn offsets_are_computed() {
         let (off, ext) = rine_common_comdlg32::update_offsets("C:\\games\\foo.exe");
