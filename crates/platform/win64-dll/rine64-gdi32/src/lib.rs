@@ -1,4 +1,10 @@
-use rine_dlls::{DllPlugin, Export};
+#![allow(unsafe_op_in_unsafe_fn)]
+
+use rine_dlls::{DllPlugin, Export, as_win_api};
+mod objects;
+mod ops;
+mod state;
+mod text;
 
 pub struct Gdi32Plugin;
 
@@ -8,6 +14,20 @@ impl DllPlugin for Gdi32Plugin {
     }
 
     fn exports(&self) -> Vec<Export> {
-        vec![]
+        vec![
+            Export::Func("CreateCompatibleDC", as_win_api!(ops::create_compatible_dc)),
+            Export::Func("DeleteDC", as_win_api!(ops::delete_dc)),
+            Export::Func(
+                "CreateCompatibleBitmap",
+                as_win_api!(ops::create_compatible_bitmap),
+            ),
+            Export::Func("CreateSolidBrush", as_win_api!(ops::create_solid_brush)),
+            Export::Func("CreatePen", as_win_api!(ops::create_pen)),
+            Export::Func("SelectObject", as_win_api!(ops::select_object)),
+            Export::Func("DeleteObject", as_win_api!(ops::delete_object)),
+            Export::Func("BitBlt", as_win_api!(ops::bit_blt)),
+            Export::Func("TextOutA", as_win_api!(ops::text_out_a)),
+            Export::Func("TextOutW", as_win_api!(ops::text_out_w)),
+        ]
     }
 }

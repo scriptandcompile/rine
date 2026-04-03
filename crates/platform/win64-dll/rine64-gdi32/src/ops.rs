@@ -1,0 +1,281 @@
+use rine_types::errors::WinBool;
+use rine_types::strings::{read_cstr_counted, read_wstr_counted};
+
+use crate::objects::{Bitmap, Brush, DeviceContext, GdiObject, Pen};
+use crate::state::{alloc_handle, gdi_state, object_selected_by_any_dc, with_selected_bitmap_mut};
+use crate::text::draw_text;
+
+pub(crate) const SRCCOPY: u32 = 0x00CC0020;
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "win64" fn create_compatible_dc(_hdc: usize) -> usize {
+    let mut state = gdi_state().lock().unwrap();
+    let dc_handle = alloc_handle();
+
+    let mut dc = DeviceContext::default();
+
+    let default_bitmap_handle = alloc_handle();
+    dc.selected_bitmap = Some(default_bitmap_handle);
+    dc.owned_objects.push(default_bitmap_handle);
+    state.objects.insert(
+        default_bitmap_handle,
+        GdiObject::Bitmap(Bitmap::new(1, 1).unwrap()),
+    );
+
+    state.dcs.insert(dc_handle, dc);
+    dc_handle
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "win64" fn delete_dc(hdc: usize) -> WinBool {
+    let mut state = gdi_state().lock().unwrap();
+    let Some(dc) = state.dcs.remove(&hdc) else {
+        return WinBool::FALSE;
+    };
+
+    for object in dc.owned_objects {
+        state.objects.remove(&object);
+    }
+
+    WinBool::TRUE
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "win64" fn create_compatible_bitmap(
+    _hdc: usize,
+    width: i32,
+    height: i32,
+) -> usize {
+    let Some(bitmap) = Bitmap::new(width, height) else {
+        return 0;
+    };
+
+    let mut state = gdi_state().lock().unwrap();
+    let handle = alloc_handle();
+    state.objects.insert(handle, GdiObject::Bitmap(bitmap));
+    handle
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "win64" fn create_solid_brush(color: u32) -> usize {
+    let mut state = gdi_state().lock().unwrap();
+    let handle = alloc_handle();
+    state
+        .objects
+        .insert(handle, GdiObject::Brush(Brush { color }));
+    handle
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "win64" fn create_pen(_style: i32, _width: i32, color: u32) -> usize {
+    let mut state = gdi_state().lock().unwrap();
+    let handle = alloc_handle();
+    state.objects.insert(handle, GdiObject::Pen(Pen { color }));
+    handle
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "win64" fn select_object(hdc: usize, object: usize) -> usize {
+    let mut state = gdi_state().lock().unwrap();
+
+    let object_kind = match state.objects.get(&object) {
+        Some(GdiObject::Bitmap(_)) => 0_u8,
+        Some(GdiObject::Brush(brush)) => {
+            let _ = brush.color;
+            1_u8
+        }
+        Some(GdiObject::Pen(pen)) => {
+            let _ = pen.color;
+            2_u8
+        }
+        None => return 0,
+    };
+
+    let Some(dc) = state.dcs.get_mut(&hdc) else {
+        return 0;
+    };
+
+    match object_kind {
+        0 => {
+            let old = dc.selected_bitmap.unwrap_or(0);
+            dc.selected_bitmap = Some(object);
+            old
+        }
+        1 => {
+            let old = dc.selected_brush.unwrap_or(0);
+            dc.selected_brush = Some(object);
+            old
+        }
+        _ => {
+            let old = dc.selected_pen.unwrap_or(0);
+            dc.selected_pen = Some(object);
+            old
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "win64" fn delete_object(object: usize) -> WinBool {
+    let mut state = gdi_state().lock().unwrap();
+    if object_selected_by_any_dc(&state, object) {
+        return WinBool::FALSE;
+    }
+
+    if state.objects.remove(&object).is_some() {
+        WinBool::TRUE
+    } else {
+        WinBool::FALSE
+    }
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "win64" fn bit_blt(
+    hdc_dest: usize,
+    x_dest: i32,
+    y_dest: i32,
+    width: i32,
+    height: i32,
+    hdc_src: usize,
+    x_src: i32,
+    y_src: i32,
+    rop: u32,
+) -> WinBool {
+    if width <= 0 || height <= 0 || rop != SRCCOPY {
+        return WinBool::FALSE;
+    }
+
+    let mut state = gdi_state().lock().unwrap();
+
+    let src_bitmap = match with_selected_bitmap_mut(&mut state, hdc_src, |bmp| bmp.clone()) {
+        Some(bitmap) => bitmap,
+        None => return WinBool::FALSE,
+    };
+
+    let Some(result) = with_selected_bitmap_mut(&mut state, hdc_dest, |dest| {
+        for dy in 0..height {
+            for dx in 0..width {
+                let src_x = x_src + dx;
+                let src_y = y_src + dy;
+                let dest_x = x_dest + dx;
+                let dest_y = y_dest + dy;
+
+                let Some(src_idx) = src_bitmap.index(src_x, src_y) else {
+                    continue;
+                };
+                let Some(dest_idx) = dest.index(dest_x, dest_y) else {
+                    continue;
+                };
+
+                dest.pixels[dest_idx] = src_bitmap.pixels[src_idx];
+            }
+        }
+
+        WinBool::TRUE
+    }) else {
+        return WinBool::FALSE;
+    };
+
+    result
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "win64" fn text_out_a(
+    hdc: usize,
+    x: i32,
+    y: i32,
+    text: *const u8,
+    count: i32,
+) -> WinBool {
+    let Some(text) = (unsafe { read_cstr_counted(text, count) }) else {
+        return WinBool::FALSE;
+    };
+
+    let mut state = gdi_state().lock().unwrap();
+    if with_selected_bitmap_mut(&mut state, hdc, |bitmap| draw_text(bitmap, x, y, &text)).is_none()
+    {
+        return WinBool::FALSE;
+    }
+
+    WinBool::TRUE
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "win64" fn text_out_w(
+    hdc: usize,
+    x: i32,
+    y: i32,
+    text: *const u16,
+    count: i32,
+) -> WinBool {
+    let Some(text) = (unsafe { read_wstr_counted(text, count) }) else {
+        return WinBool::FALSE;
+    };
+
+    let mut state = gdi_state().lock().unwrap();
+    if with_selected_bitmap_mut(&mut state, hdc, |bitmap| draw_text(bitmap, x, y, &text)).is_none()
+    {
+        return WinBool::FALSE;
+    }
+
+    WinBool::TRUE
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::objects::GdiObject;
+    use crate::state::gdi_state;
+
+    #[test]
+    fn bitblt_copies_surface_pixels() {
+        unsafe {
+            let src_dc = create_compatible_dc(0);
+            let dst_dc = create_compatible_dc(0);
+
+            let src_bitmap = create_compatible_bitmap(src_dc, 32, 32);
+            let dst_bitmap = create_compatible_bitmap(dst_dc, 32, 32);
+            assert_ne!(src_bitmap, 0);
+            assert_ne!(dst_bitmap, 0);
+
+            assert_ne!(select_object(src_dc, src_bitmap), 0);
+            assert_ne!(select_object(dst_dc, dst_bitmap), 0);
+
+            let hello = b"Hello";
+            assert_eq!(
+                text_out_a(src_dc, 0, 0, hello.as_ptr(), hello.len() as i32),
+                WinBool::TRUE
+            );
+            assert_eq!(
+                bit_blt(dst_dc, 0, 0, 32, 32, src_dc, 0, 0, SRCCOPY),
+                WinBool::TRUE
+            );
+
+            let state = gdi_state().lock().unwrap();
+            let src_pixels = match state.objects.get(&src_bitmap) {
+                Some(GdiObject::Bitmap(bitmap)) => bitmap.pixels.clone(),
+                _ => panic!("source bitmap missing"),
+            };
+            let dst_pixels = match state.objects.get(&dst_bitmap) {
+                Some(GdiObject::Bitmap(bitmap)) => bitmap.pixels.clone(),
+                _ => panic!("dest bitmap missing"),
+            };
+            drop(state);
+
+            assert_eq!(src_pixels, dst_pixels);
+            assert_eq!(delete_dc(src_dc), WinBool::TRUE);
+            assert_eq!(delete_dc(dst_dc), WinBool::TRUE);
+        }
+    }
+
+    #[test]
+    fn delete_object_fails_while_selected() {
+        unsafe {
+            let dc = create_compatible_dc(0);
+            let bitmap = create_compatible_bitmap(dc, 4, 4);
+            assert_ne!(select_object(dc, bitmap), 0);
+            assert_eq!(delete_object(bitmap), WinBool::FALSE);
+            assert_eq!(delete_dc(dc), WinBool::TRUE);
+            assert_eq!(delete_object(bitmap), WinBool::TRUE);
+        }
+    }
+}

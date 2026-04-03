@@ -28,7 +28,12 @@ pub(crate) unsafe extern "win64" fn create_window_ex_a(
         class_name_str,
         window_title,
         style,
-        Rect { left: x, top: y, right: x + width, bottom: y + height },
+        Rect {
+            left: x,
+            top: y,
+            right: x + width,
+            bottom: y + height,
+        },
         parent,
     )
 }
@@ -56,7 +61,12 @@ pub(crate) unsafe extern "win64" fn create_window_ex_w(
         class_name_str,
         window_title,
         style,
-        Rect { left: x, top: y, right: x + width, bottom: y + height },
+        Rect {
+            left: x,
+            top: y,
+            right: x + width,
+            bottom: y + height,
+        },
         parent,
     )
 }

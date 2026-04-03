@@ -76,6 +76,48 @@ pub unsafe fn read_wstr(ptr: *const u16) -> Option<String> {
     Some(String::from_utf16_lossy(slice))
 }
 
+/// Read an ANSI string from a raw pointer with an explicit character count.
+///
+/// Returns `None` if `ptr` is null or `count` is negative.
+///
+/// # Safety
+/// `ptr` must point to at least `count` readable bytes when `count > 0`.
+pub unsafe fn read_cstr_counted(ptr: *const u8, count: i32) -> Option<String> {
+    if ptr.is_null() || count < 0 {
+        return None;
+    }
+    if count == 0 {
+        return Some(String::new());
+    }
+
+    let bytes = unsafe { core::slice::from_raw_parts(ptr, count as usize) };
+    let mut nul_terminated = Vec::with_capacity(bytes.len() + 1);
+    nul_terminated.extend_from_slice(bytes);
+    nul_terminated.push(0);
+    unsafe { read_cstr(nul_terminated.as_ptr()) }
+}
+
+/// Read a UTF-16LE string from a raw pointer with an explicit character count.
+///
+/// Returns `None` if `ptr` is null or `count` is negative.
+///
+/// # Safety
+/// `ptr` must point to at least `count` readable `u16` values when `count > 0`.
+pub unsafe fn read_wstr_counted(ptr: *const u16, count: i32) -> Option<String> {
+    if ptr.is_null() || count < 0 {
+        return None;
+    }
+    if count == 0 {
+        return Some(String::new());
+    }
+
+    let units = unsafe { core::slice::from_raw_parts(ptr, count as usize) };
+    let mut nul_terminated = Vec::with_capacity(units.len() + 1);
+    nul_terminated.extend_from_slice(units);
+    nul_terminated.push(0);
+    unsafe { read_wstr(nul_terminated.as_ptr()) }
+}
+
 // ---------------------------------------------------------------------------
 // Win32 buffer writers
 // ---------------------------------------------------------------------------
@@ -165,6 +207,50 @@ mod tests {
     fn read_wstr_valid() {
         let s: Vec<u16> = "hello\0".encode_utf16().collect();
         assert_eq!(unsafe { read_wstr(s.as_ptr()) }, Some("hello".into()));
+    }
+
+    // ── read_cstr_counted ───────────────────────────────────────
+
+    #[test]
+    fn read_cstr_counted_null_returns_none() {
+        assert_eq!(unsafe { read_cstr_counted(std::ptr::null(), 4) }, None);
+    }
+
+    #[test]
+    fn read_cstr_counted_negative_returns_none() {
+        let s = b"hello";
+        assert_eq!(unsafe { read_cstr_counted(s.as_ptr(), -1) }, None);
+    }
+
+    #[test]
+    fn read_cstr_counted_reads_exact_len() {
+        let s = b"hello world";
+        assert_eq!(
+            unsafe { read_cstr_counted(s.as_ptr(), 5) },
+            Some("hello".into())
+        );
+    }
+
+    // ── read_wstr_counted ───────────────────────────────────────
+
+    #[test]
+    fn read_wstr_counted_null_returns_none() {
+        assert_eq!(unsafe { read_wstr_counted(std::ptr::null(), 4) }, None);
+    }
+
+    #[test]
+    fn read_wstr_counted_negative_returns_none() {
+        let s: Vec<u16> = "hello".encode_utf16().collect();
+        assert_eq!(unsafe { read_wstr_counted(s.as_ptr(), -1) }, None);
+    }
+
+    #[test]
+    fn read_wstr_counted_reads_exact_len() {
+        let s: Vec<u16> = "hello world".encode_utf16().collect();
+        assert_eq!(
+            unsafe { read_wstr_counted(s.as_ptr(), 5) },
+            Some("hello".into())
+        );
     }
 
     // ── write_cstr ───────────────────────────────────────────────

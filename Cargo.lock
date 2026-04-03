@@ -3392,6 +3392,7 @@ name = "rine64-gdi32"
 version = "0.1.0"
 dependencies = [
  "rine-dlls",
+ "rine-types",
 ]
 
 [[package]]
