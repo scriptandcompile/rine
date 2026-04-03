@@ -430,7 +430,7 @@ pub fn run(
         &User32Plugin,
         &Ws2_32Plugin,
     ]);
-    let report = resolver::resolve_imports(&image, &parsed.pe, &registry)?;
+    let report = resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry)?;
     info!(
         resolved = report.total_resolved,
         stubbed = report.total_stubbed,

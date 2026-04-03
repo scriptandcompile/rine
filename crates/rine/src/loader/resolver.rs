@@ -11,6 +11,7 @@ use thiserror::Error;
 use tracing::{debug, info, warn};
 
 use super::memory::LoadedImage;
+use crate::pe::parser::PeFormat;
 
 #[derive(Debug, Error)]
 pub enum ResolverError {
@@ -59,6 +60,7 @@ pub struct ResolutionReport {
 pub fn resolve_imports(
     image: &LoadedImage,
     pe: &PE,
+    pe_format: PeFormat,
     registry: &DllRegistry,
 ) -> Result<ResolutionReport, ResolverError> {
     let import_data = pe.import_data.as_ref().ok_or(ResolverError::NoImportData)?;
@@ -101,15 +103,14 @@ pub fn resolve_imports(
             }
         };
 
-        // Each IAT entry is 8 bytes for PE32+ (64-bit).
-        let entry_size: u32 = 8;
+        let entry_size = iat_entry_size(pe_format);
 
         for (i, lookup_entry) in lookup_table.iter().enumerate() {
             let iat_slot_rva = RelativeVirtualAddress::new(iat_rva + (i as u32) * entry_size);
             let iat_slot_va = base.offset(iat_slot_rva);
 
-            // Bounds check: ensure the 8-byte write is within the image.
-            if iat_slot_rva.as_usize() + 8 > image_size {
+            // Bounds check: ensure the entry write is within the image.
+            if iat_slot_rva.as_usize() + entry_size as usize > image_size {
                 return Err(ResolverError::IatOutOfBounds { va: iat_slot_va });
             }
 
@@ -135,7 +136,7 @@ pub fn resolve_imports(
                     );
                     summary.resolved += 1;
                     summary.resolved_names.push(func_name);
-                    write_iat_entry(iat_slot_va, func as usize);
+                    write_iat_entry(iat_slot_va, func as usize, pe_format);
                 }
                 LookupResult::Stub(func) => {
                     debug!(
@@ -146,7 +147,7 @@ pub fn resolve_imports(
                     );
                     summary.stubbed += 1;
                     summary.stubbed_names.push(func_name);
-                    write_iat_entry(iat_slot_va, func as usize);
+                    write_iat_entry(iat_slot_va, func as usize, pe_format);
                 }
             }
         }
@@ -211,12 +212,25 @@ pub fn resolve_delay_imports(
 /// Write a function pointer into an IAT slot in the loaded image.
 ///
 /// # Safety
-/// The caller must ensure `va` points to a valid, writable 8-byte IAT slot
-/// within the loaded image's memory region.
-fn write_iat_entry(va: VirtualAddress, func_addr: usize) {
-    unsafe {
-        let slot = va.as_mut_ptr() as *mut u64;
-        ptr::write_unaligned(slot, func_addr as u64);
+/// The caller must ensure `va` points to a valid, writable IAT slot
+/// (4 bytes for PE32, 8 bytes for PE32+) within the loaded image's memory region.
+fn write_iat_entry(va: VirtualAddress, func_addr: usize, pe_format: PeFormat) {
+    match pe_format {
+        PeFormat::Pe32Plus => unsafe {
+            let slot = va.as_mut_ptr() as *mut u64;
+            ptr::write_unaligned(slot, func_addr as u64);
+        },
+        PeFormat::Pe32 => unsafe {
+            let slot = va.as_mut_ptr() as *mut u32;
+            ptr::write_unaligned(slot, func_addr as u32);
+        },
+    }
+}
+
+fn iat_entry_size(pe_format: PeFormat) -> u32 {
+    match pe_format {
+        PeFormat::Pe32 => 4,
+        PeFormat::Pe32Plus => 8,
     }
 }
 
@@ -225,12 +239,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn write_iat_entry_writes_correct_value() {
+    fn write_iat_entry_writes_correct_value_pe32_plus() {
         let mut buf: u64 = 0;
         let va = VirtualAddress::from_ptr(&mut buf as *mut u64 as *const u8);
         let test_addr: usize = 0xDEAD_BEEF_CAFE_BABE;
-        write_iat_entry(va, test_addr);
+        write_iat_entry(va, test_addr, PeFormat::Pe32Plus);
         assert_eq!(buf, test_addr as u64);
+    }
+
+    #[test]
+    fn write_iat_entry_writes_correct_value_pe32() {
+        let mut buf: u32 = 0;
+        let va = VirtualAddress::from_ptr(&mut buf as *mut u32 as *const u8);
+        let test_addr: usize = 0xDEAD_BEEF_CAFE_BABE;
+        write_iat_entry(va, test_addr, PeFormat::Pe32);
+        assert_eq!(buf, test_addr as u32);
+    }
+
+    #[test]
+    fn iat_entry_size_matches_pe_format() {
+        assert_eq!(iat_entry_size(PeFormat::Pe32), 4);
+        assert_eq!(iat_entry_size(PeFormat::Pe32Plus), 8);
     }
 
     #[test]

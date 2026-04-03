@@ -9,7 +9,7 @@ use rine_types::memory::{BaseAddress, FileOffset, RelativeVirtualAddress, Virtua
 use thiserror::Error;
 use tracing::{debug, warn};
 
-use crate::pe::parser::ParsedPe;
+use crate::pe::parser::{ParsedPe, PeFormat};
 
 #[derive(Debug, Error)]
 pub enum LoaderError {
@@ -134,7 +134,7 @@ impl LoadedImage {
 
         // Apply base relocations if we didn't load at the preferred address.
         if relocation_delta != 0 {
-            apply_relocations(actual_base, pe, relocation_delta, image_size)?;
+            apply_relocations(actual_base, pe, parsed.format, relocation_delta, image_size)?;
         }
 
         // NOTE: Memory protections are NOT set here. The image remains
@@ -273,6 +273,7 @@ fn copy_sections(
 fn apply_relocations(
     base: BaseAddress,
     pe: &goblin::pe::PE,
+    pe_format: PeFormat,
     delta: i64,
     image_size: usize,
 ) -> Result<(), LoaderError> {
@@ -296,76 +297,158 @@ fn apply_relocations(
             let offset = word.offset() as u32;
             let rva = block_rva.add(offset);
 
-            match reloc_type as u16 {
-                relocation::IMAGE_REL_BASED_ABSOLUTE => {
-                    // Padding entry, skip.
+            let applied = match pe_format {
+                PeFormat::Pe32Plus => apply_relocation_pe32_plus(
+                    base,
+                    delta,
+                    image_size,
+                    reloc_type,
+                    rva,
+                )?,
+                PeFormat::Pe32 => {
+                    apply_relocation_pe32(base, delta, image_size, reloc_type, rva)?
                 }
-                relocation::IMAGE_REL_BASED_DIR64 => {
-                    if rva.as_usize() + 8 > image_size {
-                        warn!(
-                            rva = format_args!("{rva}"),
-                            "DIR64 relocation out of bounds, skipping"
-                        );
-                        continue;
-                    }
-                    unsafe {
-                        let ptr = base.offset(rva).as_mut_ptr() as *mut u64;
-                        let value = ptr::read_unaligned(ptr);
-                        ptr::write_unaligned(ptr, (value as i64 + delta) as u64);
-                    }
-                    count += 1;
-                }
-                relocation::IMAGE_REL_BASED_HIGHLOW => {
-                    if rva.as_usize() + 4 > image_size {
-                        warn!(
-                            rva = format_args!("{rva}"),
-                            "HIGHLOW relocation out of bounds, skipping"
-                        );
-                        continue;
-                    }
-                    unsafe {
-                        let ptr = base.offset(rva).as_mut_ptr() as *mut u32;
-                        let value = ptr::read_unaligned(ptr);
-                        ptr::write_unaligned(ptr, (value as i64 + delta) as u32);
-                    }
-                    count += 1;
-                }
-                relocation::IMAGE_REL_BASED_HIGH => {
-                    if rva.as_usize() + 2 > image_size {
-                        continue;
-                    }
-                    unsafe {
-                        let ptr = base.offset(rva).as_mut_ptr() as *mut u16;
-                        let value = ptr::read_unaligned(ptr) as i32;
-                        let adjusted = value + (delta >> 16) as i32;
-                        ptr::write_unaligned(ptr, adjusted as u16);
-                    }
-                    count += 1;
-                }
-                relocation::IMAGE_REL_BASED_LOW => {
-                    if rva.as_usize() + 2 > image_size {
-                        continue;
-                    }
-                    unsafe {
-                        let ptr = base.offset(rva).as_mut_ptr() as *mut u16;
-                        let value = ptr::read_unaligned(ptr) as i32;
-                        let adjusted = value + (delta & 0xFFFF) as i32;
-                        ptr::write_unaligned(ptr, adjusted as u16);
-                    }
-                    count += 1;
-                }
-                _ => {
-                    return Err(LoaderError::UnsupportedRelocation(
-                        reloc_type,
-                        rva.as_usize() as u64,
-                    ));
-                }
+            };
+
+            if applied {
+                count += 1;
             }
         }
     }
 
     debug!(count, delta, "applied base relocations");
     Ok(())
+}
+
+fn apply_relocation_pe32_plus(
+    base: BaseAddress,
+    delta: i64,
+    image_size: usize,
+    reloc_type: u8,
+    rva: RelativeVirtualAddress,
+) -> Result<bool, LoaderError> {
+    match reloc_type as u16 {
+        relocation::IMAGE_REL_BASED_ABSOLUTE => {
+            // Padding entry, skip.
+            Ok(false)
+        }
+        relocation::IMAGE_REL_BASED_DIR64 => {
+            if rva.as_usize() + 8 > image_size {
+                warn!(
+                    rva = format_args!("{rva}"),
+                    "DIR64 relocation out of bounds, skipping"
+                );
+                return Ok(false);
+            }
+            unsafe {
+                let ptr = base.offset(rva).as_mut_ptr() as *mut u64;
+                let value = ptr::read_unaligned(ptr);
+                ptr::write_unaligned(ptr, (value as i64 + delta) as u64);
+            }
+            Ok(true)
+        }
+        relocation::IMAGE_REL_BASED_HIGHLOW => {
+            if rva.as_usize() + 4 > image_size {
+                warn!(
+                    rva = format_args!("{rva}"),
+                    "HIGHLOW relocation out of bounds, skipping"
+                );
+                return Ok(false);
+            }
+            unsafe {
+                let ptr = base.offset(rva).as_mut_ptr() as *mut u32;
+                let value = ptr::read_unaligned(ptr);
+                ptr::write_unaligned(ptr, (value as i64 + delta) as u32);
+            }
+            Ok(true)
+        }
+        relocation::IMAGE_REL_BASED_HIGH => {
+            if rva.as_usize() + 2 > image_size {
+                return Ok(false);
+            }
+            unsafe {
+                let ptr = base.offset(rva).as_mut_ptr() as *mut u16;
+                let value = ptr::read_unaligned(ptr) as i32;
+                let adjusted = value + (delta >> 16) as i32;
+                ptr::write_unaligned(ptr, adjusted as u16);
+            }
+            Ok(true)
+        }
+        relocation::IMAGE_REL_BASED_LOW => {
+            if rva.as_usize() + 2 > image_size {
+                return Ok(false);
+            }
+            unsafe {
+                let ptr = base.offset(rva).as_mut_ptr() as *mut u16;
+                let value = ptr::read_unaligned(ptr) as i32;
+                let adjusted = value + (delta & 0xFFFF) as i32;
+                ptr::write_unaligned(ptr, adjusted as u16);
+            }
+            Ok(true)
+        }
+        _ => Err(LoaderError::UnsupportedRelocation(
+            reloc_type,
+            rva.as_usize() as u64,
+        )),
+    }
+}
+
+fn apply_relocation_pe32(
+    base: BaseAddress,
+    delta: i64,
+    image_size: usize,
+    reloc_type: u8,
+    rva: RelativeVirtualAddress,
+) -> Result<bool, LoaderError> {
+    match reloc_type as u16 {
+        relocation::IMAGE_REL_BASED_ABSOLUTE => {
+            // Padding entry, skip.
+            Ok(false)
+        }
+        relocation::IMAGE_REL_BASED_HIGHLOW => {
+            if rva.as_usize() + 4 > image_size {
+                warn!(
+                    rva = format_args!("{rva}"),
+                    "HIGHLOW relocation out of bounds, skipping"
+                );
+                return Ok(false);
+            }
+            unsafe {
+                let ptr = base.offset(rva).as_mut_ptr() as *mut u32;
+                let value = ptr::read_unaligned(ptr);
+                ptr::write_unaligned(ptr, (value as i64 + delta) as u32);
+            }
+            Ok(true)
+        }
+        relocation::IMAGE_REL_BASED_HIGH => {
+            if rva.as_usize() + 2 > image_size {
+                return Ok(false);
+            }
+            unsafe {
+                let ptr = base.offset(rva).as_mut_ptr() as *mut u16;
+                let value = ptr::read_unaligned(ptr) as i32;
+                let adjusted = value + (delta >> 16) as i32;
+                ptr::write_unaligned(ptr, adjusted as u16);
+            }
+            Ok(true)
+        }
+        relocation::IMAGE_REL_BASED_LOW => {
+            if rva.as_usize() + 2 > image_size {
+                return Ok(false);
+            }
+            unsafe {
+                let ptr = base.offset(rva).as_mut_ptr() as *mut u16;
+                let value = ptr::read_unaligned(ptr) as i32;
+                let adjusted = value + (delta & 0xFFFF) as i32;
+                ptr::write_unaligned(ptr, adjusted as u16);
+            }
+            Ok(true)
+        }
+        _ => Err(LoaderError::UnsupportedRelocation(
+            reloc_type,
+            rva.as_usize() as u64,
+        )),
+    }
 }
 
 /// Translate PE section characteristics to mmap protection flags.
