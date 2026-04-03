@@ -3307,6 +3307,7 @@ dependencies = [
  "rine-dlls",
  "rine-types",
  "rine64-advapi32",
+ "rine64-comdlg32",
  "rine64-gdi32",
  "rine64-kernel32",
  "rine64-msvcrt",
@@ -3385,6 +3386,13 @@ dependencies = [
  "rine-dlls",
  "rine-types",
  "tracing",
+]
+
+[[package]]
+name = "rine64-comdlg32"
+version = "0.1.0"
+dependencies = [
+ "rine-dlls",
 ]
 
 [[package]]

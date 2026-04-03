@@ -13,6 +13,7 @@ members = [
     "crates/platform/win64-dll/rine64-ntdll",
     "crates/platform/win64-dll/rine64-advapi32",
     "crates/platform/win64-dll/rine64-gdi32",
+    "crates/platform/win64-dll/rine64-comdlg32",
     "crates/platform/win64-dll/rine64-user32",
     "crates/platform/win64-dll/rine64-ws2_32",
 ]
@@ -32,6 +33,7 @@ rine64-msvcrt = { path = "crates/platform/win64-dll/rine64-msvcrt" }
 rine64-ntdll = { path = "crates/platform/win64-dll/rine64-ntdll" }
 rine64-advapi32 = { path = "crates/platform/win64-dll/rine64-advapi32" }
 rine64-gdi32 = { path = "crates/platform/win64-dll/rine64-gdi32" }
+rine64-comdlg32 = { path = "crates/platform/win64-dll/rine64-comdlg32" }
 rine64-user32 = { path = "crates/platform/win64-dll/rine64-user32" }
 rine64-ws2_32 = { path = "crates/platform/win64-dll/rine64-ws2_32" }
 goblin = "0.10.5"

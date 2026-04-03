@@ -13,6 +13,7 @@ use serde::Serialize;
 use tracing::info;
 
 use rine64_advapi32::Advapi32Plugin;
+use rine64_comdlg32::Comdlg32Plugin;
 use rine64_gdi32::Gdi32Plugin;
 use rine64_kernel32::Kernel32Plugin;
 use rine64_msvcrt::{CrtForwarderPlugin, MsvcrtPlugin};
@@ -384,6 +385,7 @@ pub fn run(
         &NtdllPlugin,
         &Advapi32Plugin,
         &Gdi32Plugin,
+        &Comdlg32Plugin,
         &User32Plugin,
         &Ws2_32Plugin,
     ]);
@@ -429,6 +431,17 @@ pub fn run(
 
     // 5a. Set the spoofed Windows version from config.
     subsys::version::init_version(app_config.windows_version);
+
+    // 5aa. Initialize dialog policy from config.
+    subsys::dialogs::init_policy(app_config.dialogs.clone());
+    if let Some(policy) = subsys::dialogs::policy() {
+        info!(
+            mode = ?policy.default_mode,
+            native_backend = ?policy.native_backend,
+            emulated_theme = ?policy.emulated_theme,
+            "dialog policy initialized"
+        );
+    }
 
     // 5b. Set up fake Windows Thread Environment Block (TEB) so CRT code
     //     that reads gs:0x30 doesn't segfault.

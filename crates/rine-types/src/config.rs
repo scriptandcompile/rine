@@ -43,8 +43,74 @@ pub struct AppConfig {
     /// DLL resolution behaviour.
     pub dll: DllConfig,
 
+    /// Dialog/backend behaviour for common dialogs.
+    pub dialogs: DialogConfig,
+
     /// Extra environment variables injected before PE entry.
     pub environment: HashMap<String, String>,
+}
+
+// ---------------------------------------------------------------------------
+// Dialog config
+// ---------------------------------------------------------------------------
+
+/// Dialog behaviour settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DialogConfig {
+    /// Primary dialog mode selection.
+    pub default_mode: DialogMode,
+
+    /// Native backend preference when native dialogs are used.
+    pub native_backend: NativeDialogBackend,
+
+    /// Emulated dialog visual style preference.
+    pub emulated_theme: EmulatedDialogTheme,
+}
+
+impl Default for DialogConfig {
+    fn default() -> Self {
+        Self {
+            default_mode: DialogMode::Auto,
+            native_backend: NativeDialogBackend::Auto,
+            emulated_theme: EmulatedDialogTheme::WindowsVersion,
+        }
+    }
+}
+
+/// Dialog mode to use by default.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum DialogMode {
+    /// Pick best available mode from runtime environment.
+    #[default]
+    Auto,
+    Native,
+    Emulated,
+}
+
+/// Native dialog backend preference.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum NativeDialogBackend {
+    #[default]
+    Auto,
+    Portal,
+    Gtk,
+    Kde,
+}
+
+/// Visual style for emulated dialogs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EmulatedDialogTheme {
+    Auto,
+    Xp,
+    Win7,
+    Win10,
+    #[default]
+    WindowsVersion,
+    Win11,
 }
 
 // ---------------------------------------------------------------------------
@@ -256,6 +322,11 @@ mod tests {
         assert!(parsed.filesystem.case_insensitive);
         assert!(parsed.filesystem.drives.is_empty());
         assert_eq!(parsed.windows_version, WindowsVersion::Win11);
+        assert_eq!(parsed.dialogs.default_mode, DialogMode::Auto);
+        assert_eq!(
+            parsed.dialogs.emulated_theme,
+            EmulatedDialogTheme::WindowsVersion
+        );
         assert!(parsed.dll.search_order.is_empty());
         assert!(parsed.environment.is_empty());
     }

@@ -187,6 +187,11 @@ function setupButtons() {
       filesystem: { default_root: null, drives: {}, case_insensitive: true },
       windows_version: "win11",
       dll: { search_order: [], force_stub: [] },
+      dialogs: {
+        default_mode: "auto",
+        native_backend: "auto",
+        emulated_theme: "windows_version",
+      },
       environment: {},
     };
     populateForm();

@@ -18,6 +18,7 @@ rine64-msvcrt = { workspace = true }
 rine64-ntdll = { workspace = true }
 rine64-advapi32 = { workspace = true }
 rine64-gdi32 = { workspace = true }
+rine64-comdlg32 = { workspace = true }
 rine64-user32 = { workspace = true }
 rine64-ws2_32 = { workspace = true }
 goblin = { workspace = true }
