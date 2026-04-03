@@ -143,16 +143,33 @@ fn pick_path(
         return Some(PathBuf::from(path));
     }
 
-    if let Some(path) = pick_with_zenity(kind, title.as_deref(), initial_dir.as_deref()) {
-        return Some(path);
+    let mut backend_available = false;
+
+    match pick_with_zenity(kind, title.as_deref(), initial_dir.as_deref()) {
+        PickerResult::Selected(path) => return Some(path),
+        PickerResult::BackendAvailableNoSelection => backend_available = true,
+        PickerResult::BackendUnavailable => {}
     }
 
-    if let Some(path) = pick_with_kdialog(kind, title.as_deref(), initial_dir.as_deref()) {
-        return Some(path);
+    match pick_with_kdialog(kind, title.as_deref(), initial_dir.as_deref()) {
+        PickerResult::Selected(path) => return Some(path),
+        PickerResult::BackendAvailableNoSelection => backend_available = true,
+        PickerResult::BackendUnavailable => {}
     }
 
-    emit_backend_missing_warning_once();
+    // Only emit a backend-missing warning when no backend was available at all.
+    // A user cancel or dialog runtime error should not be reported as "install zenity/kdialog".
+    if !backend_available {
+        emit_backend_missing_warning_once();
+    }
+
     None
+}
+
+enum PickerResult {
+    Selected(PathBuf),
+    BackendAvailableNoSelection,
+    BackendUnavailable,
 }
 
 fn emit_backend_missing_warning_once() {
@@ -192,7 +209,7 @@ fn pick_with_zenity(
     kind: DialogKind,
     title: Option<&str>,
     initial_dir: Option<&str>,
-) -> Option<PathBuf> {
+) -> PickerResult {
     let mut cmd = Command::new("zenity");
     cmd.arg("--file-selection");
 
@@ -212,17 +229,23 @@ fn pick_with_zenity(
         cmd.arg("--filename").arg(format!("{dir}/"));
     }
 
-    let output = cmd.output().ok()?;
+    let output = match cmd.output() {
+        Ok(output) => output,
+        Err(_) => return PickerResult::BackendUnavailable,
+    };
+
+    // `zenity` was found and executed; non-zero status typically means
+    // cancel or runtime display error, not missing backend.
     if !output.status.success() {
-        return None;
+        return PickerResult::BackendAvailableNoSelection;
     }
 
     let selected = String::from_utf8_lossy(&output.stdout).trim().to_owned();
     if selected.is_empty() {
-        return None;
+        return PickerResult::BackendAvailableNoSelection;
     }
 
-    Some(PathBuf::from(selected))
+    PickerResult::Selected(PathBuf::from(selected))
 }
 
 /// Attempt to pick a file path using `kdialog`. Returns `None` if `kdialog` is not available or the dialog fails/is cancelled.
@@ -233,7 +256,7 @@ fn pick_with_kdialog(
     kind: DialogKind,
     title: Option<&str>,
     initial_dir: Option<&str>,
-) -> Option<PathBuf> {
+) -> PickerResult {
     let mut cmd = Command::new("kdialog");
 
     match kind {
@@ -253,17 +276,23 @@ fn pick_with_kdialog(
         cmd.arg("--title").arg(title);
     }
 
-    let output = cmd.output().ok()?;
+    let output = match cmd.output() {
+        Ok(output) => output,
+        Err(_) => return PickerResult::BackendUnavailable,
+    };
+
+    // `kdialog` was found and executed; non-zero status typically means
+    // cancel or runtime display error, not missing backend.
     if !output.status.success() {
-        return None;
+        return PickerResult::BackendAvailableNoSelection;
     }
 
     let selected = String::from_utf8_lossy(&output.stdout).trim().to_owned();
     if selected.is_empty() {
-        return None;
+        return PickerResult::BackendAvailableNoSelection;
     }
 
-    Some(PathBuf::from(selected))
+    PickerResult::Selected(PathBuf::from(selected))
 }
 
 unsafe extern "C" fn get_open_file_name_a(open_file_name: *mut c_void) -> i32 {

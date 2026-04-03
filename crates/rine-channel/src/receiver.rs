@@ -1,6 +1,7 @@
 use std::io::{self, Read};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use crate::DevEvent;
 
@@ -50,9 +51,42 @@ impl DevReceiver {
     pub fn into_stream(mut self) -> impl Iterator<Item = io::Result<DevEvent>> {
         std::iter::from_fn(move || match self.recv() {
             Ok(ev) => Some(Ok(ev)),
-            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => None,
+            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
+                match self.accept_followup_stream() {
+                    Ok(Some(stream)) => {
+                        self.stream = stream;
+                        self.recv().map(Ok).ok()
+                    }
+                    Ok(None) => None,
+                    Err(e) => Some(Err(e)),
+                }
+            }
             Err(e) => Some(Err(e)),
         })
+    }
+
+    fn accept_followup_stream(&self) -> io::Result<Option<UnixStream>> {
+        // x86 `--dev` dispatch uses two processes (`rine` then `rine32`) that may
+        // connect one after another. Keep a brief window open to accept a queued
+        // follow-up sender after the first stream reaches EOF.
+        self._listener.set_nonblocking(true)?;
+        for _ in 0..40 {
+            match self._listener.accept() {
+                Ok((stream, _addr)) => {
+                    self._listener.set_nonblocking(false)?;
+                    return Ok(Some(stream));
+                }
+                Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
+                    std::thread::sleep(Duration::from_millis(25));
+                }
+                Err(e) => {
+                    self._listener.set_nonblocking(false)?;
+                    return Err(e);
+                }
+            }
+        }
+        self._listener.set_nonblocking(false)?;
+        Ok(None)
     }
 }
 

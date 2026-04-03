@@ -3304,6 +3304,7 @@ dependencies = [
  "memmap2 0.9.10",
  "nix 0.31.2",
  "rine-channel",
+ "rine-dev-bridge",
  "rine-dlls",
  "rine-runtime-core",
  "rine-types",
@@ -3363,6 +3364,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rine-dev-bridge"
+version = "0.1.0"
+dependencies = [
+ "rine-channel",
+ "rine-runtime-core",
+ "rine-types",
+ "tracing",
+]
+
+[[package]]
 name = "rine-dlls"
 version = "0.1.0"
 dependencies = [
@@ -3404,6 +3415,9 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "goblin",
+ "libc",
+ "rine-channel",
+ "rine-dev-bridge",
  "rine-dlls",
  "rine-runtime-core",
  "rine-types",
@@ -3430,7 +3444,9 @@ dependencies = [
 name = "rine32-kernel32"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "rine-dlls",
+ "rine-types",
  "tracing",
 ]
 
@@ -3438,7 +3454,9 @@ dependencies = [
 name = "rine32-msvcrt"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "rine-dlls",
+ "rine-types",
  "tracing",
 ]
 

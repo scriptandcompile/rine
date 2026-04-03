@@ -8,20 +8,24 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+#[cfg(feature = "dev")]
+use rine_dev_bridge::{
+    DevBridge, DevBridgeObserver, DevEventSink, imports_resolved_event, pe_loaded_event,
+};
 use rine_dlls::DllRegistry;
 #[cfg(feature = "dev")]
 use serde::Serialize;
 use tracing::info;
 
+use rine_runtime_core::loader::{entry, memory::LoadedImage, resolver};
+use rine_runtime_core::loader::{entry::EntryError, memory::LoaderError, resolver::ResolverError};
+use rine_runtime_core::pe::parser::{ParsedPe, PeError};
 use rine64_advapi32::Advapi32Plugin;
 use rine64_comdlg32::Comdlg32Plugin;
 use rine64_gdi32::Gdi32Plugin;
 use rine64_kernel32::Kernel32Plugin;
 use rine64_msvcrt::{CrtForwarderPlugin, MsvcrtPlugin};
 use rine64_ntdll::NtdllPlugin;
-use rine_runtime_core::loader::{entry, memory::LoadedImage, resolver};
-use rine_runtime_core::loader::{entry::EntryError, memory::LoaderError, resolver::ResolverError};
-use rine_runtime_core::pe::parser::{ParsedPe, PeError, PeFormat};
 use rine64_user32::User32Plugin;
 use rine64_ws2_32::Ws2_32Plugin;
 
@@ -40,39 +44,13 @@ fn set_var_if_absent(key: &str, value: &str) {
 
 /// Conditionally emits a dev event. Compiles to nothing without the `dev` feature.
 macro_rules! dev_emit {
-    ($event:expr) => {
+    ($bridge:expr, $event:expr) => {
         #[cfg(feature = "dev")]
-        dev_send_event(&$event);
+        if let Some(bridge) = $bridge.as_ref() {
+            let _ = bridge.send(&$event);
+        }
     };
 }
-
-/// Send a lifecycle DevEvent through the shared sender.
-#[cfg(feature = "dev")]
-fn dev_send_event(event: &rine_channel::DevEvent) {
-    if let Some(sender) = DEV_SENDER.get()
-        && let Ok(mut s) = sender.lock()
-    {
-        let _ = s.send(event);
-    }
-}
-
-/// Shut down the dev channel cleanly so all buffered events reach
-/// rine-dev before the process exits.
-#[cfg(feature = "dev")]
-fn dev_shutdown() {
-    if let Some(sender) = DEV_SENDER.get() {
-        // Take the sender out of the mutex and drop it, closing the socket.
-        if let Ok(mut guard) = sender.lock() {
-            guard.shutdown();
-        }
-    }
-}
-
-/// Single shared sender used by both the ChannelDevHook (handle/thread
-/// events from DLL code) and the `dev_emit!` macro (lifecycle events).
-#[cfg(feature = "dev")]
-static DEV_SENDER: std::sync::OnceLock<std::sync::Mutex<rine_channel::DevSender>> =
-    std::sync::OnceLock::new();
 
 #[cfg(feature = "dev")]
 #[derive(Debug, Clone)]
@@ -201,9 +179,9 @@ fn write_memory_snapshot_files() -> Option<(String, String, usize, u64)> {
 }
 
 #[cfg(feature = "dev")]
-fn emit_memory_snapshot_ready() {
+fn emit_memory_snapshot_ready(sink: &dyn DevEventSink) {
     if let Some((json_path, bin_path, region_count, total_bytes)) = write_memory_snapshot_files() {
-        dev_send_event(&rine_channel::DevEvent::MemorySnapshotReady {
+        sink.send_event(rine_channel::DevEvent::MemorySnapshotReady {
             json_path,
             bin_path,
             region_count,
@@ -212,93 +190,23 @@ fn emit_memory_snapshot_ready() {
     }
 }
 
-/// Bridge between the [`rine_types::dev_hooks::DevHook`] trait and the
-/// dev channel.  Installed as a global hook so that DLL implementations
-/// (kernel32, advapi32, …) can emit handle/thread/TLS events without
-/// depending on `rine-channel` directly.
 #[cfg(feature = "dev")]
-struct ChannelDevHook;
+struct SnapshotObserver;
 
 #[cfg(feature = "dev")]
-impl rine_types::dev_hooks::DevHook for ChannelDevHook {
-    fn on_handle_created(&self, handle: i64, kind: &str, detail: &str) {
-        dev_send_event(&rine_channel::DevEvent::HandleCreated {
-            handle,
-            kind: kind.to_owned(),
-            detail: detail.to_owned(),
-        });
-    }
-
-    fn on_handle_closed(&self, handle: i64) {
-        dev_send_event(&rine_channel::DevEvent::HandleClosed { handle });
-    }
-
-    fn on_thread_created(&self, handle: i64, thread_id: u32, entry_point: u64) {
-        dev_send_event(&rine_channel::DevEvent::ThreadCreated {
-            handle,
-            thread_id,
-            entry_point,
-        });
-    }
-
-    fn on_thread_exited(&self, thread_id: u32, exit_code: u32) {
-        dev_send_event(&rine_channel::DevEvent::ThreadExited {
-            thread_id,
-            exit_code,
-        });
-    }
-
-    fn on_tls_allocated(&self, index: u32) {
-        dev_send_event(&rine_channel::DevEvent::TlsAllocated { index });
-    }
-
-    fn on_tls_freed(&self, index: u32) {
-        dev_send_event(&rine_channel::DevEvent::TlsFreed { index });
-    }
-
-    fn on_memory_allocated(&self, address: u64, size: u64, source: &str) {
+impl DevBridgeObserver for SnapshotObserver {
+    fn on_memory_allocated(&self, _sink: &dyn DevEventSink, address: u64, size: u64, source: &str) {
         track_memory_alloc(address, size, source);
-        dev_send_event(&rine_channel::DevEvent::MemoryAllocated {
-            address,
-            size,
-            source: source.to_owned(),
-        });
     }
 
-    fn on_memory_freed(&self, address: u64, size: u64, source: &str) {
+    fn on_memory_freed(&self, _sink: &dyn DevEventSink, address: u64, size: u64, source: &str) {
+        let _ = (size, source);
         track_memory_free(address);
-        dev_send_event(&rine_channel::DevEvent::MemoryFreed {
-            address,
-            size,
-            source: source.to_owned(),
-        });
     }
 
-    fn on_dialog_opened(&self, opened: rine_types::dev_hooks::DialogOpenTelemetry<'_>) {
-        dev_send_event(&rine_channel::DevEvent::DialogOpened {
-            api: opened.api.to_owned(),
-            theme: opened.theme.to_owned(),
-            native_backend: opened.native_backend.to_owned(),
-            windows_theme: opened.windows_theme.to_owned(),
-        });
-    }
-
-    fn on_dialog_result(&self, result: rine_types::dev_hooks::DialogResultTelemetry<'_>) {
-        dev_send_event(&rine_channel::DevEvent::DialogResult {
-            api: result.api.to_owned(),
-            theme: result.theme.to_owned(),
-            native_backend: result.native_backend.to_owned(),
-            windows_theme: result.windows_theme.to_owned(),
-            success: result.success,
-            error_code: result.error_code,
-            selected_path: result.selected_path.map(str::to_owned),
-        });
-    }
-
-    fn on_process_exiting(&self, exit_code: i32) {
-        emit_memory_snapshot_ready();
-        dev_send_event(&rine_channel::DevEvent::ProcessExited { exit_code });
-        dev_shutdown();
+    fn on_process_exiting(&self, sink: &dyn DevEventSink, exit_code: i32) {
+        let _ = exit_code;
+        emit_memory_snapshot_ready(sink);
     }
 }
 
@@ -311,23 +219,8 @@ pub fn run(
     // ── Dev channel setup ──────────────────────────────────────────
     #[cfg(not(feature = "dev"))]
     let _dev_channel: Option<()> = None;
-
-    // If RINE_DEV_SOCKET is set, rine-dev spawned us as a child process.
-    // Connect immediately so dashboard state is live even when we dispatch
-    // early (for example, forwarding x86 executables to rine32).
     #[cfg(feature = "dev")]
-    if let Ok(socket_path) = std::env::var("RINE_DEV_SOCKET") {
-        match rine_channel::DevSender::connect(std::path::Path::new(&socket_path)) {
-            Ok(sender) => {
-                info!("connected to rine-dev dashboard");
-                let _ = DEV_SENDER.set(std::sync::Mutex::new(sender));
-                let _ = rine_types::dev_hooks::set_dev_hook(Box::new(ChannelDevHook));
-            }
-            Err(e) => {
-                tracing::warn!("failed to connect to rine-dev: {e}");
-            }
-        }
-    }
+    let _dev_channel = DevBridge::init_from_env_with_observer("rine", SnapshotObserver);
 
     // Route by PE machine type so users can keep using `rine <exe>`.
     let arch = detect_architecture(exe_path).map_err(RunError::Probe)?;
@@ -339,16 +232,25 @@ pub fn run(
         // x86 executables are executed by the helper runtime (`rine32`). Emit
         // a synthetic PE lifecycle event so the dashboard can show progress
         // instead of remaining in the initial waiting state.
-        dev_emit!(rine_channel::DevEvent::PeLoaded {
-            exe_path: exe_path.display().to_string(),
-            architecture: "32-bit (PE32 / x86) via rine32 dispatch".to_owned(),
-            image_base: 0,
-            image_size: 0,
-            entry_rva: 0,
-            relocation_delta: 0,
-            sections: Vec::new(),
-        });
-        return dispatch_to_rine32(exe_path, cli).map_err(RunError::Dispatch);
+        dev_emit!(
+            _dev_channel,
+            rine_channel::DevEvent::PeLoaded {
+                exe_path: exe_path.display().to_string(),
+                architecture: "32-bit (PE32 / x86) via rine32 dispatch".to_owned(),
+                image_base: 0,
+                image_size: 0,
+                entry_rva: 0,
+                relocation_delta: 0,
+                sections: Vec::new(),
+            }
+        );
+        return dispatch_to_rine32(
+            exe_path,
+            cli,
+            #[cfg(feature = "dev")]
+            _dev_channel.as_ref(),
+        )
+        .map_err(RunError::Dispatch);
     }
     if let PeArchitecture::Unsupported(machine) = arch {
         return Err(RunError::UnsupportedMachine(machine));
@@ -363,15 +265,18 @@ pub fn run(
         "app config loaded"
     );
 
-    dev_emit!(rine_channel::DevEvent::ConfigLoaded {
-        config_path: mgr.config_path(exe_path).display().to_string(),
-        windows_version: app_config.windows_version.to_string(),
-        environment_overrides: app_config
-            .environment
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect(),
-    });
+    dev_emit!(
+        _dev_channel,
+        rine_channel::DevEvent::ConfigLoaded {
+            config_path: mgr.config_path(exe_path).display().to_string(),
+            windows_version: app_config.windows_version.to_string(),
+            environment_overrides: app_config
+                .environment
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+        }
+    );
 
     // Inject environment overrides from the config.
     for (key, value) in &app_config.environment {
@@ -397,39 +302,16 @@ pub fn run(
         "image loaded"
     );
 
-    dev_emit!(rine_channel::DevEvent::PeLoaded {
-        exe_path: exe_path.display().to_string(),
-        architecture: match parsed.format {
-            PeFormat::Pe32 => "32-bit (PE32 / x86)",
-            PeFormat::Pe32Plus => "64-bit (PE32+ / x64)",
-        }
-        .to_string(),
-        image_base: image.base().as_usize() as u64,
-        image_size: image.size() as u64,
-        entry_rva: parsed.pe.entry as u64,
-        relocation_delta: image.base().as_usize() as i64 - parsed.pe.image_base as i64,
-        sections: parsed
-            .pe
-            .sections
-            .iter()
-            .map(|s| {
-                rine_channel::SectionInfo {
-                    name: String::from_utf8_lossy(&s.name)
-                        .trim_end_matches('\0')
-                        .to_string(),
-                    virtual_address: s.virtual_address as u64,
-                    virtual_size: s.virtual_size as u64,
-                    characteristics: s.characteristics,
-                }
-            })
-            .collect(),
-    });
+    dev_emit!(_dev_channel, pe_loaded_event(exe_path, &parsed, &image));
 
-    dev_emit!(rine_channel::DevEvent::MemoryAllocated {
-        address: image.base().as_usize() as u64,
-        size: image.size() as u64,
-        source: "PE Image".to_owned(),
-    });
+    dev_emit!(
+        _dev_channel,
+        rine_channel::DevEvent::MemoryAllocated {
+            address: image.base().as_usize() as u64,
+            size: image.size() as u64,
+            source: "PE Image".to_owned(),
+        }
+    );
     #[cfg(feature = "dev")]
     track_memory_alloc(
         image.base().as_usize() as u64,
@@ -465,23 +347,7 @@ pub fn run(
         }
     }
 
-    dev_emit!(rine_channel::DevEvent::ImportsResolved {
-        summaries: report
-            .dll_summaries
-            .iter()
-            .map(|d| {
-                rine_channel::DllSummary {
-                    dll_name: d.dll_name.clone(),
-                    resolved: d.resolved,
-                    stubbed: d.stubbed,
-                    resolved_names: d.resolved_names.clone(),
-                    stubbed_names: d.stubbed_names.clone(),
-                }
-            })
-            .collect(),
-        total_resolved: report.total_resolved,
-        total_stubbed: report.total_stubbed,
-    });
+    dev_emit!(_dev_channel, imports_resolved_event(&report));
 
     // Also attempt delay-load imports (currently just warns if present).
     let _ = resolver::resolve_delay_imports(&image, &parsed.pe, &registry);
@@ -537,10 +403,11 @@ pub fn run(
     // (via the DevHook).  This is a fallback for PEs that return from
     // their entry point instead of calling ExitProcess.
     #[cfg(feature = "dev")]
-    emit_memory_snapshot_ready();
-    dev_emit!(rine_channel::DevEvent::ProcessExited { exit_code });
-    #[cfg(feature = "dev")]
-    dev_shutdown();
+    if let Some(bridge) = _dev_channel.as_ref() {
+        emit_memory_snapshot_ready(bridge);
+        let _ = bridge.send(&rine_channel::DevEvent::ProcessExited { exit_code });
+        bridge.shutdown();
+    }
 
     std::process::exit(exit_code);
 }
@@ -597,6 +464,7 @@ pub enum DispatchError {
 fn dispatch_to_rine32(
     exe_path: &Path,
     #[allow(unused)] cli: &Cli,
+    #[cfg(feature = "dev")] dev_bridge: Option<&DevBridge>,
 ) -> Result<std::convert::Infallible, DispatchError> {
     let helper_path = resolve_rine32_helper_path();
     let helper = helper_path.display().to_string();
@@ -610,18 +478,18 @@ fn dispatch_to_rine32(
 
     if status.success() {
         #[cfg(feature = "dev")]
-        {
-            dev_emit!(rine_channel::DevEvent::ProcessExited { exit_code: 0 });
-            dev_shutdown();
+        if let Some(bridge) = dev_bridge {
+            let _ = bridge.send(&rine_channel::DevEvent::ProcessExited { exit_code: 0 });
+            bridge.shutdown();
         }
         std::process::exit(0);
     }
 
     #[cfg(feature = "dev")]
-    {
+    if let Some(bridge) = dev_bridge {
         let code = status.code().unwrap_or(-1);
-        dev_emit!(rine_channel::DevEvent::ProcessExited { exit_code: code });
-        dev_shutdown();
+        let _ = bridge.send(&rine_channel::DevEvent::ProcessExited { exit_code: code });
+        bridge.shutdown();
     }
 
     Err(DispatchError::Failed { helper, status })

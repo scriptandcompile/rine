@@ -1,0 +1,12 @@
+[package]
+name = "rine-dev-bridge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared dev-channel bridge for rine runtimes"
+
+[dependencies]
+rine-channel = { workspace = true }
+rine-runtime-core = { workspace = true }
+rine-types = { workspace = true }
+tracing = { workspace = true }

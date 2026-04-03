@@ -8,14 +8,16 @@ compile_error!(
 
 use clap::{CommandFactory, Parser};
 use goblin::Object;
+use rine_channel::DevEvent;
+use rine_dev_bridge::{DevBridge, imports_resolved_event, pe_loaded_event};
 use rine_dlls::DllRegistry;
 use rine_runtime_core::loader::{entry, memory, resolver};
 use rine_runtime_core::loader::{entry::EntryError, memory::LoaderError, resolver::ResolverError};
 use rine_runtime_core::pe::parser::{ParsedPe, PeError, PeFormat};
-use rine_types::os::{VersionInfo, set_version};
 use rine_types::config::{
     AppConfig, ConfigError, DialogTheme, EmulatedDialogTheme, NativeDialogBackend, WindowsVersion,
 };
+use rine_types::os::{VersionInfo, set_version};
 use rine32_comdlg32::Comdlg32Plugin32;
 use rine32_kernel32::Kernel32Plugin32;
 use rine32_msvcrt::{CrtForwarderPlugin32, MsvcrtPlugin32};
@@ -24,6 +26,30 @@ use thiserror::Error;
 use tracing::{error, info, warn};
 
 const IMAGE_FILE_MACHINE_I386: u16 = 0x014c;
+
+#[cfg(target_arch = "x86")]
+#[repr(C)]
+struct UserDesc {
+    entry_number: u32,
+    base_addr: u32,
+    limit: u32,
+    flags: u32,
+}
+
+#[cfg(target_arch = "x86")]
+const USER_DESC_SEG_32BIT: u32 = 1 << 0;
+#[cfg(target_arch = "x86")]
+const USER_DESC_LIMIT_IN_PAGES: u32 = 1 << 4;
+#[cfg(target_arch = "x86")]
+const USER_DESC_USEABLE: u32 = 1 << 6;
+
+macro_rules! dev_emit {
+    ($bridge:expr, $event:expr) => {
+        if let Some(bridge) = $bridge.as_ref() {
+            let _ = bridge.send(&$event);
+        }
+    };
+}
 
 #[derive(Parser, Debug)]
 #[command(
@@ -114,6 +140,8 @@ fn main() -> ExitCode {
 }
 
 fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
+    let dev_bridge = DevBridge::init_from_env("rine32");
+
     let resolved = resolve_exe_path(exe_path);
     ensure_pe32(&resolved)?;
     let app_config = rine_types::config::load_config(exe_path)?;
@@ -122,6 +150,21 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
         version = %app_config.windows_version,
         config = %rine_types::config::config_path(exe_path).display(),
         "app config loaded"
+    );
+
+    dev_emit!(
+        dev_bridge,
+        DevEvent::ConfigLoaded {
+            config_path: rine_types::config::config_path(exe_path)
+                .display()
+                .to_string(),
+            windows_version: app_config.windows_version.to_string(),
+            environment_overrides: app_config
+                .environment
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+        }
     );
 
     for (key, value) in &app_config.environment {
@@ -157,6 +200,8 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     init_version_from_config(app_config.windows_version);
 
     let image = memory::LoadedImage::load(&parsed)?;
+    dev_emit!(dev_bridge, pe_loaded_event(&resolved, &parsed, &image));
+
     let report = resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry)?;
     info!(
         resolved = report.total_resolved,
@@ -173,12 +218,15 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
         }
     }
 
+    dev_emit!(dev_bridge, imports_resolved_event(&report));
+
     let _ = resolver::resolve_delay_imports(&image, &parsed.pe, &registry);
     image.protect(&parsed.pe)?;
 
     unsafe { init_teb_for_pe32().map_err(|_| Run32Error::TebInit)? };
 
     let exit_code = entry::execute(&image, &parsed)?;
+    dev_emit!(dev_bridge, DevEvent::ProcessExited { exit_code });
     Ok(exit_code)
 }
 
@@ -229,7 +277,7 @@ unsafe fn init_teb_for_pe32() -> Result<(), ()> {
         unsafe {
             core::arch::asm!("mov {}, esp", out(reg) stack_base);
         }
-        let stack_base = (stack_base + 0x100000) & !0xFFF;
+        let stack_base = stack_base.saturating_add(0x100000) & !0xFFF;
         let stack_limit = stack_base.saturating_sub(0x200000);
 
         unsafe {
@@ -237,6 +285,28 @@ unsafe fn init_teb_for_pe32() -> Result<(), ()> {
             std::ptr::write(teb.add(TEB_STACK_LIMIT) as *mut u32, stack_limit);
             std::ptr::write(teb.add(TEB_SELF) as *mut u32, teb as u32);
             std::ptr::write(teb.add(TEB_PEB) as *mut u32, peb as u32);
+        }
+
+        let mut user_desc = UserDesc {
+            entry_number: u32::MAX,
+            base_addr: teb as u32,
+            limit: 0xFFFFF,
+            flags: USER_DESC_SEG_32BIT | USER_DESC_LIMIT_IN_PAGES | USER_DESC_USEABLE,
+        };
+
+        let ret = unsafe {
+            libc::syscall(
+                libc::SYS_set_thread_area,
+                &mut user_desc as *mut UserDesc as *mut libc::c_void,
+            )
+        };
+        if ret != 0 {
+            return Err(());
+        }
+
+        let selector = ((user_desc.entry_number << 3) | 0x3) as u16;
+        unsafe {
+            core::arch::asm!("mov fs, ax", in("ax") selector, options(nostack, preserves_flags));
         }
 
         return Ok(());

@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/rine",
     "crates/rine32",
+    "crates/rine-dev-bridge",
     "crates/rine-runtime-core",
     "crates/rine-dlls",
     "crates/rine-types",
@@ -51,6 +52,7 @@ license = "MIT"
 rine-dlls = { path = "crates/rine-dlls" }
 rine-types = { path = "crates/rine-types" }
 rine-channel = { path = "crates/rine-channel" }
+rine-dev-bridge = { path = "crates/rine-dev-bridge" }
 rine-runtime-core = { path = "crates/rine-runtime-core" }
 rine-frontend-common = { path = "crates/rine-frontend-common" }
 rine64-kernel32 = { path = "crates/platform/win64-dll/rine64-kernel32" }

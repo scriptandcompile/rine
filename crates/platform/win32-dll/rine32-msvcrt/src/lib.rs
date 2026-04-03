@@ -1,4 +1,8 @@
-use std::sync::OnceLock;
+use std::collections::HashMap;
+use std::ffi::CString;
+use std::ffi::c_void;
+use std::sync::Mutex;
+use std::sync::{LazyLock, OnceLock};
 
 use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
 
@@ -15,34 +19,6 @@ win32_stub!(puts, "msvcrt");
 win32_stub!(fprintf, "msvcrt");
 win32_stub!(vfprintf, "msvcrt");
 win32_stub!(fwrite, "msvcrt");
-win32_stub!(exit, "msvcrt");
-win32_stub!(_cexit, "msvcrt");
-win32_stub!(__getmainargs, "msvcrt");
-win32_stub!(_initterm, "msvcrt");
-win32_stub!(_initterm_e, "msvcrt");
-win32_stub!(__set_app_type, "msvcrt");
-win32_stub!(__setusermatherr, "msvcrt");
-win32_stub!(__C_specific_handler, "msvcrt");
-win32_stub!(__iob_func, "msvcrt");
-win32_stub!(_onexit, "msvcrt");
-win32_stub!(_amsg_exit, "msvcrt");
-win32_stub!(abort, "msvcrt");
-win32_stub!(signal, "msvcrt");
-win32_stub!(_lock, "msvcrt");
-win32_stub!(_unlock, "msvcrt");
-win32_stub!(_errno, "msvcrt");
-win32_stub!(__p__environ, "msvcrt");
-win32_stub!(__p__fmode, "msvcrt");
-win32_stub!(__p__commode, "msvcrt");
-win32_stub!(malloc, "msvcrt");
-win32_stub!(calloc, "msvcrt");
-win32_stub!(realloc, "msvcrt");
-win32_stub!(free, "msvcrt");
-win32_stub!(memcpy, "msvcrt");
-win32_stub!(memset, "msvcrt");
-win32_stub!(strlen, "msvcrt");
-win32_stub!(strcmp, "msvcrt");
-win32_stub!(strncmp, "msvcrt");
 
 fn leaked_i32(initial: i32) -> *mut i32 {
     Box::into_raw(Box::new(initial))
@@ -68,6 +44,290 @@ fn initenv_cell() -> *mut usize {
     static CELL: OnceLock<usize> = OnceLock::new();
     let ptr = *CELL.get_or_init(|| leaked_usize(0) as usize);
     ptr as *mut usize
+}
+
+struct MainArgs {
+    argc: i32,
+    argv_ptrs: Vec<*mut i8>,
+    envp_ptrs: Vec<*mut i8>,
+    _argv_strings: Vec<CString>,
+    _envp_strings: Vec<CString>,
+}
+
+unsafe impl Send for MainArgs {}
+unsafe impl Sync for MainArgs {}
+
+static MAIN_ARGS: OnceLock<MainArgs> = OnceLock::new();
+
+fn cached_main_args() -> &'static MainArgs {
+    MAIN_ARGS.get_or_init(|| {
+        let args: Vec<String> = std::env::args().collect();
+        let argv_strings: Vec<CString> = args
+            .iter()
+            .map(|a| CString::new(a.as_str()).unwrap_or_default())
+            .collect();
+        let mut argv_ptrs: Vec<*mut i8> = argv_strings
+            .iter()
+            .map(|cs| cs.as_ptr() as *mut i8)
+            .collect();
+        argv_ptrs.push(std::ptr::null_mut());
+
+        let envp_strings: Vec<CString> = std::env::vars()
+            .map(|(k, v)| CString::new(format!("{k}={v}")).unwrap_or_default())
+            .collect();
+        let mut envp_ptrs: Vec<*mut i8> = envp_strings
+            .iter()
+            .map(|cs| cs.as_ptr() as *mut i8)
+            .collect();
+        envp_ptrs.push(std::ptr::null_mut());
+
+        MainArgs {
+            argc: args.len() as i32,
+            argv_ptrs,
+            envp_ptrs,
+            _argv_strings: argv_strings,
+            _envp_strings: envp_strings,
+        }
+    })
+}
+
+static FAKE_IOB: LazyLock<Box<[u8; 96]>> = LazyLock::new(|| {
+    let mut buf = Box::new([0u8; 96]);
+    buf[0..4].copy_from_slice(&0i32.to_ne_bytes());
+    buf[32..36].copy_from_slice(&1i32.to_ne_bytes());
+    buf[64..68].copy_from_slice(&2i32.to_ne_bytes());
+    buf
+});
+
+static CRT_ALLOCATIONS: LazyLock<Mutex<HashMap<usize, usize>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn exit(code: i32) {
+    rine_types::dev_notify!(on_process_exiting(code));
+    std::process::exit(code);
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _cexit() {
+    unsafe { libc::fflush(std::ptr::null_mut()) };
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn __getmainargs(
+    p_argc: *mut i32,
+    p_argv: *mut *mut *mut i8,
+    p_envp: *mut *mut *mut i8,
+    _do_wildcard: i32,
+    _start_info: *mut core::ffi::c_void,
+) -> i32 {
+    let args = cached_main_args();
+
+    if !p_argc.is_null() {
+        unsafe { *p_argc = args.argc };
+    }
+    if !p_argv.is_null() {
+        unsafe { *p_argv = args.argv_ptrs.as_ptr() as *mut *mut i8 };
+    }
+    if !p_envp.is_null() {
+        unsafe { *p_envp = args.envp_ptrs.as_ptr() as *mut *mut i8 };
+    }
+
+    0
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _initterm(
+    start: *const Option<unsafe extern "C" fn()>,
+    end: *const Option<unsafe extern "C" fn()>,
+) {
+    if start.is_null() || end.is_null() || start >= end {
+        return;
+    }
+
+    let count = unsafe { end.offset_from(start) } as usize;
+    for index in 0..count {
+        if let Some(func) = unsafe { *start.add(index) } {
+            unsafe { func() };
+        }
+    }
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _initterm_e(
+    start: *const Option<unsafe extern "C" fn() -> i32>,
+    end: *const Option<unsafe extern "C" fn() -> i32>,
+) -> i32 {
+    if start.is_null() || end.is_null() || start >= end {
+        return 0;
+    }
+
+    let count = unsafe { end.offset_from(start) } as usize;
+    for index in 0..count {
+        if let Some(func) = unsafe { *start.add(index) } {
+            let result = unsafe { func() };
+            if result != 0 {
+                tracing::warn!(result, index, "msvcrt::_initterm_e: initializer failed");
+                return result;
+            }
+        }
+    }
+
+    0
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn __set_app_type(_app_type: i32) {}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn __setusermatherr(_handler: usize) {}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "C" fn __C_specific_handler(
+    _exception_record: usize,
+    _establisher_frame: usize,
+    _context_record: usize,
+    _dispatcher_context: usize,
+) -> i32 {
+    1
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn __iob_func() -> *mut u8 {
+    FAKE_IOB.as_ptr() as *mut u8
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _onexit(func: usize) -> usize {
+    func
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _amsg_exit(msg_num: i32) {
+    eprintln!("rine: msvcrt runtime error (msg_num={msg_num})");
+    std::process::abort();
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn abort() {
+    std::process::abort();
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn signal(_sig: i32, _handler: usize) -> usize {
+    0
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _lock(_locknum: i32) {}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _unlock(_locknum: i32) {}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn _errno() -> *mut i32 {
+    unsafe { libc::__errno_location() }
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "C" fn __p__environ() -> *const *const *const i8 {
+    initenv_cell() as *const *const *const i8
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "C" fn __p__fmode() -> *mut i32 {
+    fmode_cell()
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "C" fn __p__commode() -> *mut i32 {
+    commode_cell()
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn malloc(size: usize) -> *mut c_void {
+    let ptr = unsafe { libc::malloc(size) };
+    if !ptr.is_null() {
+        CRT_ALLOCATIONS.lock().unwrap().insert(ptr as usize, size);
+        rine_types::dev_notify!(on_memory_allocated(ptr as u64, size as u64, "malloc"));
+    }
+    ptr
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn calloc(count: usize, size: usize) -> *mut c_void {
+    let ptr = unsafe { libc::calloc(count, size) };
+    if !ptr.is_null() {
+        let total = count.saturating_mul(size);
+        CRT_ALLOCATIONS.lock().unwrap().insert(ptr as usize, total);
+        rine_types::dev_notify!(on_memory_allocated(ptr as u64, total as u64, "calloc"));
+    }
+    ptr
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
+    let old_size = if !ptr.is_null() {
+        CRT_ALLOCATIONS.lock().unwrap().remove(&(ptr as usize))
+    } else {
+        None
+    };
+
+    let new_ptr = unsafe { libc::realloc(ptr, size) };
+    if new_ptr.is_null() {
+        if let Some(sz) = old_size {
+            CRT_ALLOCATIONS.lock().unwrap().insert(ptr as usize, sz);
+        }
+        return new_ptr;
+    }
+
+    if let Some(sz) = old_size {
+        rine_types::dev_notify!(on_memory_freed(ptr as u64, sz as u64, "realloc"));
+    }
+    CRT_ALLOCATIONS
+        .lock()
+        .unwrap()
+        .insert(new_ptr as usize, size);
+    rine_types::dev_notify!(on_memory_allocated(new_ptr as u64, size as u64, "realloc"));
+    new_ptr
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn free(ptr: *mut c_void) {
+    if !ptr.is_null()
+        && let Some(sz) = CRT_ALLOCATIONS.lock().unwrap().remove(&(ptr as usize))
+    {
+        rine_types::dev_notify!(on_memory_freed(ptr as u64, sz as u64, "free"));
+    }
+    unsafe { libc::free(ptr) };
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void {
+    unsafe { libc::memcpy(dest, src, n) }
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn memset(dest: *mut c_void, c: i32, n: usize) -> *mut c_void {
+    unsafe { libc::memset(dest, c, n) }
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn strlen(s: *const i8) -> usize {
+    if s.is_null() {
+        return 0;
+    }
+    unsafe { libc::strlen(s) }
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn strcmp(lhs: *const i8, rhs: *const i8) -> i32 {
+    unsafe { libc::strcmp(lhs, rhs) }
+}
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn strncmp(lhs: *const i8, rhs: *const i8, n: usize) -> i32 {
+    unsafe { libc::strncmp(lhs, rhs, n) }
 }
 
 impl DllPlugin for MsvcrtPlugin32 {
@@ -103,6 +363,7 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("__p__commode", as_win_api!(__p__commode)),
             Export::Data("_commode", commode_cell() as *const ()),
             Export::Data("_fmode", fmode_cell() as *const ()),
+            Export::Data("_iob", FAKE_IOB.as_ptr() as *const ()),
             Export::Data("__initenv", initenv_cell() as *const ()),
             Export::Func("malloc", as_win_api!(malloc)),
             Export::Func("calloc", as_win_api!(calloc)),

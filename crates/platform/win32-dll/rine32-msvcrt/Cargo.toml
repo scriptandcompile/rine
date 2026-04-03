@@ -7,4 +7,6 @@ description = "Win32 msvcrt export plugin scaffold"
 
 [dependencies]
 rine-dlls = { workspace = true }
+rine-types = { workspace = true }
+libc = { workspace = true }
 tracing = { workspace = true }

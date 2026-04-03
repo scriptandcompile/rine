@@ -41,6 +41,22 @@ const TEB_LAYOUT_X86: TebLayout = TebLayout {
 /// Size of the fake PEB allocation.
 const PEB_SIZE: usize = 0x1000;
 
+#[cfg(target_arch = "x86")]
+#[repr(C)]
+struct UserDesc {
+    entry_number: u32,
+    base_addr: u32,
+    limit: u32,
+    flags: u32,
+}
+
+#[cfg(target_arch = "x86")]
+const USER_DESC_SEG_32BIT: u32 = 1 << 0;
+#[cfg(target_arch = "x86")]
+const USER_DESC_LIMIT_IN_PAGES: u32 = 1 << 4;
+#[cfg(target_arch = "x86")]
+const USER_DESC_USEABLE: u32 = 1 << 6;
+
 #[derive(Debug, Error)]
 pub enum ThreadingError {
     #[error("failed to allocate fake TEB")]
@@ -54,6 +70,10 @@ pub enum ThreadingError {
 
     #[error("arch_prctl({op}) failed: {ret}")]
     ArchPrctlFailed { op: &'static str, ret: i64 },
+
+    #[cfg(target_arch = "x86")]
+    #[error("set_thread_area failed: {ret}")]
+    SetThreadAreaFailed { ret: i64 },
 }
 
 /// Set up a minimal fake Thread Environment Block for the requested PE format.
@@ -164,7 +184,7 @@ unsafe fn init_teb_x86() -> Result<(), ThreadingError> {
         unsafe {
             core::arch::asm!("mov {}, esp", out(reg) stack_base);
         }
-        let stack_base = (stack_base + 0x100000) & !0xFFF;
+        let stack_base = stack_base.saturating_add(0x100000) & !0xFFF;
         let stack_limit = stack_base.saturating_sub(0x200000);
 
         unsafe {
@@ -174,12 +194,33 @@ unsafe fn init_teb_x86() -> Result<(), ThreadingError> {
             ptr::write(teb.add(layout.teb_peb) as *mut u32, peb as u32);
         }
 
-        // Linux i386 does not expose ARCH_SET_FS via arch_prctl like x86_64.
-        // Wiring `fs` to this TEB is done in the 32-bit runtime bring-up.
+        let mut user_desc = UserDesc {
+            entry_number: u32::MAX,
+            base_addr: teb as u32,
+            limit: 0xFFFFF,
+            flags: USER_DESC_SEG_32BIT | USER_DESC_LIMIT_IN_PAGES | USER_DESC_USEABLE,
+        };
+
+        let ret = unsafe {
+            libc::syscall(
+                libc::SYS_set_thread_area,
+                &mut user_desc as *mut UserDesc as *mut libc::c_void,
+            )
+        };
+        if ret != 0 {
+            return Err(ThreadingError::SetThreadAreaFailed { ret });
+        }
+
+        let selector = ((user_desc.entry_number << 3) | 0x3) as u16;
+        unsafe {
+            core::arch::asm!("mov fs, ax", in("ax") selector, options(nostack, preserves_flags));
+        }
+
         debug!(
             teb = format_args!("{teb:#p}"),
             peb = format_args!("{peb:#p}"),
-            "initialized fake x86 TEB/PEB (fs base wiring pending)"
+            selector = format_args!("{selector:#x}"),
+            "initialized fake x86 TEB/PEB"
         );
 
         return Ok(());
