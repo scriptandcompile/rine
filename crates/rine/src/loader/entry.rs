@@ -1,15 +1,16 @@
 //! Entry point setup & execution.
 //!
-//! Sets up a Windows x64-compatible stack frame and transfers control to the
-//! PE's `AddressOfEntryPoint`. The PE's CRT startup code then calls our
-//! reimplemented DLL functions through the Import Address Table.
+//! Sets up an architecture-appropriate Windows-compatible stack frame and
+//! transfers control to the PE's `AddressOfEntryPoint`. The PE's CRT startup
+//! code then calls our reimplemented DLL functions through the Import Address
+//! Table.
 
 use rine_types::memory::{RelativeVirtualAddress, VirtualAddress};
 use thiserror::Error;
 use tracing::{debug, info};
 
 use super::memory::LoadedImage;
-use crate::pe::parser::ParsedPe;
+use crate::pe::parser::{ParsedPe, PeFormat};
 
 #[derive(Debug, Error)]
 pub enum EntryError {
@@ -18,6 +19,15 @@ pub enum EntryError {
 
     #[error("entry point {0} is outside the loaded image (size {1:#x})")]
     OutOfBounds(VirtualAddress, usize),
+
+    #[error(
+        "{format:?} entry trampoline requires host architecture `{required}`, current host is `{host}`"
+    )]
+    HostArchMismatch {
+        format: PeFormat,
+        required: &'static str,
+        host: &'static str,
+    },
 }
 
 /// Execute the loaded PE image's entry point.
@@ -48,12 +58,45 @@ pub fn execute(image: &LoadedImage, parsed: &ParsedPe) -> Result<i32, EntryError
         "transferring control to PE entry point"
     );
 
-    // Transfer control. The trampoline sets up a Windows x64 stack frame
-    // and calls the entry point. If it returns, we get the exit code from rax.
-    let exit_code = unsafe { trampoline(entry_va.as_usize()) };
+    let exit_code = unsafe { execute_entry(entry_va.as_usize(), parsed.format)? };
 
     debug!(exit_code, "PE entry point returned");
     Ok(exit_code as i32)
+}
+
+unsafe fn execute_entry(entry: usize, format: PeFormat) -> Result<u64, EntryError> {
+    match format {
+        PeFormat::Pe32Plus => {
+            #[cfg(target_arch = "x86_64")]
+            {
+                Ok(unsafe { trampoline_x64(entry) })
+            }
+
+            #[cfg(not(target_arch = "x86_64"))]
+            {
+                Err(EntryError::HostArchMismatch {
+                    format,
+                    required: "x86_64",
+                    host: std::env::consts::ARCH,
+                })
+            }
+        }
+        PeFormat::Pe32 => {
+            #[cfg(target_arch = "x86")]
+            {
+                return Ok(unsafe { trampoline_x86(entry) as u64 });
+            }
+
+            #[cfg(not(target_arch = "x86"))]
+            {
+                Err(EntryError::HostArchMismatch {
+                    format,
+                    required: "x86",
+                    host: std::env::consts::ARCH,
+                })
+            }
+        }
+    }
 }
 
 /// Assembly trampoline that calls a PE entry point with a proper Windows x64
@@ -70,8 +113,9 @@ pub fn execute(image: &LoadedImage, parsed: &ParsedPe) -> Result<i32, EntryError
 ///
 /// `entry` must be a valid code address within the loaded PE image
 /// with correct memory protections (executable).
+#[cfg(target_arch = "x86_64")]
 #[unsafe(naked)]
-unsafe extern "C" fn trampoline(_entry: usize) -> u64 {
+unsafe extern "C" fn trampoline_x64(_entry: usize) -> u64 {
     // SAFETY: We set up and tear down a valid stack frame. The entry
     // address has been bounds-checked by the caller.
     core::arch::naked_asm!(
@@ -91,6 +135,28 @@ unsafe extern "C" fn trampoline(_entry: usize) -> u64 {
         // Entry point returned (exit code in rax).
         "mov rsp, rbp",
         "pop rbp",
+        "ret",
+    );
+}
+
+/// Assembly trampoline for PE32 (x86). The PE entry point takes no arguments
+/// and returns an exit code in `eax`.
+#[cfg(target_arch = "x86")]
+#[unsafe(naked)]
+unsafe extern "C" fn trampoline_x86(_entry: usize) -> u32 {
+    // SAFETY: We set up and tear down a valid x86 stack frame and transfer
+    // control to the bounds-checked entry address.
+    core::arch::naked_asm!(
+        // cdecl first argument is at [ebp+8].
+        "push ebp",
+        "mov ebp, esp",
+        "mov eax, [ebp + 8]",
+        // Keep stack alignment conservative before entering CRT startup.
+        "and esp, -16",
+        "call eax",
+        // Return PE exit code from eax.
+        "mov esp, ebp",
+        "pop ebp",
         "ret",
     );
 }

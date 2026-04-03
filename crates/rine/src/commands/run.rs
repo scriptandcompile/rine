@@ -310,7 +310,10 @@ pub fn run(
 
     // Route by PE machine type so users can keep using `rine <exe>`.
     let arch = detect_architecture(exe_path).map_err(RunError::Probe)?;
-    info!(architecture = arch.machine_name(), "detected PE architecture");
+    info!(
+        architecture = arch.machine_name(),
+        "detected PE architecture"
+    );
     if let PeArchitecture::X86 = arch {
         return dispatch_to_rine32(exe_path, cli).map_err(RunError::Dispatch);
     }
