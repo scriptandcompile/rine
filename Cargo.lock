@@ -3337,6 +3337,10 @@ name = "rine-common-comdlg32"
 version = "0.1.0"
 
 [[package]]
+name = "rine-common-msvcrt"
+version = "0.1.0"
+
+[[package]]
 name = "rine-config"
 version = "0.1.0"
 dependencies = [
@@ -3455,6 +3459,7 @@ name = "rine32-msvcrt"
 version = "0.1.0"
 dependencies = [
  "libc",
+ "rine-common-msvcrt",
  "rine-dlls",
  "rine-types",
  "tracing",
@@ -3512,6 +3517,7 @@ name = "rine64-msvcrt"
 version = "0.1.0"
 dependencies = [
  "libc",
+ "rine-common-msvcrt",
  "rine-dlls",
  "rine-types",
  "tracing",

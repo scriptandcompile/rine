@@ -1,60 +1,6 @@
 //! MSVCRT C runtime initialization: __getmainargs, _initterm, _initterm_e.
 
-use std::ffi::CString;
-use std::sync::OnceLock;
-
-/// Cached C-style argc/argv/envp built once from `std::env`.
-struct MainArgs {
-    argc: i32,
-    argv_ptrs: Vec<*mut i8>,
-    envp_ptrs: Vec<*mut i8>,
-    // The CStrings own the backing memory; the *mut i8 pointers above
-    // borrow into them. Because this lives in a OnceLock<> the storage
-    // is valid for the lifetime of the process.
-    _argv_strings: Vec<CString>,
-    _envp_strings: Vec<CString>,
-}
-
-// SAFETY: All raw pointers in MainArgs point into the CString vecs that
-// are co-located in the same struct and never moved or freed (OnceLock).
-unsafe impl Send for MainArgs {}
-unsafe impl Sync for MainArgs {}
-
-static MAIN_ARGS: OnceLock<MainArgs> = OnceLock::new();
-
-fn cached_main_args() -> &'static MainArgs {
-    MAIN_ARGS.get_or_init(|| {
-        // Build argv from process arguments.
-        let args: Vec<String> = std::env::args().collect();
-        let argv_strings: Vec<CString> = args
-            .iter()
-            .map(|a| CString::new(a.as_str()).unwrap_or_default())
-            .collect();
-        let mut argv_ptrs: Vec<*mut i8> = argv_strings
-            .iter()
-            .map(|cs| cs.as_ptr() as *mut i8)
-            .collect();
-        argv_ptrs.push(std::ptr::null_mut()); // NULL sentinel
-
-        // Build envp from process environment.
-        let envp_strings: Vec<CString> = std::env::vars()
-            .map(|(k, v)| CString::new(format!("{k}={v}")).unwrap_or_default())
-            .collect();
-        let mut envp_ptrs: Vec<*mut i8> = envp_strings
-            .iter()
-            .map(|cs| cs.as_ptr() as *mut i8)
-            .collect();
-        envp_ptrs.push(std::ptr::null_mut()); // NULL sentinel
-
-        MainArgs {
-            argc: args.len() as i32,
-            argv_ptrs,
-            envp_ptrs,
-            _argv_strings: argv_strings,
-            _envp_strings: envp_strings,
-        }
-    })
-}
+use rine_common_msvcrt::cached_main_args;
 
 /// __getmainargs — MSVCRT CRT argument initialization.
 ///
@@ -75,13 +21,13 @@ pub unsafe extern "win64" fn __getmainargs(
     let args = cached_main_args();
 
     if !p_argc.is_null() {
-        unsafe { *p_argc = args.argc };
+        unsafe { *p_argc = args.argc() };
     }
     if !p_argv.is_null() {
-        unsafe { *p_argv = args.argv_ptrs.as_ptr() as *mut *mut i8 };
+        unsafe { *p_argv = args.argv_ptr() };
     }
     if !p_envp.is_null() {
-        unsafe { *p_envp = args.envp_ptrs.as_ptr() as *mut *mut i8 };
+        unsafe { *p_envp = args.envp_ptr() };
     }
 
     0 // success

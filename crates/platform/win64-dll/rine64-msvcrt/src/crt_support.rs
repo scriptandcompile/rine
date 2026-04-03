@@ -3,21 +3,7 @@
 //! These are called by the MinGW CRT startup code before `main()` runs.
 //! Most are no-ops or minimal stubs for Phase 1.
 
-/// Wrapper to make a raw pointer Sync for use in statics.
-struct SyncPtr<T>(T);
-unsafe impl<T> Sync for SyncPtr<T> {}
-unsafe impl<T> Send for SyncPtr<T> {}
-
-// PE CRT startup writes to these with plain `mov` instructions, so they MUST
-// live in heap-allocated (writable) memory — `static AtomicI32` gets placed
-// in a read-only section and faults.
-static COMMODE_PTR: std::sync::LazyLock<SyncPtr<*mut i32>> =
-    std::sync::LazyLock::new(|| SyncPtr(Box::into_raw(Box::new(0i32))));
-static FMODE_PTR: std::sync::LazyLock<SyncPtr<*mut i32>> =
-    std::sync::LazyLock::new(|| SyncPtr(Box::into_raw(Box::new(0i32))));
-
-static INITENV_PTR: std::sync::LazyLock<SyncPtr<*mut usize>> =
-    std::sync::LazyLock::new(|| SyncPtr(Box::into_raw(Box::new(0usize))));
+use rine_common_msvcrt::{commode_ptr, fmode_ptr, initenv_ptr};
 
 /// __set_app_type — set the application type (console/GUI).
 ///
@@ -53,23 +39,23 @@ pub unsafe extern "win64" fn __C_specific_handler(
 /// _commode — return a pointer to the commit mode variable.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _commode() -> *mut i32 {
-    COMMODE_PTR.0
+    commode_ptr()
 }
 
 /// Return the raw pointer to the _commode variable for data-export registration.
 pub fn commode_data_ptr() -> *mut i32 {
-    COMMODE_PTR.0
+    commode_ptr()
 }
 
 /// _fmode — return a pointer to the default file translation mode.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn _fmode() -> *mut i32 {
-    FMODE_PTR.0
+    fmode_ptr()
 }
 
 /// Return the raw pointer to the _fmode variable for data-export registration.
 pub fn fmode_data_ptr() -> *mut i32 {
-    FMODE_PTR.0
+    fmode_ptr()
 }
 
 /// __initenv — return a pointer to the initial environment pointer.
@@ -78,12 +64,12 @@ pub fn fmode_data_ptr() -> *mut i32 {
 /// the real environment is provided via `__getmainargs`).
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
-    INITENV_PTR.0 as *const *const i8
+    initenv_ptr() as *const *const i8
 }
 
 /// Return the raw pointer to the __initenv variable for data-export registration.
 pub fn initenv_data_ptr() -> *mut usize {
-    INITENV_PTR.0
+    initenv_ptr()
 }
 
 // Fake FILE table for __iob_func. Windows CRT __iob_func returns a pointer
@@ -174,7 +160,7 @@ pub unsafe extern "win64" fn _errno() -> *mut i32 {
 /// Returns a pointer to a NULL pointer (minimal stub).
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
-    INITENV_PTR.0 as *const *const *const i8
+    initenv_ptr() as *const *const *const i8
 }
 
 /// __p__fmode — return a pointer to the global file mode variable.
@@ -182,7 +168,7 @@ pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
 /// Returns the same pointer as `_fmode()`.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
-    FMODE_PTR.0
+    fmode_ptr()
 }
 
 /// __p__commode — return a pointer to the global commit mode variable.
@@ -190,5 +176,5 @@ pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
 /// Returns the same pointer as `_commode()`.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
-    COMMODE_PTR.0
+    commode_ptr()
 }

@@ -8,5 +8,6 @@ description = "msvcrt.dll implementation for rine"
 [dependencies]
 rine-dlls = { workspace = true }
 rine-types = { workspace = true }
+rine-common-msvcrt = { workspace = true }
 libc = { workspace = true }
 tracing = { workspace = true }

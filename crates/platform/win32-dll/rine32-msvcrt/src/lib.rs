@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-use std::ffi::CString;
 use std::ffi::c_void;
-use std::sync::Mutex;
-use std::sync::{LazyLock, OnceLock};
+use std::sync::LazyLock;
 
+use rine_common_msvcrt::{
+    AllocationTracker, cached_main_args, commode_ptr, fmode_ptr, initenv_ptr,
+};
 use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
 
 #[cfg(not(target_pointer_width = "32"))]
@@ -20,77 +20,6 @@ win32_stub!(fprintf, "msvcrt");
 win32_stub!(vfprintf, "msvcrt");
 win32_stub!(fwrite, "msvcrt");
 
-fn leaked_i32(initial: i32) -> *mut i32 {
-    Box::into_raw(Box::new(initial))
-}
-
-fn leaked_usize(initial: usize) -> *mut usize {
-    Box::into_raw(Box::new(initial))
-}
-
-fn fmode_cell() -> *mut i32 {
-    static CELL: OnceLock<usize> = OnceLock::new();
-    let ptr = *CELL.get_or_init(|| leaked_i32(0) as usize);
-    ptr as *mut i32
-}
-
-fn commode_cell() -> *mut i32 {
-    static CELL: OnceLock<usize> = OnceLock::new();
-    let ptr = *CELL.get_or_init(|| leaked_i32(0) as usize);
-    ptr as *mut i32
-}
-
-fn initenv_cell() -> *mut usize {
-    static CELL: OnceLock<usize> = OnceLock::new();
-    let ptr = *CELL.get_or_init(|| leaked_usize(0) as usize);
-    ptr as *mut usize
-}
-
-struct MainArgs {
-    argc: i32,
-    argv_ptrs: Vec<*mut i8>,
-    envp_ptrs: Vec<*mut i8>,
-    _argv_strings: Vec<CString>,
-    _envp_strings: Vec<CString>,
-}
-
-unsafe impl Send for MainArgs {}
-unsafe impl Sync for MainArgs {}
-
-static MAIN_ARGS: OnceLock<MainArgs> = OnceLock::new();
-
-fn cached_main_args() -> &'static MainArgs {
-    MAIN_ARGS.get_or_init(|| {
-        let args: Vec<String> = std::env::args().collect();
-        let argv_strings: Vec<CString> = args
-            .iter()
-            .map(|a| CString::new(a.as_str()).unwrap_or_default())
-            .collect();
-        let mut argv_ptrs: Vec<*mut i8> = argv_strings
-            .iter()
-            .map(|cs| cs.as_ptr() as *mut i8)
-            .collect();
-        argv_ptrs.push(std::ptr::null_mut());
-
-        let envp_strings: Vec<CString> = std::env::vars()
-            .map(|(k, v)| CString::new(format!("{k}={v}")).unwrap_or_default())
-            .collect();
-        let mut envp_ptrs: Vec<*mut i8> = envp_strings
-            .iter()
-            .map(|cs| cs.as_ptr() as *mut i8)
-            .collect();
-        envp_ptrs.push(std::ptr::null_mut());
-
-        MainArgs {
-            argc: args.len() as i32,
-            argv_ptrs,
-            envp_ptrs,
-            _argv_strings: argv_strings,
-            _envp_strings: envp_strings,
-        }
-    })
-}
-
 static FAKE_IOB: LazyLock<Box<[u8; 96]>> = LazyLock::new(|| {
     let mut buf = Box::new([0u8; 96]);
     buf[0..4].copy_from_slice(&0i32.to_ne_bytes());
@@ -99,8 +28,7 @@ static FAKE_IOB: LazyLock<Box<[u8; 96]>> = LazyLock::new(|| {
     buf
 });
 
-static CRT_ALLOCATIONS: LazyLock<Mutex<HashMap<usize, usize>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
+static CRT_ALLOCATIONS: LazyLock<AllocationTracker> = LazyLock::new(AllocationTracker::new);
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn exit(code: i32) {
@@ -124,13 +52,13 @@ pub unsafe extern "C" fn __getmainargs(
     let args = cached_main_args();
 
     if !p_argc.is_null() {
-        unsafe { *p_argc = args.argc };
+        unsafe { *p_argc = args.argc() };
     }
     if !p_argv.is_null() {
-        unsafe { *p_argv = args.argv_ptrs.as_ptr() as *mut *mut i8 };
+        unsafe { *p_argv = args.argv_ptr() };
     }
     if !p_envp.is_null() {
-        unsafe { *p_envp = args.envp_ptrs.as_ptr() as *mut *mut i8 };
+        unsafe { *p_envp = args.envp_ptr() };
     }
 
     0
@@ -231,24 +159,24 @@ pub unsafe extern "C" fn _errno() -> *mut i32 {
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "C" fn __p__environ() -> *const *const *const i8 {
-    initenv_cell() as *const *const *const i8
+    initenv_ptr() as *const *const *const i8
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "C" fn __p__fmode() -> *mut i32 {
-    fmode_cell()
+    fmode_ptr()
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "C" fn __p__commode() -> *mut i32 {
-    commode_cell()
+    commode_ptr()
 }
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn malloc(size: usize) -> *mut c_void {
     let ptr = unsafe { libc::malloc(size) };
     if !ptr.is_null() {
-        CRT_ALLOCATIONS.lock().unwrap().insert(ptr as usize, size);
+        CRT_ALLOCATIONS.record(ptr, size);
         rine_types::dev_notify!(on_memory_allocated(ptr as u64, size as u64, "malloc"));
     }
     ptr
@@ -259,7 +187,7 @@ pub unsafe extern "C" fn calloc(count: usize, size: usize) -> *mut c_void {
     let ptr = unsafe { libc::calloc(count, size) };
     if !ptr.is_null() {
         let total = count.saturating_mul(size);
-        CRT_ALLOCATIONS.lock().unwrap().insert(ptr as usize, total);
+        CRT_ALLOCATIONS.record(ptr, total);
         rine_types::dev_notify!(on_memory_allocated(ptr as u64, total as u64, "calloc"));
     }
     ptr
@@ -267,16 +195,12 @@ pub unsafe extern "C" fn calloc(count: usize, size: usize) -> *mut c_void {
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
-    let old_size = if !ptr.is_null() {
-        CRT_ALLOCATIONS.lock().unwrap().remove(&(ptr as usize))
-    } else {
-        None
-    };
+    let old_size = CRT_ALLOCATIONS.forget(ptr);
 
     let new_ptr = unsafe { libc::realloc(ptr, size) };
     if new_ptr.is_null() {
         if let Some(sz) = old_size {
-            CRT_ALLOCATIONS.lock().unwrap().insert(ptr as usize, sz);
+            CRT_ALLOCATIONS.restore(ptr, sz);
         }
         return new_ptr;
     }
@@ -284,19 +208,14 @@ pub unsafe extern "C" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
     if let Some(sz) = old_size {
         rine_types::dev_notify!(on_memory_freed(ptr as u64, sz as u64, "realloc"));
     }
-    CRT_ALLOCATIONS
-        .lock()
-        .unwrap()
-        .insert(new_ptr as usize, size);
+    CRT_ALLOCATIONS.record(new_ptr, size);
     rine_types::dev_notify!(on_memory_allocated(new_ptr as u64, size as u64, "realloc"));
     new_ptr
 }
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn free(ptr: *mut c_void) {
-    if !ptr.is_null()
-        && let Some(sz) = CRT_ALLOCATIONS.lock().unwrap().remove(&(ptr as usize))
-    {
+    if let Some(sz) = CRT_ALLOCATIONS.forget(ptr) {
         rine_types::dev_notify!(on_memory_freed(ptr as u64, sz as u64, "free"));
     }
     unsafe { libc::free(ptr) };
@@ -361,10 +280,10 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("__p__environ", as_win_api!(__p__environ)),
             Export::Func("__p__fmode", as_win_api!(__p__fmode)),
             Export::Func("__p__commode", as_win_api!(__p__commode)),
-            Export::Data("_commode", commode_cell() as *const ()),
-            Export::Data("_fmode", fmode_cell() as *const ()),
+            Export::Data("_commode", commode_ptr() as *const ()),
+            Export::Data("_fmode", fmode_ptr() as *const ()),
             Export::Data("_iob", FAKE_IOB.as_ptr() as *const ()),
-            Export::Data("__initenv", initenv_cell() as *const ()),
+            Export::Data("__initenv", initenv_ptr() as *const ()),
             Export::Func("malloc", as_win_api!(malloc)),
             Export::Func("calloc", as_win_api!(calloc)),
             Export::Func("realloc", as_win_api!(realloc)),
