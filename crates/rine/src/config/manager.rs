@@ -86,8 +86,10 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         let mgr = ConfigManager { root: dir.clone() };
 
-        let mut cfg = AppConfig::default();
-        cfg.windows_version = WindowsVersion::Win7;
+        let mut cfg = AppConfig {
+            windows_version: WindowsVersion::Win7,
+            ..Default::default()
+        };
         cfg.environment.insert("FOO".into(), "bar".into());
 
         let exe = Path::new("/tmp/test.exe");

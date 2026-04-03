@@ -28,10 +28,7 @@ pub(crate) unsafe extern "win64" fn create_window_ex_a(
         class_name_str,
         window_title,
         style,
-        x,
-        y,
-        width,
-        height,
+        Rect { left: x, top: y, right: x + width, bottom: y + height },
         parent,
     )
 }
@@ -59,10 +56,7 @@ pub(crate) unsafe extern "win64" fn create_window_ex_w(
         class_name_str,
         window_title,
         style,
-        x,
-        y,
-        width,
-        height,
+        Rect { left: x, top: y, right: x + width, bottom: y + height },
         parent,
     )
 }
@@ -72,10 +66,7 @@ fn create_window_common(
     class_name_str: String,
     window_title: String,
     style: u32,
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
+    rect: Rect,
     parent: usize,
 ) -> usize {
     let escaped_class_name = json_escape(&class_name_str);
@@ -92,17 +83,12 @@ fn create_window_common(
         title: window_title,
         style,
         ex_style,
-        rect: Rect {
-            left: x,
-            top: y,
-            right: x + width,
-            bottom: y + height,
-        },
+        rect,
         client_rect: Rect {
             left: 0,
             top: 0,
-            right: width,
-            bottom: height,
+            right: rect.right - rect.left,
+            bottom: rect.bottom - rect.top,
         },
         parent: Hwnd::from_raw(parent),
         visible: (style & window_style::WS_VISIBLE) != 0,
