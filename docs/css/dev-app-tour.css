@@ -1,0 +1,105 @@
+.tour-main {
+  padding: 3rem 0 5rem;
+}
+
+.tour-hero {
+  max-width: 80ch;
+  margin: 0 0 2.25rem;
+}
+
+.tour-hero h1 {
+  margin: 0;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+}
+
+.tour-grid {
+  display: grid;
+  gap: 0;
+}
+
+.screen-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr);
+  gap: 1.25rem;
+  align-items: start;
+  padding: 2rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.screen-card:first-child {
+  border-top: 0;
+  padding-top: 0.2rem;
+}
+
+.screen-copy {
+  margin-bottom: 0;
+}
+
+.screen-copy h2 {
+  margin: 0;
+  font-size: 1.55rem;
+}
+
+.screen-copy p,
+.screen-copy li {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.screen-copy ul {
+  margin: 0.9rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.screen-card img {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: zoom-in;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  transform-origin: center top;
+  position: relative;
+  z-index: 1;
+}
+
+.screen-card img:hover {
+  transform: scale(1.5);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+  z-index: 30;
+}
+
+.sub-screen-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.sub-screen-grid figure {
+  margin: 0;
+}
+
+.sub-screen-grid figcaption {
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 900px) {
+  .screen-card img:hover {
+    transform: scale(1.12);
+  }
+
+  .screen-card {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+    padding: 1.35rem 0;
+  }
+
+  .sub-screen-grid {
+    grid-template-columns: 1fr;
+  }
+}

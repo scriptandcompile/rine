@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Guided walkthrough of the rine-dev runtime dashboard tabs and sub-tabs.">
+  <title>rine | Dev App Tour</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/dev-app-tour.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="rine home">
+        <span class="brand-mark">R</span>
+        <span class="brand-name">rine</span>
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="index.html">Home</a>
+        <a href="dll-support.html">DLL Support</a>
+        <a href="dev-app-tour.html" aria-current="page">Dev App Tour</a>
+      </nav>
+    </header>
+
+    <main class="tour-main">
+      <section class="tour-hero">
+        <p class="eyebrow">rine-dev walkthrough</p>
+        <h1>Inspect live runtime state with the rine-dev app</h1>
+        <p class="hero-text">
+          The rine-dev app gives you a live view into runtime internals so you can inspect imports,
+          file and memory activity, thread and synchronization state, window and dialog behavior,
+          graphics operations, event signaling, and process output while an application is running.
+        </p>
+      </section>
+
+      <section class="tour-grid" aria-label="rine-dev tab walkthrough">
+        <article class="screen-card" id="overview">
+          <div class="screen-copy">
+            <h2>Overview</h2>
+            <p>Landing snapshot of the running process, showing high-level runtime status and key metrics in one place.</p>
+          </div>
+          <img src="img/dev/overview.png" alt="rine-dev Overview tab screenshot">
+        </article>
+
+        <article class="screen-card" id="imports">
+          <div class="screen-copy">
+            <h2>Imports</h2>
+            <p>Summarizes imported symbols and resolution behavior, helping confirm DLL binding and function availability.</p>
+          </div>
+          <img src="img/dev/imports.png" alt="rine-dev Imports tab screenshot">
+        </article>
+
+        <article class="screen-card" id="files">
+          <div class="screen-copy">
+            <h2>Files</h2>
+            <p>Provides visibility into file handles and file operations performed by the loaded Windows binary.</p>
+          </div>
+          <img src="img/dev/files.png" alt="rine-dev Files tab screenshot">
+        </article>
+
+        <article class="screen-card" id="memory-summary">
+          <div class="screen-copy">
+            <h2>Memory - Summary</h2>
+            <p>High-level memory usage overview for quickly assessing allocation trends and overall runtime footprint.</p>
+          </div>
+          <img src="img/dev/memory%20-%20summary.png" alt="rine-dev Memory summary sub-tab screenshot">
+        </article>
+
+        <article class="screen-card" id="memory-snapshot">
+          <div class="screen-copy">
+            <h2>Memory - Snapshot</h2>
+            <p>Point-in-time detailed memory state used for deeper inspection of specific regions and allocations.</p>
+          </div>
+          <img src="img/dev/memory%20-%20snapshot.png" alt="rine-dev Memory snapshot sub-tab screenshot">
+        </article>
+
+        <article class="screen-card" id="threads">
+          <div class="screen-copy">
+            <h2>Threads</h2>
+            <p>Lists thread activity to help diagnose scheduling behavior, contention, and app responsiveness issues.</p>
+          </div>
+          <img src="img/dev/threads.png" alt="rine-dev Threads tab screenshot">
+        </article>
+
+        <article class="screen-card" id="mutexes">
+          <div class="screen-copy">
+            <h2>Mutexes</h2>
+            <p>Shows synchronization objects and lock state for debugging deadlocks, stalls, and ownership flow.</p>
+          </div>
+          <img src="img/dev/mutexes.png" alt="rine-dev Mutexes tab screenshot">
+        </article>
+
+        <article class="screen-card" id="windows">
+          <div class="screen-copy">
+            <h2>Windows</h2>
+            <p>Tracks created windows and related metadata so UI lifecycle activity can be monitored as the app runs.</p>
+          </div>
+          <img src="img/dev/windows.png" alt="rine-dev Windows tab screenshot">
+        </article>
+
+        <article class="screen-card" id="gdi">
+          <div class="screen-copy">
+            <h2>GDI</h2>
+            <p>Surfaces graphics-device activity and GDI-related calls for tracing rendering and drawing behavior.</p>
+          </div>
+          <img src="img/dev/gdi.png" alt="rine-dev GDI tab screenshot">
+        </article>
+
+        <article class="screen-card" id="dialogs">
+          <div class="screen-copy">
+            <h2>Dialogs</h2>
+            <p>Captures dialog interactions and state so common dialog flows can be inspected and verified.</p>
+          </div>
+          <img src="img/dev/dialogs.png" alt="rine-dev Dialogs tab screenshot">
+        </article>
+
+        <article class="screen-card" id="events">
+          <div class="screen-copy">
+            <h2>Events</h2>
+            <p>Displays event objects and signaling behavior, useful for understanding wakeups and wait patterns.</p>
+          </div>
+          <img src="img/dev/events.png" alt="rine-dev Events tab screenshot">
+        </article>
+
+        <article class="screen-card" id="output-stdout">
+          <div class="screen-copy">
+            <h2>Output - Stdout</h2>
+            <p>Captures normal program output and progress logs emitted to standard output during execution.</p>
+          </div>
+          <img src="img/dev/output%20-%20stdout.png" alt="rine-dev Output stdout sub-tab screenshot">
+        </article>
+
+        <article class="screen-card" id="output-stderr">
+          <div class="screen-copy">
+            <h2>Output - Stderr</h2>
+            <p>Surfaces warnings, errors, and diagnostic messages written to standard error.</p>
+          </div>
+          <img src="img/dev/output%20-%20stderr.png" alt="rine-dev Output stderr sub-tab screenshot">
+        </article>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>rine-dev documentation</p>
+      <p><span id="current-year"></span> • tab walkthrough</p>
+    </footer>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
