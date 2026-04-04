@@ -4,6 +4,7 @@
 //! window state (stored in rine-types globals) and actual screen windows.
 //! Shared by both 32-bit and 64-bit user32 wrappers.
 
+use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -30,7 +31,7 @@ fn native_backend_enabled() -> bool {
         if let Ok(v) = std::env::var("RINE_USER32_NATIVE_BACKEND") {
             return v == "1" || v.eq_ignore_ascii_case("true") || v.eq_ignore_ascii_case("yes");
         }
-        cfg!(target_pointer_width = "64")
+        !user32_debug_enabled()
     })
 }
 
@@ -212,7 +213,23 @@ impl WinitBackend {
 }
 
 thread_local! {
-    static WINIT_BACKEND: RefCell<Option<WinitBackend>> = const { RefCell::new(None) };
+    static WINIT_BACKEND: RefCell<BackendState> = const { RefCell::new(BackendState::Uninitialized) };
+}
+
+enum BackendState {
+    Uninitialized,
+    Available(WinitBackend),
+    Failed,
+}
+
+fn panic_payload_message(payload: &(dyn Any + Send)) -> String {
+    if let Some(message) = payload.downcast_ref::<String>() {
+        return message.clone();
+    }
+    if let Some(message) = payload.downcast_ref::<&'static str>() {
+        return (*message).to_owned();
+    }
+    "unknown backend initialization panic".to_owned()
 }
 
 fn with_backend<R>(f: impl FnOnce(&mut WinitBackend) -> R) -> Option<R> {
@@ -223,12 +240,29 @@ fn with_backend<R>(f: impl FnOnce(&mut WinitBackend) -> R) -> Option<R> {
 
     WINIT_BACKEND.with(|backend| {
         let mut backend = backend.borrow_mut();
-        if backend.is_none() {
-            let created = std::panic::catch_unwind(WinitBackend::new).ok()?;
-            *backend = Some(created);
+        if matches!(*backend, BackendState::Uninitialized) {
+            match std::panic::catch_unwind(WinitBackend::new) {
+                Ok(created) => {
+                    *backend = BackendState::Available(created);
+                }
+                Err(payload) => {
+                    let reason = panic_payload_message(payload.as_ref());
+                    eprintln!(
+                        "warning: native user32 backend unavailable; falling back to emulated mode: {reason}"
+                    );
+                    debug_log_backend(
+                        "native backend initialization failed; falling back to emulated user32",
+                    );
+                    *backend = BackendState::Failed;
+                    return None;
+                }
+            }
         }
 
-        backend.as_mut().map(f)
+        match &mut *backend {
+            BackendState::Available(instance) => Some(f(instance)),
+            BackendState::Failed | BackendState::Uninitialized => None,
+        }
     })
 }
 
