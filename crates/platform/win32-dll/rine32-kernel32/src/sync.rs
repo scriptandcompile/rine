@@ -1,9 +1,11 @@
 use std::ptr;
 use std::sync::{Arc, Condvar, Mutex};
 
+use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::threading;
+use tracing::debug;
 
 unsafe fn init_cs(cs: *mut u8) {
     unsafe { ptr::write_bytes(cs, 0, 24) };
@@ -82,14 +84,18 @@ pub unsafe extern "stdcall" fn CreateEventA(
     initial_state: WinBool,
     _name: *const u8,
 ) -> isize {
-    let waitable = threading::EventWaitable {
-        inner: Arc::new(threading::EventInner {
-            signaled: Mutex::new(initial_state.is_true()),
-            condvar: Condvar::new(),
-            manual_reset: manual_reset.is_true(),
-        }),
-    };
-    handle_table().insert(HandleEntry::Event(waitable)).as_raw()
+    let h = common::sync::create_event(manual_reset, initial_state);
+    debug!(?h, "CreateEventA");
+    rine_types::dev_notify!(on_handle_created(
+        h.as_raw() as i64,
+        "Event",
+        if manual_reset.is_true() {
+            "manual-reset"
+        } else {
+            "auto-reset"
+        }
+    ));
+    h.as_raw()
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]

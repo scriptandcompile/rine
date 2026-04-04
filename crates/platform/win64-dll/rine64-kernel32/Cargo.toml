@@ -7,6 +7,7 @@ description = "kernel32.dll implementation for rine"
 
 [dependencies]
 rine-dlls = { workspace = true }
+rine-common-kernel32 = { workspace = true }
 rine-types = { workspace = true }
 libc = { workspace = true }
 nix = { workspace = true }

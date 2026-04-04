@@ -22,6 +22,7 @@ members = [
     "crates/platform/win-common/rine-common-advapi32",
     "crates/platform/win-common/rine-common-comdlg32",
     "crates/platform/win-common/rine-common-gdi32",
+    "crates/platform/win-common/rine-common-kernel32",
     "crates/platform/win-common/rine-common-msvcrt",
     "crates/platform/win-common/rine-common-user32",
     "crates/platform/win32-dll/rine32-advapi32",
@@ -73,6 +74,7 @@ rine64-ws2_32 = { path = "crates/platform/win64-dll/rine64-ws2_32" }
 rine-common-advapi32 = { path = "crates/platform/win-common/rine-common-advapi32" }
 rine-common-comdlg32 = { path = "crates/platform/win-common/rine-common-comdlg32" }
 rine-common-gdi32 = { path = "crates/platform/win-common/rine-common-gdi32" }
+rine-common-kernel32 = { path = "crates/platform/win-common/rine-common-kernel32" }
 rine-common-msvcrt = { path = "crates/platform/win-common/rine-common-msvcrt" }
 rine-common-user32 = { path = "crates/platform/win-common/rine-common-user32" }
 rine32-advapi32 = { path = "crates/platform/win32-dll/rine32-advapi32" }

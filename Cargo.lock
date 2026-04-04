@@ -3354,6 +3354,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rine-common-kernel32"
+version = "0.1.2"
+dependencies = [
+ "rine-types",
+]
+
+[[package]]
 name = "rine-common-msvcrt"
 version = "0.1.2"
 dependencies = [
@@ -3499,6 +3506,7 @@ name = "rine32-kernel32"
 version = "0.1.2"
 dependencies = [
  "libc",
+ "rine-common-kernel32",
  "rine-dlls",
  "rine-types",
  "tracing",
@@ -3567,6 +3575,7 @@ version = "0.1.2"
 dependencies = [
  "libc",
  "nix 0.31.2",
+ "rine-common-kernel32",
  "rine-dlls",
  "rine-types",
  "serial_test",

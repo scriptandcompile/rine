@@ -1,0 +1,9 @@
+[package]
+name = "rine-common-kernel32"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared architecture-neutral kernel32 logic for rine"
+
+[dependencies]
+rine-types = { workspace = true }
