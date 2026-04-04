@@ -55,26 +55,47 @@ pub const STD_ERROR_HANDLE: u32 = 0xFFFF_FFF4; // (DWORD)-12
 pub const INVALID_HANDLE_VALUE: Handle = Handle(-1);
 
 impl Handle {
+    /// The null handle (`NULL`).
     pub const NULL: Self = Self(0);
 
+    /// Create a `Handle` from a raw `isize` value, for use in the Windows ABI.
     #[inline]
     pub const fn from_raw(value: isize) -> Self {
         Self(value)
     }
 
+    /// Get the raw `isize` value of this handle, for use in the Windows ABI.
     #[inline]
     pub const fn as_raw(self) -> isize {
         self.0
     }
 
+    /// Check if this handle is `NULL` (0), which is a valid but non-functional handle.
     #[inline]
     pub const fn is_null(self) -> bool {
         self.0 == 0
     }
 
+    /// Check if this handle is `INVALID_HANDLE_VALUE` (−1), which indicates an error.
     #[inline]
     pub const fn is_invalid(self) -> bool {
         self.0 == -1
+    }
+
+    /// Helper to check if a handle is valid (not NULL and not INVALID_HANDLE_VALUE)
+    ///
+    /// In Windows conventions, valid handles are positive integers (or zero for NULL),
+    /// while negative values indicate errors.  
+    ///
+    /// This method returns true for valid handles and false for NULL or INVALID_HANDLE_VALUE.
+    ///
+    /// In Windows conventions:
+    /// - Handle(0) = NULL (valid but represents no object)
+    /// - Handle(-1) = INVALID_HANDLE_VALUE (indicates failure)
+    /// - Valid handles are positive integers >= 1
+    #[inline]
+    pub const fn is_valid(self) -> bool {
+        self.0 > 0
     }
 }
 
