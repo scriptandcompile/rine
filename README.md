@@ -236,6 +236,35 @@ cargo test
 Test fixtures are C programs under `tests/fixtures/src/` (organized by domain, e.g. `core/`, `system/`, `ui/`) compiled to PE executables in `tests/fixtures/bin/x64/` and `tests/fixtures/bin/x86/`.
 By default, integration tests use `x64` fixtures; set `RINE_FIXTURE_ARCH=x86` to target x86 fixture binaries.
 
+## Debian Packaging
+
+Build a Debian package that includes all runtime-facing components:
+
+- `rine` (main runtime)
+- `rine32` (x86 helper runtime)
+- `rine-dev` (developer dashboard)
+- `rine-config` (configuration editor)
+
+```bash
+./scripts/build-rine-deb.sh
+```
+
+Output artifact:
+
+- `target/debian/rine_<version>_<arch>.deb`
+
+Install locally:
+
+```bash
+sudo dpkg -i target/debian/rine_<version>_<arch>.deb
+```
+
+Package install behavior:
+
+- Registers `binfmt_misc` automatically (best-effort, non-fatal if unavailable).
+- Installs system-wide desktop + MIME association for `.exe` files on Freedesktop environments (including GNOME).
+- Installs per-user file-manager right-click context menu actions automatically for local desktop users (UID >= 1000).
+
 ## Roadmap
 
 - [x] PE parsing and memory loading
