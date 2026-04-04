@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="rine runs Windows PE executables directly on Linux with a Rust loader and reimplemented Windows DLLs.">
+  <title>rine | Windows PE loader for Linux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="rine home">
+        <span class="brand-mark">R</span>
+        <span class="brand-name">rine</span>
+      </a>
+
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        Menu
+      </button>
+
+      <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
+        <a href="#core_capabilities">Core capabilities</a>
+        <a href="dll-support.html">DLL support</a>
+        <a href="#status">Status</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero section">
+        <div class="hero-copy reveal">
+          <p class="eyebrow">Windows compatibility without the VM</p>
+          <h1>Run Windows programs natively on linux.</h1>
+          <p class="hero-text">
+            A user first focus on windows interopability.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" href="#core_capabilities">Features</a>
+            <a class="button button-secondary" href="dll-support.html">DLL support</a>
+          </div>
+
+        </div>
+
+        <div class="hero-panel reveal reveal-delay-1" aria-label="Runtime overview">
+          <div class="terminal-card">
+            <div class="terminal-bar">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <pre><code>$ ./scripts/build-rine.sh
+$ target/release/rine ./hello.exe
+
+hello world</code></pre>
+          </div>
+
+          <div class="signal-grid">
+            <article>
+              <strong id="hero-dll-count">7</strong>
+              <span>Windows DLL crates</span>
+            </article>
+            <article>
+              <strong>--config</strong>
+              <span>Per-app configuration dashboard</span>
+            </article>
+            <article>
+              <strong>--dev</strong>
+              <span>Live runtime dashboard</span>
+            </article>
+            <article>
+              <strong>TOML</strong>
+              <span>Per-app configuration</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="core_capabilities" class="section feature-section">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Core Capabilities</p>
+          <h2>Built to feel native on Linux desktops.</h2>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card reveal">
+            <h3>Desktop integration</h3>
+            <p>Register .exe handling with binfmt_misc and desktop entries so Windows apps launch naturally from file managers and app menus.</p>
+          </article>
+          <article class="feature-card reveal reveal-delay-1">
+            <h3>Linux ecosystem friendly</h3>
+            <p>Plugs into standard Linux workflows, including shell execution, MIME handling, and existing dev tooling without introducing a separate runtime silo.</p>
+          </article>
+          <article class="feature-card reveal reveal-delay-2">
+            <h3>Simple app onboarding</h3>
+            <p>Per-app configuration and optional UI tools make it easy to map paths, tune behavior, and integrate Windows binaries into everyday Linux usage.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="status" class="section status-section">
+        <div class="status-card reveal">
+          <div>
+            <p class="eyebrow">Project Status</p>
+            <h2>Early development, focused on core runtime correctness.</h2>
+            <p>
+              Console applications with basic I/O, threading, and synchronization are already in scope.
+              GUI and networking support are under active build-out through the growing DLL surface.
+            </p>
+          </div>
+          <ul class="status-list">
+            <li>Active: kernel32, ntdll, msvcrt</li>
+            <li>Partial: comdlg32, gdi32, user32</li>
+            <li>Stubbed: advapi32, ws2_32</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>rine project site</p>
+      <p><span id="current-year"></span> • docs/ GitHub Pages landing page</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
