@@ -8,7 +8,10 @@ use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::OnceLock;
+use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 
+use rine_channel::{HostWindowCommand, HostWindowEvent, HostWindowRect, HostWindowSender};
 use rine_types::windows::*;
 use winit::dpi::{LogicalPosition, LogicalSize};
 use winit::event::{Event, WindowEvent};
@@ -41,10 +44,24 @@ pub fn debug_log_backend(msg: impl AsRef<str>) {
     }
 }
 
+fn host_socket_path() -> Option<String> {
+    std::env::var("RINE_WINDOW_HOST_SOCKET").ok()
+}
+
 struct WinitBackend {
     event_loop: EventLoop<()>,
     windows: HashMap<Hwnd, Window>,
     reverse: HashMap<WindowId, Hwnd>,
+}
+
+struct HostedBackend {
+    sender: Arc<Mutex<HostWindowSender>>,
+    events: mpsc::Receiver<HostWindowEvent>,
+}
+
+enum Backend {
+    Local(WinitBackend),
+    Hosted(HostedBackend),
 }
 
 impl WinitBackend {
@@ -212,13 +229,174 @@ impl WinitBackend {
     }
 }
 
+impl HostedBackend {
+    fn connect(socket_path: &str) -> Result<Self, String> {
+        let sender = HostWindowSender::connect(std::path::Path::new(socket_path))
+            .map_err(|e| format!("failed to connect to window host: {e}"))?;
+        let mut event_reader = sender
+            .try_clone()
+            .map_err(|e| format!("failed to clone host window channel: {e}"))?;
+        let (event_tx, event_rx) = mpsc::channel();
+
+        std::thread::spawn(move || {
+            loop {
+                match event_reader.recv_event() {
+                    Ok(event) => {
+                        if event_tx.send(event).is_err() {
+                            break;
+                        }
+                    }
+                    Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
+                    Err(e) => {
+                        if user32_debug_enabled() {
+                            eprintln!("[user32/backend] window host event stream closed: {e}");
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+
+        Ok(Self {
+            sender: Arc::new(Mutex::new(sender)),
+            events: event_rx,
+        })
+    }
+
+    fn send(&self, command: HostWindowCommand) {
+        let Ok(mut sender) = self.sender.lock() else {
+            return;
+        };
+        if let Err(error) = sender.send_command(&command) {
+            eprintln!(
+                "warning: window host command failed; native backend falling back to emulated behavior: {error}"
+            );
+        }
+    }
+
+    fn create_window(&self, hwnd: Hwnd, state: &WindowState) {
+        self.send(HostWindowCommand::CreateWindow {
+            runtime_hwnd: hwnd.as_raw() as u64,
+            title: state.title.clone(),
+            rect: HostWindowRect {
+                left: state.rect.left,
+                top: state.rect.top,
+                right: state.rect.right,
+                bottom: state.rect.bottom,
+            },
+            visible: state.visible,
+            style: state.style,
+            ex_style: state.ex_style,
+        });
+    }
+
+    fn destroy_window(&self, hwnd: Hwnd) {
+        self.send(HostWindowCommand::DestroyWindow {
+            runtime_hwnd: hwnd.as_raw() as u64,
+        });
+    }
+
+    fn set_visible(&self, hwnd: Hwnd, visible: bool) {
+        self.send(HostWindowCommand::SetVisible {
+            runtime_hwnd: hwnd.as_raw() as u64,
+            visible,
+        });
+    }
+
+    fn set_title(&self, hwnd: Hwnd, title: &str) {
+        self.send(HostWindowCommand::SetTitle {
+            runtime_hwnd: hwnd.as_raw() as u64,
+            title: title.to_owned(),
+        });
+    }
+
+    fn request_redraw(&self, hwnd: Hwnd) {
+        self.send(HostWindowCommand::RequestRedraw {
+            runtime_hwnd: hwnd.as_raw() as u64,
+        });
+    }
+
+    fn pump_messages(&mut self) -> Vec<Msg> {
+        let mut out = Vec::new();
+        while let Ok(event) = self.events.try_recv() {
+            match event {
+                HostWindowEvent::Created { .. } => {}
+                HostWindowEvent::CloseRequested { runtime_hwnd } => out.push(Msg {
+                    hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                    message: window_message::WM_CLOSE,
+                    w_param: 0,
+                    l_param: 0,
+                    time: 0,
+                    pt: Point::default(),
+                }),
+                HostWindowEvent::Destroyed { runtime_hwnd } => out.push(Msg {
+                    hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                    message: window_message::WM_DESTROY,
+                    w_param: 0,
+                    l_param: 0,
+                    time: 0,
+                    pt: Point::default(),
+                }),
+                HostWindowEvent::Resized {
+                    runtime_hwnd,
+                    width,
+                    height,
+                } => out.push(Msg {
+                    hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                    message: window_message::WM_SIZE,
+                    w_param: 0,
+                    l_param: ((height as isize) << 16) | ((width as isize) & 0xFFFF),
+                    time: 0,
+                    pt: Point::default(),
+                }),
+                HostWindowEvent::Moved { runtime_hwnd, x, y } => {
+                    let x_word = (x as i16) as u16 as usize;
+                    let y_word = (y as i16) as u16 as usize;
+                    out.push(Msg {
+                        hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                        message: window_message::WM_MOVE,
+                        w_param: 0,
+                        l_param: ((y_word << 16) | x_word) as isize,
+                        time: 0,
+                        pt: Point { x, y },
+                    });
+                }
+                HostWindowEvent::Focused {
+                    runtime_hwnd,
+                    focused,
+                } => out.push(Msg {
+                    hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                    message: if focused {
+                        window_message::WM_SETFOCUS
+                    } else {
+                        window_message::WM_KILLFOCUS
+                    },
+                    w_param: 0,
+                    l_param: 0,
+                    time: 0,
+                    pt: Point::default(),
+                }),
+                HostWindowEvent::RedrawRequested { runtime_hwnd } => out.push(Msg {
+                    hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                    message: window_message::WM_PAINT,
+                    w_param: 0,
+                    l_param: 0,
+                    time: 0,
+                    pt: Point::default(),
+                }),
+            }
+        }
+        out
+    }
+}
+
 thread_local! {
     static WINIT_BACKEND: RefCell<BackendState> = const { RefCell::new(BackendState::Uninitialized) };
 }
 
 enum BackendState {
     Uninitialized,
-    Available(WinitBackend),
+    Available(Backend),
     Failed,
 }
 
@@ -232,29 +410,44 @@ fn panic_payload_message(payload: &(dyn Any + Send)) -> String {
     "unknown backend initialization panic".to_owned()
 }
 
-fn with_backend<R>(f: impl FnOnce(&mut WinitBackend) -> R) -> Option<R> {
-    if !native_backend_enabled() {
-        debug_log_backend("native backend disabled; using emulated user32 only");
-        return None;
-    }
-
+fn with_backend<R>(f: impl FnOnce(&mut Backend) -> R) -> Option<R> {
     WINIT_BACKEND.with(|backend| {
         let mut backend = backend.borrow_mut();
         if matches!(*backend, BackendState::Uninitialized) {
-            match std::panic::catch_unwind(WinitBackend::new) {
-                Ok(created) => {
-                    *backend = BackendState::Available(created);
+            if let Some(socket_path) = host_socket_path() {
+                match HostedBackend::connect(&socket_path) {
+                    Ok(created) => {
+                        debug_log_backend(format!("using hosted window backend via {}", socket_path));
+                        *backend = BackendState::Available(Backend::Hosted(created));
+                    }
+                    Err(error) => {
+                        eprintln!("warning: hosted user32 backend unavailable; falling back to local mode: {error}");
+                    }
                 }
-                Err(payload) => {
-                    let reason = panic_payload_message(payload.as_ref());
-                    eprintln!(
-                        "warning: native user32 backend unavailable; falling back to emulated mode: {reason}"
-                    );
-                    debug_log_backend(
-                        "native backend initialization failed; falling back to emulated user32",
-                    );
+            }
+
+            if matches!(*backend, BackendState::Uninitialized) {
+                if !native_backend_enabled() {
+                    debug_log_backend("native backend disabled; using emulated user32 only");
                     *backend = BackendState::Failed;
                     return None;
+                }
+
+                match std::panic::catch_unwind(WinitBackend::new) {
+                    Ok(created) => {
+                        *backend = BackendState::Available(Backend::Local(created));
+                    }
+                    Err(payload) => {
+                        let reason = panic_payload_message(payload.as_ref());
+                        eprintln!(
+                            "warning: native user32 backend unavailable; falling back to emulated mode: {reason}"
+                        );
+                        debug_log_backend(
+                            "native backend initialization failed; falling back to emulated user32",
+                        );
+                        *backend = BackendState::Failed;
+                        return None;
+                    }
                 }
             }
         }
@@ -267,27 +460,49 @@ fn with_backend<R>(f: impl FnOnce(&mut WinitBackend) -> R) -> Option<R> {
 }
 
 pub fn create_native_window(hwnd: Hwnd, state: &WindowState) {
-    let _ = with_backend(|backend| backend.create_window(hwnd, state));
+    let _ = with_backend(|backend| match backend {
+        Backend::Local(local) => local.create_window(hwnd, state),
+        Backend::Hosted(hosted) => {
+            hosted.create_window(hwnd, state);
+            Ok(())
+        }
+    });
 }
 
 pub fn destroy_native_window(hwnd: Hwnd) {
-    let _ = with_backend(|backend| backend.destroy_window(hwnd));
+    let _ = with_backend(|backend| match backend {
+        Backend::Local(local) => local.destroy_window(hwnd),
+        Backend::Hosted(hosted) => hosted.destroy_window(hwnd),
+    });
 }
 
 pub fn set_native_visibility(hwnd: Hwnd, visible: bool) {
-    let _ = with_backend(|backend| backend.set_visible(hwnd, visible));
+    let _ = with_backend(|backend| match backend {
+        Backend::Local(local) => local.set_visible(hwnd, visible),
+        Backend::Hosted(hosted) => hosted.set_visible(hwnd, visible),
+    });
 }
 
 pub fn set_native_title(hwnd: Hwnd, title: &str) {
-    let _ = with_backend(|backend| backend.set_title(hwnd, title));
+    let _ = with_backend(|backend| match backend {
+        Backend::Local(local) => local.set_title(hwnd, title),
+        Backend::Hosted(hosted) => hosted.set_title(hwnd, title),
+    });
 }
 
 pub fn request_native_redraw(hwnd: Hwnd) {
-    let _ = with_backend(|backend| backend.request_redraw(hwnd));
+    let _ = with_backend(|backend| match backend {
+        Backend::Local(local) => local.request_redraw(hwnd),
+        Backend::Hosted(hosted) => hosted.request_redraw(hwnd),
+    });
 }
 
 pub fn pump_backend_messages() {
-    let messages = with_backend(|backend| backend.pump_messages()).unwrap_or_default();
+    let messages = with_backend(|backend| match backend {
+        Backend::Local(local) => local.pump_messages(),
+        Backend::Hosted(hosted) => hosted.pump_messages(),
+    })
+    .unwrap_or_default();
     if messages.is_empty() {
         return;
     }

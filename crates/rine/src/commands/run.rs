@@ -30,6 +30,7 @@ use rine64_user32::User32Plugin;
 use rine64_ws2_32::Ws2_32Plugin;
 
 use crate::cli::Cli;
+use crate::commands::window_host::{WINDOW_HOST_SOCKET_ENV, WindowHostSession};
 use crate::config::errors::ConfigError;
 use crate::config::manager::ConfigManager;
 use crate::pe::probe::{PeArchitecture, ProbeError, detect_architecture};
@@ -460,15 +461,42 @@ fn dispatch_to_rine32(
     #[allow(unused)] cli: &Cli,
     #[cfg(feature = "dev")] dev_bridge: Option<&DevBridge>,
 ) -> Result<std::convert::Infallible, DispatchError> {
+    let window_host = match WindowHostSession::start() {
+        Ok(session) => Some(session),
+        Err(error) => {
+            tracing::warn!(
+                "failed to start x86 window host; continuing without native host: {error}"
+            );
+            None
+        }
+    };
+
     let helper_path = resolve_rine32_helper_path();
     let helper = helper_path.display().to_string();
 
-    let status = spawn_rine32(&helper_path, exe_path, &cli.exe_args).map_err(|source| {
-        DispatchError::Spawn {
-            helper: helper.clone(),
-            source,
+    let status = match spawn_rine32(
+        &helper_path,
+        exe_path,
+        &cli.exe_args,
+        window_host
+            .as_ref()
+            .map(|session| (WINDOW_HOST_SOCKET_ENV, session.socket_path())),
+    ) {
+        Ok(status) => status,
+        Err(source) => {
+            if let Some(session) = window_host {
+                session.wait();
+            }
+            return Err(DispatchError::Spawn {
+                helper: helper.clone(),
+                source,
+            });
         }
-    })?;
+    };
+
+    if let Some(session) = window_host {
+        session.wait();
+    }
 
     if status.success() {
         #[cfg(feature = "dev")]
@@ -499,6 +527,16 @@ fn resolve_rine32_helper_path() -> std::path::PathBuf {
     std::env::current_exe()
         .ok()
         .and_then(|p| {
+            if let Some(target_dir) = p.parent().and_then(|dir| dir.parent()) {
+                let cross_target = target_dir
+                    .join("i686-unknown-linux-gnu")
+                    .join("debug")
+                    .join("rine32");
+                if cross_target.is_file() {
+                    return Some(cross_target);
+                }
+            }
+
             let sibling = p.with_file_name("rine32");
             sibling.is_file().then_some(sibling)
         })
@@ -509,11 +547,14 @@ fn spawn_rine32(
     helper_path: &Path,
     exe_path: &Path,
     exe_args: &[String],
+    window_host_socket: Option<(&str, &Path)>,
 ) -> Result<std::process::ExitStatus, std::io::Error> {
-    Command::new(helper_path)
-        .arg(exe_path)
-        .args(exe_args)
-        .status()
+    let mut command = Command::new(helper_path);
+    command.arg(exe_path).args(exe_args);
+    if let Some((key, value)) = window_host_socket {
+        command.env(key, value);
+    }
+    command.status()
 }
 
 #[cfg(test)]
@@ -526,7 +567,7 @@ mod tests {
         let exe = Path::new("/tmp/fake-x86.exe");
         let args: Vec<String> = vec!["arg1".to_string()];
 
-        let result = spawn_rine32(helper, exe, &args);
+        let result = spawn_rine32(helper, exe, &args, None);
         assert!(result.is_err(), "missing helper should fail to spawn");
     }
 }

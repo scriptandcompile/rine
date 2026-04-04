@@ -1,8 +1,12 @@
 mod receiver;
 mod sender;
+mod window_host;
 
 pub use receiver::DevReceiver;
 pub use sender::DevSender;
+pub use window_host::{
+    HostWindowCommand, HostWindowEvent, HostWindowReceiver, HostWindowRect, HostWindowSender,
+};
 
 use serde::{Deserialize, Serialize};
 

@@ -126,3 +126,48 @@ fn x86_fixture_dispatches_to_rine32_helper() {
 
     let _ = std::fs::remove_dir_all(dir);
 }
+
+#[cfg(unix)]
+#[test]
+fn x86_dispatch_exports_window_host_socket() {
+    let dir = unique_temp_dir("rine-dispatch-window-host");
+    let pe = dir.join("tiny_x86_window_host.exe");
+    let helper = dir.join("rine32");
+    let marker = dir.join("window-host-socket.txt");
+
+    write_minimal_pe32(&pe);
+    std::fs::write(
+        &helper,
+        format!(
+            "#!/usr/bin/env sh\nif [ -S \"$RINE_WINDOW_HOST_SOCKET\" ]; then printf '%s' \"$RINE_WINDOW_HOST_SOCKET\" > '{}'; exit 0; fi\nprintf 'missing' > '{}'; exit 1\n",
+            marker.display(),
+            marker.display(),
+        ),
+    )
+    .expect("failed to write helper script");
+    make_executable(&helper);
+
+    let output = run_rine_with_env(
+        &pe,
+        &[],
+        &[
+            ("RUST_LOG", "off"),
+            ("RINE_RINE32_HELPER", helper.to_string_lossy().as_ref()),
+        ],
+    );
+
+    assert!(
+        output.status.success(),
+        "dispatch should export window host socket\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let seen = std::fs::read_to_string(&marker).expect("helper should write host socket marker");
+    assert!(
+        seen.trim().ends_with(".sock"),
+        "helper should receive socket path, got `{seen}`"
+    );
+
+    let _ = std::fs::remove_dir_all(dir);
+}

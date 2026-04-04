@@ -7,12 +7,12 @@ description = "Windows PE executable loader for Linux"
 
 [features]
 default = ["dev"]
-dev = ["dep:rine-channel", "dep:rine-dev-bridge"]
+dev = ["dep:rine-dev-bridge"]
 
 [dependencies]
 rine-dlls = { workspace = true }
 rine-types = { workspace = true, features = ["config"] }
-rine-channel = { workspace = true, optional = true }
+rine-channel = { workspace = true }
 rine-dev-bridge = { workspace = true, optional = true }
 rine-runtime-core = { workspace = true }
 rine64-kernel32 = { workspace = true }
@@ -35,3 +35,4 @@ tracing-subscriber = { workspace = true }
 memmap2 = { workspace = true }
 bitflags = { workspace = true }
 thiserror = { workspace = true }
+winit = "0.28.7"

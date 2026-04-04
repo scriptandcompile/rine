@@ -3,6 +3,7 @@ mod config;
 mod context_menu;
 mod desktop;
 mod run;
+mod window_host;
 
 pub use self::binfmt::{binfmt_status_cmd, install_binfmt_cmd, uninstall_binfmt_cmd};
 pub use self::config::show_config;

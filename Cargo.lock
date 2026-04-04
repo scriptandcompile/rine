@@ -3322,6 +3322,7 @@ dependencies = [
  "toml 1.1.2+spec-1.1.0",
  "tracing",
  "tracing-subscriber",
+ "winit",
 ]
 
 [[package]]
@@ -3362,6 +3363,7 @@ dependencies = [
 name = "rine-common-user32"
 version = "0.1.0"
 dependencies = [
+ "rine-channel",
  "rine-types",
  "winit",
 ]
