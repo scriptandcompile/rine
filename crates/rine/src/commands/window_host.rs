@@ -70,6 +70,8 @@ impl WindowHostSession {
             Ok(())
         });
 
+        wait_for_socket_ready(&socket_path)?;
+
         Ok(Self {
             socket_path,
             transport_thread,
@@ -100,6 +102,25 @@ impl WindowHostSession {
             let _ = sender.send_command(&HostWindowCommand::ShutdownWindowHost);
         }
     }
+}
+
+fn wait_for_socket_ready(socket_path: &Path) -> io::Result<()> {
+    // The transport thread binds asynchronously; wait briefly so x86 dispatch
+    // can pass a socket path that already exists as a Unix domain socket.
+    for _ in 0..100 {
+        if socket_path.exists() {
+            return Ok(());
+        }
+        thread::sleep(Duration::from_millis(5));
+    }
+
+    Err(io::Error::new(
+        io::ErrorKind::TimedOut,
+        format!(
+            "window host socket was not ready in time: {}",
+            socket_path.display()
+        ),
+    ))
 }
 
 fn unique_socket_path() -> PathBuf {
