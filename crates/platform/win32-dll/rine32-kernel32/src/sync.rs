@@ -99,6 +99,27 @@ pub unsafe extern "stdcall" fn CreateEventA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn CreateEventW(
+    _security_attrs: usize,
+    manual_reset: WinBool,
+    initial_state: WinBool,
+    _name: *const u16,
+) -> isize {
+    let h = common::sync::create_event(manual_reset, initial_state);
+    debug!(?h, "CreateEventW");
+    rine_types::dev_notify!(on_handle_created(
+        h.as_raw() as i64,
+        "Event",
+        if manual_reset.is_true() {
+            "manual-reset"
+        } else {
+            "auto-reset"
+        }
+    ));
+    h.as_raw()
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn SetEvent(event_handle: isize) -> WinBool {
     let h = Handle::from_raw(event_handle);
     let waitable = match handle_table().get_waitable(h) {

@@ -11,8 +11,7 @@ use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::threading::{
-    EventInner, EventWaitable, MutexInner, MutexState, MutexWaitable, SemaphoreInner,
-    SemaphoreWaitable, Waitable,
+    MutexInner, MutexState, MutexWaitable, SemaphoreInner, SemaphoreWaitable, Waitable,
 };
 use std::sync::{Arc, Condvar, Mutex};
 use tracing::{debug, warn};
@@ -172,14 +171,7 @@ pub unsafe extern "win64" fn CreateEventW(
     initial_state: WinBool,
     _name: *const u16,
 ) -> isize {
-    let waitable = EventWaitable {
-        inner: Arc::new(EventInner {
-            signaled: Mutex::new(initial_state.is_true()),
-            condvar: Condvar::new(),
-            manual_reset: manual_reset.is_true(),
-        }),
-    };
-    let h = handle_table().insert(HandleEntry::Event(waitable));
+    let h = common::sync::create_event(manual_reset, initial_state);
     debug!(?h, "CreateEventW");
     rine_types::dev_notify!(on_handle_created(
         h.as_raw() as i64,
