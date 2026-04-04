@@ -1,0 +1,137 @@
+name: Debian Artifact
+
+permissions:
+  contents: write
+
+"on":
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - Cargo.toml
+      - scripts/build-rine-deb.sh
+      - .github/workflows/deb-artifact.yml
+
+jobs:
+  detect-version-bump:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.version.outputs.changed }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect workspace version bump
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          current_version="$(sed -n 's/^version = "\([^"]*\)"$/\1/p' Cargo.toml | head -n1)"
+          if [[ -z "$current_version" ]]; then
+            echo "error: unable to parse version from Cargo.toml" >&2
+            exit 1
+          fi
+
+          changed="false"
+          expected_tag="v${current_version}"
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            changed="true"
+          elif [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+            if [[ "${GITHUB_REF_NAME:-}" != "$expected_tag" ]]; then
+              echo "error: tag '${GITHUB_REF_NAME:-}' does not match Cargo.toml version '$current_version' (expected '$expected_tag')" >&2
+              exit 1
+            fi
+            changed="true"
+          elif git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+            previous_version="$(git show HEAD^:Cargo.toml | sed -n 's/^version = "\([^"]*\)"$/\1/p' | head -n1)"
+            if [[ -n "$previous_version" && "$previous_version" != "$current_version" ]]; then
+              changed="true"
+            fi
+          fi
+
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "version=$current_version" >> "$GITHUB_OUTPUT"
+
+          echo "Detected version: $current_version"
+          echo "Version changed: $changed"
+
+  build-deb:
+    needs: detect-version-bump
+    if: needs.detect-version-bump.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            patchelf \
+            gcc-multilib \
+            libc6-dev-i386 \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            dpkg-dev
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: i686-unknown-linux-gnu
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build Debian package
+        run: ./scripts/build-rine-deb.sh
+
+      - name: Show generated package
+        run: ls -lh target/debian/*.deb
+
+      - name: Upload Debian artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rine-deb-${{ needs.detect-version-bump.outputs.version }}
+          path: target/debian/*.deb
+          if-no-files-found: error
+
+  publish-release-asset:
+    needs:
+      - detect-version-bump
+      - build-deb
+    if: github.ref_type == 'tag' && needs.detect-version-bump.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Debian artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rine-deb-${{ needs.detect-version-bump.outputs.version }}
+          path: dist
+
+      - name: Publish Debian package to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.deb
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+
+  no-version-change:
+    needs: detect-version-bump
+    if: needs.detect-version-bump.outputs.changed != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: No version change
+        run: |
+          echo "Cargo.toml version unchanged; skipping Debian build."
