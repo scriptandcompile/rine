@@ -59,6 +59,7 @@ struct HostedBackend {
     events: mpsc::Receiver<HostWindowEvent>,
 }
 
+#[allow(clippy::large_enum_variant)]
 enum Backend {
     Local(WinitBackend),
     Hosted(HostedBackend),
@@ -394,6 +395,7 @@ thread_local! {
     static WINIT_BACKEND: RefCell<BackendState> = const { RefCell::new(BackendState::Uninitialized) };
 }
 
+#[allow(clippy::large_enum_variant)]
 enum BackendState {
     Uninitialized,
     Available(Backend),

@@ -89,7 +89,11 @@ fn reg_open_key_impl(hkey: isize, sub_key: &str, result_key: *mut isize) -> u32 
     ERROR_SUCCESS
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+#[allow(
+    non_snake_case,
+    clippy::missing_safety_doc,
+    clippy::too_many_arguments
+)]
 pub unsafe fn RegCreateKeyExA(
     hkey: isize,
     sub_key: *const u8,
@@ -105,7 +109,11 @@ pub unsafe fn RegCreateKeyExA(
     reg_create_key_impl(hkey, &sub, result_key)
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+#[allow(
+    non_snake_case,
+    clippy::missing_safety_doc,
+    clippy::too_many_arguments
+)]
 pub unsafe fn RegCreateKeyExW(
     hkey: isize,
     sub_key: *const u16,

@@ -1,5 +1,6 @@
 use rine_common_gdi32 as common;
 use rine_types::errors::WinBool;
+use rine_types::windows::Rect;
 
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn create_compatible_dc(_hdc: usize) -> usize {
@@ -52,10 +53,21 @@ pub(crate) unsafe extern "win64" fn bit_blt(
     y_src: i32,
     rop: u32,
 ) -> WinBool {
+    let dest_rect = Rect {
+        left: x_dest,
+        top: y_dest,
+        right: x_dest.saturating_add(width),
+        bottom: y_dest.saturating_add(height),
+    };
+    let src_rect = Rect {
+        left: x_src,
+        top: y_src,
+        right: x_src.saturating_add(width),
+        bottom: y_src.saturating_add(height),
+    };
+
     unsafe {
-        common::bit_blt(
-            hdc_dest, x_dest, y_dest, width, height, hdc_src, x_src, y_src, rop,
-        )
+        common::bit_blt(hdc_dest, dest_rect, hdc_src, src_rect, rop)
     }
 }
 

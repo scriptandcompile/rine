@@ -83,6 +83,10 @@ pub fn create_window(
 ///
 /// `call_wnd_proc` receives `(proc_fn, hwnd, msg, w_param, l_param)`.
 ///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime and
+/// provide a callback that can safely invoke the target window procedure.
+///
 /// Returns 1 on success, 0 if the HWND was not found.
 pub unsafe fn destroy_window(
     hwnd: usize,

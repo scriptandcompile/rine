@@ -1,3 +1,4 @@
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn run_initterm<F, Invoke>(
     start: *const Option<F>,
     end: *const Option<F>,
@@ -18,6 +19,7 @@ pub unsafe fn run_initterm<F, Invoke>(
     }
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn run_initterm_e<F, Invoke>(
     start: *const Option<F>,
     end: *const Option<F>,

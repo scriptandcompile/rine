@@ -1,5 +1,6 @@
 use rine_types::errors::WinBool;
 use rine_types::strings::{read_cstr_counted, read_wstr_counted};
+use rine_types::windows::Rect;
 
 use crate::objects::{Bitmap, Brush, DeviceContext, GdiObject, Pen};
 use crate::state::{alloc_handle, gdi_state, object_selected_by_any_dc, with_selected_bitmap_mut};
@@ -35,6 +36,7 @@ fn notify_bitmap_free(bitmap: &Bitmap) {
     ));
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn create_compatible_dc(_hdc: usize) -> usize {
     let mut state = gdi_state().lock().unwrap();
     let dc_handle = alloc_handle();
@@ -56,6 +58,7 @@ pub unsafe fn create_compatible_dc(_hdc: usize) -> usize {
     dc_handle
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn delete_dc(hdc: usize) -> WinBool {
     let mut state = gdi_state().lock().unwrap();
     let Some(dc) = state.dcs.remove(&hdc) else {
@@ -75,6 +78,7 @@ pub unsafe fn delete_dc(hdc: usize) -> WinBool {
     WinBool::TRUE
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn create_compatible_bitmap(_hdc: usize, width: i32, height: i32) -> usize {
     let Some(bitmap) = Bitmap::new(width, height) else {
         return 0;
@@ -87,6 +91,7 @@ pub unsafe fn create_compatible_bitmap(_hdc: usize, width: i32, height: i32) -> 
     handle
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn create_solid_brush(color: u32) -> usize {
     let mut state = gdi_state().lock().unwrap();
     let handle = alloc_handle();
@@ -102,6 +107,7 @@ pub unsafe fn create_solid_brush(color: u32) -> usize {
     handle
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn create_pen(style: i32, width: i32, color: u32) -> usize {
     let mut state = gdi_state().lock().unwrap();
     let handle = alloc_handle();
@@ -117,6 +123,7 @@ pub unsafe fn create_pen(style: i32, width: i32, color: u32) -> usize {
     handle
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn select_object(hdc: usize, object: usize) -> usize {
     let mut state = gdi_state().lock().unwrap();
 
@@ -156,6 +163,7 @@ pub unsafe fn select_object(hdc: usize, object: usize) -> usize {
     }
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn delete_object(object: usize) -> WinBool {
     let mut state = gdi_state().lock().unwrap();
     if object_selected_by_any_dc(&state, object) {
@@ -173,18 +181,24 @@ pub unsafe fn delete_object(object: usize) -> WinBool {
     }
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn bit_blt(
     hdc_dest: usize,
-    x_dest: i32,
-    y_dest: i32,
-    width: i32,
-    height: i32,
+    dest_rect: Rect,
     hdc_src: usize,
-    x_src: i32,
-    y_src: i32,
+    src_rect: Rect,
     rop: u32,
 ) -> WinBool {
+    let width = dest_rect.right.saturating_sub(dest_rect.left);
+    let height = dest_rect.bottom.saturating_sub(dest_rect.top);
+    let src_width = src_rect.right.saturating_sub(src_rect.left);
+    let src_height = src_rect.bottom.saturating_sub(src_rect.top);
+
     if width <= 0 || height <= 0 || rop != SRCCOPY {
+        return WinBool::FALSE;
+    }
+
+    if src_width != width || src_height != height {
         return WinBool::FALSE;
     }
 
@@ -198,10 +212,10 @@ pub unsafe fn bit_blt(
     let Some(result) = with_selected_bitmap_mut(&mut state, hdc_dest, |dest| {
         for dy in 0..height {
             for dx in 0..width {
-                let src_x = x_src + dx;
-                let src_y = y_src + dy;
-                let dest_x = x_dest + dx;
-                let dest_y = y_dest + dy;
+                let src_x = src_rect.left + dx;
+                let src_y = src_rect.top + dy;
+                let dest_x = dest_rect.left + dx;
+                let dest_y = dest_rect.top + dy;
 
                 let Some(src_idx) = src_bitmap.index(src_x, src_y) else {
                     continue;
@@ -222,6 +236,7 @@ pub unsafe fn bit_blt(
     result
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn text_out_a(hdc: usize, x: i32, y: i32, text: *const u8, count: i32) -> WinBool {
     let Some(text) = (unsafe { read_cstr_counted(text, count) }) else {
         return WinBool::FALSE;
@@ -236,6 +251,7 @@ pub unsafe fn text_out_a(hdc: usize, x: i32, y: i32, text: *const u8, count: i32
     WinBool::TRUE
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn text_out_w(hdc: usize, x: i32, y: i32, text: *const u16, count: i32) -> WinBool {
     let Some(text) = (unsafe { read_wstr_counted(text, count) }) else {
         return WinBool::FALSE;
@@ -276,7 +292,23 @@ mod tests {
                 WinBool::TRUE
             );
             assert_eq!(
-                bit_blt(dst_dc, 0, 0, 32, 32, src_dc, 0, 0, SRCCOPY),
+                bit_blt(
+                    dst_dc,
+                    Rect {
+                        left: 0,
+                        top: 0,
+                        right: 32,
+                        bottom: 32,
+                    },
+                    src_dc,
+                    Rect {
+                        left: 0,
+                        top: 0,
+                        right: 32,
+                        bottom: 32,
+                    },
+                    SRCCOPY,
+                ),
                 WinBool::TRUE
             );
 
