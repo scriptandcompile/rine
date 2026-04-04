@@ -3329,6 +3329,7 @@ dependencies = [
 name = "rine-channel"
 version = "0.1.0"
 dependencies = [
+ "rine-types",
  "serde",
  "serde_json",
 ]

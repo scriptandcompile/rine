@@ -6,7 +6,8 @@ license.workspace = true
 description = "Shared Windows type definitions for rine"
 
 [features]
-config = ["dep:serde", "dep:toml", "dep:thiserror"]
+serde = ["dep:serde"]
+config = ["serde", "dep:toml", "dep:thiserror"]
 
 [dependencies]
 bitflags = { workspace = true }

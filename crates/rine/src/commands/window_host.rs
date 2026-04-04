@@ -5,9 +5,8 @@ use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use rine_channel::{
-    HostWindowCommand, HostWindowEvent, HostWindowReceiver, HostWindowRect, HostWindowSender,
-};
+use rine_channel::{HostWindowCommand, HostWindowEvent, HostWindowReceiver, HostWindowSender};
+use rine_types::windows::Rect;
 use tracing::warn;
 use winit::dpi::{LogicalPosition, LogicalSize};
 use winit::event::{Event, WindowEvent};
@@ -179,9 +178,11 @@ impl WindowHost {
                         rect.left as f64,
                         rect.top as f64,
                     ));
+                    let width = rect.right.saturating_sub(rect.left).max(1) as f64;
+                    let height = rect.bottom.saturating_sub(rect.top).max(1) as f64;
                     window.set_inner_size(LogicalSize::new(
-                        rect.width() as f64,
-                        rect.height() as f64,
+                        width,
+                        height,
                     ));
                 }
             }
@@ -200,13 +201,15 @@ impl WindowHost {
         &mut self,
         runtime_hwnd: u64,
         title: &str,
-        rect: HostWindowRect,
+        rect: Rect,
         visible: bool,
     ) -> Result<(), String> {
+        let width = rect.right.saturating_sub(rect.left).max(1) as f64;
+        let height = rect.bottom.saturating_sub(rect.top).max(1) as f64;
         let window = WindowBuilder::new()
             .with_title(title)
             .with_visible(visible)
-            .with_inner_size(LogicalSize::new(rect.width() as f64, rect.height() as f64))
+            .with_inner_size(LogicalSize::new(width, height))
             .with_position(LogicalPosition::new(rect.left as f64, rect.top as f64))
             .build(&self.event_loop)
             .map_err(|error| format!("failed to create host window: {error}"))?;

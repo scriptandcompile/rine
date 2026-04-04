@@ -11,7 +11,7 @@ use std::sync::OnceLock;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
-use rine_channel::{HostWindowCommand, HostWindowEvent, HostWindowRect, HostWindowSender};
+use rine_channel::{HostWindowCommand, HostWindowEvent, HostWindowSender};
 use rine_types::windows::*;
 use winit::dpi::{LogicalPosition, LogicalSize};
 use winit::event::{Event, WindowEvent};
@@ -279,12 +279,7 @@ impl HostedBackend {
         self.send(HostWindowCommand::CreateWindow {
             runtime_hwnd: hwnd.as_raw() as u64,
             title: state.title.clone(),
-            rect: HostWindowRect {
-                left: state.rect.left,
-                top: state.rect.top,
-                right: state.rect.right,
-                bottom: state.rect.bottom,
-            },
+            rect: state.rect,
             visible: state.visible,
             style: state.style,
             ex_style: state.ex_style,

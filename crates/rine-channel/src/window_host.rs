@@ -3,25 +3,8 @@ use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+use rine_types::windows::Rect;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct HostWindowRect {
-    pub left: i32,
-    pub top: i32,
-    pub right: i32,
-    pub bottom: i32,
-}
-
-impl HostWindowRect {
-    pub fn width(self) -> u32 {
-        self.right.saturating_sub(self.left).max(1) as u32
-    }
-
-    pub fn height(self) -> u32 {
-        self.bottom.saturating_sub(self.top).max(1) as u32
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -29,7 +12,7 @@ pub enum HostWindowCommand {
     CreateWindow {
         runtime_hwnd: u64,
         title: String,
-        rect: HostWindowRect,
+        rect: Rect,
         visible: bool,
         style: u32,
         ex_style: u32,
@@ -47,7 +30,7 @@ pub enum HostWindowCommand {
     },
     SetRect {
         runtime_hwnd: u64,
-        rect: HostWindowRect,
+        rect: Rect,
     },
     RequestRedraw {
         runtime_hwnd: u64,
