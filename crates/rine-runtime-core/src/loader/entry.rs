@@ -84,7 +84,7 @@ unsafe fn execute_entry(entry: usize, format: PeFormat) -> Result<u64, EntryErro
         PeFormat::Pe32 => {
             #[cfg(target_arch = "x86")]
             {
-                return Ok(unsafe { trampoline_x86(entry) as u64 });
+                Ok(unsafe { trampoline_x86(entry) as u64 })
             }
 
             #[cfg(not(target_arch = "x86"))]
