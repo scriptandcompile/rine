@@ -78,6 +78,7 @@ jobs:
             pkg-config \
             patchelf \
             gcc-multilib \
+            gcc-i686-linux-gnu \
             libc6-dev-i386 \
             libglib2.0-dev \
             libgtk-3-dev \
@@ -95,6 +96,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build Debian package
+        env:
+          CC_i686_unknown_linux_gnu: i686-linux-gnu-gcc
+          CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER: i686-linux-gnu-gcc
         run: ./scripts/build-rine-deb.sh
 
       - name: Show generated package

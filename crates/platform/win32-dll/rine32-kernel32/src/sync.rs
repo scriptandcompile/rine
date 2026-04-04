@@ -15,7 +15,7 @@ unsafe fn init_cs(cs: *mut u8) {
     unsafe {
         libc::pthread_mutexattr_init(&mut attr);
         libc::pthread_mutexattr_settype(&mut attr, libc::PTHREAD_MUTEX_RECURSIVE);
-        libc::pthread_mutex_init(mutex, &mut attr);
+        libc::pthread_mutex_init(mutex, &attr);
         libc::pthread_mutexattr_destroy(&mut attr);
     }
 
