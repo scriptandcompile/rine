@@ -1,0 +1,281 @@
+use std::alloc::Layout;
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
+
+use rine_dlls::win32_stub;
+use rine_types::errors::WinBool;
+use rine_types::handles::{Handle, HandleEntry, handle_table};
+
+const PAGE_NOACCESS: u32 = 0x01;
+const PAGE_READONLY: u32 = 0x02;
+const PAGE_READWRITE: u32 = 0x04;
+const PAGE_EXECUTE: u32 = 0x10;
+const PAGE_EXECUTE_READ: u32 = 0x20;
+const PAGE_EXECUTE_READWRITE: u32 = 0x40;
+
+const HEAP_ZERO_MEMORY: u32 = 0x0000_0008;
+const MEM_COMMIT: u32 = 0x0000_1000;
+const MEM_RESERVE: u32 = 0x0000_2000;
+const MEM_RELEASE: u32 = 0x0000_8000;
+
+static DEFAULT_HEAP: LazyLock<Handle> = LazyLock::new(|| {
+    handle_table().insert(HandleEntry::Heap(rine_types::handles::HeapState {
+        allocations: Mutex::new(HashMap::new()),
+        flags: 0,
+    }))
+});
+static VIRTUAL_REGIONS: LazyLock<Mutex<HashMap<usize, usize>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+win32_stub!(VirtualQuery, "kernel32");
+
+fn win_protect_to_linux(protect: u32) -> i32 {
+    match protect {
+        PAGE_NOACCESS => libc::PROT_NONE,
+        PAGE_READONLY => libc::PROT_READ,
+        PAGE_READWRITE => libc::PROT_READ | libc::PROT_WRITE,
+        PAGE_EXECUTE => libc::PROT_EXEC,
+        PAGE_EXECUTE_READ => libc::PROT_READ | libc::PROT_EXEC,
+        PAGE_EXECUTE_READWRITE => libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC,
+        _ => libc::PROT_READ | libc::PROT_WRITE,
+    }
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn GetProcessHeap() -> isize {
+    DEFAULT_HEAP.as_raw()
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn HeapCreate(
+    options: u32,
+    _initial_size: usize,
+    _maximum_size: usize,
+) -> isize {
+    let heap = rine_types::handles::HeapState {
+        allocations: Mutex::new(HashMap::new()),
+        flags: options,
+    };
+    handle_table().insert(HandleEntry::Heap(heap)).as_raw()
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn HeapDestroy(heap_handle: isize) -> WinBool {
+    let handle = Handle::from_raw(heap_handle);
+    if heap_handle == DEFAULT_HEAP.as_raw() {
+        return WinBool::FALSE;
+    }
+
+    match handle_table().remove(handle) {
+        Some(HandleEntry::Heap(state)) => {
+            let allocs = state.allocations.lock().unwrap();
+            for (&addr, &(size, align)) in allocs.iter() {
+                if let Ok(layout) = Layout::from_size_align(size, align) {
+                    unsafe { std::alloc::dealloc(addr as *mut u8, layout) };
+                }
+            }
+            WinBool::TRUE
+        }
+        Some(HandleEntry::Window(_)) => WinBool::FALSE,
+        Some(other) => {
+            let _ = handle_table().insert(other);
+            WinBool::FALSE
+        }
+        None => WinBool::FALSE,
+    }
+}
+
+fn heap_alloc_inner(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
+    let align = std::mem::align_of::<usize>();
+    let layout = match Layout::from_size_align(size, align) {
+        Ok(l) => l,
+        Err(_) => return std::ptr::null_mut(),
+    };
+
+    let ptr = unsafe { std::alloc::alloc(layout) };
+    if ptr.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    if flags & HEAP_ZERO_MEMORY != 0 {
+        unsafe { std::ptr::write_bytes(ptr, 0, size) };
+    }
+
+    let handle = Handle::from_raw(heap_handle);
+    handle_table().with_heap(handle, |state| {
+        state
+            .allocations
+            .lock()
+            .unwrap()
+            .insert(ptr as usize, (size, align));
+    });
+
+    ptr
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn HeapAlloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
+    if size == 0 {
+        return heap_alloc_inner(heap_handle, flags, 1);
+    }
+    heap_alloc_inner(heap_handle, flags, size)
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut u8) -> WinBool {
+    if ptr.is_null() {
+        return WinBool::TRUE;
+    }
+
+    let handle = Handle::from_raw(heap_handle);
+    let removed = handle_table().with_heap(handle, |state| {
+        state.allocations.lock().unwrap().remove(&(ptr as usize))
+    });
+
+    match removed {
+        Some(Some((size, align))) => {
+            if let Ok(layout) = Layout::from_size_align(size, align) {
+                unsafe { std::alloc::dealloc(ptr, layout) };
+            }
+            WinBool::TRUE
+        }
+        _ => WinBool::FALSE,
+    }
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn HeapReAlloc(
+    heap_handle: isize,
+    flags: u32,
+    ptr: *mut u8,
+    new_size: usize,
+) -> *mut u8 {
+    if ptr.is_null() {
+        return unsafe { HeapAlloc(heap_handle, flags, new_size) };
+    }
+
+    let handle = Handle::from_raw(heap_handle);
+    let actual_new_size = if new_size == 0 { 1 } else { new_size };
+    let old_info = handle_table().with_heap(handle, |state| {
+        state
+            .allocations
+            .lock()
+            .unwrap()
+            .get(&(ptr as usize))
+            .copied()
+    });
+
+    let (old_size, old_align) = match old_info {
+        Some(Some(info)) => info,
+        _ => return std::ptr::null_mut(),
+    };
+
+    let old_layout = match Layout::from_size_align(old_size, old_align) {
+        Ok(l) => l,
+        Err(_) => return std::ptr::null_mut(),
+    };
+
+    let new_ptr = unsafe { std::alloc::realloc(ptr, old_layout, actual_new_size) };
+    if new_ptr.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    if flags & HEAP_ZERO_MEMORY != 0 && actual_new_size > old_size {
+        unsafe { std::ptr::write_bytes(new_ptr.add(old_size), 0, actual_new_size - old_size) };
+    }
+
+    handle_table().with_heap(handle, |state| {
+        let mut allocs = state.allocations.lock().unwrap();
+        allocs.remove(&(ptr as usize));
+        allocs.insert(new_ptr as usize, (actual_new_size, old_align));
+    });
+
+    new_ptr
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn VirtualAlloc(
+    address: *mut u8,
+    size: usize,
+    alloc_type: u32,
+    protect: u32,
+) -> *mut u8 {
+    if alloc_type & (MEM_COMMIT | MEM_RESERVE) == 0 {
+        return std::ptr::null_mut();
+    }
+
+    let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize };
+    let alloc_size = (size + page_size - 1) & !(page_size - 1);
+    if alloc_size == 0 {
+        return std::ptr::null_mut();
+    }
+
+    let prot = win_protect_to_linux(protect);
+    let addr_hint = if address.is_null() {
+        std::ptr::null_mut()
+    } else {
+        address.cast()
+    };
+
+    let mut flags = libc::MAP_PRIVATE | libc::MAP_ANONYMOUS;
+    if !address.is_null() {
+        flags |= libc::MAP_FIXED;
+    }
+
+    let result = unsafe { libc::mmap(addr_hint, alloc_size, prot, flags, -1, 0) };
+    if result == libc::MAP_FAILED {
+        return std::ptr::null_mut();
+    }
+
+    let ptr = result as *mut u8;
+    VIRTUAL_REGIONS
+        .lock()
+        .unwrap()
+        .insert(ptr as usize, alloc_size);
+    ptr
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn VirtualFree(
+    address: *mut u8,
+    _size: usize,
+    free_type: u32,
+) -> WinBool {
+    if address.is_null() {
+        return WinBool::FALSE;
+    }
+
+    if free_type & MEM_RELEASE != 0 {
+        let region_size = match VIRTUAL_REGIONS.lock().unwrap().remove(&(address as usize)) {
+            Some(s) => s,
+            None => return WinBool::FALSE,
+        };
+        let result = unsafe { libc::munmap(address.cast(), region_size) };
+        return if result == 0 {
+            WinBool::TRUE
+        } else {
+            WinBool::FALSE
+        };
+    }
+
+    WinBool::TRUE
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn VirtualProtect(
+    address: *mut u8,
+    size: usize,
+    new_protect: u32,
+    old_protect: *mut u32,
+) -> WinBool {
+    if !old_protect.is_null() {
+        unsafe { *old_protect = new_protect };
+    }
+
+    let result = unsafe { libc::mprotect(address.cast(), size, win_protect_to_linux(new_protect)) };
+    if result == 0 {
+        WinBool::TRUE
+    } else {
+        WinBool::FALSE
+    }
+}
