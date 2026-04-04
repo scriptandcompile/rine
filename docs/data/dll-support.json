@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T23:11:16.143476+00:00",
+  "generatedAt": "2026-04-04T23:28:57.100793+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",

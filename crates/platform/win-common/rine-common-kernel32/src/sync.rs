@@ -15,6 +15,13 @@ use rine_types::threading::{EventInner, EventWaitable, MutexInner, MutexState, M
 /// this is handled by the `EventWaitable` type.
 /// Mutexes track ownership and recursion count to support recursive locking by
 /// the owning thread.
+///
+/// # Safety
+///
+/// The caller must ensure that the `cs` pointer is valid and points to a memory region
+/// that can hold the necessary data for a critical section.
+/// The caller must also ensure that the critical section is properly initialized before
+/// use, and that it is not used after being deleted.
 pub unsafe fn init_critical_section(cs: *mut u8) {
     unsafe {
         ptr::write_bytes(cs, 0, 24);
@@ -32,6 +39,11 @@ pub unsafe fn init_critical_section(cs: *mut u8) {
 }
 
 /// Read the mutex pointer from a CRITICAL_SECTION.
+///
+/// # Safety
+///
+/// The caller must ensure that `cs` is a valid pointer to a CRITICAL_SECTION that
+/// has been initialized with `init_critical_section`.
 #[inline]
 pub unsafe fn get_mutex(cs: *const u8) -> *mut libc::pthread_mutex_t {
     unsafe { ptr::read(cs as *const *mut libc::pthread_mutex_t) }

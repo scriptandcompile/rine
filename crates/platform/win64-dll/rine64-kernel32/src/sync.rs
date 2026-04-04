@@ -1,4 +1,4 @@
-//! kernel32 synchronisation objects: critical sections, events, mutexes, semaphores.
+//! kernel32 64bit synchronisation objects: critical sections, events, mutexes, semaphores.
 //!
 //! This is mostly a thin wrapper around the common implementations in `rine-common-kernel32`,
 //! but also includes the Windows API entry points and some handle table integration.
@@ -7,7 +7,7 @@ use std::ptr;
 
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, HandleEntry, handle_table};
+use rine_types::handles::{Handle, HandleEntry, NULL_HANDLE_VALUE, handle_table};
 use rine_types::threading::{SemaphoreInner, SemaphoreWaitable, Waitable};
 use std::sync::{Arc, Condvar, Mutex};
 use tracing::{debug, warn};
@@ -40,15 +40,20 @@ pub unsafe extern "win64" fn EnterCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    let mutex = unsafe { common::sync::get_mutex(cs) };
-    if mutex.is_null() {
-        // Lazy init for zero-initialised CRITICAL_SECTIONs.
-        unsafe { common::sync::init_critical_section(cs) };
-        let mutex = unsafe { common::sync::get_mutex(cs) };
-        unsafe { libc::pthread_mutex_lock(mutex) };
-        return;
+
+    unsafe {
+        let mutex = common::sync::get_mutex(cs);
+
+        if mutex.is_null() {
+            // Lazy init for zero-initialised CRITICAL_SECTIONs.
+            common::sync::init_critical_section(cs);
+            let mutex = common::sync::get_mutex(cs);
+            libc::pthread_mutex_lock(mutex);
+            return;
+        }
+
+        libc::pthread_mutex_lock(mutex);
     }
-    unsafe { libc::pthread_mutex_lock(mutex) };
 }
 
 /// TryEnterCriticalSection — non-blocking lock attempt.
@@ -57,14 +62,19 @@ pub unsafe extern "win64" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
     if cs.is_null() {
         return WinBool::FALSE;
     }
-    let mutex = unsafe { common::sync::get_mutex(cs) };
-    if mutex.is_null() {
-        return WinBool::FALSE;
-    }
-    if unsafe { libc::pthread_mutex_trylock(mutex) } == 0 {
-        WinBool::TRUE
-    } else {
-        WinBool::FALSE
+
+    unsafe {
+        let mutex = common::sync::get_mutex(cs);
+
+        if mutex.is_null() {
+            return WinBool::FALSE;
+        }
+
+        if libc::pthread_mutex_trylock(mutex) == 0 {
+            WinBool::TRUE
+        } else {
+            WinBool::FALSE
+        }
     }
 }
 
@@ -74,11 +84,16 @@ pub unsafe extern "win64" fn LeaveCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    let mutex = unsafe { common::sync::get_mutex(cs) };
-    if mutex.is_null() {
-        return;
+
+    unsafe {
+        let mutex = common::sync::get_mutex(cs);
+
+        if mutex.is_null() {
+            return;
+        }
+
+        libc::pthread_mutex_unlock(mutex);
     }
-    unsafe { libc::pthread_mutex_unlock(mutex) };
 }
 
 /// DeleteCriticalSection — destroy and deallocate the mutex.
@@ -87,12 +102,16 @@ pub unsafe extern "win64" fn DeleteCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    let mutex = unsafe { common::sync::get_mutex(cs) };
-    if mutex.is_null() {
-        return;
-    }
+
     unsafe {
+        let mutex = common::sync::get_mutex(cs);
+
+        if mutex.is_null() {
+            return;
+        }
+
         libc::pthread_mutex_destroy(mutex);
+
         drop(Box::from_raw(mutex));
         ptr::write(cs as *mut *mut libc::pthread_mutex_t, ptr::null_mut());
     }
@@ -117,10 +136,11 @@ pub unsafe extern "win64" fn CreateEventA(
     initial_state: WinBool,
     _name: *const u8,
 ) -> isize {
-    let h = common::sync::create_event(manual_reset, initial_state);
-    debug!(?h, "CreateEventA");
+    let handle = common::sync::create_event(manual_reset, initial_state);
+
+    debug!(?handle, "CreateEventA");
     rine_types::dev_notify!(on_handle_created(
-        h.as_raw() as i64,
+        handle.as_raw() as i64,
         "Event",
         if manual_reset.is_true() {
             "manual-reset"
@@ -128,7 +148,8 @@ pub unsafe extern "win64" fn CreateEventA(
             "auto-reset"
         }
     ));
-    h.as_raw()
+
+    handle.as_raw()
 }
 
 /// CreateEventW — wide-string variant (name ignored).
@@ -139,10 +160,11 @@ pub unsafe extern "win64" fn CreateEventW(
     initial_state: WinBool,
     _name: *const u16,
 ) -> isize {
-    let h = common::sync::create_event(manual_reset, initial_state);
-    debug!(?h, "CreateEventW");
+    let handle = common::sync::create_event(manual_reset, initial_state);
+
+    debug!(?handle, "CreateEventW");
     rine_types::dev_notify!(on_handle_created(
-        h.as_raw() as i64,
+        handle.as_raw() as i64,
         "Event",
         if manual_reset.is_true() {
             "manual-reset"
@@ -150,42 +172,50 @@ pub unsafe extern "win64" fn CreateEventW(
             "auto-reset"
         }
     ));
-    h.as_raw()
+
+    handle.as_raw()
 }
 
 /// SetEvent — signal the event and wake waiters.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
-    let h = Handle::from_raw(event_handle);
-    let waitable = match handle_table().get_waitable(h) {
+    let handle = Handle::from_raw(event_handle);
+
+    let waitable = match handle_table().get_waitable(handle) {
         Some(rine_types::threading::Waitable::Event(e)) => e,
         _ => {
             warn!(handle = event_handle, "SetEvent: invalid handle");
             return WinBool::FALSE;
         }
     };
+
     let mut signaled = waitable.inner.signaled.lock().unwrap();
+
     *signaled = true;
     if waitable.inner.manual_reset {
         waitable.inner.condvar.notify_all();
     } else {
         waitable.inner.condvar.notify_one();
     }
+
     WinBool::TRUE
 }
 
 /// ResetEvent — clear the signalled state.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn ResetEvent(event_handle: isize) -> WinBool {
-    let h = Handle::from_raw(event_handle);
-    let waitable = match handle_table().get_waitable(h) {
+    let handle = Handle::from_raw(event_handle);
+
+    let waitable = match handle_table().get_waitable(handle) {
         Some(rine_types::threading::Waitable::Event(e)) => e,
         _ => {
             warn!(handle = event_handle, "ResetEvent: invalid handle");
             return WinBool::FALSE;
         }
     };
+
     let mut signaled = waitable.inner.signaled.lock().unwrap();
+
     *signaled = false;
     WinBool::TRUE
 }
@@ -208,10 +238,12 @@ pub unsafe extern "win64" fn CreateMutexA(
     name: *const u8,
 ) -> isize {
     let name_str = unsafe { rine_types::strings::read_cstr(name) };
-    let (h, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
-    debug!(?h, name = ?name_str, "CreateMutexA");
-    rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "Mutex", &detail));
-    h.as_raw()
+    let (handle, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
+
+    debug!(?handle, name = ?name_str, "CreateMutexA");
+    rine_types::dev_notify!(on_handle_created(handle.as_raw() as i64, "Mutex", &detail));
+
+    handle.as_raw()
 }
 
 /// CreateMutexW — wide-string variant.
@@ -222,10 +254,12 @@ pub unsafe extern "win64" fn CreateMutexW(
     name: *const u16,
 ) -> isize {
     let name_str = unsafe { rine_types::strings::read_wstr(name) };
-    let (h, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
-    debug!(?h, name = ?name_str, "CreateMutexW");
-    rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "Mutex", &detail));
-    h.as_raw()
+    let (handle, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
+
+    debug!(?handle, name = ?name_str, "CreateMutexW");
+    rine_types::dev_notify!(on_handle_created(handle.as_raw() as i64, "Mutex", &detail));
+
+    handle.as_raw()
 }
 
 /// ReleaseMutex — release ownership of the mutex.
@@ -233,28 +267,31 @@ pub unsafe extern "win64" fn CreateMutexW(
 /// The calling thread must own the mutex.  Returns FALSE on error.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
-    let h = Handle::from_raw(mutex_handle);
-    let waitable = match handle_table().get_waitable(h) {
-        Some(Waitable::Mutex(m)) => m,
+    let handle = Handle::from_raw(mutex_handle);
+    let waitable = match handle_table().get_waitable(handle) {
+        Some(Waitable::Mutex(mutex)) => mutex,
         _ => {
             warn!(handle = mutex_handle, "ReleaseMutex: invalid handle");
             return WinBool::FALSE;
         }
     };
-    let tid = std::thread::current().id();
-    let mut state = waitable.inner.state.lock().unwrap();
-    if state.owner != Some(tid) {
+    let thread_id = std::thread::current().id();
+    let mut mutex_state = waitable.inner.state.lock().unwrap();
+
+    if mutex_state.owner != Some(thread_id) {
         warn!(
             handle = mutex_handle,
             "ReleaseMutex: caller does not own mutex"
         );
         return WinBool::FALSE;
     }
-    state.count -= 1;
-    if state.count == 0 {
-        state.owner = None;
+
+    mutex_state.count -= 1;
+    if mutex_state.count == 0 {
+        mutex_state.owner = None;
         waitable.inner.condvar.notify_one();
     }
+
     WinBool::TRUE
 }
 
@@ -297,7 +334,7 @@ fn create_semaphore_impl(initial_count: i32, maximum_count: i32, tag: &str) -> i
             initial_count,
             maximum_count, "CreateSemaphore: invalid parameters"
         );
-        return 0; // NULL handle
+        return NULL_HANDLE_VALUE.as_raw();
     }
 
     let waitable = SemaphoreWaitable {
@@ -307,14 +344,17 @@ fn create_semaphore_impl(initial_count: i32, maximum_count: i32, tag: &str) -> i
             condvar: Condvar::new(),
         }),
     };
-    let h = handle_table().insert(HandleEntry::Semaphore(waitable));
-    debug!(?h, tag);
+
+    let handle = handle_table().insert(HandleEntry::Semaphore(waitable));
+
+    debug!(?handle, tag);
     rine_types::dev_notify!(on_handle_created(
-        h.as_raw() as i64,
+        handle.as_raw() as i64,
         "Semaphore",
         &format!("initial={initial_count}, max={maximum_count}")
     ));
-    h.as_raw()
+
+    handle.as_raw()
 }
 
 /// ReleaseSemaphore — increment the semaphore count.
@@ -337,8 +377,9 @@ pub unsafe extern "win64" fn ReleaseSemaphore(
         return WinBool::FALSE;
     }
 
-    let h = Handle::from_raw(semaphore_handle);
-    let waitable = match handle_table().get_waitable(h) {
+    let handle = Handle::from_raw(semaphore_handle);
+
+    let waitable = match handle_table().get_waitable(handle) {
         Some(Waitable::Semaphore(s)) => s,
         _ => {
             warn!(
@@ -349,8 +390,8 @@ pub unsafe extern "win64" fn ReleaseSemaphore(
         }
     };
 
-    let mut count = waitable.inner.count.lock().unwrap();
-    let prev = *count;
+    let mut current_count = waitable.inner.count.lock().unwrap();
+    let prev = *current_count;
 
     if prev + release_count > waitable.inner.max_count {
         warn!(
@@ -366,7 +407,7 @@ pub unsafe extern "win64" fn ReleaseSemaphore(
         unsafe { ptr::write(previous_count, prev) };
     }
 
-    *count = prev + release_count;
+    *current_count = prev + release_count;
 
     // Wake up to `release_count` waiters.
     for _ in 0..release_count {

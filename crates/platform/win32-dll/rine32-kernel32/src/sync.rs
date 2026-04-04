@@ -1,3 +1,8 @@
+//! kernel32 32bit synchronisation objects: critical sections, events, mutexes, semaphores.
+//!
+//! This is mostly a thin wrapper around the common implementations in `rine-common-kernel32`,
+//! but also includes the Windows API entry points and some handle table integration.
+
 use std::ptr;
 use std::sync::{Arc, Condvar, Mutex};
 
@@ -6,10 +11,6 @@ use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::threading;
 use tracing::debug;
-
-unsafe fn get_mutex(cs: *const u8) -> *mut libc::pthread_mutex_t {
-    unsafe { common::sync::get_mutex(cs) }
-}
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn InitializeCriticalSection(cs: *mut u8) {
@@ -24,10 +25,10 @@ pub unsafe extern "stdcall" fn EnterCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    let mut mutex = unsafe { get_mutex(cs) };
+    let mut mutex = unsafe { common::sync::get_mutex(cs) };
     if mutex.is_null() {
         unsafe { common::sync::init_critical_section(cs) };
-        mutex = unsafe { get_mutex(cs) };
+        mutex = unsafe { common::sync::get_mutex(cs) };
     }
     unsafe { libc::pthread_mutex_lock(mutex) };
 }
@@ -37,7 +38,7 @@ pub unsafe extern "stdcall" fn LeaveCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    let mutex = unsafe { get_mutex(cs) };
+    let mutex = unsafe { common::sync::get_mutex(cs) };
     if mutex.is_null() {
         return;
     }
@@ -49,7 +50,7 @@ pub unsafe extern "stdcall" fn DeleteCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    let mutex = unsafe { get_mutex(cs) };
+    let mutex = unsafe { common::sync::get_mutex(cs) };
     if mutex.is_null() {
         return;
     }

@@ -54,6 +54,11 @@ pub const STD_ERROR_HANDLE: u32 = 0xFFFF_FFF4; // (DWORD)-12
 /// The invalid handle sentinel (`INVALID_HANDLE_VALUE`).
 pub const INVALID_HANDLE_VALUE: Handle = Handle(-1);
 
+/// The null handle (`NULL`).  Note that `NULL` is a valid
+/// handle value that represents "no object", while
+/// `INVALID_HANDLE_VALUE` indicates an error.
+pub const NULL_HANDLE_VALUE: Handle = Handle(0);
+
 impl Handle {
     /// The null handle (`NULL`).
     pub const NULL: Self = Self(0);
