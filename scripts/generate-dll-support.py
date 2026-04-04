@@ -233,9 +233,26 @@ def build_dataset() -> dict:
 def main() -> None:
     data = build_dataset()
     DOCS_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
-    DOCS_DATA_PATH.write_text(f"{json.dumps(data, indent=2)}\n", encoding="utf-8")
 
-    print(f"Wrote {DOCS_DATA_PATH}")
+    should_write = True
+    if DOCS_DATA_PATH.exists():
+        try:
+            existing = json.loads(DOCS_DATA_PATH.read_text(encoding="utf-8"))
+            existing_cmp = dict(existing)
+            next_cmp = dict(data)
+            existing_cmp["generatedAt"] = next_cmp.get("generatedAt")
+            if existing_cmp == next_cmp:
+                should_write = False
+        except json.JSONDecodeError:
+            # If the file is malformed, replace it with freshly generated JSON.
+            should_write = True
+
+    if should_write:
+        DOCS_DATA_PATH.write_text(f"{json.dumps(data, indent=2)}\n", encoding="utf-8")
+        print(f"Wrote {DOCS_DATA_PATH}")
+    else:
+        print(f"No DLL support changes detected (ignoring generatedAt): {DOCS_DATA_PATH}")
+
     print(f"DLLs: {len(data['dlls'])}, functions: {data['totals']['functions']}")
     print(
         "x64 -> implemented "
