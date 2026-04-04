@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T04:07:35.384492+00:00",
+  "generatedAt": "2026-04-04T06:11:11.283154+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -350,8 +350,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "CloseHandle",
-            "source": "kernel32 - lib.rs"
+            "symbol": "file::CloseHandle",
+            "source": "kernel32 - file.rs"
           }
         },
         {
@@ -363,8 +363,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "CreateEventA",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::CreateEventA",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -388,9 +388,9 @@
             "source": "kernel32 - file.rs"
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "CreateFileA",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "file::CreateFileA",
+            "source": "kernel32 - file.rs"
           }
         },
         {
@@ -401,9 +401,9 @@
             "source": "kernel32 - file.rs"
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "CreateFileW",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "file::CreateFileW",
+            "source": "kernel32 - file.rs"
           }
         },
         {
@@ -415,8 +415,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "CreateMutexA",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::CreateMutexA",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -467,8 +467,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "CreateSemaphoreA",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::CreateSemaphoreA",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -493,8 +493,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "CreateThread",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::CreateThread",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -506,8 +506,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "DeleteCriticalSection",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::DeleteCriticalSection",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -519,8 +519,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "EnterCriticalSection",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::EnterCriticalSection",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -532,8 +532,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ExitProcess",
-            "source": "kernel32 - lib.rs"
+            "symbol": "process::ExitProcess",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -545,8 +545,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ExpandEnvironmentStringsA",
-            "source": "kernel32 - lib.rs"
+            "symbol": "environment::ExpandEnvironmentStringsA",
+            "source": "kernel32 - environment.rs"
           }
         },
         {
@@ -558,8 +558,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ExpandEnvironmentStringsW",
-            "source": "kernel32 - lib.rs"
+            "symbol": "environment::ExpandEnvironmentStringsW",
+            "source": "kernel32 - environment.rs"
           }
         },
         {
@@ -636,8 +636,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "FreeEnvironmentStringsW",
-            "source": "kernel32 - lib.rs"
+            "symbol": "environment::FreeEnvironmentStringsW",
+            "source": "kernel32 - environment.rs"
           }
         },
         {
@@ -648,9 +648,9 @@
             "source": null
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "FreeLibrary",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "process::FreeLibrary",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -662,8 +662,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetCommandLineA",
-            "source": "kernel32 - lib.rs"
+            "symbol": "process::GetCommandLineA",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -675,8 +675,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetCommandLineW",
-            "source": "kernel32 - lib.rs"
+            "symbol": "process::GetCommandLineW",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -688,8 +688,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetCurrentProcess",
-            "source": "kernel32 - lib.rs"
+            "symbol": "process::GetCurrentProcess",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -701,8 +701,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetCurrentProcessId",
-            "source": "kernel32 - lib.rs"
+            "symbol": "process::GetCurrentProcessId",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -714,8 +714,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetCurrentThread",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::GetCurrentThread",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -727,8 +727,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetCurrentThreadId",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::GetCurrentThreadId",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -740,8 +740,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetEnvironmentStringsW",
-            "source": "kernel32 - lib.rs"
+            "symbol": "environment::GetEnvironmentStringsW",
+            "source": "kernel32 - environment.rs"
           }
         },
         {
@@ -753,8 +753,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetEnvironmentVariableA",
-            "source": "kernel32 - lib.rs"
+            "symbol": "environment::GetEnvironmentVariableA",
+            "source": "kernel32 - environment.rs"
           }
         },
         {
@@ -766,8 +766,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetEnvironmentVariableW",
-            "source": "kernel32 - lib.rs"
+            "symbol": "environment::GetEnvironmentVariableW",
+            "source": "kernel32 - environment.rs"
           }
         },
         {
@@ -779,8 +779,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetExitCodeProcess",
-            "source": "kernel32 - lib.rs"
+            "symbol": "process::GetExitCodeProcess",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -792,8 +792,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetExitCodeThread",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::GetExitCodeThread",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -817,9 +817,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "GetLastError",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "process::GetLastError",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -830,9 +830,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "GetModuleHandleA",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "process::GetModuleHandleA",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -843,9 +843,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "GetModuleHandleW",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "process::GetModuleHandleW",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -856,9 +856,9 @@
             "source": null
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "GetProcAddress",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "process::GetProcAddress",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -870,8 +870,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetProcessHeap",
-            "source": "kernel32 - lib.rs"
+            "symbol": "memory::GetProcessHeap",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -883,8 +883,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "GetStdHandle",
-            "source": "kernel32 - lib.rs"
+            "symbol": "console::GetStdHandle",
+            "source": "kernel32 - console.rs"
           }
         },
         {
@@ -935,8 +935,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "HeapAlloc",
-            "source": "kernel32 - lib.rs"
+            "symbol": "memory::HeapAlloc",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -948,8 +948,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "HeapCreate",
-            "source": "kernel32 - lib.rs"
+            "symbol": "memory::HeapCreate",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -961,8 +961,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "HeapDestroy",
-            "source": "kernel32 - lib.rs"
+            "symbol": "memory::HeapDestroy",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -974,8 +974,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "HeapFree",
-            "source": "kernel32 - lib.rs"
+            "symbol": "memory::HeapFree",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -987,8 +987,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "HeapReAlloc",
-            "source": "kernel32 - lib.rs"
+            "symbol": "memory::HeapReAlloc",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -1013,8 +1013,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "InitializeCriticalSection",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::InitializeCriticalSection",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -1039,8 +1039,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "LeaveCriticalSection",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::LeaveCriticalSection",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -1051,9 +1051,9 @@
             "source": null
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "LoadLibraryA",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "process::LoadLibraryA",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -1064,9 +1064,9 @@
             "source": "kernel32 - file.rs"
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "ReadFile",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "file::ReadFile",
+            "source": "kernel32 - file.rs"
           }
         },
         {
@@ -1078,8 +1078,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ReleaseMutex",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::ReleaseMutex",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -1091,8 +1091,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ReleaseSemaphore",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::ReleaseSemaphore",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -1104,8 +1104,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ResetEvent",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::ResetEvent",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -1117,8 +1117,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "SetEnvironmentVariableA",
-            "source": "kernel32 - lib.rs"
+            "symbol": "environment::SetEnvironmentVariableA",
+            "source": "kernel32 - environment.rs"
           }
         },
         {
@@ -1130,8 +1130,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "SetEnvironmentVariableW",
-            "source": "kernel32 - lib.rs"
+            "symbol": "environment::SetEnvironmentVariableW",
+            "source": "kernel32 - environment.rs"
           }
         },
         {
@@ -1143,8 +1143,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "SetEvent",
-            "source": "kernel32 - lib.rs"
+            "symbol": "sync::SetEvent",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -1168,9 +1168,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "SetUnhandledExceptionFilter",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "process::SetUnhandledExceptionFilter",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -1182,8 +1182,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "Sleep",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::Sleep",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -1195,8 +1195,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "TlsAlloc",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::TlsAlloc",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -1208,8 +1208,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "TlsFree",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::TlsFree",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -1221,8 +1221,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "TlsGetValue",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::TlsGetValue",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -1234,8 +1234,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "TlsSetValue",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::TlsSetValue",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -1260,8 +1260,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "VirtualAlloc",
-            "source": "kernel32 - lib.rs"
+            "symbol": "memory::VirtualAlloc",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -1273,8 +1273,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "VirtualFree",
-            "source": "kernel32 - lib.rs"
+            "symbol": "memory::VirtualFree",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -1286,8 +1286,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "VirtualProtect",
-            "source": "kernel32 - lib.rs"
+            "symbol": "memory::VirtualProtect",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -1298,9 +1298,9 @@
             "source": "kernel32 - memory.rs"
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "VirtualQuery",
-            "source": null
+            "status": "unimplemented",
+            "symbol": "memory::VirtualQuery",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -1312,8 +1312,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "WaitForMultipleObjects",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::WaitForMultipleObjects",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -1325,8 +1325,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "WaitForSingleObject",
-            "source": "kernel32 - lib.rs"
+            "symbol": "thread::WaitForSingleObject",
+            "source": "kernel32 - thread.rs"
           }
         },
         {
@@ -1338,8 +1338,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "WriteConsoleA",
-            "source": "kernel32 - lib.rs"
+            "symbol": "console::WriteConsoleA",
+            "source": "kernel32 - console.rs"
           }
         },
         {
@@ -1351,8 +1351,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "WriteConsoleW",
-            "source": "kernel32 - lib.rs"
+            "symbol": "console::WriteConsoleW",
+            "source": "kernel32 - console.rs"
           }
         },
         {
@@ -1364,8 +1364,8 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "WriteFile",
-            "source": "kernel32 - lib.rs"
+            "symbol": "file::WriteFile",
+            "source": "kernel32 - file.rs"
           }
         }
       ]
@@ -2334,8 +2334,8 @@
     },
     "x86": {
       "implemented": 137,
-      "stubbed": 20,
-      "unimplemented": 18
+      "stubbed": 9,
+      "unimplemented": 29
     }
   }
 }
