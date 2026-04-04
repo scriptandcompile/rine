@@ -88,10 +88,60 @@ static int test_events(void) {
     return 0;
 }
 
+
+static int test_events_w(void) {
+    // Manual-reset event, initially unsignaled.
+    g_event = CreateEventW(NULL, TRUE, FALSE, NULL);
+    if (g_event == NULL) return 1;
+
+    g_event_value = 0;
+
+    HANDLE th = CreateThread(NULL, 0, event_producer, NULL, 0, NULL);
+    if (th == NULL) return 1;
+
+    // Wait for producer to signal.
+    DWORD r = WaitForSingleObject(g_event, 5000);
+    if (r != WAIT_OBJECT_0) return 1;
+
+    // Value should be set by producer.
+    if (g_event_value != 99) return 1;
+
+    // Manual-reset: event stays signaled.
+    r = WaitForSingleObject(g_event, 0);
+    if (r != WAIT_OBJECT_0) return 1;
+
+    // Reset and check it's now unsignaled.
+    ResetEvent(g_event);
+    r = WaitForSingleObject(g_event, 0);
+    if (r != WAIT_TIMEOUT) return 1;
+
+    WaitForSingleObject(th, INFINITE);
+    CloseHandle(th);
+    CloseHandle(g_event);
+    return 0;
+}
+
 // ── Auto-reset event: only one waiter wakes ─────────────────────
 
 static int test_auto_reset_event(void) {
     HANDLE ev = CreateEventA(NULL, FALSE, TRUE, NULL);
+    if (ev == NULL) return 1;
+
+    // Initially signaled: first wait succeeds and auto-resets.
+    DWORD r = WaitForSingleObject(ev, 0);
+    if (r != WAIT_OBJECT_0) return 1;
+
+    // Should be unsignaled now.
+    r = WaitForSingleObject(ev, 0);
+    if (r != WAIT_TIMEOUT) return 1;
+
+    CloseHandle(ev);
+    return 0;
+}
+
+
+static int test_auto_reset_event_w(void) {
+    HANDLE ev = CreateEventW(NULL, FALSE, TRUE, NULL);
     if (ev == NULL) return 1;
 
     // Initially signaled: first wait succeeds and auto-resets.
@@ -146,10 +196,52 @@ static int test_mutex(void) {
     return 0;
 }
 
+
+static int test_mutex_w(void) {
+    g_mutex = CreateMutexW(NULL, FALSE, NULL);
+    if (g_mutex == NULL) return 1;
+
+    g_mutex_counter = 0;
+
+    HANDLE threads[MUTEX_THREADS];
+    for (int i = 0; i < MUTEX_THREADS; i++) {
+        threads[i] = CreateThread(NULL, 0, mutex_worker, NULL, 0, NULL);
+        if (threads[i] == NULL) return 1;
+    }
+
+    WaitForMultipleObjects(MUTEX_THREADS, threads, TRUE, INFINITE);
+    for (int i = 0; i < MUTEX_THREADS; i++) CloseHandle(threads[i]);
+
+    CloseHandle(g_mutex);
+
+    int expected = MUTEX_THREADS * MUTEX_INCREMENTS;
+    if (g_mutex_counter != expected) return 1;
+    return 0;
+}
+
 // ── Mutex recursive ownership ───────────────────────────────────
 
 static int test_mutex_recursive(void) {
     HANDLE m = CreateMutexA(NULL, TRUE, NULL);  // initially owned
+    if (m == NULL) return 1;
+
+    // Same thread can acquire recursively.
+    DWORD r = WaitForSingleObject(m, 0);
+    if (r != WAIT_OBJECT_0) return 1;
+
+    // Release twice (once for each acquire).
+    if (!ReleaseMutex(m)) return 1;
+    if (!ReleaseMutex(m)) return 1;
+
+    // Third release should fail (not owned).
+    if (ReleaseMutex(m)) return 1;
+
+    CloseHandle(m);
+    return 0;
+}
+
+static int test_mutex_recursive_w(void) {
+    HANDLE m = CreateMutexW(NULL, TRUE, NULL);  // initially owned
     if (m == NULL) return 1;
 
     // Same thread can acquire recursively.
@@ -223,6 +315,32 @@ static int test_semaphore(void) {
     return 0;
 }
 
+
+static int test_semaphore_w(void) {
+    InitializeCriticalSection(&g_sem_cs);
+    g_semaphore = CreateSemaphoreW(NULL, SEM_MAX_CONCURRENT, SEM_MAX_CONCURRENT, NULL);
+    if (g_semaphore == NULL) return 1;
+
+    g_sem_active = 0;
+    g_sem_max_active = 0;
+
+    HANDLE threads[SEM_THREADS];
+    for (int i = 0; i < SEM_THREADS; i++) {
+        threads[i] = CreateThread(NULL, 0, semaphore_worker, NULL, 0, NULL);
+        if (threads[i] == NULL) return 1;
+    }
+
+    WaitForMultipleObjects(SEM_THREADS, threads, TRUE, INFINITE);
+    for (int i = 0; i < SEM_THREADS; i++) CloseHandle(threads[i]);
+
+    CloseHandle(g_semaphore);
+    DeleteCriticalSection(&g_sem_cs);
+
+    // Max concurrent should not exceed semaphore limit.
+    if (g_sem_max_active > SEM_MAX_CONCURRENT) return 1;
+    return 0;
+}
+
 // ── Semaphore release with previous-count output ────────────────
 
 static int test_semaphore_release(void) {
@@ -244,6 +362,27 @@ static int test_semaphore_release(void) {
     return 0;
 }
 
+
+static int test_semaphore_release_w(void) {
+    HANDLE s = CreateSemaphoreW(NULL, 0, 5, NULL);
+    if (s == NULL) return 1;
+
+    LONG prev = -1;
+    if (!ReleaseSemaphore(s, 2, &prev)) return 1;
+    if (prev != 0) return 1;  // was 0 before release
+
+    prev = -1;
+    if (!ReleaseSemaphore(s, 1, &prev)) return 1;
+    if (prev != 2) return 1;  // was 2 before release
+
+    // Should fail: 3 + 3 = 6 > max 5.
+    if (ReleaseSemaphore(s, 3, NULL)) return 1;
+
+    CloseHandle(s);
+    return 0;
+}
+
+
 // ── main: run all tests ─────────────────────────────────────────
 
 int main(void) {
@@ -263,10 +402,24 @@ int main(void) {
         failures++;
     }
 
+    if (test_events_w() == 0) {
+        puts("events_w: ok");
+    } else {
+        puts("events_w: FAIL");
+        failures++;
+    }
+
     if (test_auto_reset_event() == 0) {
         puts("auto_reset: ok");
     } else {
         puts("auto_reset: FAIL");
+        failures++;
+    }
+
+    if (test_auto_reset_event_w() == 0) {
+        puts("auto_reset_w: ok");
+    } else {
+        puts("auto_reset_w: FAIL");
         failures++;
     }
 
@@ -277,10 +430,24 @@ int main(void) {
         failures++;
     }
 
+    if (test_mutex_w() == 0) {
+        puts("mutex_w: ok");
+    } else {
+        puts("mutex_w: FAIL");
+        failures++;
+    }
+
     if (test_mutex_recursive() == 0) {
         puts("mutex_recursive: ok");
     } else {
         puts("mutex_recursive: FAIL");
+        failures++;
+    }
+
+    if (test_mutex_recursive_w() == 0) {
+        puts("mutex_recursive_w: ok");
+    } else {
+        puts("mutex_recursive_w: FAIL");
         failures++;
     }
 
@@ -291,10 +458,24 @@ int main(void) {
         failures++;
     }
 
+    if (test_semaphore_w() == 0) {
+        puts("semaphore_w: ok");
+    } else {
+        puts("semaphore_w: FAIL");
+        failures++;
+    }
+
     if (test_semaphore_release() == 0) {
         puts("sem_release: ok");
     } else {
         puts("sem_release: FAIL");
+        failures++;
+    }
+
+    if (test_semaphore_release_w() == 0) {
+        puts("sem_release_w: ok");
+    } else {
+        puts("sem_release_w: FAIL");
         failures++;
     }
 
