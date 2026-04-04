@@ -43,6 +43,11 @@ fn set_var_if_absent(key: &str, value: &str) {
     }
 }
 
+fn current_thread_id() -> u32 {
+    // Linux thread ID is the closest runtime identifier to Win32 thread ID.
+    unsafe { libc::syscall(libc::SYS_gettid) as u32 }
+}
+
 /// Conditionally emits a dev event. Compiles to nothing without the `dev` feature.
 macro_rules! dev_emit {
     ($bridge:expr, $event:expr) => {
@@ -397,8 +402,15 @@ pub fn run(
     //     that reads segment-based TEB fields doesn't fault.
     unsafe { subsys::threading::init_teb_for_format(parsed.format)? };
 
+    // Emit a synthetic primary thread lifecycle for dashboards: even apps
+    // that never call CreateThread execute on an implicit main thread.
+    let main_tid = current_thread_id();
+    let main_entry = image.base().as_usize() as u64 + parsed.pe.entry as u64;
+    rine_types::dev_notify!(on_thread_created(-2, main_tid, main_entry));
+
     // 6. Execute the PE entry point.
     let exit_code = entry::execute(&image, &parsed)?;
+    rine_types::dev_notify!(on_thread_exited(main_tid, exit_code as u32));
 
     // ProcessExited + shutdown are normally handled by ExitProcess
     // (via the DevHook).  This is a fallback for PEs that return from

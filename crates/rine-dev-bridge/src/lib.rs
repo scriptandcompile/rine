@@ -184,6 +184,11 @@ impl DevHook for ChannelDevHook {
     }
 
     fn on_process_exiting(&self, exit_code: i32) {
+        let tid = unsafe { libc::syscall(libc::SYS_gettid) as u32 };
+        self.bridge.send_event(DevEvent::ThreadExited {
+            thread_id: tid,
+            exit_code: exit_code as u32,
+        });
         self.observer.on_process_exiting(&self.bridge, exit_code);
         self.bridge
             .send_event(DevEvent::ProcessExited { exit_code });

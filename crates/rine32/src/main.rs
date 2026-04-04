@@ -54,6 +54,11 @@ macro_rules! dev_emit {
     };
 }
 
+fn current_thread_id() -> u32 {
+    // Linux thread ID is the closest runtime identifier to Win32 thread ID.
+    unsafe { libc::syscall(libc::SYS_gettid) as u32 }
+}
+
 #[derive(Parser, Debug)]
 #[command(
     name = "rine32",
@@ -231,7 +236,14 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
 
     unsafe { init_teb_for_pe32().map_err(|_| Run32Error::TebInit)? };
 
+    // Emit synthetic primary-thread lifecycle telemetry for apps that never
+    // call CreateThread but still run on an implicit main thread.
+    let main_tid = current_thread_id();
+    let main_entry = image.base().as_usize() as u64 + parsed.pe.entry as u64;
+    rine_types::dev_notify!(on_thread_created(-2, main_tid, main_entry));
+
     let exit_code = entry::execute(&image, &parsed)?;
+    rine_types::dev_notify!(on_thread_exited(main_tid, exit_code as u32));
     dev_emit!(dev_bridge, DevEvent::ProcessExited { exit_code });
     Ok(exit_code)
 }

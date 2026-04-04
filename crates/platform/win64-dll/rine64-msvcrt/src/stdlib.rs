@@ -6,6 +6,8 @@
 /// Does not return.
 pub unsafe extern "win64" fn exit(code: core::ffi::c_int) {
     tracing::debug!(code, "msvcrt::exit");
+    let tid = unsafe { libc::syscall(libc::SYS_gettid) as u32 };
+    rine_types::dev_notify!(on_thread_exited(tid, code as u32));
     rine_types::dev_notify!(on_process_exiting(code));
     std::process::exit(code);
 }

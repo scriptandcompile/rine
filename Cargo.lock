@@ -3399,6 +3399,7 @@ dependencies = [
 name = "rine-dev-bridge"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "rine-channel",
  "rine-runtime-core",
  "rine-types",

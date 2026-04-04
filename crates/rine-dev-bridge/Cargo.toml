@@ -10,3 +10,4 @@ rine-channel = { workspace = true }
 rine-runtime-core = { workspace = true }
 rine-types = { workspace = true }
 tracing = { workspace = true }
+libc = { workspace = true }
