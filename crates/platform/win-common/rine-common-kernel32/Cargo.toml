@@ -8,3 +8,4 @@ description = "Shared architecture-neutral kernel32 logic for rine"
 [dependencies]
 rine-types = { workspace = true }
 libc = { workspace = true }
+tracing = { workspace = true }

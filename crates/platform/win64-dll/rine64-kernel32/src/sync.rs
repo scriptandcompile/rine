@@ -7,9 +7,9 @@ use std::ptr;
 
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, HandleEntry, NULL_HANDLE_VALUE, handle_table};
-use rine_types::threading::{SemaphoreInner, SemaphoreWaitable, Waitable};
-use std::sync::{Arc, Condvar, Mutex};
+use rine_types::handles::{Handle, handle_table};
+use rine_types::threading::Waitable;
+
 use tracing::{debug, warn};
 
 /// InitializeCriticalSection
@@ -314,7 +314,16 @@ pub unsafe extern "win64" fn CreateSemaphoreA(
     maximum_count: i32,
     _name: *const u8,
 ) -> isize {
-    create_semaphore_impl(initial_count, maximum_count, "CreateSemaphoreA")
+    let handle = common::sync::create_semaphore(initial_count, maximum_count);
+
+    debug!(?handle, "CreateSemaphoreA");
+    rine_types::dev_notify!(on_handle_created(
+        handle as i64,
+        "SemaphoreA",
+        &format!("initial={initial_count}, max={maximum_count}")
+    ));
+
+    handle
 }
 
 /// CreateSemaphoreW — wide-string variant (name ignored).
@@ -325,36 +334,16 @@ pub unsafe extern "win64" fn CreateSemaphoreW(
     maximum_count: i32,
     _name: *const u16,
 ) -> isize {
-    create_semaphore_impl(initial_count, maximum_count, "CreateSemaphoreW")
-}
+    let handle = common::sync::create_semaphore(initial_count, maximum_count);
 
-fn create_semaphore_impl(initial_count: i32, maximum_count: i32, tag: &str) -> isize {
-    if maximum_count <= 0 || initial_count < 0 || initial_count > maximum_count {
-        warn!(
-            initial_count,
-            maximum_count, "CreateSemaphore: invalid parameters"
-        );
-        return NULL_HANDLE_VALUE.as_raw();
-    }
-
-    let waitable = SemaphoreWaitable {
-        inner: Arc::new(SemaphoreInner {
-            count: Mutex::new(initial_count),
-            max_count: maximum_count,
-            condvar: Condvar::new(),
-        }),
-    };
-
-    let handle = handle_table().insert(HandleEntry::Semaphore(waitable));
-
-    debug!(?handle, tag);
+    debug!(?handle, "CreateSemaphoreW");
     rine_types::dev_notify!(on_handle_created(
-        handle.as_raw() as i64,
-        "Semaphore",
+        handle as i64,
+        "SemaphoreW",
         &format!("initial={initial_count}, max={maximum_count}")
     ));
 
-    handle.as_raw()
+    handle
 }
 
 /// ReleaseSemaphore — increment the semaphore count.
@@ -421,7 +410,9 @@ pub unsafe extern "win64" fn ReleaseSemaphore(
 mod tests {
     use super::*;
     use rine_types::threading::{WaitStatus, wait_on};
+
     use std::ptr;
+    use std::sync::Arc;
 
     // ── Critical Section tests ───────────────────────────────────
 

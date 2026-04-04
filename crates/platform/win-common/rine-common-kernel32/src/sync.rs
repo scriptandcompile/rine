@@ -2,8 +2,13 @@ use std::ptr;
 use std::sync::{Arc, Condvar, Mutex};
 
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, HandleEntry, handle_table};
-use rine_types::threading::{EventInner, EventWaitable, MutexInner, MutexState, MutexWaitable};
+use rine_types::handles::{Handle, HandleEntry, NULL_HANDLE_VALUE, handle_table};
+use rine_types::threading::{
+    EventInner, EventWaitable, MutexInner, MutexState, MutexWaitable, SemaphoreInner,
+    SemaphoreWaitable,
+};
+
+use tracing::warn;
 
 /// Initialization for synchronization primitives like events and mutexes.
 ///
@@ -122,37 +127,84 @@ pub fn create_mutex(initial_owner: WinBool, name: Option<String>) -> (Handle, St
     (h, detail)
 }
 
+/// Creates a semaphore with the specified initial and maximum counts.
+///
+/// # Arguments
+/// * `initial_count` - The initial count for the semaphore. Must be non-negative and
+/// less than or equal to `maximum_count`.
+/// * `maximum_count` - The maximum count for the semaphore. Must be greater than 0.
+///
+/// # Returns
+/// A handle to the newly created semaphore, or `NULL_HANDLE_VALUE` if the parameters are
+/// invalid.
+///
+/// # Examples
+/// ```
+/// use rine_common_kernel32::sync::create_semaphore;
+/// use rine_types::handles::NULL_HANDLE_VALUE;
+///
+/// let semaphore = create_semaphore(2, 5);
+/// assert!(semaphore.is_valid());
+///
+/// let invalid_semaphore = create_semaphore(-1, 5);
+/// assert_eq!(invalid_semaphore, NULL_HANDLE_VALUE);
+///
+/// let invalid_semaphore = create_semaphore(3, 2);
+/// assert_eq!(invalid_semaphore, NULL_HANDLE_VALUE);
+/// ```
+pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> isize {
+    if maximum_count <= 0 || initial_count < 0 || initial_count > maximum_count {
+        warn!(
+            initial_count,
+            maximum_count, "CreateSemaphore: invalid parameters"
+        );
+        return NULL_HANDLE_VALUE.as_raw();
+    }
+
+    let waitable = SemaphoreWaitable {
+        inner: Arc::new(SemaphoreInner {
+            count: Mutex::new(initial_count),
+            max_count: maximum_count,
+            condvar: Condvar::new(),
+        }),
+    };
+
+    let handle = handle_table().insert(HandleEntry::Semaphore(waitable));
+
+    handle.as_raw()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use rine_types::errors::WinBool;
 
     #[test]
-    fn test_create_event_auto_reset() {
+    fn create_event_auto_reset() {
         let h = create_event(WinBool::FALSE, WinBool::FALSE);
         assert!(h.is_valid());
     }
 
     #[test]
-    fn test_create_event_manual_reset() {
+    fn create_event_manual_reset() {
         let h = create_event(WinBool::TRUE, WinBool::FALSE);
         assert!(h.is_valid());
     }
 
     #[test]
-    fn test_create_event_initial_signaled() {
+    fn create_event_initial_signaled() {
         let h = create_event(WinBool::FALSE, WinBool::TRUE);
         assert!(h.is_valid());
     }
 
     #[test]
-    fn test_create_event_initial_not_signaled() {
+    fn create_event_initial_not_signaled() {
         let h = create_event(WinBool::FALSE, WinBool::FALSE);
         assert!(h.is_valid());
     }
 
     #[test]
-    fn test_create_event_different_parameters() {
+    fn create_event_different_parameters() {
         let h1 = create_event(WinBool::FALSE, WinBool::FALSE);
         let h2 = create_event(WinBool::FALSE, WinBool::FALSE);
         assert!(h1.is_valid());
@@ -160,7 +212,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_event_manual_vs_auto() {
+    fn create_event_manual_vs_auto() {
         let h1 = create_event(WinBool::FALSE, WinBool::FALSE);
         let h2 = create_event(WinBool::TRUE, WinBool::FALSE);
         assert!(h1.is_valid());
@@ -168,35 +220,35 @@ mod tests {
     }
 
     #[test]
-    fn test_create_mutex_unnamed_auto() {
+    fn create_mutex_unnamed_auto() {
         let (h, desc) = create_mutex(WinBool::FALSE, None);
         assert!(h.is_valid());
         assert!(desc.contains("(unnamed)"));
     }
 
     #[test]
-    fn test_create_mutex_unnamed_initial_owned() {
+    fn create_mutex_unnamed_initial_owned() {
         let (h, desc) = create_mutex(WinBool::TRUE, None);
         assert!(h.is_valid());
         assert!(desc.contains("(unnamed") && desc.contains("initially-owned"));
     }
 
     #[test]
-    fn test_create_mutex_named() {
+    fn create_mutex_named() {
         let (h, desc) = create_mutex(WinBool::FALSE, Some("TestMutex".to_string()));
         assert!(h.is_valid());
         assert_eq!(desc, "TestMutex");
     }
 
     #[test]
-    fn test_create_mutex_named_initial_owned() {
+    fn create_mutex_named_initial_owned() {
         let (h, desc) = create_mutex(WinBool::TRUE, Some("OwnedMutex".to_string()));
         assert!(h.is_valid());
         assert_eq!(desc, "OwnedMutex (initially-owned)");
     }
 
     #[test]
-    fn test_create_mutex_different_parameters() {
+    fn create_mutex_different_parameters() {
         let (h1, desc1) = create_mutex(WinBool::FALSE, None);
         let (h2, desc2) = create_mutex(WinBool::FALSE, Some("Test".to_string()));
         assert!(h1.is_valid());
@@ -206,7 +258,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_mutex_initial_state() {
+    fn create_mutex_initial_state() {
         let (h, desc) = create_mutex(WinBool::TRUE, Some("Test".to_string()));
         assert!(h.is_valid());
         assert!(desc.contains("initially-owned"));
@@ -217,7 +269,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_mutex_multiple_instances() {
+    fn create_mutex_multiple_instances() {
         let mut handles = Vec::new();
         let mut descs = Vec::new();
 
@@ -236,5 +288,43 @@ mod tests {
         assert_eq!(descs[2], "Mutex2");
         assert_eq!(descs[3], "Mutex3");
         assert_eq!(descs[4], "Mutex4");
+    }
+
+    #[test]
+    fn create_semaphore_valid() {
+        let h = create_semaphore(2, 5);
+        assert!(h != NULL_HANDLE_VALUE.as_raw());
+    }
+
+    #[test]
+    fn create_semaphore_invalid_initial_count() {
+        let h = create_semaphore(-1, 5);
+        assert_eq!(h, NULL_HANDLE_VALUE.as_raw());
+    }
+
+    #[test]
+    fn create_semaphore_invalid_maximum_count() {
+        let h = create_semaphore(3, 2);
+        assert_eq!(h, NULL_HANDLE_VALUE.as_raw());
+    }
+
+    #[test]
+    fn create_semaphore_zero_initial() {
+        let h = create_semaphore(0, 5);
+        assert!(h != NULL_HANDLE_VALUE.as_raw());
+    }
+
+    #[test]
+    fn create_semaphore_initial_equals_maximum() {
+        let h = create_semaphore(5, 5);
+        assert!(h != NULL_HANDLE_VALUE.as_raw());
+    }
+
+    #[test]
+    fn create_semaphore_multiple_instances() {
+        let h1 = create_semaphore(1, 3);
+        let h2 = create_semaphore(2, 4);
+        assert!(h1 != NULL_HANDLE_VALUE.as_raw());
+        assert!(h2 != NULL_HANDLE_VALUE.as_raw());
     }
 }

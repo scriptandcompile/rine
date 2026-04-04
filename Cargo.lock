@@ -3359,6 +3359,7 @@ version = "0.1.2"
 dependencies = [
  "libc",
  "rine-types",
+ "tracing",
 ]
 
 [[package]]
