@@ -22,11 +22,17 @@ fn sync_primitives() {
         0,
         "cs: ok\n\
          events: ok\n\
+         events_w: ok\n\
          auto_reset: ok\n\
+         auto_reset_w: ok\n\
          mutex: ok\n\
+         mutex_w: ok\n\
          mutex_recursive: ok\n\
+         mutex_recursive_w: ok\n\
          semaphore: ok\n\
-         sem_release: ok",
+         semaphore_w: ok\n\
+         sem_release: ok\n\
+         sem_release_w: ok",
     );
 }
 

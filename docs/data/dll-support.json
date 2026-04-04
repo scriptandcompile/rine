@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T20:57:09.806469+00:00",
+  "generatedAt": "2026-04-04T23:10:07.229864+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -427,9 +427,9 @@
             "source": "kernel32 - sync.rs"
           },
           "x86": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "sync::CreateMutexW",
+            "source": "kernel32 - sync.rs"
           }
         },
         {
@@ -2333,9 +2333,9 @@
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 138,
+      "implemented": 139,
       "stubbed": 9,
-      "unimplemented": 28
+      "unimplemented": 27
     }
   }
 }
