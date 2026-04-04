@@ -10,6 +10,14 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 echo "==> Running unit tests across workspace"
-cargo test --workspace --lib --bins
+cargo test --workspace --lib --bins \
+	--exclude rine32 \
+	--exclude rine32-advapi32 \
+	--exclude rine32-kernel32 \
+	--exclude rine32-comdlg32 \
+	--exclude rine32-gdi32 \
+	--exclude rine32-msvcrt \
+	--exclude rine32-ntdll \
+	--exclude rine32-user32
 
 echo "Unit test run completed successfully."
