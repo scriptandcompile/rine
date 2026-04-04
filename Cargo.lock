@@ -3295,7 +3295,7 @@ dependencies = [
 
 [[package]]
 name = "rine"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "bitflags 2.11.0",
  "clap",
@@ -3327,7 +3327,7 @@ dependencies = [
 
 [[package]]
 name = "rine-channel"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-types",
  "serde",
@@ -3336,7 +3336,7 @@ dependencies = [
 
 [[package]]
 name = "rine-common-advapi32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-types",
  "tracing",
@@ -3344,25 +3344,25 @@ dependencies = [
 
 [[package]]
 name = "rine-common-comdlg32"
-version = "0.1.1"
+version = "0.1.2"
 
 [[package]]
 name = "rine-common-gdi32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-types",
 ]
 
 [[package]]
 name = "rine-common-msvcrt"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "libc",
 ]
 
 [[package]]
 name = "rine-common-user32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-channel",
  "rine-types",
@@ -3371,7 +3371,7 @@ dependencies = [
 
 [[package]]
 name = "rine-config"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rfd",
  "rine-frontend-common",
@@ -3385,7 +3385,7 @@ dependencies = [
 
 [[package]]
 name = "rine-dev"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rfd",
  "rine-channel",
@@ -3398,7 +3398,7 @@ dependencies = [
 
 [[package]]
 name = "rine-dev-bridge"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "libc",
  "rine-channel",
@@ -3409,18 +3409,18 @@ dependencies = [
 
 [[package]]
 name = "rine-dlls"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "tracing",
 ]
 
 [[package]]
 name = "rine-frontend-common"
-version = "0.1.1"
+version = "0.1.2"
 
 [[package]]
 name = "rine-runtime-core"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "goblin",
  "libc",
@@ -3434,7 +3434,7 @@ dependencies = [
 
 [[package]]
 name = "rine-types"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "bitflags 2.11.0",
  "serde",
@@ -3445,7 +3445,7 @@ dependencies = [
 
 [[package]]
 name = "rine32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "clap",
  "goblin",
@@ -3469,7 +3469,7 @@ dependencies = [
 
 [[package]]
 name = "rine32-advapi32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-common-advapi32",
  "rine-dlls",
@@ -3477,7 +3477,7 @@ dependencies = [
 
 [[package]]
 name = "rine32-comdlg32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-common-comdlg32",
  "rine-dlls",
@@ -3487,7 +3487,7 @@ dependencies = [
 
 [[package]]
 name = "rine32-gdi32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-common-gdi32",
  "rine-dlls",
@@ -3496,7 +3496,7 @@ dependencies = [
 
 [[package]]
 name = "rine32-kernel32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "libc",
  "rine-dlls",
@@ -3506,7 +3506,7 @@ dependencies = [
 
 [[package]]
 name = "rine32-msvcrt"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "libc",
  "rine-common-msvcrt",
@@ -3517,7 +3517,7 @@ dependencies = [
 
 [[package]]
 name = "rine32-ntdll"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-dlls",
  "tracing",
@@ -3525,7 +3525,7 @@ dependencies = [
 
 [[package]]
 name = "rine32-user32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-common-user32",
  "rine-dlls",
@@ -3534,7 +3534,7 @@ dependencies = [
 
 [[package]]
 name = "rine64-advapi32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-common-advapi32",
  "rine-dlls",
@@ -3544,7 +3544,7 @@ dependencies = [
 
 [[package]]
 name = "rine64-comdlg32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rfd",
  "rine-common-comdlg32",
@@ -3554,7 +3554,7 @@ dependencies = [
 
 [[package]]
 name = "rine64-gdi32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-common-gdi32",
  "rine-dlls",
@@ -3563,7 +3563,7 @@ dependencies = [
 
 [[package]]
 name = "rine64-kernel32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "libc",
  "nix 0.31.2",
@@ -3575,7 +3575,7 @@ dependencies = [
 
 [[package]]
 name = "rine64-msvcrt"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "libc",
  "rine-common-msvcrt",
@@ -3586,7 +3586,7 @@ dependencies = [
 
 [[package]]
 name = "rine64-ntdll"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "libc",
  "nix 0.31.2",
@@ -3598,7 +3598,7 @@ dependencies = [
 
 [[package]]
 name = "rine64-user32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-common-user32",
  "rine-dlls",
@@ -3608,7 +3608,7 @@ dependencies = [
 
 [[package]]
 name = "rine64-ws2_32"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "rine-dlls",
 ]
