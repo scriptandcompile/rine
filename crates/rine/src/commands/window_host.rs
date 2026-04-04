@@ -180,10 +180,7 @@ impl WindowHost {
                     ));
                     let width = rect.right.saturating_sub(rect.left).max(1) as f64;
                     let height = rect.bottom.saturating_sub(rect.top).max(1) as f64;
-                    window.set_inner_size(LogicalSize::new(
-                        width,
-                        height,
-                    ));
+                    window.set_inner_size(LogicalSize::new(width, height));
                 }
             }
             HostWindowCommand::RequestRedraw { runtime_hwnd } => {

@@ -15,9 +15,8 @@ use crate::pe::parser::PeFormat;
 
 #[derive(Debug, Error)]
 pub enum ResolverError {
-    #[error("DLL not found and no implementation available: {dll}")]
-    #[allow(dead_code)]
-    UnknownDll { dll: String },
+    #[error("unimplemented imports detected: {imports:?}")]
+    UnimplementedImports { imports: Vec<String> },
 
     #[error("IAT write at {va} is outside the loaded image bounds")]
     IatOutOfBounds { va: VirtualAddress },
@@ -72,6 +71,7 @@ pub fn resolve_imports(
         total_resolved: 0,
         total_stubbed: 0,
     };
+    let mut unimplemented_imports = Vec::new();
 
     for entry in &import_data.import_data {
         let dll_name = entry.name;
@@ -143,10 +143,11 @@ pub fn resolve_imports(
                         dll = dll_name,
                         func = func_name,
                         addr = format_args!("{iat_slot_va}"),
-                        "stubbed import"
+                        "unimplemented import"
                     );
                     summary.stubbed += 1;
-                    summary.stubbed_names.push(func_name);
+                    summary.stubbed_names.push(func_name.clone());
+                    unimplemented_imports.push(format!("{dll_name}!{func_name}"));
                     write_iat_entry(iat_slot_va, func as usize, pe_format);
                 }
             }
@@ -162,6 +163,12 @@ pub fn resolve_imports(
         report.total_resolved += summary.resolved;
         report.total_stubbed += summary.stubbed;
         report.dll_summaries.push(summary);
+    }
+
+    if !unimplemented_imports.is_empty() {
+        return Err(ResolverError::UnimplementedImports {
+            imports: unimplemented_imports,
+        });
     }
 
     info!(

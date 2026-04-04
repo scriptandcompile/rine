@@ -66,9 +66,7 @@ pub(crate) unsafe extern "stdcall" fn bit_blt(
         bottom: y_src.saturating_add(height),
     };
 
-    unsafe {
-        common::bit_blt(hdc_dest, dest_rect, hdc_src, src_rect, rop)
-    }
+    unsafe { common::bit_blt(hdc_dest, dest_rect, hdc_src, src_rect, rop) }
 }
 
 #[unsafe(no_mangle)]
