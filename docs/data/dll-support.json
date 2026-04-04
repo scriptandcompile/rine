@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T02:33:02.161397+00:00",
+  "generatedAt": "2026-04-04T02:56:45.356916+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -648,9 +648,9 @@
             "source": null
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "FreeLibrary",
-            "source": "kernel32 - lib.rs"
+            "source": null
           }
         },
         {
@@ -817,9 +817,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "GetLastError",
-            "source": "kernel32 - lib.rs"
+            "source": null
           }
         },
         {
@@ -830,9 +830,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "GetModuleHandleA",
-            "source": "kernel32 - lib.rs"
+            "source": null
           }
         },
         {
@@ -843,9 +843,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "GetModuleHandleW",
-            "source": "kernel32 - lib.rs"
+            "source": null
           }
         },
         {
@@ -856,9 +856,9 @@
             "source": null
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "GetProcAddress",
-            "source": "kernel32 - lib.rs"
+            "source": null
           }
         },
         {
@@ -1051,9 +1051,9 @@
             "source": null
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "LoadLibraryA",
-            "source": "kernel32 - lib.rs"
+            "source": null
           }
         },
         {
@@ -1168,9 +1168,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "SetUnhandledExceptionFilter",
-            "source": "kernel32 - lib.rs"
+            "source": null
           }
         },
         {
@@ -1298,9 +1298,9 @@
             "source": "kernel32 - memory.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "VirtualQuery",
-            "source": "kernel32 - lib.rs"
+            "source": null
           }
         },
         {
@@ -2333,8 +2333,8 @@
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 145,
-      "stubbed": 12,
+      "implemented": 137,
+      "stubbed": 20,
       "unimplemented": 18
     }
   }

@@ -26,6 +26,14 @@ pub struct Kernel32Plugin32;
 win32_stub!(CreateFileA, "kernel32");
 win32_stub!(CreateFileW, "kernel32");
 win32_stub!(ReadFile, "kernel32");
+win32_stub!(GetModuleHandleA, "kernel32");
+win32_stub!(GetModuleHandleW, "kernel32");
+win32_stub!(GetLastError, "kernel32");
+win32_stub!(SetUnhandledExceptionFilter, "kernel32");
+win32_stub!(LoadLibraryA, "kernel32");
+win32_stub!(GetProcAddress, "kernel32");
+win32_stub!(FreeLibrary, "kernel32");
+win32_stub!(VirtualQuery, "kernel32");
 
 const PAGE_NOACCESS: u32 = 0x01;
 const PAGE_READONLY: u32 = 0x02;
@@ -244,16 +252,6 @@ pub unsafe extern "stdcall" fn GetCommandLineW() -> *const u16 {
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn GetModuleHandleA(_module_name: *const u8) -> usize {
-    0
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn GetModuleHandleW(_module_name: *const u16) -> usize {
-    0
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn GetCurrentProcessId() -> u32 {
     unsafe { libc::getpid() as u32 }
 }
@@ -273,16 +271,6 @@ pub unsafe extern "stdcall" fn GetExitCodeProcess(
     }
     unsafe { *exit_code_out = threading::STILL_ACTIVE };
     WinBool::TRUE
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn GetLastError() -> u32 {
-    0
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn SetUnhandledExceptionFilter(_filter: usize) -> usize {
-    0
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
@@ -335,21 +323,6 @@ pub unsafe extern "stdcall" fn DeleteCriticalSection(cs: *mut u8) {
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn LoadLibraryA(_file_name: *const u8) -> usize {
-    0
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn GetProcAddress(_module: usize, _name: *const u8) -> usize {
-    0
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn FreeLibrary(_module: usize) -> WinBool {
-    WinBool::FALSE
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn VirtualProtect(
     address: *mut u8,
     size: usize,
@@ -366,15 +339,6 @@ pub unsafe extern "stdcall" fn VirtualProtect(
     } else {
         WinBool::FALSE
     }
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn VirtualQuery(
-    _address: *const u8,
-    _buffer: *mut u8,
-    _length: usize,
-) -> usize {
-    0
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
