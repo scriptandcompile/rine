@@ -32,8 +32,8 @@ jobs:
       - name: Cache cargo build
         uses: Swatinem/rust-cache@v2
 
-      - name: Build
-        run: cargo build
+      - name: Build (host + staged rine32)
+        run: ./scripts/build-rine.sh
 
       - name: Unit tests (rine bin)
         run: cargo test -p rine --bin rine
@@ -60,8 +60,11 @@ jobs:
       - name: Cache cargo build
         uses: Swatinem/rust-cache@v2
 
+      - name: Install i686 target
+        run: rustup target add i686-unknown-linux-gnu
+
       - name: Build rine32
-        run: cargo check -p rine32
+        run: cargo check -p rine32 --target i686-unknown-linux-gnu
 
       - name: Clippy rine32
-        run: cargo clippy -p rine32 --all-targets -- -D warnings
+        run: cargo clippy -p rine32 --target i686-unknown-linux-gnu --all-targets -- -D warnings
