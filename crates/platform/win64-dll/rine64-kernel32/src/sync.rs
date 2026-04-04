@@ -10,9 +10,7 @@ use std::ptr;
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
-use rine_types::threading::{
-    MutexInner, MutexState, MutexWaitable, SemaphoreInner, SemaphoreWaitable, Waitable,
-};
+use rine_types::threading::{SemaphoreInner, SemaphoreWaitable, Waitable};
 use std::sync::{Arc, Condvar, Mutex};
 use tracing::{debug, warn};
 
@@ -240,7 +238,10 @@ pub unsafe extern "win64" fn CreateMutexA(
     name: *const u8,
 ) -> isize {
     let name_str = unsafe { rine_types::strings::read_cstr(name) };
-    create_mutex_impl(initial_owner, name_str, "CreateMutexA")
+    let (h, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
+    debug!(?h, name = ?name_str, "CreateMutexA");
+    rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "Mutex", &detail));
+    h.as_raw()
 }
 
 /// CreateMutexW — wide-string variant.
@@ -251,32 +252,8 @@ pub unsafe extern "win64" fn CreateMutexW(
     name: *const u16,
 ) -> isize {
     let name_str = unsafe { rine_types::strings::read_wstr(name) };
-    create_mutex_impl(initial_owner, name_str, "CreateMutexW")
-}
-
-fn create_mutex_impl(initial_owner: WinBool, name: Option<String>, tag: &str) -> isize {
-    let (owner, count) = if initial_owner.is_true() {
-        (Some(std::thread::current().id()), 1)
-    } else {
-        (None, 0)
-    };
-
-    let waitable = MutexWaitable {
-        inner: Arc::new(MutexInner {
-            state: Mutex::new(MutexState { owner, count }),
-            condvar: Condvar::new(),
-        }),
-    };
-    let h = handle_table().insert(HandleEntry::Mutex(waitable));
-
-    let detail = match (name.as_deref(), initial_owner.is_true()) {
-        (Some(n), true) => format!("{} (initially-owned)", n),
-        (Some(n), false) => n.to_owned(),
-        (None, true) => "(unnamed, initially-owned)".to_owned(),
-        (None, false) => "(unnamed)".to_owned(),
-    };
-
-    debug!(?h, tag, name = ?name);
+    let (h, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
+    debug!(?h, name = ?name_str, "CreateMutexW");
     rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "Mutex", &detail));
     h.as_raw()
 }

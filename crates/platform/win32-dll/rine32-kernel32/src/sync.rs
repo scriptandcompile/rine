@@ -152,21 +152,26 @@ pub unsafe extern "stdcall" fn ResetEvent(event_handle: isize) -> WinBool {
 pub unsafe extern "stdcall" fn CreateMutexA(
     _security_attrs: usize,
     initial_owner: WinBool,
-    _name: *const u8,
+    name: *const u8,
 ) -> isize {
-    let (owner, count) = if initial_owner.is_true() {
-        (Some(std::thread::current().id()), 1)
-    } else {
-        (None, 0)
-    };
+    let name_str = unsafe { rine_types::strings::read_cstr(name) };
+    let (h, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
+    debug!(?h, name = ?name_str, "CreateMutexA");
+    rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "Mutex", &detail));
+    h.as_raw()
+}
 
-    let waitable = threading::MutexWaitable {
-        inner: Arc::new(threading::MutexInner {
-            state: Mutex::new(threading::MutexState { owner, count }),
-            condvar: Condvar::new(),
-        }),
-    };
-    handle_table().insert(HandleEntry::Mutex(waitable)).as_raw()
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn CreateMutexW(
+    _security_attrs: usize,
+    initial_owner: WinBool,
+    name: *const u16,
+) -> isize {
+    let name_str = unsafe { rine_types::strings::read_wstr(name) };
+    let (h, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
+    debug!(?h, name = ?name_str, "CreateMutexW");
+    rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "Mutex", &detail));
+    h.as_raw()
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
