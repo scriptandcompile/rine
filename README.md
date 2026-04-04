@@ -218,22 +218,17 @@ crates/
 # Install MinGW cross-compilers (Debian/Ubuntu)
 sudo apt install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
 
-# Build test fixtures (.c -> .exe) for x64 + x86 (default)
-./tests/build_fixtures.sh
+# Build rine so it is ready to run
+./scripts/build-rine.sh
 
-# Build fixtures for only one arch (optional)
-./tests/build_fixtures.sh x64
-./tests/build_fixtures.sh x86
+# Build rine and run all unit tests
+./scripts/build-rine-unit-tests.sh
+
+# Build everything needed for integration tests
+./scripts/build-integration-prereqs.sh
 
 # Run the test suite
 cargo test
-
-# Run integration test workflow for x64 + x86 (default)
-./tests/integration_test.sh
-
-# Restrict integration workflow to one arch (optional)
-./tests/integration_test.sh x64
-./tests/integration_test.sh x86
 ```
 
 Test fixtures are C programs under `tests/fixtures/src/` (organized by domain, e.g. `core/`, `system/`, `ui/`) compiled to PE executables in `tests/fixtures/bin/x64/` and `tests/fixtures/bin/x86/`.
