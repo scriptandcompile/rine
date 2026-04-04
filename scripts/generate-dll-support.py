@@ -54,7 +54,7 @@ def parse_win32_stub_names(lib_source: str) -> set[str]:
 
 def parse_exports(lib_source: str) -> list[tuple[str, str]]:
     pattern = re.compile(
-        r'Export::Func\(\s*"([^"]+)"\s*,\s*as_win_api!\(([^)]+)\)\s*\)',
+        r'Export::Func\(\s*"([^"]+)"\s*,\s*as_win_api!\(([^)]+)\)\s*,?\s*\)',
         re.MULTILINE | re.DOTALL,
     )
     return [(m.group(1).strip(), m.group(2).strip()) for m in pattern.finditer(lib_source)]

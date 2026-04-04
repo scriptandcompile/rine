@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T01:58:02.911689+00:00",
+  "generatedAt": "2026-04-04T02:33:02.161397+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -203,7 +203,7 @@
     },
     {
       "name": "gdi32.dll",
-      "functionCount": 9,
+      "functionCount": 10,
       "functions": [
         {
           "name": "BitBlt",
@@ -215,6 +215,19 @@
           "x86": {
             "status": "implemented",
             "symbol": "ops::bit_blt",
+            "source": "gdi32 - ops.rs"
+          }
+        },
+        {
+          "name": "CreateCompatibleBitmap",
+          "x64": {
+            "status": "implemented",
+            "symbol": "ops::create_compatible_bitmap",
+            "source": "gdi32 - ops.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "ops::create_compatible_bitmap",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -326,7 +339,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 66,
+      "functionCount": 79,
       "functions": [
         {
           "name": "CloseHandle",
@@ -487,9 +500,9 @@
         {
           "name": "DeleteCriticalSection",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "sync::DeleteCriticalSection",
+            "source": "kernel32 - sync.rs"
           },
           "x86": {
             "status": "implemented",
@@ -500,9 +513,9 @@
         {
           "name": "EnterCriticalSection",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "sync::EnterCriticalSection",
+            "source": "kernel32 - sync.rs"
           },
           "x86": {
             "status": "implemented",
@@ -520,6 +533,32 @@
           "x86": {
             "status": "implemented",
             "symbol": "ExitProcess",
+            "source": "kernel32 - lib.rs"
+          }
+        },
+        {
+          "name": "ExpandEnvironmentStringsA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "environment::ExpandEnvironmentStringsA",
+            "source": "kernel32 - environment.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "ExpandEnvironmentStringsA",
+            "source": "kernel32 - lib.rs"
+          }
+        },
+        {
+          "name": "ExpandEnvironmentStringsW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "environment::ExpandEnvironmentStringsW",
+            "source": "kernel32 - environment.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "ExpandEnvironmentStringsW",
             "source": "kernel32 - lib.rs"
           }
         },
@@ -589,6 +628,19 @@
           }
         },
         {
+          "name": "FreeEnvironmentStringsW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "environment::FreeEnvironmentStringsW",
+            "source": "kernel32 - environment.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "FreeEnvironmentStringsW",
+            "source": "kernel32 - lib.rs"
+          }
+        },
+        {
           "name": "FreeLibrary",
           "x64": {
             "status": "unimplemented",
@@ -643,9 +695,9 @@
         {
           "name": "GetCurrentProcessId",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "process::GetCurrentProcessId",
+            "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "implemented",
@@ -669,9 +721,9 @@
         {
           "name": "GetCurrentThreadId",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "thread::GetCurrentThreadId",
+            "source": "kernel32 - thread.rs"
           },
           "x86": {
             "status": "implemented",
@@ -680,11 +732,50 @@
           }
         },
         {
+          "name": "GetEnvironmentStringsW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "environment::GetEnvironmentStringsW",
+            "source": "kernel32 - environment.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "GetEnvironmentStringsW",
+            "source": "kernel32 - lib.rs"
+          }
+        },
+        {
+          "name": "GetEnvironmentVariableA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "environment::GetEnvironmentVariableA",
+            "source": "kernel32 - environment.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "GetEnvironmentVariableA",
+            "source": "kernel32 - lib.rs"
+          }
+        },
+        {
+          "name": "GetEnvironmentVariableW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "environment::GetEnvironmentVariableW",
+            "source": "kernel32 - environment.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "GetEnvironmentVariableW",
+            "source": "kernel32 - lib.rs"
+          }
+        },
+        {
           "name": "GetExitCodeProcess",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "process::GetExitCodeProcess",
+            "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "implemented",
@@ -914,11 +1005,37 @@
           }
         },
         {
-          "name": "LeaveCriticalSection",
+          "name": "InitializeCriticalSection",
           "x64": {
+            "status": "implemented",
+            "symbol": "sync::InitializeCriticalSection",
+            "source": "kernel32 - sync.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "InitializeCriticalSection",
+            "source": "kernel32 - lib.rs"
+          }
+        },
+        {
+          "name": "InitializeCriticalSectionAndSpinCount",
+          "x64": {
+            "status": "implemented",
+            "symbol": "sync::InitializeCriticalSectionAndSpinCount",
+            "source": "kernel32 - sync.rs"
+          },
+          "x86": {
             "status": "unimplemented",
             "symbol": null,
             "source": null
+          }
+        },
+        {
+          "name": "LeaveCriticalSection",
+          "x64": {
+            "status": "implemented",
+            "symbol": "sync::LeaveCriticalSection",
+            "source": "kernel32 - sync.rs"
           },
           "x86": {
             "status": "implemented",
@@ -992,6 +1109,32 @@
           }
         },
         {
+          "name": "SetEnvironmentVariableA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "environment::SetEnvironmentVariableA",
+            "source": "kernel32 - environment.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "SetEnvironmentVariableA",
+            "source": "kernel32 - lib.rs"
+          }
+        },
+        {
+          "name": "SetEnvironmentVariableW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "environment::SetEnvironmentVariableW",
+            "source": "kernel32 - environment.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "SetEnvironmentVariableW",
+            "source": "kernel32 - lib.rs"
+          }
+        },
+        {
           "name": "SetEvent",
           "x64": {
             "status": "implemented",
@@ -1015,6 +1158,19 @@
             "status": "unimplemented",
             "symbol": null,
             "source": null
+          }
+        },
+        {
+          "name": "SetUnhandledExceptionFilter",
+          "x64": {
+            "status": "implemented",
+            "symbol": "process::SetUnhandledExceptionFilter",
+            "source": "kernel32 - process.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "SetUnhandledExceptionFilter",
+            "source": "kernel32 - lib.rs"
           }
         },
         {
@@ -1083,6 +1239,19 @@
           }
         },
         {
+          "name": "TryEnterCriticalSection",
+          "x64": {
+            "status": "implemented",
+            "symbol": "sync::TryEnterCriticalSection",
+            "source": "kernel32 - sync.rs"
+          },
+          "x86": {
+            "status": "unimplemented",
+            "symbol": null,
+            "source": null
+          }
+        },
+        {
           "name": "VirtualAlloc",
           "x64": {
             "status": "implemented",
@@ -1135,11 +1304,24 @@
           }
         },
         {
+          "name": "WaitForMultipleObjects",
+          "x64": {
+            "status": "implemented",
+            "symbol": "thread::WaitForMultipleObjects",
+            "source": "kernel32 - thread.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "WaitForMultipleObjects",
+            "source": "kernel32 - lib.rs"
+          }
+        },
+        {
           "name": "WaitForSingleObject",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "thread::WaitForSingleObject",
+            "source": "kernel32 - thread.rs"
           },
           "x86": {
             "status": "implemented",
@@ -1195,9 +1377,9 @@
         {
           "name": "__C_specific_handler",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "crt_support::__C_specific_handler",
+            "source": "msvcrt - crt_support.rs"
           },
           "x86": {
             "status": "implemented",
@@ -1286,9 +1468,9 @@
         {
           "name": "__setusermatherr",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "crt_support::__setusermatherr",
+            "source": "msvcrt - crt_support.rs"
           },
           "x86": {
             "status": "implemented",
@@ -1625,7 +1807,7 @@
     },
     {
       "name": "ntdll.dll",
-      "functionCount": 7,
+      "functionCount": 8,
       "functions": [
         {
           "name": "NtClose",
@@ -1654,6 +1836,19 @@
           }
         },
         {
+          "name": "NtQueryInformationFile",
+          "x64": {
+            "status": "implemented",
+            "symbol": "file::NtQueryInformationFile",
+            "source": "ntdll - file.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "NtQueryInformationFile",
+            "source": null
+          }
+        },
+        {
           "name": "NtReadFile",
           "x64": {
             "status": "implemented",
@@ -1669,9 +1864,9 @@
         {
           "name": "NtTerminateProcess",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "stubbed",
+            "symbol": "process::NtTerminateProcess",
+            "source": "ntdll - process.rs"
           },
           "x86": {
             "status": "stubbed",
@@ -1708,9 +1903,9 @@
         {
           "name": "RtlInitUnicodeString",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "rtl::RtlInitUnicodeString",
+            "source": "ntdll - rtl.rs"
           },
           "x86": {
             "status": "stubbed",
@@ -1722,8 +1917,99 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 10,
+      "functionCount": 31,
       "functions": [
+        {
+          "name": "CreateWindowExA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window_lifecycle::create_window_ex_a",
+            "source": "user32 - window_lifecycle.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window_lifecycle::create_window_ex_a",
+            "source": "user32 - window_lifecycle.rs"
+          }
+        },
+        {
+          "name": "CreateWindowExW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window_lifecycle::create_window_ex_w",
+            "source": "user32 - window_lifecycle.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window_lifecycle::create_window_ex_w",
+            "source": "user32 - window_lifecycle.rs"
+          }
+        },
+        {
+          "name": "DefWindowProcA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "message_queue::def_window_proc_a",
+            "source": "user32 - message_queue.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "message_queue::def_window_proc_a",
+            "source": "user32 - message_queue.rs"
+          }
+        },
+        {
+          "name": "DefWindowProcW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "message_queue::def_window_proc_w",
+            "source": "user32 - message_queue.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "message_queue::def_window_proc_w",
+            "source": "user32 - message_queue.rs"
+          }
+        },
+        {
+          "name": "DestroyWindow",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window_lifecycle::destroy_window",
+            "source": "user32 - window_lifecycle.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window_lifecycle::destroy_window",
+            "source": "user32 - window_lifecycle.rs"
+          }
+        },
+        {
+          "name": "DispatchMessageA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "message_queue::dispatch_message_a",
+            "source": "user32 - message_queue.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "message_queue::dispatch_message_a",
+            "source": "user32 - message_queue.rs"
+          }
+        },
+        {
+          "name": "DispatchMessageW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "message_queue::dispatch_message_w",
+            "source": "user32 - message_queue.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "message_queue::dispatch_message_w",
+            "source": "user32 - message_queue.rs"
+          }
+        },
         {
           "name": "GetMessageA",
           "x64": {
@@ -1748,6 +2034,58 @@
             "status": "implemented",
             "symbol": "message_queue::get_message_w",
             "source": "user32 - message_queue.rs"
+          }
+        },
+        {
+          "name": "GetWindowTextA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window_text::get_window_text_a",
+            "source": "user32 - window_text.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window_text::get_window_text_a",
+            "source": "user32 - window_text.rs"
+          }
+        },
+        {
+          "name": "GetWindowTextLengthA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window_text::get_window_text_length_a",
+            "source": "user32 - window_text.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window_text::get_window_text_length_a",
+            "source": "user32 - window_text.rs"
+          }
+        },
+        {
+          "name": "GetWindowTextLengthW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window_text::get_window_text_length_w",
+            "source": "user32 - window_text.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window_text::get_window_text_length_w",
+            "source": "user32 - window_text.rs"
+          }
+        },
+        {
+          "name": "GetWindowTextW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window_text::get_window_text_w",
+            "source": "user32 - window_text.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window_text::get_window_text_w",
+            "source": "user32 - window_text.rs"
           }
         },
         {
@@ -1803,6 +2141,71 @@
           }
         },
         {
+          "name": "PostQuitMessage",
+          "x64": {
+            "status": "implemented",
+            "symbol": "message_queue::post_quit_message",
+            "source": "user32 - message_queue.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "message_queue::post_quit_message",
+            "source": "user32 - message_queue.rs"
+          }
+        },
+        {
+          "name": "RegisterClassA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "class_registration::register_class_a",
+            "source": "user32 - class_registration.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "class_registration::register_class_a",
+            "source": "user32 - class_registration.rs"
+          }
+        },
+        {
+          "name": "RegisterClassExA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "class_registration::register_class_ex_a",
+            "source": "user32 - class_registration.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "class_registration::register_class_ex_a",
+            "source": "user32 - class_registration.rs"
+          }
+        },
+        {
+          "name": "RegisterClassExW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "class_registration::register_class_ex_w",
+            "source": "user32 - class_registration.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "class_registration::register_class_ex_w",
+            "source": "user32 - class_registration.rs"
+          }
+        },
+        {
+          "name": "RegisterClassW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "class_registration::register_class_w",
+            "source": "user32 - class_registration.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "class_registration::register_class_w",
+            "source": "user32 - class_registration.rs"
+          }
+        },
+        {
           "name": "SendMessageA",
           "x64": {
             "status": "implemented",
@@ -1829,6 +2232,32 @@
           }
         },
         {
+          "name": "SetWindowTextA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window_text::set_window_text_a",
+            "source": "user32 - window_text.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window_text::set_window_text_a",
+            "source": "user32 - window_text.rs"
+          }
+        },
+        {
+          "name": "SetWindowTextW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window_text::set_window_text_w",
+            "source": "user32 - window_text.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window_text::set_window_text_w",
+            "source": "user32 - window_text.rs"
+          }
+        },
+        {
           "name": "ShowWindow",
           "x64": {
             "status": "implemented",
@@ -1839,6 +2268,45 @@
             "status": "implemented",
             "symbol": "window_lifecycle::show_window",
             "source": "user32 - window_lifecycle.rs"
+          }
+        },
+        {
+          "name": "TranslateMessage",
+          "x64": {
+            "status": "implemented",
+            "symbol": "message_queue::translate_message",
+            "source": "user32 - message_queue.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "message_queue::translate_message",
+            "source": "user32 - message_queue.rs"
+          }
+        },
+        {
+          "name": "UnregisterClassA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "class_registration::unregister_class_a",
+            "source": "user32 - class_registration.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "class_registration::unregister_class_a",
+            "source": "user32 - class_registration.rs"
+          }
+        },
+        {
+          "name": "UnregisterClassW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "class_registration::unregister_class_w",
+            "source": "user32 - class_registration.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "class_registration::unregister_class_w",
+            "source": "user32 - class_registration.rs"
           }
         },
         {
@@ -1858,16 +2326,16 @@
     }
   ],
   "totals": {
-    "functions": 139,
+    "functions": 175,
     "x64": {
-      "implemented": 124,
-      "stubbed": 1,
-      "unimplemented": 14
+      "implemented": 170,
+      "stubbed": 2,
+      "unimplemented": 3
     },
     "x86": {
-      "implemented": 112,
-      "stubbed": 11,
-      "unimplemented": 16
+      "implemented": 145,
+      "stubbed": 12,
+      "unimplemented": 18
     }
   }
 }
