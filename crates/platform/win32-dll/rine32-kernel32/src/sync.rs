@@ -7,25 +7,8 @@ use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::threading;
 use tracing::debug;
 
-unsafe fn init_cs(cs: *mut u8) {
-    unsafe { ptr::write_bytes(cs, 0, 24) };
-
-    let mutex = Box::into_raw(Box::new(unsafe {
-        core::mem::zeroed::<libc::pthread_mutex_t>()
-    }));
-    let mut attr: libc::pthread_mutexattr_t = unsafe { core::mem::zeroed() };
-    unsafe {
-        libc::pthread_mutexattr_init(&mut attr);
-        libc::pthread_mutexattr_settype(&mut attr, libc::PTHREAD_MUTEX_RECURSIVE);
-        libc::pthread_mutex_init(mutex, &attr);
-        libc::pthread_mutexattr_destroy(&mut attr);
-    }
-
-    unsafe { ptr::write(cs as *mut *mut libc::pthread_mutex_t, mutex) };
-}
-
 unsafe fn get_mutex(cs: *const u8) -> *mut libc::pthread_mutex_t {
-    unsafe { ptr::read(cs as *const *mut libc::pthread_mutex_t) }
+    unsafe { common::sync::get_mutex(cs) }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
@@ -33,7 +16,7 @@ pub unsafe extern "stdcall" fn InitializeCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    unsafe { init_cs(cs) };
+    unsafe { common::sync::init_critical_section(cs) };
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
@@ -43,7 +26,7 @@ pub unsafe extern "stdcall" fn EnterCriticalSection(cs: *mut u8) {
     }
     let mut mutex = unsafe { get_mutex(cs) };
     if mutex.is_null() {
-        unsafe { init_cs(cs) };
+        unsafe { common::sync::init_critical_section(cs) };
         mutex = unsafe { get_mutex(cs) };
     }
     unsafe { libc::pthread_mutex_lock(mutex) };

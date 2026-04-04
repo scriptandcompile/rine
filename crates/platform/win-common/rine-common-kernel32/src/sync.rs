@@ -1,8 +1,41 @@
+use std::ptr;
 use std::sync::{Arc, Condvar, Mutex};
 
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::threading::{EventInner, EventWaitable, MutexInner, MutexState, MutexWaitable};
+
+/// Initialization for synchronization primitives like events and mutexes.
+///
+/// These are implemented using Rust's standard library synchronization types,
+/// but wrapped in a way that allows them to be used as Windows synchronization
+/// objects with the expected semantics.
+///
+/// For example, Windows events can be either manual-reset or auto-reset, and
+/// this is handled by the `EventWaitable` type.
+/// Mutexes track ownership and recursion count to support recursive locking by
+/// the owning thread.
+pub unsafe fn init_critical_section(cs: *mut u8) {
+    unsafe {
+        ptr::write_bytes(cs, 0, 24);
+
+        let mutex = Box::into_raw(Box::new(core::mem::zeroed::<libc::pthread_mutex_t>()));
+
+        let mut attr: libc::pthread_mutexattr_t = core::mem::zeroed();
+        libc::pthread_mutexattr_init(&mut attr);
+        libc::pthread_mutexattr_settype(&mut attr, libc::PTHREAD_MUTEX_RECURSIVE);
+        libc::pthread_mutex_init(mutex, &attr);
+        libc::pthread_mutexattr_destroy(&mut attr);
+
+        ptr::write(cs as *mut *mut libc::pthread_mutex_t, mutex)
+    }
+}
+
+/// Read the mutex pointer from a CRITICAL_SECTION.
+#[inline]
+pub unsafe fn get_mutex(cs: *const u8) -> *mut libc::pthread_mutex_t {
+    unsafe { ptr::read(cs as *const *mut libc::pthread_mutex_t) }
+}
 
 /// Creates a synchronization event.
 ///

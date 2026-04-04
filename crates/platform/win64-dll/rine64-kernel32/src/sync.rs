@@ -1,9 +1,7 @@
-#![allow(non_snake_case)]
-//! kernel32 synchronisation: critical sections backed by `pthread_mutex`.
+//! kernel32 synchronisation objects: critical sections, events, mutexes, semaphores.
 //!
-//! A Windows `CRITICAL_SECTION` is 40 bytes on x86-64.  We heap-allocate a
-//! recursive `pthread_mutex_t` and store its pointer in the first 8 bytes
-//! of the caller-supplied struct.  The remaining bytes are zeroed.
+//! This is mostly a thin wrapper around the common implementations in `rine-common-kernel32`,
+//! but also includes the Windows API entry points and some handle table integration.
 
 use std::ptr;
 
@@ -14,41 +12,13 @@ use rine_types::threading::{SemaphoreInner, SemaphoreWaitable, Waitable};
 use std::sync::{Arc, Condvar, Mutex};
 use tracing::{debug, warn};
 
-// ── Critical Section ─────────────────────────────────────────────
-
-/// Shared init: allocate a recursive `pthread_mutex_t` and store its
-/// pointer in the first 8 bytes of the CRITICAL_SECTION.
-unsafe fn init_cs(cs: *mut u8) {
-    unsafe { ptr::write_bytes(cs, 0, 40) };
-
-    let mutex = Box::into_raw(Box::new(unsafe {
-        core::mem::zeroed::<libc::pthread_mutex_t>()
-    }));
-
-    unsafe {
-        let mut attr: libc::pthread_mutexattr_t = core::mem::zeroed();
-        libc::pthread_mutexattr_init(&mut attr);
-        libc::pthread_mutexattr_settype(&mut attr, libc::PTHREAD_MUTEX_RECURSIVE);
-        libc::pthread_mutex_init(mutex, &attr);
-        libc::pthread_mutexattr_destroy(&mut attr);
-
-        ptr::write(cs as *mut *mut libc::pthread_mutex_t, mutex);
-    }
-}
-
-/// Read the mutex pointer from a CRITICAL_SECTION.
-#[inline]
-unsafe fn get_mutex(cs: *const u8) -> *mut libc::pthread_mutex_t {
-    unsafe { ptr::read(cs as *const *mut libc::pthread_mutex_t) }
-}
-
 /// InitializeCriticalSection
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn InitializeCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    unsafe { init_cs(cs) };
+    unsafe { common::sync::init_critical_section(cs) };
 }
 
 /// InitializeCriticalSectionAndSpinCount — spin count is ignored (always 0).
@@ -60,7 +30,7 @@ pub unsafe extern "win64" fn InitializeCriticalSectionAndSpinCount(
     if cs.is_null() {
         return WinBool::FALSE;
     }
-    unsafe { init_cs(cs) };
+    unsafe { common::sync::init_critical_section(cs) };
     WinBool::TRUE
 }
 
@@ -70,11 +40,11 @@ pub unsafe extern "win64" fn EnterCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    let mutex = unsafe { get_mutex(cs) };
+    let mutex = unsafe { common::sync::get_mutex(cs) };
     if mutex.is_null() {
         // Lazy init for zero-initialised CRITICAL_SECTIONs.
-        unsafe { init_cs(cs) };
-        let mutex = unsafe { get_mutex(cs) };
+        unsafe { common::sync::init_critical_section(cs) };
+        let mutex = unsafe { common::sync::get_mutex(cs) };
         unsafe { libc::pthread_mutex_lock(mutex) };
         return;
     }
@@ -87,7 +57,7 @@ pub unsafe extern "win64" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
     if cs.is_null() {
         return WinBool::FALSE;
     }
-    let mutex = unsafe { get_mutex(cs) };
+    let mutex = unsafe { common::sync::get_mutex(cs) };
     if mutex.is_null() {
         return WinBool::FALSE;
     }
@@ -104,7 +74,7 @@ pub unsafe extern "win64" fn LeaveCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    let mutex = unsafe { get_mutex(cs) };
+    let mutex = unsafe { common::sync::get_mutex(cs) };
     if mutex.is_null() {
         return;
     }
@@ -117,7 +87,7 @@ pub unsafe extern "win64" fn DeleteCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
-    let mutex = unsafe { get_mutex(cs) };
+    let mutex = unsafe { common::sync::get_mutex(cs) };
     if mutex.is_null() {
         return;
     }
