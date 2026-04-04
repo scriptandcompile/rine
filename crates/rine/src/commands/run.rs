@@ -474,7 +474,7 @@ fn dispatch_to_rine32(
     let helper_path = resolve_rine32_helper_path();
     let helper = helper_path.display().to_string();
 
-    let status = match spawn_rine32(
+    let mut child = match spawn_rine32(
         &helper_path,
         exe_path,
         &cli.exe_args,
@@ -482,7 +482,7 @@ fn dispatch_to_rine32(
             .as_ref()
             .map(|session| (WINDOW_HOST_SOCKET_ENV, session.socket_path())),
     ) {
-        Ok(status) => status,
+        Ok(child) => child,
         Err(source) => {
             if let Some(session) = window_host {
                 session.wait();
@@ -494,24 +494,25 @@ fn dispatch_to_rine32(
         }
     };
 
+    #[cfg(feature = "dev")]
+    if let Some(bridge) = dev_bridge {
+        // The x86 helper reuses the same dashboard socket. Release the parent
+        // connection immediately so rine-dev can accept the follow-up stream
+        // and surface ConfigLoaded/ImportsResolved before the PE starts running.
+        bridge.shutdown();
+    }
+
+    let status = child.wait().map_err(|source| DispatchError::Spawn {
+        helper: helper.clone(),
+        source,
+    })?;
+
     if let Some(session) = window_host {
         session.wait();
     }
 
     if status.success() {
-        #[cfg(feature = "dev")]
-        if let Some(bridge) = dev_bridge {
-            let _ = bridge.send(&rine_channel::DevEvent::ProcessExited { exit_code: 0 });
-            bridge.shutdown();
-        }
         std::process::exit(0);
-    }
-
-    #[cfg(feature = "dev")]
-    if let Some(bridge) = dev_bridge {
-        let code = status.code().unwrap_or(-1);
-        let _ = bridge.send(&rine_channel::DevEvent::ProcessExited { exit_code: code });
-        bridge.shutdown();
     }
 
     // Preserve the helper's exit semantics for x86 fixtures and real apps.
@@ -548,13 +549,13 @@ fn spawn_rine32(
     exe_path: &Path,
     exe_args: &[String],
     window_host_socket: Option<(&str, &Path)>,
-) -> Result<std::process::ExitStatus, std::io::Error> {
+) -> Result<std::process::Child, std::io::Error> {
     let mut command = Command::new(helper_path);
     command.arg(exe_path).args(exe_args);
     if let Some((key, value)) = window_host_socket {
         command.env(key, value);
     }
-    command.status()
+    command.spawn()
 }
 
 #[cfg(test)]
