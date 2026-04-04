@@ -10,6 +10,12 @@ const x64Implemented = document.getElementById("x64-implemented");
 const x86Implemented = document.getElementById("x86-implemented");
 const generatedAt = document.getElementById("generated-at");
 
+const GITHUB_BLOB_ROOT = "https://github.com/scriptandcompile/rine/blob/main";
+const SOURCE_ROOTS = {
+  x64: "crates/platform/win64-dll",
+  x86: "crates/platform/win32-dll",
+};
+
 let rows = [];
 
 function formatGeneratedAt(value) {
@@ -29,12 +35,58 @@ function createStatusPill(status) {
   return `<span class="status-pill ${status}">${status}</span>`;
 }
 
-function createSourceCell(archData) {
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function extractSourceFileName(sourceLabel) {
+  if (!sourceLabel || typeof sourceLabel !== "string") {
+    return null;
+  }
+
+  const parts = sourceLabel.split(" - ");
+  if (parts.length >= 2) {
+    return parts.slice(1).join(" - ").trim();
+  }
+
+  return sourceLabel.trim();
+}
+
+function buildSourceUrl(arch, dllName, fileName) {
+  const sourceRoot = SOURCE_ROOTS[arch];
+  if (!sourceRoot || !dllName || !fileName) {
+    return null;
+  }
+
+  const dllBase = dllName.toLowerCase().replace(/\.dll$/, "");
+  const cratePrefix = arch === "x64" ? "rine64-" : "rine32-";
+  const repoPath = `${sourceRoot}/${cratePrefix}${dllBase}/src/${fileName}`;
+  return `${GITHUB_BLOB_ROOT}/${repoPath}`;
+}
+
+function createSourceCell(arch, dllName, archData) {
   if (!archData || !archData.source) {
     return "<span class=\"source-path\">-</span>";
   }
 
-  return `<span class="source-path">${archData.source}</span>`;
+  const fileName = extractSourceFileName(archData.source);
+  if (!fileName) {
+    return "<span class=\"source-path\">-</span>";
+  }
+
+  const sourceUrl = buildSourceUrl(arch, dllName, fileName);
+  const safeFileName = escapeHtml(fileName);
+
+  if (!sourceUrl) {
+    return `<span class="source-path">${safeFileName}</span>`;
+  }
+
+  return `<a class="source-path source-link" href="${sourceUrl}" target="_blank" rel="noopener noreferrer">${safeFileName}</a>`;
 }
 
 function renderTable() {
@@ -77,8 +129,8 @@ function renderTable() {
         <td>${row.name}</td>
         <td>${createStatusPill(row.x64.status)}</td>
         <td>${createStatusPill(row.x86.status)}</td>
-        <td>${createSourceCell(row.x64)}</td>
-        <td>${createSourceCell(row.x86)}</td>
+        <td>${createSourceCell("x64", row.dll, row.x64)}</td>
+        <td>${createSourceCell("x86", row.dll, row.x86)}</td>
       </tr>`
     )
     .join("");

@@ -68,7 +68,7 @@ def find_symbol_source_file(crate_src_dir: Path, symbol_path: str) -> Path | Non
         if module_file.exists():
             return module_file
 
-    for file_path in crate_src_dir.glob("*.rs"):
+    for file_path in crate_src_dir.rglob("*.rs"):
         text = read_text(file_path)
         if f"fn {symbol_path}" in text:
             return file_path
@@ -132,12 +132,13 @@ def infer_status(
     return "implemented"
 
 
-def to_source_label(dll_name: str, abs_path: Path | None) -> str | None:
+def to_source_label(dll_name: str, crate_src_dir: Path, abs_path: Path | None) -> str | None:
     if abs_path is None:
         return None
 
     dll_base = dll_name.lower().removesuffix(".dll")
-    return f"{dll_base} - {abs_path.name}"
+    relative_source = abs_path.relative_to(crate_src_dir).as_posix()
+    return f"{dll_base} - {relative_source}"
 
 
 def collect_arch_data(arch: str, arch_root: Path) -> list[ExportRow]:
@@ -169,7 +170,7 @@ def collect_arch_data(arch: str, arch_root: Path) -> list[ExportRow]:
                     arch=arch,
                     status=status,
                     symbol=symbol_path,
-                    source=to_source_label(dll_name, source_file),
+                    source=to_source_label(dll_name, src_dir, source_file),
                 )
             )
 

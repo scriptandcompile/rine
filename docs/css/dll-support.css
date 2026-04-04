@@ -234,6 +234,15 @@ tbody tr:nth-child(even) {
   word-break: break-word;
 }
 
+.source-link {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.source-link:hover {
+  color: #9dd6ff;
+}
+
 .empty-state {
   text-align: center;
   color: var(--muted);
