@@ -131,7 +131,7 @@ pub fn create_mutex(initial_owner: WinBool, name: Option<String>) -> (Handle, St
 ///
 /// # Arguments
 /// * `initial_count` - The initial count for the semaphore. Must be non-negative and
-/// less than or equal to `maximum_count`.
+///   less than or equal to `maximum_count`.
 /// * `maximum_count` - The maximum count for the semaphore. Must be greater than 0.
 ///
 /// # Returns

@@ -5,6 +5,16 @@ permissions:
 
 "on":
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish .deb files to a GitHub Release"
+        required: false
+        default: false
+        type: boolean
+      release_tag:
+        description: "Release tag to publish (for example: v0.1.2). Required when publish_release is enabled."
+        required: false
+        type: string
   push:
     branches:
       - main
@@ -21,9 +31,10 @@ jobs:
     outputs:
       changed: ${{ steps.version.outputs.changed }}
       version: ${{ steps.version.outputs.version }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 2
 
@@ -41,14 +52,29 @@ jobs:
 
           changed="false"
           expected_tag="v${current_version}"
+          release_tag=""
 
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.event.inputs.publish_release || 'false' }}" == "true" ]]; then
+              input_tag="${{ github.event.inputs.release_tag || '' }}"
+              if [[ -z "$input_tag" ]]; then
+                echo "error: workflow_dispatch with publish_release=true requires release_tag input" >&2
+                exit 1
+              fi
+              if [[ "$input_tag" != "$expected_tag" ]]; then
+                echo "error: release_tag '$input_tag' does not match Cargo.toml version '$current_version' (expected '$expected_tag')" >&2
+                exit 1
+              fi
+              release_tag="$input_tag"
+            fi
             changed="true"
-          elif [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
-            if [[ "${GITHUB_REF_NAME:-}" != "$expected_tag" ]]; then
-              echo "error: tag '${GITHUB_REF_NAME:-}' does not match Cargo.toml version '$current_version' (expected '$expected_tag')" >&2
+          elif [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
+            actual_tag="${GITHUB_REF_NAME:-${GITHUB_REF#refs/tags/}}"
+            if [[ "$actual_tag" != "$expected_tag" ]]; then
+              echo "error: tag '$actual_tag' does not match Cargo.toml version '$current_version' (expected '$expected_tag')" >&2
               exit 1
             fi
+            release_tag="$actual_tag"
             changed="true"
           elif git rev-parse --verify HEAD^ >/dev/null 2>&1; then
             previous_version="$(git show HEAD^:Cargo.toml | sed -n 's/^version = "\([^"]*\)"$/\1/p' | head -n1)"
@@ -59,9 +85,11 @@ jobs:
 
           echo "changed=$changed" >> "$GITHUB_OUTPUT"
           echo "version=$current_version" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
 
           echo "Detected version: $current_version"
           echo "Version changed: $changed"
+          echo "Release tag: ${release_tag:-<none>}"
 
   build-deb:
     needs: detect-version-bump
@@ -69,7 +97,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Linux system dependencies
         run: |
@@ -111,7 +139,7 @@ jobs:
     needs:
       - detect-version-bump
       - build-deb
-    if: github.ref_type == 'tag' && needs.detect-version-bump.outputs.changed == 'true'
+    if: needs.detect-version-bump.outputs.changed == 'true' && needs.detect-version-bump.outputs.release_tag != ''
     runs-on: ubuntu-latest
     steps:
       - name: Download Debian artifact
@@ -123,6 +151,8 @@ jobs:
       - name: Publish Debian package to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.detect-version-bump.outputs.release_tag }}
+          target_commitish: ${{ github.sha }}
           files: dist/*.deb
           fail_on_unmatched_files: true
           generate_release_notes: true

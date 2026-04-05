@@ -11,9 +11,9 @@
 //! - **Nemo (Cinnamon)**: A `.nemo_action` file in
 //!   `~/.local/share/nemo/actions/` that adds a MIME-filtered right-click action.
 //!
-//! Two actions are installed per environment:
-//! - **Configure with rine** — launches `rine --config <exe>`.
-//! - **Dev dashboard** — launches `rine --dev <exe>`.
+//! Context-menu actions vary by build:
+//! - **Configure with rine** — always installed (`rine --config <exe>`).
+//! - **Dev dashboard** — only installed in builds with the `dev` feature.
 
 use std::fmt;
 use std::fs;
@@ -158,22 +158,38 @@ fn nautilus_dev_content(interpreter: &Path) -> String {
 /// Appears as a top-level right-click action on `.exe` files.
 /// Contains both "configure" and "dev dashboard" actions under a rine submenu.
 fn dolphin_service_content(interpreter: &Path) -> String {
+    if cfg!(feature = "dev") {
+        return format!(
+            "[Desktop Entry]\n\
+             Type=Service\n\
+             MimeType=application/x-dosexec;application/x-ms-dos-executable;\n\
+             Actions=configure;dev\n\
+             X-KDE-Submenu=rine\n\
+             \n\
+             [Desktop Action configure]\n\
+             Name=Configure\n\
+             Icon=preferences-system\n\
+             Exec={interpreter} --config %f\n\
+             \n\
+             [Desktop Action dev]\n\
+             Name=Dev dashboard\n\
+             Icon=utilities-terminal\n\
+             Exec={interpreter} --dev %f\n",
+            interpreter = interpreter.display(),
+        );
+    }
+
     format!(
         "[Desktop Entry]\n\
          Type=Service\n\
          MimeType=application/x-dosexec;application/x-ms-dos-executable;\n\
-         Actions=configure;dev\n\
+         Actions=configure\n\
          X-KDE-Submenu=rine\n\
          \n\
          [Desktop Action configure]\n\
          Name=Configure\n\
          Icon=preferences-system\n\
-         Exec={interpreter} --config %f\n\
-         \n\
-         [Desktop Action dev]\n\
-         Name=Dev dashboard\n\
-         Icon=utilities-terminal\n\
-         Exec={interpreter} --dev %f\n",
+         Exec={interpreter} --config %f\n",
         interpreter = interpreter.display(),
     )
 }
@@ -320,7 +336,11 @@ pub fn install(interpreter_override: Option<&Path>) -> Result<ContextMenuStatus,
         &paths.configure_desktop,
         configure_desktop_entry(&interpreter),
     )?;
-    fs::write(&paths.dev_desktop, dev_desktop_entry(&interpreter))?;
+    if cfg!(feature = "dev") {
+        fs::write(&paths.dev_desktop, dev_desktop_entry(&interpreter))?;
+    } else if paths.dev_desktop.exists() {
+        let _ = fs::remove_file(&paths.dev_desktop);
+    }
 
     // -- Nautilus scripts -----------------------------------------------------
     fs::create_dir_all(&paths.nautilus_scripts_dir)?;
@@ -329,8 +349,12 @@ pub fn install(interpreter_override: Option<&Path>) -> Result<ContextMenuStatus,
         nautilus_configure_content(&interpreter),
     )?;
     fs::set_permissions(&paths.nautilus_configure, fs::Permissions::from_mode(0o755))?;
-    fs::write(&paths.nautilus_dev, nautilus_dev_content(&interpreter))?;
-    fs::set_permissions(&paths.nautilus_dev, fs::Permissions::from_mode(0o755))?;
+    if cfg!(feature = "dev") {
+        fs::write(&paths.nautilus_dev, nautilus_dev_content(&interpreter))?;
+        fs::set_permissions(&paths.nautilus_dev, fs::Permissions::from_mode(0o755))?;
+    } else if paths.nautilus_dev.exists() {
+        let _ = fs::remove_file(&paths.nautilus_dev);
+    }
 
     // -- Dolphin service menu -------------------------------------------------
     fs::create_dir_all(&paths.dolphin_services_dir)?;
@@ -342,7 +366,11 @@ pub fn install(interpreter_override: Option<&Path>) -> Result<ContextMenuStatus,
     // -- Nemo actions ---------------------------------------------------------
     fs::create_dir_all(&paths.nemo_actions_dir)?;
     fs::write(&paths.nemo_configure, nemo_configure_content(&interpreter))?;
-    fs::write(&paths.nemo_dev, nemo_dev_content(&interpreter))?;
+    if cfg!(feature = "dev") {
+        fs::write(&paths.nemo_dev, nemo_dev_content(&interpreter))?;
+    } else if paths.nemo_dev.exists() {
+        let _ = fs::remove_file(&paths.nemo_dev);
+    }
 
     // -- Refresh --------------------------------------------------------------
     update_desktop_database(&paths.applications_dir);
