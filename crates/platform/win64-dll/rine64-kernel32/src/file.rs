@@ -132,19 +132,7 @@ pub unsafe extern "win64" fn WriteFile(
     _overlapped: *mut core::ffi::c_void,
 ) -> WinBool {
     let handle = Handle::from_raw(file);
-    let Some(fd) = handle_to_fd(handle) else {
-        return WinBool::FALSE;
-    };
-
-    let written = unsafe { libc::write(fd, buffer.cast(), bytes_to_write as usize) };
-    if written < 0 {
-        return WinBool::FALSE;
-    }
-
-    if !bytes_written.is_null() {
-        unsafe { *bytes_written = written as u32 };
-    }
-    WinBool::TRUE
+    unsafe { common::file::write_file(handle, buffer, bytes_to_write, bytes_written, _overlapped) }
 }
 
 // ---------------------------------------------------------------------------

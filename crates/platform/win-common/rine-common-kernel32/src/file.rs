@@ -1,7 +1,45 @@
-use rine_types::handles::{
-    CREATE_ALWAYS, CREATE_NEW, GENERIC_READ, GENERIC_WRITE, HandleEntry, INVALID_HANDLE_VALUE,
-    OPEN_ALWAYS, OPEN_EXISTING, TRUNCATE_EXISTING, handle_table,
+use rine_types::{
+    errors::WinBool,
+    handles::{
+        CREATE_ALWAYS, CREATE_NEW, GENERIC_READ, GENERIC_WRITE, Handle, HandleEntry,
+        INVALID_HANDLE_VALUE, OPEN_ALWAYS, OPEN_EXISTING, TRUNCATE_EXISTING, handle_table,
+        handle_to_fd,
+    },
 };
+
+/// implementation of win32 WriteFile, shared between 32-bit and 64-bit DLLs.
+///
+/// # Arguments
+/// * `handle`: Windows file handle (must have been created by CreateFile).
+/// * `buffer`: pointer to data to write.
+/// * `bytes_to_write`: number of bytes to write.
+/// * `bytes_written`: output pointer for number of bytes actually written (can be null).
+/// * `_overlapped`: ignored.
+///
+/// # Safety
+/// * `handle` must be a valid file handle returned by CreateFile.
+/// * `buffer` must point to at least `bytes_to_write` bytes of valid memory.
+pub unsafe fn write_file(
+    handle: Handle,
+    buffer: *const u8,
+    bytes_to_write: u32,
+    bytes_written: *mut u32,
+    _overlapped: *mut core::ffi::c_void,
+) -> WinBool {
+    let Some(fd) = handle_to_fd(handle) else {
+        return WinBool::FALSE;
+    };
+
+    let written = unsafe { libc::write(fd, buffer.cast(), bytes_to_write as usize) };
+    if written < 0 {
+        return WinBool::FALSE;
+    }
+
+    if !bytes_written.is_null() {
+        unsafe { *bytes_written = written as u32 };
+    }
+    WinBool::TRUE
+}
 
 /// Shared implementation for CreateFileA/W.
 pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u32) -> isize {

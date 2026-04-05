@@ -1,6 +1,6 @@
 use rine_common_kernel32 as common;
 use rine_dlls::win32_stub;
-use rine_types::handles::{Handle, HandleEntry, INVALID_HANDLE_VALUE, handle_table, handle_to_fd};
+use rine_types::handles::{Handle, HandleEntry, INVALID_HANDLE_VALUE, handle_table};
 use rine_types::{
     errors::WinBool,
     strings::{read_cstr, read_wstr},
@@ -65,19 +65,7 @@ pub unsafe extern "stdcall" fn WriteFile(
     _overlapped: *mut core::ffi::c_void,
 ) -> WinBool {
     let handle = Handle::from_raw(file);
-    let Some(fd) = handle_to_fd(handle) else {
-        return WinBool::FALSE;
-    };
-
-    let written = unsafe { libc::write(fd, buffer.cast(), bytes_to_write as usize) };
-    if written < 0 {
-        return WinBool::FALSE;
-    }
-
-    if !bytes_written.is_null() {
-        unsafe { *bytes_written = written as u32 };
-    }
-    WinBool::TRUE
+    unsafe { common::file::write_file(handle, buffer, bytes_to_write, bytes_written, _overlapped) }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
