@@ -271,6 +271,19 @@ pub unsafe extern "stdcall" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
     unsafe { common::sync::release_mutex(mutex_handle) }
 }
 
+/// Create a semaphore object with the specified initial and maximum counts, and an optional (ANSI) name.
+///
+/// # Arguments
+/// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
+/// * `initial_count` - The initial count for the semaphore. Must be non-negative and less than or equal to `maximum_count`.
+/// * `maximum_count` - The maximum count for the semaphore. Must be greater than 0.
+/// * `name` - Currently ignored, as named semaphores are not implemented, but it is still read and logged for dev notification purposes.
+///
+/// Returns a handle to the created semaphore, or 0 on failure (e.g. invalid parameters).
+///
+/// # Safety
+/// The caller must ensure that `name` points to a valid null-terminated ANSI string if it is not null.
+/// The caller is responsible for managing the returned semaphore handle, including closing it when no longer needed.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn CreateSemaphoreA(
     _security_attrs: usize,
@@ -294,6 +307,19 @@ pub unsafe extern "stdcall" fn CreateSemaphoreA(
     handle as isize
 }
 
+/// Create a semaphore object with the specified initial and maximum counts, and an optional (UTF-16) name.
+///
+/// # Arguments
+/// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
+/// * `initial_count` - The initial count for the semaphore. Must be non-negative and less than or equal to `maximum_count`.
+/// * `maximum_count` - The maximum count for the semaphore. Must be greater than 0.
+/// * `name` - Currently ignored, as named semaphores are not implemented, but it is still read and logged for dev notification purposes.
+///
+/// Returns a handle to the created semaphore, or 0 on failure (e.g. invalid parameters).
+///
+/// # Safety
+/// The caller must ensure that `name` points to a valid null-terminated UTF-16 string if it is not null.
+/// The caller is responsible for managing the returned semaphore handle, including closing it when no longer needed.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn CreateSemaphoreW(
     _security_attrs: usize,
@@ -317,39 +343,35 @@ pub unsafe extern "stdcall" fn CreateSemaphoreW(
     handle as isize
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Release a semaphore, incrementing its count by `release_count` and potentially unblocking waiters.
+///
+/// Returns TRUE on success, FALSE on failure (e.g. invalid handle, not a semaphore, or
+/// release would exceed max count).
+///
+/// # Arguments
+/// * `semaphore_handle` - A handle to the semaphore to release. The caller must have
+///   appropriate access to the semaphore.
+/// * `release_count` - The amount by which to increment the semaphore's count.
+///   Must be greater than 0 and such that the resulting count does not exceed the semaphore's maximum count.
+/// * `previous_count` - An optional pointer to receive the previous count of the
+///   semaphore before the release. Can be null if the caller does not need this information.
+///
+/// # Safety
+/// The caller must ensure that `semaphore_handle` is a valid handle to a semaphore object and
+/// that the caller has appropriate access rights to release it. The caller must also ensure
+/// that `release_count` is greater than 0 and that releasing the semaphore by this amount
+/// will not cause its count to exceed the semaphore's maximum count.
+///
+/// If `previous_count` is not null, the caller must ensure that it points to a valid writable
+/// memory location where an i32 can be stored. Releasing a semaphore with an invalid handle,
+/// or with parameters that would exceed the maximum count, will result in failure and return FALSE.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn ReleaseSemaphore(
     semaphore_handle: isize,
     release_count: i32,
     previous_count: *mut i32,
 ) -> WinBool {
-    if release_count <= 0 {
-        return WinBool::FALSE;
-    }
-
-    let handle = Handle::from_raw(semaphore_handle);
-    let waitable = match handle_table().get_waitable(handle) {
-        Some(threading::Waitable::Semaphore(s)) => s,
-        _ => return WinBool::FALSE,
-    };
-
-    let mut count = waitable.inner.count.lock().unwrap();
-    let prev = *count;
-
-    if prev + release_count > waitable.inner.max_count {
-        return WinBool::FALSE;
-    }
-
-    if !previous_count.is_null() {
-        unsafe { ptr::write(previous_count, prev) };
-    }
-
-    *count = prev + release_count;
-    for _ in 0..release_count {
-        waitable.inner.condvar.notify_one();
-    }
-
-    WinBool::TRUE
+    unsafe { common::sync::release_semaphore(semaphore_handle, release_count, previous_count) }
 }
 
 #[cfg(test)]

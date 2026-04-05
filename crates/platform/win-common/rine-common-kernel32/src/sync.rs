@@ -210,6 +210,78 @@ pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> isize {
     handle.as_raw()
 }
 
+/// Release a semaphore, incrementing its count by `release_count` and potentially unblocking waiters.
+///
+/// Returns TRUE on success, FALSE on failure (e.g. invalid handle, not a semaphore, or
+/// release would exceed max count).
+///
+/// # Arguments
+/// * `semaphore_handle` - A handle to the semaphore to release. The caller must have
+///   appropriate access to the semaphore.
+/// * `release_count` - The amount by which to increment the semaphore's count.
+///   Must be greater than 0 and such that the resulting count does not exceed the semaphore's maximum count.
+/// * `previous_count` - An optional pointer to receive the previous count of the
+///   semaphore before the release. Can be null if the caller does not need this information.
+///
+/// # Safety
+/// The caller must ensure that `semaphore_handle` is a valid handle to a semaphore object and
+/// that the caller has appropriate access rights to release it. The caller must also ensure
+/// that `release_count` is greater than 0 and that releasing the semaphore by this amount
+/// will not cause its count to exceed the semaphore's maximum count.
+///
+/// If `previous_count` is not null, the caller must ensure that it points to a valid writable
+/// memory location where an i32 can be stored. Releasing a semaphore with an invalid handle,
+/// or with parameters that would exceed the maximum count, will result in failure and return FALSE.
+pub unsafe fn release_semaphore(
+    semaphore_handle: isize,
+    release_count: i32,
+    previous_count: *mut i32,
+) -> WinBool {
+    if release_count <= 0 {
+        warn!(release_count, "ReleaseSemaphore: release_count must be > 0");
+        return WinBool::FALSE;
+    }
+
+    let handle = Handle::from_raw(semaphore_handle);
+
+    let waitable = match handle_table().get_waitable(handle) {
+        Some(Waitable::Semaphore(s)) => s,
+        _ => {
+            warn!(
+                handle = semaphore_handle,
+                "ReleaseSemaphore: invalid handle"
+            );
+            return WinBool::FALSE;
+        }
+    };
+
+    let mut current_count = waitable.inner.count.lock().unwrap();
+    let prev = *current_count;
+
+    if prev + release_count > waitable.inner.max_count {
+        warn!(
+            prev,
+            release_count,
+            max = waitable.inner.max_count,
+            "ReleaseSemaphore: would exceed maximum count"
+        );
+        return WinBool::FALSE;
+    }
+
+    if !previous_count.is_null() {
+        unsafe { ptr::write(previous_count, prev) };
+    }
+
+    *current_count = prev + release_count;
+
+    // Wake up to `release_count` waiters.
+    for _ in 0..release_count {
+        waitable.inner.condvar.notify_one();
+    }
+
+    WinBool::TRUE
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
