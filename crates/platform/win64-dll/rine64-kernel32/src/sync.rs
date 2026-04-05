@@ -18,6 +18,7 @@ pub unsafe extern "win64" fn InitializeCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
     }
+
     unsafe { common::sync::init_critical_section(cs) };
 }
 
@@ -30,7 +31,9 @@ pub unsafe extern "win64" fn InitializeCriticalSectionAndSpinCount(
     if cs.is_null() {
         return WinBool::FALSE;
     }
+
     unsafe { common::sync::init_critical_section(cs) };
+
     WinBool::TRUE
 }
 

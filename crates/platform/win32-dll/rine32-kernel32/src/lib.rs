@@ -62,6 +62,10 @@ impl DllPlugin for Kernel32Plugin32 {
                 as_win_api!(sync::InitializeCriticalSection),
             ),
             Export::Func(
+                "InitializeCriticalSectionAndSpinCount",
+                as_win_api!(sync::InitializeCriticalSectionAndSpinCount),
+            ),
+            Export::Func(
                 "EnterCriticalSection",
                 as_win_api!(sync::EnterCriticalSection),
             ),
@@ -81,6 +85,7 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("CreateMutexW", as_win_api!(sync::CreateMutexW)),
             Export::Func("ReleaseMutex", as_win_api!(sync::ReleaseMutex)),
             Export::Func("CreateSemaphoreA", as_win_api!(sync::CreateSemaphoreA)),
+            Export::Func("CreateSemaphoreW", as_win_api!(sync::CreateSemaphoreW)),
             Export::Func("ReleaseSemaphore", as_win_api!(sync::ReleaseSemaphore)),
             Export::Func("LoadLibraryA", as_win_api!(process::LoadLibraryA)),
             Export::Func("GetProcAddress", as_win_api!(process::GetProcAddress)),
