@@ -143,37 +143,10 @@ pub unsafe extern "win64" fn WriteFile(
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
     let handle = Handle::from_raw(object);
+
     rine_types::dev_notify!(on_handle_closed(object as i64));
 
-    match handle_table().remove(handle) {
-        Some(HandleEntry::File(fd)) => {
-            unsafe { libc::close(fd) };
-            WinBool::TRUE
-        }
-        Some(HandleEntry::FindData(_)) => {
-            // FindData has no OS resource to free.
-            WinBool::TRUE
-        }
-        Some(HandleEntry::Thread(_)) => {
-            // Thread keeps running; we just release our handle.
-            WinBool::TRUE
-        }
-        Some(HandleEntry::Event(_)) => WinBool::TRUE,
-        Some(HandleEntry::Process(_)) => WinBool::TRUE,
-        Some(HandleEntry::Mutex(_)) => WinBool::TRUE,
-        Some(HandleEntry::Semaphore(_)) => WinBool::TRUE,
-        Some(HandleEntry::Heap(_)) => WinBool::TRUE,
-        Some(HandleEntry::RegistryKey(_)) => WinBool::TRUE,
-        Some(HandleEntry::Window(_)) => {
-            // Window handles are managed by user32, not kernel32.
-            // They should not be closed via CloseHandle.
-            WinBool::FALSE
-        }
-        None => {
-            tracing::warn!(?handle, "CloseHandle: unknown handle");
-            WinBool::FALSE
-        }
-    }
+    common::file::close_handle(handle)
 }
 
 // ---------------------------------------------------------------------------

@@ -3,7 +3,7 @@ use rine_types::{
     handles::{
         CREATE_ALWAYS, CREATE_NEW, GENERIC_READ, GENERIC_WRITE, Handle, HandleEntry,
         INVALID_HANDLE_VALUE, OPEN_ALWAYS, OPEN_EXISTING, TRUNCATE_EXISTING, handle_table,
-        handle_to_fd,
+        handle_to_fd, std_handle_to_fd,
     },
 };
 
@@ -153,4 +153,33 @@ fn translate_win_path(win_path: &str) -> std::path::PathBuf {
 
     // Relative or unrecognized — return as-is with normalized slashes.
     std::path::PathBuf::from(stripped)
+}
+
+pub fn close_handle(handle: Handle) -> WinBool {
+    match handle_table().remove(handle) {
+        Some(HandleEntry::Thread(_)) => WinBool::TRUE,
+        Some(HandleEntry::Event(_)) => WinBool::TRUE,
+        Some(HandleEntry::Process(_)) => WinBool::TRUE,
+        Some(HandleEntry::Mutex(_)) => WinBool::TRUE,
+        Some(HandleEntry::Semaphore(_)) => WinBool::TRUE,
+        Some(HandleEntry::Heap(_)) => WinBool::TRUE,
+        Some(HandleEntry::RegistryKey(_)) => WinBool::TRUE,
+        Some(HandleEntry::FindData(_)) => WinBool::TRUE,
+        Some(HandleEntry::File(object)) => {
+            let Some(fd) = std_handle_to_fd(object as u32) else {
+                return WinBool::FALSE;
+            };
+
+            // 'fd' should be the linux file descriptor.
+            // If it's a standard stream, we don't actually want to close it.
+            if fd == libc::STDERR_FILENO || fd == libc::STDOUT_FILENO || fd == libc::STDIN_FILENO {
+                WinBool::TRUE
+            } else {
+                unsafe { libc::close(fd) };
+                WinBool::TRUE
+            }
+        }
+        Some(HandleEntry::Window(_)) => WinBool::FALSE,
+        None => WinBool::FALSE,
+    }
 }

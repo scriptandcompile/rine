@@ -1,6 +1,6 @@
 use rine_common_kernel32 as common;
 use rine_dlls::win32_stub;
-use rine_types::handles::{Handle, HandleEntry, INVALID_HANDLE_VALUE, handle_table};
+use rine_types::handles::{Handle, INVALID_HANDLE_VALUE};
 use rine_types::{
     errors::WinBool,
     strings::{read_cstr, read_wstr},
@@ -71,24 +71,8 @@ pub unsafe extern "stdcall" fn WriteFile(
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn CloseHandle(object: isize) -> WinBool {
     let handle = Handle::from_raw(object);
-    match handle_table().remove(handle) {
-        Some(HandleEntry::Thread(_)) => WinBool::TRUE,
-        Some(HandleEntry::Event(_)) => WinBool::TRUE,
-        Some(HandleEntry::Process(_)) => WinBool::TRUE,
-        Some(HandleEntry::Mutex(_)) => WinBool::TRUE,
-        Some(HandleEntry::Semaphore(_)) => WinBool::TRUE,
-        Some(HandleEntry::Heap(_)) => WinBool::TRUE,
-        Some(HandleEntry::RegistryKey(_)) => WinBool::TRUE,
-        Some(HandleEntry::FindData(_)) => WinBool::TRUE,
-        Some(HandleEntry::File(fd)) => {
-            if fd <= 2 {
-                WinBool::TRUE
-            } else {
-                unsafe { libc::close(fd) };
-                WinBool::TRUE
-            }
-        }
-        Some(HandleEntry::Window(_)) => WinBool::FALSE,
-        None => WinBool::FALSE,
-    }
+
+    rine_types::dev_notify!(on_handle_closed(object as i64));
+
+    common::file::close_handle(handle)
 }
