@@ -5,7 +5,7 @@ use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, NULL_HANDLE_VALUE, handle_table};
 use rine_types::threading::{
     EventInner, EventWaitable, MutexInner, MutexState, MutexWaitable, SemaphoreInner,
-    SemaphoreWaitable,
+    SemaphoreWaitable, Waitable,
 };
 
 use tracing::warn;
@@ -52,6 +52,42 @@ pub unsafe fn init_critical_section(cs: *mut u8) {
 #[inline]
 pub unsafe fn get_mutex(cs: *const u8) -> *mut libc::pthread_mutex_t {
     unsafe { ptr::read(cs as *const *mut libc::pthread_mutex_t) }
+}
+
+/// Delete a critical section by destroying the underlying mutex and freeing its memory.
+///
+/// # Arguments
+///
+/// * `mutex_handle` - A handle to the mutex to release. The caller must have ownership of
+///   the mutex (i.e. have previously acquired it and not yet released it).
+///
+/// # Safety
+///
+/// The caller must ensure that `mutex_handle` is a valid handle to a mutex object that the caller currently owns.
+///
+/// Note that this function does not check whether the mutex is currently owned or in use.
+#[inline]
+pub unsafe fn release_mutex(mutex_handle: isize) -> WinBool {
+    let handle = Handle::from_raw(mutex_handle);
+    let waitable = match handle_table().get_waitable(handle) {
+        Some(Waitable::Mutex(m)) => m,
+        _ => return WinBool::FALSE,
+    };
+
+    let thread_id = std::thread::current().id();
+    let mut state = waitable.inner.state.lock().unwrap();
+
+    if state.owner != Some(thread_id) {
+        return WinBool::FALSE;
+    }
+
+    state.count -= 1;
+    if state.count == 0 {
+        state.owner = None;
+        waitable.inner.condvar.notify_one();
+    }
+
+    WinBool::TRUE
 }
 
 /// Creates a synchronization event.

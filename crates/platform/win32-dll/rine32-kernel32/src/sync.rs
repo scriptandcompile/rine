@@ -191,7 +191,23 @@ pub unsafe extern "stdcall" fn ResetEvent(event_handle: isize) -> WinBool {
     WinBool::TRUE
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Create a mutex object, optionally initially owned and with an optional (ANSI) name.
+///
+/// # Arguments
+/// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
+/// * `initial_owner` - If TRUE, the creating thread takes initial ownership of the mutex,
+///   meaning it must release it before another thread can acquire it. If FALSE, the mutex
+///   is created in an unowned state.
+/// * `name` - Currently ignored, as named mutexes are not implemented, but it is still read
+///   and logged for dev notification purposes.
+///
+/// Returns a handle to the created mutex, or 0 on failure (e.g. invalid parameters).
+///
+/// # Safety
+///
+/// The caller must ensure that `name` points to a valid null-terminated ANSI string if it is not null.
+/// The caller is responsible for managing the returned mutex handle, including closing it when no longer needed.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn CreateMutexA(
     _security_attrs: usize,
     initial_owner: WinBool,
@@ -206,7 +222,23 @@ pub unsafe extern "stdcall" fn CreateMutexA(
     handle.as_raw()
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Create a mutex object, optionally initially owned and with an optional (UTF-16) name.
+///
+/// # Arguments
+/// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
+/// * `initial_owner` - If TRUE, the creating thread takes initial ownership of the mutex,
+///   meaning it must release it before another thread can acquire it. If FALSE, the mutex
+///   is created in an unowned state.
+/// * `name` - Currently ignored, as named mutexes are not implemented, but it is still read
+///   and logged for dev notification purposes.
+///
+/// Returns a handle to the created mutex, or 0 on failure (e.g. invalid parameters).
+///
+/// # Safety
+///
+/// The caller must ensure that `name` points to a valid null-terminated UTF-16 string if it is not null.
+/// The caller is responsible for managing the returned mutex handle, including closing it when no longer needed.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn CreateMutexW(
     _security_attrs: usize,
     initial_owner: WinBool,
@@ -221,26 +253,22 @@ pub unsafe extern "stdcall" fn CreateMutexW(
     handle.as_raw()
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Release a mutex, decrementing its ownership count and potentially unblocking waiters.
+///
+/// Returns TRUE on success, FALSE on failure (e.g. invalid handle, not a mutex, or not owned by the caller).
+///
+/// # Arguments
+///
+/// * `mutex_handle` - A handle to the mutex to release. The caller must have ownership of
+///   the mutex (i.e. have previously acquired it and not yet released it).
+///
+/// # Safety
+///
+/// The caller must ensure that `mutex_handle` is a valid handle to a mutex object that the caller currently owns.
+/// Releasing a mutex that is not owned by the caller, or using an invalid handle, will result in failure and return FALSE.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
-    let handle = Handle::from_raw(mutex_handle);
-    let waitable = match handle_table().get_waitable(handle) {
-        Some(threading::Waitable::Mutex(m)) => m,
-        _ => return WinBool::FALSE,
-    };
-    let thread_id = std::thread::current().id();
-    let mut state = waitable.inner.state.lock().unwrap();
-    if state.owner != Some(thread_id) {
-        return WinBool::FALSE;
-    }
-
-    state.count -= 1;
-    if state.count == 0 {
-        state.owner = None;
-        waitable.inner.condvar.notify_one();
-    }
-
-    WinBool::TRUE
+    unsafe { common::sync::release_mutex(mutex_handle) }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
