@@ -1,13 +1,14 @@
 //! kernel32 file I/O: CreateFileA/W, ReadFile, WriteFile, CloseHandle,
 //! GetFileSize, SetFilePointer, FindFirstFileA/W, FindNextFileA/W, FindClose.
 
+use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{
-    self, CREATE_ALWAYS, CREATE_NEW, FILE_BEGIN, FILE_CURRENT, FILE_END, FindDataState,
-    GENERIC_READ, GENERIC_WRITE, Handle, HandleEntry, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE,
-    INVALID_SET_FILE_POINTER, OPEN_ALWAYS, OPEN_EXISTING, TRUNCATE_EXISTING, Win32FindDataA,
+    self, FILE_BEGIN, FILE_CURRENT, FILE_END, FindDataState, Handle, HandleEntry,
+    INVALID_FILE_SIZE, INVALID_HANDLE_VALUE, INVALID_SET_FILE_POINTER, Win32FindDataA,
     Win32FindDataW, handle_table, handle_to_fd,
 };
+use rine_types::strings::{read_cstr, read_wstr};
 
 // ---------------------------------------------------------------------------
 // CreateFileA / CreateFileW
@@ -15,8 +16,28 @@ use rine_types::handles::{
 
 /// CreateFileA — open or create a file (ANSI path).
 ///
+/// # Arguments
+/// * `file_name`: pointer to a null-terminated ANSI string with the file path.
+/// * `desired_access`: bitmask of GENERIC_READ, GENERIC_WRITE, etc.
+/// * `creation_disposition`: action to take on files that exist or do not exist.
+/// * _share_mode - ignored
+/// * _security_attributes - ignored
+/// * _flags_and_attributes - ignored
+/// * _template_file - ignored
+///
 /// # Safety
 /// `file_name` must be a valid null-terminated ANSI string.
+///
+/// The caller must ensure that the file path is valid and that the desired
+/// access and creation disposition are appropriate.
+///
+/// # Note
+/// This implementation does not support all features of the Windows API, such as
+/// sharing modes, security attributes, or file attributes. It focuses on basic
+/// file creation and opening functionality.
+///
+/// dev_emit! are handled in the common::create_file implementation, so that they
+/// are emitted for both CreateFileA and CreateFileW in rine & rine32.
 #[allow(non_snake_case)]
 pub unsafe extern "win64" fn CreateFileA(
     file_name: *const u8,
@@ -31,10 +52,10 @@ pub unsafe extern "win64" fn CreateFileA(
         return INVALID_HANDLE_VALUE.as_raw();
     }
 
-    let c_str = unsafe { std::ffi::CStr::from_ptr(file_name.cast()) };
-    let path_str = c_str.to_string_lossy();
+    let c_str = unsafe { read_cstr(file_name).unwrap_or_default() };
+    let path_str = c_str.to_string();
 
-    create_file_impl(&path_str, desired_access, creation_disposition)
+    common::file::create_file(&path_str, desired_access, creation_disposition)
 }
 
 /// CreateFileW — open or create a file (wide/UTF-16 path).
@@ -55,78 +76,10 @@ pub unsafe extern "win64" fn CreateFileW(
         return INVALID_HANDLE_VALUE.as_raw();
     }
 
-    let mut len = 0;
-    unsafe {
-        while *file_name.add(len) != 0 {
-            len += 1;
-        }
-    }
-    let wide = unsafe { core::slice::from_raw_parts(file_name, len) };
-    let path_str = String::from_utf16_lossy(wide);
+    let wide_file_name = unsafe { read_wstr(file_name).unwrap_or_default() };
+    let path_str = wide_file_name.to_string();
 
-    create_file_impl(&path_str, desired_access, creation_disposition)
-}
-
-/// Shared implementation for CreateFileA/W.
-fn create_file_impl(win_path: &str, desired_access: u32, creation_disposition: u32) -> isize {
-    tracing::debug!(
-        path = win_path,
-        access = desired_access,
-        disp = creation_disposition,
-        "CreateFile"
-    );
-
-    // Build Linux open flags from Windows parameters.
-    let mut flags: i32 = 0;
-
-    let read = (desired_access & GENERIC_READ) != 0;
-    let write = (desired_access & GENERIC_WRITE) != 0;
-    if read && write {
-        flags |= libc::O_RDWR;
-    } else if write {
-        flags |= libc::O_WRONLY;
-    } else {
-        flags |= libc::O_RDONLY;
-    }
-
-    match creation_disposition {
-        CREATE_NEW => flags |= libc::O_CREAT | libc::O_EXCL,
-        CREATE_ALWAYS => flags |= libc::O_CREAT | libc::O_TRUNC,
-        OPEN_EXISTING => {} // no extra flags
-        OPEN_ALWAYS => flags |= libc::O_CREAT,
-        TRUNCATE_EXISTING => flags |= libc::O_TRUNC,
-        _ => {
-            tracing::warn!(
-                disp = creation_disposition,
-                "CreateFile: unknown creation disposition"
-            );
-            return INVALID_HANDLE_VALUE.as_raw();
-        }
-    }
-
-    // Translate Windows path → Linux path.
-    let linux_path = translate_win_path(win_path);
-
-    let c_path = match std::ffi::CString::new(linux_path.to_string_lossy().as_bytes()) {
-        Ok(s) => s,
-        Err(_) => return INVALID_HANDLE_VALUE.as_raw(),
-    };
-
-    let mode: libc::mode_t = 0o644;
-    let fd = unsafe { libc::open(c_path.as_ptr(), flags, mode as libc::c_uint) };
-    if fd < 0 {
-        tracing::debug!(path = %linux_path.display(), errno = std::io::Error::last_os_error().raw_os_error(), "CreateFile: open failed");
-        return INVALID_HANDLE_VALUE.as_raw();
-    }
-
-    let h = handle_table().insert(HandleEntry::File(fd));
-    tracing::debug!(handle = ?h, fd, path = %linux_path.display(), "CreateFile: opened");
-    rine_types::dev_notify!(on_handle_created(
-        h.as_raw() as i64,
-        "File",
-        &linux_path.display().to_string()
-    ));
-    h.as_raw()
+    common::file::create_file(&path_str, desired_access, creation_disposition)
 }
 
 // ---------------------------------------------------------------------------
@@ -326,7 +279,7 @@ pub unsafe extern "win64" fn FindFirstFileA(
 
     let (dir_part, pattern) = handles::split_find_path(&path_str);
 
-    let linux_dir = translate_find_dir(dir_part);
+    let linux_dir = common::file::translate_find_dir(dir_part);
     let entries = handles::collect_find_entries(&linux_dir, pattern);
     if entries.is_empty() {
         return INVALID_HANDLE_VALUE.as_raw();
@@ -364,7 +317,7 @@ pub unsafe extern "win64" fn FindFirstFileW(
 
     let (dir_part, pattern) = handles::split_find_path(&path_str);
 
-    let linux_dir = translate_find_dir(dir_part);
+    let linux_dir = common::file::translate_find_dir(dir_part);
     let entries = handles::collect_find_entries(&linux_dir, pattern);
     if entries.is_empty() {
         return INVALID_HANDLE_VALUE.as_raw();
@@ -443,56 +396,4 @@ pub unsafe extern "win64" fn FindNextFileW(
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn FindClose(find_file: isize) -> WinBool {
     unsafe { CloseHandle(find_file) }
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/// Translate the directory portion of a FindFirstFile path to a Linux path.
-fn translate_find_dir(dir_part: &str) -> std::path::PathBuf {
-    if dir_part.is_empty() {
-        return std::path::PathBuf::from(".");
-    }
-    translate_win_path(dir_part)
-}
-
-/// Translate a Windows path to a Linux path.
-///
-/// If the path already looks like a Linux path (`/…`), it's returned as-is.
-/// Otherwise we apply a simple drive-letter mapping:
-///   `X:\rest` → `~/.rine/drives/x/rest`
-/// Backslashes are converted to forward slashes.
-fn translate_win_path(win_path: &str) -> std::path::PathBuf {
-    // Already a Linux absolute path — pass through.
-    if win_path.starts_with('/') {
-        return std::path::PathBuf::from(win_path);
-    }
-
-    let normalized = win_path.replace('\\', "/");
-
-    // Strip \\?\ and \\.\ prefixes (now //?/ and //./).
-    let stripped = normalized
-        .strip_prefix("//?/")
-        .or_else(|| normalized.strip_prefix("//./"))
-        .unwrap_or(&normalized);
-
-    // Check for drive letter: X:/…
-    let bytes = stripped.as_bytes();
-    if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
-        let drive = (bytes[0] as char).to_ascii_lowercase();
-        let rest = &stripped[2..];
-        let rest = rest.strip_prefix('/').unwrap_or(rest);
-        let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".into());
-        let mut path = std::path::PathBuf::from(home);
-        path.push(".rine/drives");
-        path.push(drive.to_string());
-        if !rest.is_empty() {
-            path.push(rest);
-        }
-        return path;
-    }
-
-    // Relative or unrecognized — return as-is with normalized slashes.
-    std::path::PathBuf::from(stripped)
 }
