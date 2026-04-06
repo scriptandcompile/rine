@@ -4,9 +4,8 @@
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{
-    self, FILE_BEGIN, FILE_CURRENT, FILE_END, FindDataState, Handle, HandleEntry,
-    INVALID_FILE_SIZE, INVALID_HANDLE_VALUE, INVALID_SET_FILE_POINTER, Win32FindDataA,
-    Win32FindDataW, handle_table, handle_to_fd,
+    self, FindDataState, Handle, HandleEntry, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE,
+    Win32FindDataA, Win32FindDataW, handle_table, handle_to_fd,
 };
 use rine_types::strings::{read_cstr, read_wstr};
 
@@ -176,11 +175,20 @@ pub unsafe extern "win64" fn GetFileSize(file: isize, file_size_high: *mut u32) 
     size as u32
 }
 
-// ---------------------------------------------------------------------------
-// SetFilePointer
-// ---------------------------------------------------------------------------
-
-/// SetFilePointer — move the file pointer.
+/// SetFilePointer — move the file pointer for a file handle.
+///
+/// # Arguments
+/// * `file` - The file handle whose pointer to move.
+/// * `distance_to_move` - The low 32 bits of the distance to move, in bytes. Can be negative to move backwards.
+/// * `distance_to_move_high` - Optional pointer to the high 32 bits of the distance to move.
+///   If non-null, this is an input/output parameter that should be initialized to the high bits of the distance
+///   before the call, and will be updated to the high bits of the new file pointer after the call.
+/// * `move_method` - The starting point for the move. Must be one of `FILE_BEGIN`, `FILE_CURRENT`, or `FILE_END`.
+///
+/// # Safety
+/// * `file` must be a valid file handle returned by `CreateFile`.
+/// * `distance_to_move_high` must be null or point to a valid i32 variable if `distance_to_move` is negative
+///   or the distance exceeds 2GB.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn SetFilePointer(
     file: isize,
@@ -189,33 +197,10 @@ pub unsafe extern "win64" fn SetFilePointer(
     move_method: u32,
 ) -> u32 {
     let handle = Handle::from_raw(file);
-    let Some(fd) = handle_to_fd(handle) else {
-        return INVALID_SET_FILE_POINTER;
-    };
 
-    let offset: i64 = if !distance_to_move_high.is_null() {
-        let high = unsafe { *distance_to_move_high } as i64;
-        (high << 32) | (distance_to_move as u32 as i64)
-    } else {
-        distance_to_move as i64
-    };
-
-    let whence = match move_method {
-        FILE_BEGIN => libc::SEEK_SET,
-        FILE_CURRENT => libc::SEEK_CUR,
-        FILE_END => libc::SEEK_END,
-        _ => return INVALID_SET_FILE_POINTER,
-    };
-
-    let result = unsafe { libc::lseek(fd, offset, whence) };
-    if result == -1 {
-        return INVALID_SET_FILE_POINTER;
+    unsafe {
+        common::file::set_file_pointer(handle, distance_to_move, distance_to_move_high, move_method)
     }
-
-    if !distance_to_move_high.is_null() {
-        unsafe { *distance_to_move_high = (result >> 32) as i32 };
-    }
-    result as u32
 }
 
 // ---------------------------------------------------------------------------

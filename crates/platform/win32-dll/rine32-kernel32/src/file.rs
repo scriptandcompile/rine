@@ -76,3 +76,31 @@ pub unsafe extern "stdcall" fn CloseHandle(object: isize) -> WinBool {
 
     common::file::close_handle(handle)
 }
+
+/// SetFilePointer — move the file pointer for a file handle.
+///
+/// # Arguments
+/// * `file` - The file handle whose pointer to move.
+/// * `distance_to_move` - The low 32 bits of the distance to move, in bytes. Can be negative to move backwards.
+/// * `distance_to_move_high` - Optional pointer to the high 32 bits of the distance to move.
+///   If non-null, this is an input/output parameter that should be initialized to the high bits of the distance
+///   before the call, and will be updated to the high bits of the new file pointer after the call.
+/// * `move_method` - The starting point for the move. Must be one of `FILE_BEGIN`, `FILE_CURRENT`, or `FILE_END`.
+///
+/// # Safety
+/// * `file` must be a valid file handle returned by `CreateFile`.
+/// * `distance_to_move_high` must be null or point to a valid i32 variable if `distance_to_move` is negative
+///   or the distance exceeds 2GB.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn SetFilePointer(
+    file: isize,
+    distance_to_move: i32,           // low 32 bits
+    distance_to_move_high: *mut i32, // high 32 bits (in/out, optional)
+    move_method: u32,
+) -> u32 {
+    let handle = Handle::from_raw(file);
+
+    unsafe {
+        common::file::set_file_pointer(handle, distance_to_move, distance_to_move_high, move_method)
+    }
+}

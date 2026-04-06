@@ -1,9 +1,9 @@
 use rine_types::{
     errors::WinBool,
     handles::{
-        CREATE_ALWAYS, CREATE_NEW, GENERIC_READ, GENERIC_WRITE, Handle, HandleEntry,
-        INVALID_HANDLE_VALUE, OPEN_ALWAYS, OPEN_EXISTING, TRUNCATE_EXISTING, handle_table,
-        handle_to_fd, std_handle_to_fd,
+        CREATE_ALWAYS, CREATE_NEW, FILE_BEGIN, FILE_CURRENT, FILE_END, GENERIC_READ, GENERIC_WRITE,
+        Handle, HandleEntry, INVALID_HANDLE_VALUE, INVALID_SET_FILE_POINTER, OPEN_ALWAYS,
+        OPEN_EXISTING, TRUNCATE_EXISTING, handle_table, handle_to_fd, std_handle_to_fd,
     },
 };
 
@@ -39,6 +39,57 @@ pub unsafe fn write_file(
         unsafe { *bytes_written = written as u32 };
     }
     WinBool::TRUE
+}
+
+/// Implementation of shared SetFilePointer logic for 32-bit and 64-bit DLLs.
+///
+/// # Arguments
+/// * `handle`: Windows file handle (must have been created by CreateFile).
+/// * `distance_to_move` - The low 32 bits of the distance to move, in bytes. Can be negative to move backwards.
+/// * `distance_to_move_high` - Optional pointer to the high 32 bits of the distance to move.
+///   If non-null, this is an input/output parameter that should be initialized to the high bits of the distance
+///   before the call, and will be updated to the high bits of the new file pointer after the call.
+/// * `move_method` - The starting point for the move. Must be one of `FILE_BEGIN`, `FILE_CURRENT`, or `FILE_END`.
+///
+/// # Safety
+/// * `file` must be a valid file handle returned by `CreateFile`.
+/// * `distance_to_move_high` must be null or point to a valid i32 variable if `distance_to_move` is negative
+///   or the distance exceeds 2GB.
+#[allow(clippy::missing_safety_doc)]
+pub unsafe fn set_file_pointer(
+    handle: Handle,
+    distance_to_move: i32,           // low 32 bits
+    distance_to_move_high: *mut i32, // high 32 bits (in/out, optional)
+    move_method: u32,
+) -> u32 {
+    let Some(fd) = handle_to_fd(handle) else {
+        return INVALID_SET_FILE_POINTER;
+    };
+
+    let offset: i64 = if !distance_to_move_high.is_null() {
+        let high = unsafe { *distance_to_move_high } as i64;
+        (high << 32) | (distance_to_move as u32 as i64)
+    } else {
+        distance_to_move as i64
+    };
+
+    let whence = match move_method {
+        FILE_BEGIN => libc::SEEK_SET,
+        FILE_CURRENT => libc::SEEK_CUR,
+        FILE_END => libc::SEEK_END,
+        _ => return INVALID_SET_FILE_POINTER,
+    };
+
+    // Use the 64-bit seek entrypoint so 32-bit builds can still address >2/4GB offsets.
+    let result = unsafe { libc::lseek64(fd, offset as libc::off64_t, whence) };
+    if result == -1 {
+        return INVALID_SET_FILE_POINTER;
+    }
+
+    if !distance_to_move_high.is_null() {
+        unsafe { *distance_to_move_high = ((result as i64) >> 32) as i32 };
+    }
+    result as u32
 }
 
 /// Shared implementation for CreateFileA/W.
@@ -181,5 +232,88 @@ pub fn close_handle(handle: Handle) -> WinBool {
         }
         Some(HandleEntry::Window(_)) => WinBool::FALSE,
         None => WinBool::FALSE,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn unique_temp_file_path() -> PathBuf {
+        let mut path = std::env::temp_dir();
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        path.push(format!(
+            "rine_set_file_pointer_{}_{}",
+            std::process::id(),
+            nanos
+        ));
+        path
+    }
+
+    fn create_test_file_handle() -> (PathBuf, Handle) {
+        let path = unique_temp_file_path();
+        let raw = create_file(
+            path.to_str()
+                .unwrap_or("/tmp/rine_set_file_pointer_fallback"),
+            GENERIC_READ | GENERIC_WRITE,
+            CREATE_ALWAYS,
+        );
+        assert_ne!(raw, INVALID_HANDLE_VALUE.as_raw());
+        (path, Handle::from_raw(raw))
+    }
+
+    fn cleanup_test_file(path: &PathBuf, handle: Handle) {
+        if let Some(fd) = handle_to_fd(handle) {
+            unsafe { libc::close(fd) };
+        }
+        let _ = handle_table().remove(handle);
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn set_file_pointer_begin_and_current_work() {
+        let (path, handle) = create_test_file_handle();
+
+        let pos = unsafe { set_file_pointer(handle, 123, core::ptr::null_mut(), FILE_BEGIN) };
+        assert_eq!(pos, 123);
+
+        let pos = unsafe { set_file_pointer(handle, 7, core::ptr::null_mut(), FILE_CURRENT) };
+        assert_eq!(pos, 130);
+
+        cleanup_test_file(&path, handle);
+    }
+
+    #[test]
+    fn set_file_pointer_sets_and_returns_high_bits_for_large_offsets() {
+        let (path, handle) = create_test_file_handle();
+
+        let mut high: i32 = 1;
+        let low = unsafe { set_file_pointer(handle, 0, &mut high, FILE_BEGIN) };
+        assert_eq!(low, 0);
+        assert_eq!(high, 1);
+
+        cleanup_test_file(&path, handle);
+    }
+
+    #[test]
+    fn set_file_pointer_invalid_handle_returns_invalid_set_file_pointer() {
+        let pos =
+            unsafe { set_file_pointer(INVALID_HANDLE_VALUE, 0, core::ptr::null_mut(), FILE_BEGIN) };
+        assert_eq!(pos, INVALID_SET_FILE_POINTER);
+    }
+
+    #[test]
+    fn set_file_pointer_invalid_move_method_returns_invalid_set_file_pointer() {
+        let (path, handle) = create_test_file_handle();
+
+        let pos = unsafe { set_file_pointer(handle, 0, core::ptr::null_mut(), u32::MAX) };
+        assert_eq!(pos, INVALID_SET_FILE_POINTER);
+
+        cleanup_test_file(&path, handle);
     }
 }
