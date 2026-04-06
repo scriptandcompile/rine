@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-05T18:30:39.449837+00:00",
+  "generatedAt": "2026-04-06T01:54:03.911379+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1155,9 +1155,9 @@
             "source": "kernel32 - file.rs"
           },
           "x86": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "file::SetFilePointer",
+            "source": "kernel32 - file.rs"
           }
         },
         {
@@ -2333,9 +2333,9 @@
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 143,
+      "implemented": 144,
       "stubbed": 9,
-      "unimplemented": 23
+      "unimplemented": 22
     }
   }
 }
