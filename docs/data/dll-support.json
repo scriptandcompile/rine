@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-06T01:54:03.911379+00:00",
+  "generatedAt": "2026-04-07T21:48:07.648148+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1825,14 +1825,14 @@
         {
           "name": "NtCreateFile",
           "x64": {
-            "status": "stubbed",
+            "status": "implemented",
             "symbol": "file::NtCreateFile",
             "source": "ntdll - file.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "implemented",
             "symbol": "NtCreateFile",
-            "source": null
+            "source": "ntdll - file.rs"
           }
         },
         {
@@ -2328,13 +2328,13 @@
   "totals": {
     "functions": 175,
     "x64": {
-      "implemented": 170,
-      "stubbed": 2,
+      "implemented": 171,
+      "stubbed": 1,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 144,
-      "stubbed": 9,
+      "implemented": 145,
+      "stubbed": 8,
       "unimplemented": 22
     }
   }

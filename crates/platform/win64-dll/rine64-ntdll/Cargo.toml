@@ -7,6 +7,7 @@ description = "ntdll.dll implementation for rine"
 
 [dependencies]
 rine-dlls = { workspace = true }
+rine-common-ntdll = { workspace = true }
 rine-types = { workspace = true }
 libc = { workspace = true }
 nix = { workspace = true }
