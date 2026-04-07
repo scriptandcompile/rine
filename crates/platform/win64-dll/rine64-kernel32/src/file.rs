@@ -334,12 +334,15 @@ pub unsafe extern "win64" fn FindNextFileW(
     }
 }
 
-// ---------------------------------------------------------------------------
-// FindClose
-// ---------------------------------------------------------------------------
-
 /// FindClose — close a search handle opened by FindFirstFile.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+///
+/// # Arguments
+/// * `find_file` - The search handle returned by `FindFirstFile`.
+///
+/// # Safety
+/// * `find_file` must be a valid search handle returned by `FindFirstFile`.
+/// * After this call, `find_file` must not be used again.
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn FindClose(find_file: isize) -> WinBool {
     unsafe { CloseHandle(find_file) }
 }

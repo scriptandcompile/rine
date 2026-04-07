@@ -52,6 +52,7 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("WriteConsoleW", as_win_api!(console::WriteConsoleW)),
             Export::Func("CloseHandle", as_win_api!(file::CloseHandle)),
             Export::Func("SetFilePointer", as_win_api!(file::SetFilePointer)),
+            Export::Func("FindClose", as_win_api!(file::FindClose)),
             Export::Func("GetStdHandle", as_win_api!(console::GetStdHandle)),
             Export::Func("GetProcessHeap", as_win_api!(memory::GetProcessHeap)),
             Export::Func("HeapCreate", as_win_api!(memory::HeapCreate)),

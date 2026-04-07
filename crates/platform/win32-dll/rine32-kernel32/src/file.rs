@@ -104,3 +104,16 @@ pub unsafe extern "stdcall" fn SetFilePointer(
         common::file::set_file_pointer(handle, distance_to_move, distance_to_move_high, move_method)
     }
 }
+
+/// FindClose — close a search handle opened by FindFirstFile.
+///
+/// # Arguments
+/// * `find_file` - The search handle returned by `FindFirstFile`.
+///
+/// # Safety
+/// * `find_file` must be a valid search handle returned by `FindFirstFile`.
+/// * After this call, `find_file` must not be used again.
+#[allow(non_snake_case)]
+pub unsafe extern "stdcall" fn FindClose(find_file: isize) -> WinBool {
+    unsafe { CloseHandle(find_file) }
+}
