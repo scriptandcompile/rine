@@ -55,7 +55,6 @@ pub unsafe fn write_file(
 /// * `file` must be a valid file handle returned by `CreateFile`.
 /// * `distance_to_move_high` must be null or point to a valid i32 variable if `distance_to_move` is negative
 ///   or the distance exceeds 2GB.
-#[allow(clippy::missing_safety_doc)]
 pub unsafe fn set_file_pointer(
     handle: Handle,
     distance_to_move: i32,           // low 32 bits
@@ -93,6 +92,15 @@ pub unsafe fn set_file_pointer(
 }
 
 /// Shared implementation for CreateFileA/W.
+///
+/// # Arguments
+/// * `win_path`: Windows-style file path (e.g. `C:\foo\bar.txt`).
+/// * `desired_access`: Windows access mask (e.g. `GENERIC_READ | GENERIC_WRITE`).
+/// * `creation_disposition`: Windows creation disposition (e.g. `CREATE_ALWAYS`).
+///
+/// # Returns
+/// On success, returns a valid Windows file handle (which must be closed with `CloseHandle` when no longer needed).
+/// On failure, returns `INVALID_HANDLE_VALUE`.
 pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u32) -> isize {
     tracing::debug!(
         path = win_path,
