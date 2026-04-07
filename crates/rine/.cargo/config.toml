@@ -1,0 +1,2 @@
+[build]
+target = "86_64-unknown-linux-gnu"
