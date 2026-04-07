@@ -1,46 +1,91 @@
-use std::ffi::CString;
-use std::sync::OnceLock;
-
-use rine_dlls::win32_stub;
+use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
+use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
+use rine_types::strings::{read_cstr, read_wstr};
 use rine_types::threading;
 
-struct CmdLineCache {
-    ansi: CString,
-    wide: Vec<u16>,
+use tracing::warn;
+
+/// CreateProcessA — create a child process (ANSI).
+///
+/// # Safety
+/// All pointer parameters must be null or point to valid memory of the
+/// expected layout.
+#[allow(non_snake_case, clippy::missing_safety_doc, clippy::too_many_arguments)]
+pub unsafe extern "stdcall" fn CreateProcessA(
+    application_name: *const u8,           // rcx
+    command_line: *mut u8,                 // rdx
+    _process_attrs: usize,                 // r8
+    _thread_attrs: usize,                  // r9
+    _inherit_handles: i32,                 // [rsp+0x28]
+    _creation_flags: u32,                  // [rsp+0x30]
+    environment: *const u8,                // [rsp+0x38]
+    _current_directory: *const u8,         // [rsp+0x40]
+    _startup_info: *const StartupInfoA,    // [rsp+0x48]
+    process_info: *mut ProcessInformation, // [rsp+0x50]
+) -> WinBool {
+    let app = unsafe { read_cstr(application_name) }.unwrap_or_default();
+    let cmd = unsafe { read_cstr(command_line.cast_const()) }.unwrap_or_default();
+
+    let (exe, args) = if !app.is_empty() {
+        (app, common::process::split_cmd_line(&cmd))
+    } else {
+        let tokens = common::process::split_cmd_line(&cmd);
+        if tokens.is_empty() {
+            warn!("CreateProcessA: no executable specified");
+            return WinBool::FALSE;
+        }
+        (tokens[0].clone(), tokens[1..].to_vec())
+    };
+
+    let env = if environment.is_null() {
+        None
+    } else {
+        Some(common::process::parse_env_block(environment))
+    };
+
+    common::process::do_create_process(&exe, &args, env, process_info)
 }
 
-static CMD_LINE: OnceLock<CmdLineCache> = OnceLock::new();
+/// CreateProcessW — create a child process (wide).
+///
+/// # Safety
+/// All pointer parameters must be null or point to valid memory of the
+/// expected layout.
+#[allow(non_snake_case, clippy::missing_safety_doc, clippy::too_many_arguments)]
+pub unsafe extern "stdcall" fn CreateProcessW(
+    application_name: *const u16,          // rcx
+    command_line: *mut u16,                // rdx
+    _process_attrs: usize,                 // r8
+    _thread_attrs: usize,                  // r9
+    _inherit_handles: i32,                 // [rsp+0x28]
+    _creation_flags: u32,                  // [rsp+0x30]
+    environment: *const u16,               // [rsp+0x38]
+    _current_directory: *const u16,        // [rsp+0x40]
+    _startup_info: *const StartupInfoW,    // [rsp+0x48]
+    process_info: *mut ProcessInformation, // [rsp+0x50]
+) -> WinBool {
+    let app = unsafe { read_wstr(application_name) }.unwrap_or_default();
+    let cmd = unsafe { read_wstr(command_line.cast_const()) }.unwrap_or_default();
 
-win32_stub!(GetModuleHandleA, "kernel32");
-win32_stub!(GetModuleHandleW, "kernel32");
-win32_stub!(GetLastError, "kernel32");
-win32_stub!(SetUnhandledExceptionFilter, "kernel32");
-win32_stub!(LoadLibraryA, "kernel32");
-win32_stub!(GetProcAddress, "kernel32");
-win32_stub!(FreeLibrary, "kernel32");
+    let (exe, args) = if !app.is_empty() {
+        (app, common::process::split_cmd_line(&cmd))
+    } else {
+        let tokens = common::process::split_cmd_line(&cmd);
+        if tokens.is_empty() {
+            warn!("CreateProcessW: no executable specified");
+            return WinBool::FALSE;
+        }
+        (tokens[0].clone(), tokens[1..].to_vec())
+    };
 
-fn cached_cmd_line() -> &'static CmdLineCache {
-    CMD_LINE.get_or_init(|| {
-        let args: Vec<String> = std::env::args().collect();
-        let joined = args
-            .iter()
-            .map(|arg| {
-                if arg.contains(' ') {
-                    format!("\"{arg}\"")
-                } else {
-                    arg.clone()
-                }
-            })
-            .collect::<Vec<_>>()
-            .join(" ");
+    let env = if environment.is_null() {
+        None
+    } else {
+        Some(common::process::parse_env_block_wide(environment))
+    };
 
-        let ansi = CString::new(joined.clone()).unwrap_or_default();
-        let mut wide: Vec<u16> = joined.encode_utf16().collect();
-        wide.push(0);
-
-        CmdLineCache { ansi, wide }
-    })
+    common::process::do_create_process(&exe, &args, env, process_info)
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
@@ -53,12 +98,12 @@ pub unsafe extern "stdcall" fn ExitProcess(exit_code: u32) -> ! {
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn GetCommandLineA() -> *const u8 {
-    cached_cmd_line().ansi.as_ptr().cast()
+    common::process::cached_cmd_line().ansi.as_ptr().cast()
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn GetCommandLineW() -> *const u16 {
-    cached_cmd_line().wide.as_ptr()
+    common::process::cached_cmd_line().wide.as_ptr()
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-07T21:48:07.648148+00:00",
+  "generatedAt": "2026-04-07T22:34:42.448386+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -339,7 +339,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 79,
+      "functionCount": 76,
       "functions": [
         {
           "name": "CloseHandle",
@@ -440,9 +440,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "process::CreateProcessA",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -453,9 +453,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "process::CreateProcessW",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -641,19 +641,6 @@
           }
         },
         {
-          "name": "FreeLibrary",
-          "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
-          },
-          "x86": {
-            "status": "unimplemented",
-            "symbol": "process::FreeLibrary",
-            "source": "kernel32 - process.rs"
-          }
-        },
-        {
           "name": "GetCommandLineA",
           "x64": {
             "status": "implemented",
@@ -818,8 +805,8 @@
           },
           "x86": {
             "status": "unimplemented",
-            "symbol": "process::GetLastError",
-            "source": "kernel32 - process.rs"
+            "symbol": null,
+            "source": null
           }
         },
         {
@@ -831,8 +818,8 @@
           },
           "x86": {
             "status": "unimplemented",
-            "symbol": "process::GetModuleHandleA",
-            "source": "kernel32 - process.rs"
+            "symbol": null,
+            "source": null
           }
         },
         {
@@ -844,21 +831,8 @@
           },
           "x86": {
             "status": "unimplemented",
-            "symbol": "process::GetModuleHandleW",
-            "source": "kernel32 - process.rs"
-          }
-        },
-        {
-          "name": "GetProcAddress",
-          "x64": {
-            "status": "unimplemented",
             "symbol": null,
             "source": null
-          },
-          "x86": {
-            "status": "unimplemented",
-            "symbol": "process::GetProcAddress",
-            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -1044,19 +1018,6 @@
           }
         },
         {
-          "name": "LoadLibraryA",
-          "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
-          },
-          "x86": {
-            "status": "unimplemented",
-            "symbol": "process::LoadLibraryA",
-            "source": "kernel32 - process.rs"
-          }
-        },
-        {
           "name": "ReadFile",
           "x64": {
             "status": "implemented",
@@ -1169,8 +1130,8 @@
           },
           "x86": {
             "status": "unimplemented",
-            "symbol": "process::SetUnhandledExceptionFilter",
-            "source": "kernel32 - process.rs"
+            "symbol": null,
+            "source": null
           }
         },
         {
@@ -2326,16 +2287,16 @@
     }
   ],
   "totals": {
-    "functions": 175,
+    "functions": 172,
     "x64": {
       "implemented": 171,
       "stubbed": 1,
-      "unimplemented": 3
+      "unimplemented": 0
     },
     "x86": {
-      "implemented": 145,
+      "implemented": 147,
       "stubbed": 8,
-      "unimplemented": 22
+      "unimplemented": 17
     }
   }
 }

@@ -6,7 +6,7 @@ pub mod process;
 pub mod sync;
 pub mod thread;
 
-use rine_dlls::{DllPlugin, Export, as_win_api};
+use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
 
 #[cfg(not(target_pointer_width = "32"))]
 compile_error!(
@@ -14,6 +14,14 @@ compile_error!(
 );
 
 pub struct Kernel32Plugin32;
+
+win32_stub!(GetModuleHandleA, "kernel32");
+win32_stub!(GetModuleHandleW, "kernel32");
+win32_stub!(GetLastError, "kernel32");
+win32_stub!(SetUnhandledExceptionFilter, "kernel32");
+win32_stub!(LoadLibraryA, "kernel32");
+win32_stub!(GetProcAddress, "kernel32");
+win32_stub!(FreeLibrary, "kernel32");
 
 impl DllPlugin for Kernel32Plugin32 {
     fn dll_names(&self) -> &[&str] {
@@ -25,9 +33,8 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("ExitProcess", as_win_api!(process::ExitProcess)),
             Export::Func("GetCommandLineA", as_win_api!(process::GetCommandLineA)),
             Export::Func("GetCommandLineW", as_win_api!(process::GetCommandLineW)),
-            Export::Func("GetModuleHandleA", as_win_api!(process::GetModuleHandleA)),
-            Export::Func("GetModuleHandleW", as_win_api!(process::GetModuleHandleW)),
-            Export::Func("GetLastError", as_win_api!(process::GetLastError)),
+            Export::Func("CreateProcessA", as_win_api!(process::CreateProcessA)),
+            Export::Func("CreateProcessW", as_win_api!(process::CreateProcessW)),
             Export::Func(
                 "GetCurrentProcessId",
                 as_win_api!(process::GetCurrentProcessId),
@@ -36,10 +43,6 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func(
                 "GetExitCodeProcess",
                 as_win_api!(process::GetExitCodeProcess),
-            ),
-            Export::Func(
-                "SetUnhandledExceptionFilter",
-                as_win_api!(process::SetUnhandledExceptionFilter),
             ),
             Export::Func("CreateFileA", as_win_api!(file::CreateFileA)),
             Export::Func("CreateFileW", as_win_api!(file::CreateFileW)),
@@ -88,9 +91,6 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("CreateSemaphoreA", as_win_api!(sync::CreateSemaphoreA)),
             Export::Func("CreateSemaphoreW", as_win_api!(sync::CreateSemaphoreW)),
             Export::Func("ReleaseSemaphore", as_win_api!(sync::ReleaseSemaphore)),
-            Export::Func("LoadLibraryA", as_win_api!(process::LoadLibraryA)),
-            Export::Func("GetProcAddress", as_win_api!(process::GetProcAddress)),
-            Export::Func("FreeLibrary", as_win_api!(process::FreeLibrary)),
             Export::Func("VirtualProtect", as_win_api!(memory::VirtualProtect)),
             Export::Func("VirtualQuery", as_win_api!(memory::VirtualQuery)),
             Export::Func("TlsAlloc", as_win_api!(thread::TlsAlloc)),
