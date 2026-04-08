@@ -66,6 +66,49 @@ pub fn heap_alloc(heap_handle: Handle, flags: u32, size: usize) -> *mut u8 {
     ptr
 }
 
+/// Free a block of memory allocated from a heap by HeapAlloc.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap from which the memory was allocated, returned by HeapCreate or GetProcessHeap.
+/// * `_flags` - Ignored in this implementation.
+/// * `ptr` - A pointer to a memory block allocated from the heap by HeapAlloc or HeapReAlloc.
+///   If this parameter is `NULL`, the function does nothing and returns `TRUE`.
+///
+/// # Safety
+/// The caller must ensure that `heap_handle` is a valid handle returned by HeapCreate or GetProcessHeap, and that there
+/// are no outstanding allocations from the heap. The caller must also ensure that `ptr` is either `NULL` or a pointer
+/// returned by HeapAlloc or HeapReAlloc from the specified heap, and that it has not already been freed.
+/// Freeing an invalid pointer or a pointer from a different heap results in undefined behavior.
+///
+/// # Returns
+/// If the function succeeds, the return value is `TRUE`. If the function fails, the return value is `FALSE`, and extended
+/// error information should be (but currently cannot) be obtained by calling GetLastError.
+///
+/// # Notes
+/// * If `ptr` is `NULL`, the function does nothing and returns `TRUE`.
+/// * The default process heap cannot be destroyed, and attempting to do so will fail, but this function can still be used
+///   to free allocations from the default heap.
+pub unsafe fn heap_free(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> WinBool {
+    if ptr.is_null() {
+        return WinBool::TRUE;
+    }
+
+    let removed = handle_table().with_heap(heap_handle, |state| {
+        state.allocations.lock().unwrap().remove(&(ptr as usize))
+    });
+
+    match removed {
+        Some(Some((size, align))) => {
+            if let Ok(layout) = Layout::from_size_align(size, align) {
+                unsafe { std::alloc::dealloc(ptr, layout) };
+            }
+            rine_types::dev_notify!(on_memory_freed(ptr as u64, size as u64, "HeapFree"));
+            WinBool::TRUE
+        }
+        _ => WinBool::FALSE,
+    }
+}
+
 /// Destroy a heap created by HeapCreate, freeing all outstanding allocations from the heap in the process.
 ///
 /// # Arguments

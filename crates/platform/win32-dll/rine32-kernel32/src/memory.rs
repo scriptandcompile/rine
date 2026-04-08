@@ -115,26 +115,36 @@ pub unsafe extern "stdcall" fn HeapSize(heap_handle: isize, _flags: u32, ptr: *c
     common::memory::heap_size(handle, _flags, ptr)
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Free a block of memory allocated from a heap by HeapAlloc.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap from which the memory was allocated, returned by HeapCreate or GetProcessHeap.
+/// * `_flags` - Ignored in this implementation.
+/// * `ptr` - A pointer to a memory block allocated from the heap by HeapAlloc or HeapReAlloc.
+///   If this parameter is `NULL`, the function does nothing and returns `TRUE`.
+///
+/// # Safety
+/// The caller must ensure that `heap_handle` is a valid handle returned by HeapCreate or GetProcessHeap, and that there
+/// are no outstanding allocations from the heap. The caller must also ensure that `ptr` is either `NULL` or a pointer
+/// returned by HeapAlloc or HeapReAlloc from the specified heap, and that it has not already been freed.
+/// Freeing an invalid pointer or a pointer from a different heap results in undefined behavior.
+///
+/// # Returns
+/// If the function succeeds, the return value is `TRUE`. If the function fails, the return value is `FALSE`, and extended
+/// error information should be (but currently cannot) be obtained by calling GetLastError.
+///
+/// # Notes
+/// * If `ptr` is `NULL`, the function does nothing and returns `TRUE`.
+/// * The default process heap cannot be destroyed, and attempting to do so will fail, but this function can still be used
+///   to free allocations from the default heap.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut u8) -> WinBool {
     if ptr.is_null() {
         return WinBool::TRUE;
     }
 
     let handle = Handle::from_raw(heap_handle);
-    let removed = handle_table().with_heap(handle, |state| {
-        state.allocations.lock().unwrap().remove(&(ptr as usize))
-    });
-
-    match removed {
-        Some(Some((size, align))) => {
-            if let Ok(layout) = Layout::from_size_align(size, align) {
-                unsafe { std::alloc::dealloc(ptr, layout) };
-            }
-            WinBool::TRUE
-        }
-        _ => WinBool::FALSE,
-    }
+    unsafe { common::memory::heap_free(handle, _flags, ptr) }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
