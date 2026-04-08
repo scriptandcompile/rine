@@ -63,49 +63,38 @@ pub unsafe extern "win64" fn HeapCreate(
 }
 
 /// HeapDestroy — destroy a private heap.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap to destroy, returned by HeapCreate.
+///
+/// # Returns
+///
+/// `TRUE` if the heap was successfully destroyed, or `FALSE` if the handle was invalid or the heap could not be destroyed.
+///
+/// # Safety
+/// The caller must ensure that `heap_handle` is a valid handle returned by HeapCreate, and that there are no outstanding
+/// allocations from the heap.
+///
+/// # Note
+/// The default process heap cannot be destroyed, and attempting to do so will fail.
+/// This does not free any outstanding allocations from the heap; it is the caller's responsibility to free them first.
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
     let handle = Handle::from_raw(heap_handle);
     rine_types::dev_notify!(on_handle_closed(heap_handle as i64));
 
-    // Don't allow destroying the default process heap.
-    if heap_handle == common::memory::DEFAULT_HEAP.as_raw() {
-        return WinBool::FALSE;
-    }
-
-    match handle_table().remove(handle) {
-        Some(HandleEntry::Heap(state)) => {
-            // Free all outstanding allocations.
-            let allocs = state.allocations.lock().unwrap();
-            for (&addr, &(size, align)) in allocs.iter() {
-                if let Ok(layout) = Layout::from_size_align(size, align) {
-                    unsafe { std::alloc::dealloc(addr as *mut u8, layout) };
-                }
-                rine_types::dev_notify!(on_memory_freed(addr as u64, size as u64, "HeapDestroy"));
-            }
-            WinBool::TRUE
-        }
-        Some(HandleEntry::Window(_)) => {
-            // Window handles should not be destroyed via HeapDestroy.
-            WinBool::FALSE
-        }
-        Some(other) => {
-            // Put it back — wasn't a heap handle.
-            handle_table().insert(other);
-            WinBool::FALSE
-        }
-        None => WinBool::FALSE,
-    }
+    common::memory::heap_destroy(handle)
 }
 
 /// HeapAlloc — allocate a block from a heap.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn HeapAlloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
+    let handle = Handle::from_raw(heap_handle);
     if size == 0 {
         // Windows HeapAlloc with size 0 returns a valid non-null pointer.
-        return common::memory::heap_alloc(heap_handle, flags, 1);
+        return common::memory::heap_alloc(handle, flags, 1);
     }
-    common::memory::heap_alloc(heap_handle, flags, size)
+    common::memory::heap_alloc(handle, flags, size)
 }
 
 /// HeapFree — free a block allocated by HeapAlloc.
@@ -116,6 +105,7 @@ pub unsafe extern "win64" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut
     }
 
     let handle = Handle::from_raw(heap_handle);
+
     let removed = handle_table().with_heap(handle, |state| {
         state.allocations.lock().unwrap().remove(&(ptr as usize))
     });

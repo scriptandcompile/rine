@@ -32,38 +32,55 @@ pub unsafe extern "stdcall" fn HeapCreate(
     handle_table().insert(HandleEntry::Heap(heap)).as_raw()
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// HeapDestroy — destroy a private heap.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap to destroy, returned by HeapCreate.
+///
+/// # Returns
+///
+/// `TRUE` if the heap was successfully destroyed, or `FALSE` if the handle was invalid or the heap could not be destroyed.
+///
+/// # Safety
+/// The caller must ensure that `heap_handle` is a valid handle returned by HeapCreate, and that there are no outstanding
+/// allocations from the heap.
+///
+/// # Note
+/// The default process heap cannot be destroyed, and attempting to do so will fail.
+/// This does not free any outstanding allocations from the heap; it is the caller's responsibility to free them first.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn HeapDestroy(heap_handle: isize) -> WinBool {
     let handle = Handle::from_raw(heap_handle);
-    if heap_handle == common::memory::DEFAULT_HEAP.as_raw() {
-        return WinBool::FALSE;
-    }
+    rine_types::dev_notify!(on_handle_closed(heap_handle as i64));
 
-    match handle_table().remove(handle) {
-        Some(HandleEntry::Heap(state)) => {
-            let allocs = state.allocations.lock().unwrap();
-            for (&addr, &(size, align)) in allocs.iter() {
-                if let Ok(layout) = Layout::from_size_align(size, align) {
-                    unsafe { std::alloc::dealloc(addr as *mut u8, layout) };
-                }
-            }
-            WinBool::TRUE
-        }
-        Some(HandleEntry::Window(_)) => WinBool::FALSE,
-        Some(other) => {
-            let _ = handle_table().insert(other);
-            WinBool::FALSE
-        }
-        None => WinBool::FALSE,
-    }
+    common::memory::heap_destroy(handle)
 }
 
+/// HeapAlloc — allocate a block from a heap.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap from which the memory will be allocated, returned by HeapCreate or GetProcessHeap.
+/// * `flags` - Allocation options. Supported flags:
+///     * `HEAP_ZERO_MEMORY` (0x00000008): If this flag is specified, the allocated memory will be initialized to zero.
+/// * `size` - The number of bytes to allocate. If this parameter is zero, the function allocates the minimum possible size (1 byte).
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to the allocated memory block. If the function fails, the return value is `NULL`.
+///
+/// # Safety
+/// The caller must ensure that `heap_handle` is a valid handle returned by HeapCreate or GetProcessHeap, and that the heap has not been
+/// destroyed. The caller is responsible for freeing the allocated memory using HeapFree when it is no longer needed.
+///
+/// # Note
+/// * `HEAP_NO_SERIALIZE` (0x00000001) and `HEAP_GENERATE_EXCEPTIONS` (0x00000004) are accepted but have no effect in this implementation.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn HeapAlloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
+    let handle = Handle::from_raw(heap_handle);
     if size == 0 {
-        return common::memory::heap_alloc(heap_handle, flags, 1);
+        // Windows HeapAlloc with size 0 returns a valid non-null pointer.
+        return common::memory::heap_alloc(handle, flags, 1);
     }
-    common::memory::heap_alloc(heap_handle, flags, size)
+    common::memory::heap_alloc(handle, flags, size)
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]

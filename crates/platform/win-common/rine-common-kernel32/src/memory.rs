@@ -2,6 +2,7 @@ use std::alloc::Layout;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
+use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, HeapState, handle_table};
 
 const HEAP_ZERO_MEMORY: u32 = 0x00000008;
@@ -26,7 +27,7 @@ pub static DEFAULT_HEAP: LazyLock<Handle> = LazyLock::new(|| {
 
 /// The default process heap, used by HeapAlloc with a null heap handle.
 /// This is lazily initialized on first use.
-pub fn heap_alloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
+pub fn heap_alloc(heap_handle: Handle, flags: u32, size: usize) -> *mut u8 {
     let align = std::mem::align_of::<usize>(); // pointer-width alignment
     let layout = match Layout::from_size_align(size, align) {
         Ok(l) => l,
@@ -43,8 +44,8 @@ pub fn heap_alloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
     }
 
     // Track the allocation in the heap's state.
-    let handle = Handle::from_raw(heap_handle);
-    handle_table().with_heap(handle, |state| {
+
+    handle_table().with_heap(heap_handle, |state| {
         state
             .allocations
             .lock()
@@ -55,6 +56,37 @@ pub fn heap_alloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
     rine_types::dev_notify!(on_memory_allocated(ptr as u64, size as u64, "HeapAlloc"));
 
     ptr
+}
+
+pub fn heap_destroy(heap_handle: Handle) -> WinBool {
+    // Don't allow destroying the default process heap.
+    if heap_handle == *DEFAULT_HEAP {
+        return WinBool::FALSE;
+    }
+
+    match handle_table().remove(heap_handle) {
+        Some(HandleEntry::Heap(state)) => {
+            // Free all outstanding allocations.
+            let allocs = state.allocations.lock().unwrap();
+            for (&addr, &(size, align)) in allocs.iter() {
+                if let Ok(layout) = Layout::from_size_align(size, align) {
+                    unsafe { std::alloc::dealloc(addr as *mut u8, layout) };
+                }
+                rine_types::dev_notify!(on_memory_freed(addr as u64, size as u64, "HeapDestroy"));
+            }
+            WinBool::TRUE
+        }
+        Some(HandleEntry::Window(_)) => {
+            // Window handles should not be destroyed via HeapDestroy.
+            WinBool::FALSE
+        }
+        Some(other) => {
+            // Put it back — wasn't a heap handle.
+            handle_table().insert(other);
+            WinBool::FALSE
+        }
+        None => WinBool::FALSE,
+    }
 }
 
 /// Convert Windows memory protection flags to Linux `mmap` protection flags.
