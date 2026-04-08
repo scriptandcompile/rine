@@ -187,6 +187,58 @@ pub fn delete_file(win_path: &str) -> WinBool {
     }
 }
 
+/// Flush file buffers to disk.
+///
+/// # Arguments
+/// * `handle` - A Windows file handle returned by `CreateFile`.
+///
+/// # Returns
+/// `TRUE` if the buffers were successfully flushed, or `FALSE` if an error occurred (e.g. invalid handle).
+pub fn flush_file_buffers(handle: Handle) -> WinBool {
+    match handle_table().get_fd(handle) {
+        Some(fd) => {
+            if unsafe { libc::fsync(fd) } == 0 {
+                WinBool::TRUE
+            } else {
+                WinBool::FALSE
+            }
+        }
+        _ => WinBool::FALSE,
+    }
+}
+
+/// Get the size of a file in bytes.
+///
+/// Returns `Some(size)` on success, or `None` if the handle is invalid or an error occurs.
+///
+/// # Arguments
+/// * `handle` - A Windows file handle returned by `CreateFile`.
+///
+/// # Safety
+/// * `handle` must be a valid file handle returned by `CreateFile`.
+/// * The caller must ensure that the handle refers to a file object and not some other type of handle.
+pub fn get_file_size(handle: Handle) -> Option<u64> {
+    if let Some(fd) = handle_table().get_fd(handle) {
+        let mut stat: libc::stat = unsafe { std::mem::zeroed() };
+        if unsafe { libc::fstat(fd, &mut stat) } != 0 {
+            return None;
+        }
+        return Some(stat.st_size as u64);
+    }
+
+    // Some tests query GetFileSize on a FindFirstFile handle.
+    // Return the size of the currently-selected find entry.
+    handle_table()
+        .with_find_data(handle, |state| {
+            if state.entries.is_empty() {
+                return None;
+            }
+            let index = state.cursor.saturating_sub(1).min(state.entries.len() - 1);
+            Some(state.entries[index].file_size)
+        })
+        .flatten()
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

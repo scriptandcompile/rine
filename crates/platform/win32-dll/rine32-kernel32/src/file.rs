@@ -1,6 +1,6 @@
 use rine_common_kernel32 as common;
 use rine_dlls::win32_stub;
-use rine_types::handles::{Handle, INVALID_HANDLE_VALUE};
+use rine_types::handles::{Handle, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE};
 use rine_types::{
     errors::WinBool,
     strings::{read_cstr, read_wstr},
@@ -86,6 +86,34 @@ pub unsafe extern "stdcall" fn DeleteFileA(file_name: *const u8) -> WinBool {
     common::file::delete_file(&path_str)
 }
 
+/// GetFileSize — return the size of a file in bytes.
+///
+/// Returns the low 32 bits. If `file_size_high` is non-null, the high
+/// 32 bits are written there.
+///
+/// # Arguments
+/// * `file` - The file handle to query. Must be a valid file handle returned by `CreateFile`.
+/// * `file_size_high` - Optional pointer to receive the high 32 bits of the file size.
+///   If the file size exceeds 4GB, this must be non-null and will be set to the high bits of the file size.
+///   If the file size is 4GB or less, this can be null or will be set to zero.
+///
+/// # Safety
+/// * `file` must be a valid file handle returned by `CreateFile`.
+/// * `file_size_high` must be null or point to a valid u32 variable.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn GetFileSize(file: isize, file_size_high: *mut u32) -> u32 {
+    let handle = Handle::from_raw(file);
+
+    let Some(size) = common::file::get_file_size(handle) else {
+        return INVALID_FILE_SIZE;
+    };
+
+    if !file_size_high.is_null() {
+        unsafe { *file_size_high = (size >> 32) as u32 };
+    }
+    size as u32
+}
+
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn WriteFile(
     file: isize,
@@ -96,6 +124,22 @@ pub unsafe extern "stdcall" fn WriteFile(
 ) -> WinBool {
     let handle = Handle::from_raw(file);
     unsafe { common::file::write_file(handle, buffer, bytes_to_write, bytes_written, _overlapped) }
+}
+
+/// FlushFileBuffers — flush a file's buffers to disk.
+///
+/// # Arguments
+/// * `file` - The file handle to flush. Must be a valid file handle returned by `CreateFile`.
+///
+/// # Safety
+/// `file` must be a valid file handle returned by `CreateFile`.
+///
+/// # Note
+/// This implementation does not support flushing of non-file handles (e.g. pipes, consoles).
+#[allow(non_snake_case)]
+pub unsafe extern "stdcall" fn FlushFileBuffers(file: isize) -> WinBool {
+    let handle = Handle::from_raw(file);
+    common::file::flush_file_buffers(handle)
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]

@@ -31,6 +31,7 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("WriteFile", as_win_api!(file::WriteFile)),
             Export::Func("CloseHandle", as_win_api!(file::CloseHandle)),
             Export::Func("GetFileSize", as_win_api!(file::GetFileSize)),
+            Export::Func("FlushFileBuffers", as_win_api!(file::FlushFileBuffers)),
             Export::Func("SetFilePointer", as_win_api!(file::SetFilePointer)),
             Export::Func("FindFirstFileA", as_win_api!(file::FindFirstFileA)),
             Export::Func("FindFirstFileW", as_win_api!(file::FindFirstFileW)),

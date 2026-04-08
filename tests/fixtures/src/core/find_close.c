@@ -1,5 +1,5 @@
 // Tests FindClose family of Windows API calls.
-// Tests: FindFirstFileA, FindNextFileA, FindClose
+// Tests: FindFirstFileA, FindNextFileA, FindClose, GetFileSize, FlushFileBuffers
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
@@ -16,6 +16,15 @@ int main(void) {
     DWORD bytes_written;
     const char* test_data = "test data for find operations";
     WriteFile(hFile, test_data, strlen(test_data), &bytes_written, NULL);
+    FlushFileBuffers(hFile);
+
+    DWORD file_size = GetFileSize(hFile, NULL);
+
+    if (file_size != bytes_written) {
+        puts("FAIL: GetFileSize failed");
+        return 1;
+    }
+
     CloseHandle(hFile);
     
     // Use FindFirstFileA to find the test file
@@ -33,7 +42,7 @@ int main(void) {
         FindClose(hFind);
         return 1;
     }
-    
+
     // Test FindClose - should succeed
     if (!FindClose(hFind)) {
         puts("FAIL: FindClose failed");
