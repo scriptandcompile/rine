@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-08T06:26:09.867395+00:00",
+  "generatedAt": "2026-04-08T20:23:30.358673+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1012,9 +1012,9 @@
             "source": "kernel32 - memory.rs"
           },
           "x86": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "memory::HeapSize",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -2333,9 +2333,9 @@
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 153,
+      "implemented": 154,
       "stubbed": 8,
-      "unimplemented": 14
+      "unimplemented": 13
     }
   }
 }
