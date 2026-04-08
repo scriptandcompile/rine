@@ -16,6 +16,11 @@ fn process_threads() {
 }
 
 #[test]
+fn create_process() {
+    assert_run("create_process", 0, "CreateProcessA ok\n");
+}
+
+#[test]
 fn sync_primitives() {
     assert_run(
         "sync_primitives",
