@@ -60,6 +60,6 @@ int main(void) {
         return 1;
     }
     
-    puts("FindClose works");
+    puts("FindClose ok");
     return 0;
 }

@@ -7,22 +7,22 @@ fn hello_puts() {
 
 #[test]
 fn write_console_a() {
-    assert_run("write_console", 0, "WriteConsoleA works");
+    assert_run("write_console", 0, "WriteConsoleA ok");
 }
 
 #[test]
 fn find_close() {
-    assert_run("find_close", 0, "FindClose works");
+    assert_run("find_close", 0, "FindClose ok");
 }
 
 #[test]
 fn write_file_stdout() {
-    assert_run("write_file", 0, "WriteFile works");
+    assert_run("write_file", 0, "WriteFile ok");
 }
 
 #[test]
 fn malloc_free() {
-    assert_run("malloc_free", 0, "heap works");
+    assert_run("malloc_free", 0, "heap ok");
 }
 
 #[test]

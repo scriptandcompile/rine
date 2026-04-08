@@ -10,7 +10,7 @@ int main(void) {
         puts("FAIL: malloc returned NULL");
         return 1;
     }
-    strcpy(buf, "heap works");
+    strcpy(buf, "heap ok");
     puts(buf);
     free(buf);
     return 0;
