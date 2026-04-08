@@ -19,7 +19,23 @@ pub unsafe extern "stdcall" fn GetProcessHeap() -> isize {
     common::memory::DEFAULT_HEAP.as_raw()
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// HeapCreate — create a new private heap.
+///
+/// # Arguments
+/// * `options`: heap flags (HEAP_GENERATE_EXCEPTIONS, HEAP_NO_SERIALIZE, etc.)
+/// * `initial_size` / `maximum_size`: ignored — we use the Rust allocator.
+///
+/// # Safety
+/// The caller must eventually call HeapDestroy on the returned handle, and must not use the heap after it has been destroyed.
+/// The caller is responsible for freeing any memory allocated from the heap using HeapFree before destroying the heap.
+///
+/// # Returns
+/// On success, returns a handle to the newly created heap. On failure, returns `NULL` (0).
+///
+/// # Note
+/// The default process heap returned by GetProcessHeap cannot be created or destroyed using
+/// HeapCreate or HeapDestroy, and attempting to do so will fail.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn HeapCreate(
     options: u32,
     _initial_size: usize,

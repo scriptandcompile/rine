@@ -14,10 +14,8 @@ pub const PAGE_EXECUTE: u32 = 0x10;
 pub const PAGE_EXECUTE_READ: u32 = 0x20;
 pub const PAGE_EXECUTE_READWRITE: u32 = 0x40;
 
-// ---------------------------------------------------------------------------
-// Process default heap (lazy)
-// ---------------------------------------------------------------------------
-
+/// The default process heap, used by HeapAlloc with a null heap handle.
+/// This is lazily initialized on first use.
 pub static DEFAULT_HEAP: LazyLock<Handle> = LazyLock::new(|| {
     handle_table().insert(HandleEntry::Heap(HeapState {
         allocations: Mutex::new(HashMap::new()),
@@ -27,6 +25,16 @@ pub static DEFAULT_HEAP: LazyLock<Handle> = LazyLock::new(|| {
 
 /// The default process heap, used by HeapAlloc with a null heap handle.
 /// This is lazily initialized on first use.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap from which the memory will be allocated, returned by HeapCreate or GetProcessHeap.
+///   If this parameter is `NULL` (0), the default process heap is used.
+/// * `flags` - Allocation options. Supported flags:
+///   * `HEAP_ZERO_MEMORY` (0x00000008): If this flag is specified, the allocated memory will be initialized to zero.
+/// * `size` - The number of bytes to allocate. If this parameter is zero, the function allocates the minimum possible size (1 byte).
+///
+/// # Note
+/// The default process heap cannot be destroyed, and attempting to do so will fail.
 pub fn heap_alloc(heap_handle: Handle, flags: u32, size: usize) -> *mut u8 {
     let align = std::mem::align_of::<usize>(); // pointer-width alignment
     let layout = match Layout::from_size_align(size, align) {
@@ -58,6 +66,13 @@ pub fn heap_alloc(heap_handle: Handle, flags: u32, size: usize) -> *mut u8 {
     ptr
 }
 
+/// Destroy a heap created by HeapCreate, freeing all outstanding allocations from the heap in the process.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap to destroy, returned by HeapCreate.
+///
+/// # Note
+/// The default process heap cannot be destroyed, and attempting to do so will fail.
 pub fn heap_destroy(heap_handle: Handle) -> WinBool {
     // Don't allow destroying the default process heap.
     if heap_handle == *DEFAULT_HEAP {
@@ -90,6 +105,28 @@ pub fn heap_destroy(heap_handle: Handle) -> WinBool {
 }
 
 /// Convert Windows memory protection flags to Linux `mmap` protection flags.
+///
+/// Unsupported or unknown flags are ignored, except that the absence of any
+/// known protection flags results in `PROT_READ | PROT_WRITE` to avoid creating inaccessible memory.
+///
+/// # Arguments
+/// * `protect` - Windows memory protection flags, e.g. `PAGE_READWRITE`.
+///
+/// # Returns
+/// Linux `mmap` protection flags, e.g. `PROT_READ | PROT_WRITE`.
+///
+/// # Note
+/// This is used for translating protection flags in memory mapping and protection APIs.
+/// It is not a general-purpose flag translator and does not handle all Windows flags or combinations.
+/// It covers the most common cases and falls back to read/write access for unknown flags to maintain functionality.
+///
+/// Supported Windows flags:
+/// * `PAGE_NOACCESS` (0x01) → `PROT_NONE`
+/// * `PAGE_READONLY` (0x02) → `PROT_READ`
+/// * `PAGE_READWRITE` (0x04) → `PROT_READ | PROT_WRITE`
+/// * `PAGE_EXECUTE` (0x10) → `PROT_EXEC`
+/// * `PAGE_EXECUTE_READ` (0x20) → `PROT_READ | PROT_EXEC`
+/// * `PAGE_EXECUTE_READWRITE` (0x40) → `PROT_READ | PROT_WRITE | PROT_EXEC`
 pub fn win_protect_to_linux(protect: u32) -> i32 {
     match protect {
         PAGE_NOACCESS => libc::PROT_NONE,
