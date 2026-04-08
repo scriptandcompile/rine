@@ -104,6 +104,35 @@ pub fn heap_destroy(heap_handle: Handle) -> WinBool {
     }
 }
 
+/// Return the size of a memory block allocated from a heap by HeapAlloc.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap from which the memory was allocated, returned by HeapCreate or GetProcessHeap.
+/// * `flags` - This parameter is reserved and must be 0.
+/// * `ptr` - A pointer to the memory block allocated by HeapAlloc.
+///
+/// # Returns
+/// If the function succeeds, the return value is the size of the allocated memory block, in bytes.
+/// If the function fails, the return value is `(SIZE_MAX)` (the maximum possible value for a `size_t`),
+/// and extended error information should be (but currently cannot) be obtained by calling GetLastError.
+///
+/// # Notes
+/// * The caller must ensure that `heap_handle` is a valid handle returned by HeapCreate or GetProcessHeap,
+///   and that there are no outstanding allocations from the heap.
+/// * The default process heap cannot be destroyed, and attempting to do so will fail, but this function can
+///   still be used to query the size of allocations from the default heap.
+pub fn heap_size(heap_handle: Handle, _flags: u32, ptr: *const u8) -> usize {
+    let result = handle_table().with_heap(heap_handle, |state| {
+        let allocs = state.allocations.lock().unwrap();
+        allocs.get(&(ptr as usize)).map(|&(size, _)| size)
+    });
+
+    match result {
+        Some(Some(size)) => size,
+        _ => usize::MAX,
+    }
+}
+
 /// Convert Windows memory protection flags to Linux `mmap` protection flags.
 ///
 /// Unsupported or unknown flags are ignored, except that the absence of any

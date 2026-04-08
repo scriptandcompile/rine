@@ -66,6 +66,7 @@ pub unsafe extern "win64" fn HeapCreate(
         flags: options,
     };
     let h = handle_table().insert(HandleEntry::Heap(heap));
+
     rine_types::dev_notify!(on_handle_created(
         h.as_raw() as i64,
         "Heap",
@@ -199,18 +200,19 @@ pub unsafe extern "win64" fn HeapReAlloc(
 }
 
 /// HeapSize — return the size of a heap allocation.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap from which the memory was allocated, returned by HeapCreate or GetProcessHeap.
+/// * `_flags` - Ignored in this implementation.
+/// * `ptr` - A pointer to a memory block allocated from the heap by HeapAlloc or HeapReAlloc.
+///
+/// # Returns
+/// The size of the allocated block in bytes, or `-1` (usize::MAX) if the handle or pointer is invalid.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn HeapSize(heap_handle: isize, _flags: u32, ptr: *const u8) -> usize {
     let handle = Handle::from_raw(heap_handle);
-    let result = handle_table().with_heap(handle, |state| {
-        let allocs = state.allocations.lock().unwrap();
-        allocs.get(&(ptr as usize)).map(|&(size, _)| size)
-    });
 
-    match result {
-        Some(Some(size)) => size,
-        _ => usize::MAX,
-    }
+    common::memory::heap_size(handle, _flags, ptr)
 }
 
 // ---------------------------------------------------------------------------

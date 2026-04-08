@@ -99,6 +99,22 @@ pub unsafe extern "stdcall" fn HeapAlloc(heap_handle: isize, flags: u32, size: u
     common::memory::heap_alloc(handle, flags, size)
 }
 
+/// HeapSize — return the size of a heap allocation.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap from which the memory was allocated, returned by HeapCreate or GetProcessHeap.
+/// * `_flags` - Ignored in this implementation.
+/// * `ptr` - A pointer to a memory block allocated from the heap by HeapAlloc or HeapReAlloc.
+///
+/// # Returns
+/// The size of the allocated block in bytes, or `-1` (usize::MAX) if the handle or pointer is invalid.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn HeapSize(heap_handle: isize, _flags: u32, ptr: *const u8) -> usize {
+    let handle = Handle::from_raw(heap_handle);
+
+    common::memory::heap_size(handle, _flags, ptr)
+}
+
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut u8) -> WinBool {
     if ptr.is_null() {
