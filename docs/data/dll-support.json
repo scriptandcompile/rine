@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-08T05:42:09.960755+00:00",
+  "generatedAt": "2026-04-08T06:26:09.867395+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1299,8 +1299,8 @@
           },
           "x86": {
             "status": "unimplemented",
-            "symbol": "memory::VirtualQuery",
-            "source": "kernel32 - memory.rs"
+            "symbol": null,
+            "source": null
           }
         },
         {

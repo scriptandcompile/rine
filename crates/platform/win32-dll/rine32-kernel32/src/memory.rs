@@ -2,48 +2,21 @@ use std::alloc::Layout;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
-use rine_dlls::win32_stub;
+use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
-
-const PAGE_NOACCESS: u32 = 0x01;
-const PAGE_READONLY: u32 = 0x02;
-const PAGE_READWRITE: u32 = 0x04;
-const PAGE_EXECUTE: u32 = 0x10;
-const PAGE_EXECUTE_READ: u32 = 0x20;
-const PAGE_EXECUTE_READWRITE: u32 = 0x40;
 
 const HEAP_ZERO_MEMORY: u32 = 0x0000_0008;
 const MEM_COMMIT: u32 = 0x0000_1000;
 const MEM_RESERVE: u32 = 0x0000_2000;
 const MEM_RELEASE: u32 = 0x0000_8000;
 
-static DEFAULT_HEAP: LazyLock<Handle> = LazyLock::new(|| {
-    handle_table().insert(HandleEntry::Heap(rine_types::handles::HeapState {
-        allocations: Mutex::new(HashMap::new()),
-        flags: 0,
-    }))
-});
 static VIRTUAL_REGIONS: LazyLock<Mutex<HashMap<usize, usize>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-win32_stub!(VirtualQuery, "kernel32");
-
-fn win_protect_to_linux(protect: u32) -> i32 {
-    match protect {
-        PAGE_NOACCESS => libc::PROT_NONE,
-        PAGE_READONLY => libc::PROT_READ,
-        PAGE_READWRITE => libc::PROT_READ | libc::PROT_WRITE,
-        PAGE_EXECUTE => libc::PROT_EXEC,
-        PAGE_EXECUTE_READ => libc::PROT_READ | libc::PROT_EXEC,
-        PAGE_EXECUTE_READWRITE => libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC,
-        _ => libc::PROT_READ | libc::PROT_WRITE,
-    }
-}
-
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn GetProcessHeap() -> isize {
-    DEFAULT_HEAP.as_raw()
+    common::memory::DEFAULT_HEAP.as_raw()
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
@@ -62,7 +35,7 @@ pub unsafe extern "stdcall" fn HeapCreate(
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn HeapDestroy(heap_handle: isize) -> WinBool {
     let handle = Handle::from_raw(heap_handle);
-    if heap_handle == DEFAULT_HEAP.as_raw() {
+    if heap_handle == common::memory::DEFAULT_HEAP.as_raw() {
         return WinBool::FALSE;
     }
 
@@ -85,40 +58,12 @@ pub unsafe extern "stdcall" fn HeapDestroy(heap_handle: isize) -> WinBool {
     }
 }
 
-fn heap_alloc_inner(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
-    let align = std::mem::align_of::<usize>();
-    let layout = match Layout::from_size_align(size, align) {
-        Ok(l) => l,
-        Err(_) => return std::ptr::null_mut(),
-    };
-
-    let ptr = unsafe { std::alloc::alloc(layout) };
-    if ptr.is_null() {
-        return std::ptr::null_mut();
-    }
-
-    if flags & HEAP_ZERO_MEMORY != 0 {
-        unsafe { std::ptr::write_bytes(ptr, 0, size) };
-    }
-
-    let handle = Handle::from_raw(heap_handle);
-    handle_table().with_heap(handle, |state| {
-        state
-            .allocations
-            .lock()
-            .unwrap()
-            .insert(ptr as usize, (size, align));
-    });
-
-    ptr
-}
-
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn HeapAlloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
     if size == 0 {
-        return heap_alloc_inner(heap_handle, flags, 1);
+        return common::memory::heap_alloc(heap_handle, flags, 1);
     }
-    heap_alloc_inner(heap_handle, flags, size)
+    common::memory::heap_alloc(heap_handle, flags, size)
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
@@ -210,7 +155,7 @@ pub unsafe extern "stdcall" fn VirtualAlloc(
         return std::ptr::null_mut();
     }
 
-    let prot = win_protect_to_linux(protect);
+    let prot = common::memory::win_protect_to_linux(protect);
     let addr_hint = if address.is_null() {
         std::ptr::null_mut()
     } else {
@@ -272,7 +217,13 @@ pub unsafe extern "stdcall" fn VirtualProtect(
         unsafe { *old_protect = new_protect };
     }
 
-    let result = unsafe { libc::mprotect(address.cast(), size, win_protect_to_linux(new_protect)) };
+    let result = unsafe {
+        libc::mprotect(
+            address.cast(),
+            size,
+            common::memory::win_protect_to_linux(new_protect),
+        )
+    };
     if result == 0 {
         WinBool::TRUE
     } else {

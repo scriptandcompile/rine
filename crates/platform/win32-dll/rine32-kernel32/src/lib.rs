@@ -22,6 +22,7 @@ win32_stub!(LoadLibraryA, "kernel32");
 win32_stub!(GetProcAddress, "kernel32");
 win32_stub!(FreeLibrary, "kernel32");
 win32_stub!(GetCurrentProcess, "kernel32");
+win32_stub!(VirtualQuery, "kernel32");
 
 impl DllPlugin for Kernel32Plugin32 {
     fn dll_names(&self) -> &[&str] {
@@ -100,7 +101,6 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("CreateSemaphoreW", as_win_api!(sync::CreateSemaphoreW)),
             Export::Func("ReleaseSemaphore", as_win_api!(sync::ReleaseSemaphore)),
             Export::Func("VirtualProtect", as_win_api!(memory::VirtualProtect)),
-            Export::Func("VirtualQuery", as_win_api!(memory::VirtualQuery)),
             Export::Func("TlsAlloc", as_win_api!(thread::TlsAlloc)),
             Export::Func("TlsFree", as_win_api!(thread::TlsFree)),
             Export::Func("TlsGetValue", as_win_api!(thread::TlsGetValue)),

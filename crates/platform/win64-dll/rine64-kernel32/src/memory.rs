@@ -4,6 +4,7 @@ use std::alloc::Layout;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
+use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, HeapState, handle_table};
 
@@ -21,24 +22,6 @@ const MEM_COMMIT: u32 = 0x00001000;
 const MEM_RESERVE: u32 = 0x00002000;
 const MEM_RELEASE: u32 = 0x00008000;
 
-const PAGE_NOACCESS: u32 = 0x01;
-const PAGE_READONLY: u32 = 0x02;
-const PAGE_READWRITE: u32 = 0x04;
-const PAGE_EXECUTE: u32 = 0x10;
-const PAGE_EXECUTE_READ: u32 = 0x20;
-const PAGE_EXECUTE_READWRITE: u32 = 0x40;
-
-// ---------------------------------------------------------------------------
-// Process default heap (lazy)
-// ---------------------------------------------------------------------------
-
-static DEFAULT_HEAP: LazyLock<Handle> = LazyLock::new(|| {
-    handle_table().insert(HandleEntry::Heap(HeapState {
-        allocations: Mutex::new(HashMap::new()),
-        flags: 0,
-    }))
-});
-
 // ---------------------------------------------------------------------------
 // VirtualAlloc region tracking
 // ---------------------------------------------------------------------------
@@ -53,7 +36,7 @@ static VIRTUAL_REGIONS: LazyLock<Mutex<HashMap<usize, usize>>> =
 /// GetProcessHeap — return the default process heap handle.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn GetProcessHeap() -> isize {
-    DEFAULT_HEAP.as_raw()
+    common::memory::DEFAULT_HEAP.as_raw()
 }
 
 /// HeapCreate — create a new private heap.
@@ -86,7 +69,7 @@ pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
     rine_types::dev_notify!(on_handle_closed(heap_handle as i64));
 
     // Don't allow destroying the default process heap.
-    if heap_handle == DEFAULT_HEAP.as_raw() {
+    if heap_handle == common::memory::DEFAULT_HEAP.as_raw() {
         return WinBool::FALSE;
     }
 
@@ -120,40 +103,9 @@ pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
 pub unsafe extern "win64" fn HeapAlloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
     if size == 0 {
         // Windows HeapAlloc with size 0 returns a valid non-null pointer.
-        return heap_alloc_inner(heap_handle, flags, 1);
+        return common::memory::heap_alloc(heap_handle, flags, 1);
     }
-    heap_alloc_inner(heap_handle, flags, size)
-}
-
-fn heap_alloc_inner(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
-    let align = std::mem::align_of::<usize>(); // pointer-width alignment
-    let layout = match Layout::from_size_align(size, align) {
-        Ok(l) => l,
-        Err(_) => return std::ptr::null_mut(),
-    };
-
-    let ptr = unsafe { std::alloc::alloc(layout) };
-    if ptr.is_null() {
-        return std::ptr::null_mut();
-    }
-
-    if flags & HEAP_ZERO_MEMORY != 0 {
-        unsafe { std::ptr::write_bytes(ptr, 0, size) };
-    }
-
-    // Track the allocation in the heap's state.
-    let handle = Handle::from_raw(heap_handle);
-    handle_table().with_heap(handle, |state| {
-        state
-            .allocations
-            .lock()
-            .unwrap()
-            .insert(ptr as usize, (size, align));
-    });
-
-    rine_types::dev_notify!(on_memory_allocated(ptr as u64, size as u64, "HeapAlloc"));
-
-    ptr
+    common::memory::heap_alloc(heap_handle, flags, size)
 }
 
 /// HeapFree — free a block allocated by HeapAlloc.
@@ -282,7 +234,7 @@ pub unsafe extern "win64" fn VirtualAlloc(
         return std::ptr::null_mut();
     }
 
-    let prot = win_protect_to_linux(protect);
+    let prot = common::memory::win_protect_to_linux(protect);
 
     let addr_hint = if address.is_null() {
         std::ptr::null_mut()
@@ -380,7 +332,7 @@ pub unsafe extern "win64" fn VirtualProtect(
         unsafe { *old_protect = new_protect };
     }
 
-    let prot = win_protect_to_linux(new_protect);
+    let prot = common::memory::win_protect_to_linux(new_protect);
     let result = unsafe { libc::mprotect(address.cast(), size, prot) };
     if result == 0 {
         WinBool::TRUE
@@ -399,19 +351,6 @@ pub unsafe extern "win64" fn VirtualQuery(
     _length: usize,
 ) -> usize {
     0
-}
-
-/// Translate Windows memory protection constants to Linux mprotect flags.
-fn win_protect_to_linux(protect: u32) -> i32 {
-    match protect {
-        PAGE_NOACCESS => libc::PROT_NONE,
-        PAGE_READONLY => libc::PROT_READ,
-        PAGE_READWRITE => libc::PROT_READ | libc::PROT_WRITE,
-        PAGE_EXECUTE => libc::PROT_EXEC,
-        PAGE_EXECUTE_READ => libc::PROT_READ | libc::PROT_EXEC,
-        PAGE_EXECUTE_READWRITE => libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC,
-        _ => libc::PROT_READ | libc::PROT_WRITE,
-    }
 }
 
 // ===========================================================================
@@ -645,7 +584,7 @@ mod tests {
                 std::ptr::null_mut(),
                 4096,
                 MEM_COMMIT | MEM_RESERVE,
-                PAGE_READWRITE,
+                common::memory::PAGE_READWRITE,
             )
         };
         assert!(!ptr.is_null());
@@ -661,7 +600,14 @@ mod tests {
 
     #[test]
     fn virtual_alloc_commit_only() {
-        let ptr = unsafe { VirtualAlloc(std::ptr::null_mut(), 8192, MEM_COMMIT, PAGE_READWRITE) };
+        let ptr = unsafe {
+            VirtualAlloc(
+                std::ptr::null_mut(),
+                8192,
+                MEM_COMMIT,
+                common::memory::PAGE_READWRITE,
+            )
+        };
         assert!(!ptr.is_null());
         unsafe {
             *ptr = 42;
@@ -678,7 +624,7 @@ mod tests {
                 std::ptr::null_mut(),
                 0,
                 MEM_COMMIT | MEM_RESERVE,
-                PAGE_READWRITE,
+                common::memory::PAGE_READWRITE,
             )
         };
         assert!(ptr.is_null());
@@ -686,7 +632,14 @@ mod tests {
 
     #[test]
     fn virtual_alloc_invalid_type_fails() {
-        let ptr = unsafe { VirtualAlloc(std::ptr::null_mut(), 4096, 0, PAGE_READWRITE) };
+        let ptr = unsafe {
+            VirtualAlloc(
+                std::ptr::null_mut(),
+                4096,
+                0,
+                common::memory::PAGE_READWRITE,
+            )
+        };
         assert!(ptr.is_null());
     }
 
@@ -711,7 +664,7 @@ mod tests {
                 std::ptr::null_mut(),
                 size,
                 MEM_COMMIT | MEM_RESERVE,
-                PAGE_READWRITE,
+                common::memory::PAGE_READWRITE,
             )
         };
         assert!(!ptr.is_null());
@@ -733,7 +686,7 @@ mod tests {
                 std::ptr::null_mut(),
                 1,
                 MEM_COMMIT | MEM_RESERVE,
-                PAGE_READWRITE,
+                common::memory::PAGE_READWRITE,
             )
         };
         assert!(!ptr.is_null());
@@ -755,14 +708,14 @@ mod tests {
                 std::ptr::null_mut(),
                 4096,
                 MEM_COMMIT | MEM_RESERVE,
-                PAGE_READWRITE,
+                common::memory::PAGE_READWRITE,
             )
         };
         assert!(!ptr.is_null());
         let mut old: u32 = 0;
-        let result = unsafe { VirtualProtect(ptr, 4096, PAGE_READONLY, &mut old) };
+        let result = unsafe { VirtualProtect(ptr, 4096, common::memory::PAGE_READONLY, &mut old) };
         assert!(result.is_true());
-        assert_eq!(old, PAGE_READONLY);
+        assert_eq!(old, common::memory::PAGE_READONLY);
         unsafe { VirtualFree(ptr, 0, MEM_RELEASE) };
     }
 
@@ -773,38 +726,19 @@ mod tests {
                 std::ptr::null_mut(),
                 4096,
                 MEM_COMMIT | MEM_RESERVE,
-                PAGE_READWRITE,
+                common::memory::PAGE_READWRITE,
             )
         };
         assert!(!ptr.is_null());
-        let result = unsafe { VirtualProtect(ptr, 4096, PAGE_READONLY, std::ptr::null_mut()) };
+        let result = unsafe {
+            VirtualProtect(
+                ptr,
+                4096,
+                common::memory::PAGE_READONLY,
+                std::ptr::null_mut(),
+            )
+        };
         assert!(result.is_true());
         unsafe { VirtualFree(ptr, 0, MEM_RELEASE) };
-    }
-
-    // ── win_protect_to_linux ────────────────────────────────────
-
-    #[test]
-    fn protect_translation() {
-        assert_eq!(win_protect_to_linux(PAGE_NOACCESS), libc::PROT_NONE);
-        assert_eq!(win_protect_to_linux(PAGE_READONLY), libc::PROT_READ);
-        assert_eq!(
-            win_protect_to_linux(PAGE_READWRITE),
-            libc::PROT_READ | libc::PROT_WRITE
-        );
-        assert_eq!(win_protect_to_linux(PAGE_EXECUTE), libc::PROT_EXEC);
-        assert_eq!(
-            win_protect_to_linux(PAGE_EXECUTE_READ),
-            libc::PROT_READ | libc::PROT_EXEC
-        );
-        assert_eq!(
-            win_protect_to_linux(PAGE_EXECUTE_READWRITE),
-            libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC
-        );
-        // Unknown → RW fallback
-        assert_eq!(
-            win_protect_to_linux(0xFF),
-            libc::PROT_READ | libc::PROT_WRITE
-        );
     }
 }
