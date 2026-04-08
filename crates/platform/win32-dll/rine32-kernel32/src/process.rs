@@ -116,6 +116,15 @@ pub unsafe extern "stdcall" fn GetCurrentProcess() -> isize {
     -1
 }
 
+/// GetLastError — return the last-error code for the calling thread.
+///
+/// Stub: always returns 0 (ERROR_SUCCESS). A real per-thread last-error
+/// store will be added with the threading subsystem.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "win64" fn GetLastError() -> u32 {
+    0
+}
+
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn GetExitCodeProcess(
     _process_handle: isize,
