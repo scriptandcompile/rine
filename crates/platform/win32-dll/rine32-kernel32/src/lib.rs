@@ -22,6 +22,7 @@ win32_stub!(SetUnhandledExceptionFilter, "kernel32");
 win32_stub!(LoadLibraryA, "kernel32");
 win32_stub!(GetProcAddress, "kernel32");
 win32_stub!(FreeLibrary, "kernel32");
+win32_stub!(GetCurrentProcess, "kernel32");
 
 impl DllPlugin for Kernel32Plugin32 {
     fn dll_names(&self) -> &[&str] {
@@ -39,7 +40,6 @@ impl DllPlugin for Kernel32Plugin32 {
                 "GetCurrentProcessId",
                 as_win_api!(process::GetCurrentProcessId),
             ),
-            Export::Func("GetCurrentProcess", as_win_api!(process::GetCurrentProcess)),
             Export::Func(
                 "GetExitCodeProcess",
                 as_win_api!(process::GetExitCodeProcess),

@@ -7,9 +7,7 @@ pub mod sync;
 pub mod thread;
 pub mod version;
 
-use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
-
-win32_stub!(GetLastError, "kernel32");
+use rine_dlls::{DllPlugin, Export, as_win_api};
 
 pub struct Kernel32Plugin;
 
@@ -33,8 +31,8 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("WriteFile", as_win_api!(file::WriteFile)),
             Export::Func("CloseHandle", as_win_api!(file::CloseHandle)),
             Export::Func("GetFileSize", as_win_api!(file::GetFileSize)),
-            Export::Func("FlushFileBuffers", as_win_api!(file::FlushFileBuffers)),
             Export::Func("SetFilePointer", as_win_api!(file::SetFilePointer)),
+            Export::Func("FlushFileBuffers", as_win_api!(file::FlushFileBuffers)),
             Export::Func("FindFirstFileA", as_win_api!(file::FindFirstFileA)),
             Export::Func("FindFirstFileW", as_win_api!(file::FindFirstFileW)),
             Export::Func("FindNextFileA", as_win_api!(file::FindNextFileA)),
@@ -46,6 +44,7 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("GetCommandLineW", as_win_api!(process::GetCommandLineW)),
             Export::Func("GetModuleHandleA", as_win_api!(process::GetModuleHandleA)),
             Export::Func("GetModuleHandleW", as_win_api!(process::GetModuleHandleW)),
+            Export::Func("GetLastError", as_win_api!(process::GetLastError)),
             Export::Func(
                 "SetUnhandledExceptionFilter",
                 as_win_api!(process::SetUnhandledExceptionFilter),
