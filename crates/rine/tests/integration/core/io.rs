@@ -16,8 +16,17 @@ fn find_close() {
 }
 
 #[test]
+fn read_write_file() {
+    assert_run(
+        "read_write_file",
+        0,
+        "CreateFile ok\nWriteFile ok\nSetFilePointer ok\nReadFile ok",
+    );
+}
+
+#[test]
 fn write_file_stdout() {
-    assert_run("write_file", 0, "WriteFile ok");
+    assert_run("write_file_stdout", 0, "WriteFile ok");
 }
 
 #[test]
