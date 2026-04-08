@@ -97,6 +97,7 @@ This produces two binaries:
 ### Run a Windows executable
 
 ```bash
+# Run both 32bit and 64bit programs in the same way. If both rine and rine32 are built, rine should handle both automatically.
 rine ./hello.exe
 rine ./myapp.exe arg1 arg2 --flag
 ```
@@ -109,16 +110,9 @@ Launch the real-time developer dashboard alongside execution:
 rine --dev ./myapp.exe
 ```
 
-This opens a Tauri GUI with the following tabs:
+This opens a Tauri 2 GUI:
 
-| Tab | Shows |
-|-----|-------|
-| **Overview** | PE info, config summary, import statistics |
-| **Imports** | Resolved vs. stubbed DLL functions with call counts |
-| **Handles** | Open/closed handle tracking (files, threads, events, mutexes) |
-| **Threads** | Thread lifecycle, entry points, and state |
-| **Events** | Chronological log of all runtime events |
-| **Output** | Captured stdout/stderr from the executable |
+(Dev App Tour)[https://scriptandcompile.github.io/rine/dev-app-tour.html]
 
 ### Per-app configuration
 
@@ -126,7 +120,7 @@ This opens a Tauri GUI with the following tabs:
 # Show or create a config file
 rine --config ./myapp.exe
 
-# Or use the GUI editor
+# Or use the GUI editor directly
 rine-config ./myapp.exe
 ```
 
@@ -188,7 +182,7 @@ rine --context_menu_status
 ├───────┬────────┬───────┬────────┬───────────┤
 │ntdll  │kernel32│msvcrt │advapi32│user32 ... │
 ├───────┴────────┴───────┴────────┴───────────┤
-│        OS Subsystem Translation Layer       │
+│    Common Platform OS Translation Layer     │
 │  (filesystem, threading, registry, sync,    │
 │   memory, environment, process, heap)       │
 ├─────────────────────────────────────────────┤
@@ -200,22 +194,38 @@ rine --context_menu_status
 
 ```
 crates/
-├── rine/                  # Main CLI binary
+├── rine/                      # Main CLI binary
 │   └── src/
-│       ├── commands/      # run, config, binfmt, desktop, context_menu
-│       ├── loader/        # PE memory mapping and entry point
-│       ├── pe/            # PE file parsing
-│       ├── subsys/        # OS subsystem emulation
-│       ├── config/        # Per-app configuration
-│       ├── compat/        # Compatibility database
-│       └── integration/   # Desktop integration
-├── rine-types/            # Shared types (handles, strings, errors, threading, registry)
-├── rine-dlls/             # DllPlugin trait and registry
-├── rine-channel/          # IPC protocol (Unix domain socket) for dev dashboard
-├── rine-dev/              # Developer dashboard (Tauri 2)
-├── rine-config/           # Config editor GUI (Tauri 2)
-├── rine-frontend-common/  # Shared frontend assets
-└── platform/win64-dll/    # DLL implementations
+│       ├── commands/          # run, config, binfmt, desktop, context_menu
+│       ├── loader/            # PE memory mapping and entry point
+│       ├── pe/                # PE file parsing
+│       ├── subsys/            # OS subsystem emulation
+│       ├── config/            # Per-app configuration
+│       ├── compat/            # Compatibility database
+│       └── integration/       # Desktop integration
+├── rine-types/                # Shared types (handles, strings, errors, threading, registry)
+├── rine-dlls/                 # DllPlugin trait and registry
+├── rine-channel/              # IPC protocol (Unix domain socket) for dev dashboard
+├── rine-dev/                  # Developer dashboard (Tauri 2)
+├── rine-config/               # Config editor GUI (Tauri 2)
+├── rine-frontend-common/      # Shared frontend assets
+├── platform/win-common/       # Common DLL implementations
+|   ├── rine-common-kernel32/
+|   ├── rine-common-ntdll/
+|   ├── rine-common-msvcrt/
+|   ├── rine-common-advapi32/
+|   ├── rine-common-gdi32/
+|   ├── rine-common-user32/
+|   └── rine-common-ws2_32/
+├── platform/win32-dll/        # 32bit DLL implementations
+|   ├── rine32-kernel32/
+|   ├── rine32-ntdll/
+|   ├── rine32-msvcrt/
+|   ├── rine32-advapi32/
+|   ├── rine32-gdi32/
+|   ├── rine32-user32/
+|   └── rine32-ws2_32/
+└── platform/win64-dll/        # 64bit DLL implementations
     ├── rine64-kernel32/
     ├── rine64-ntdll/
     ├── rine64-msvcrt/
@@ -231,7 +241,7 @@ crates/
 # Install MinGW cross-compilers (Debian/Ubuntu)
 sudo apt install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
 
-# Build rine so it is ready to run
+# Build rine with dev dashboard so it is ready to run
 ./scripts/build-rine.sh
 
 # Build rine and run all unit tests
@@ -286,7 +296,7 @@ Package install behavior:
 - [x] Developer dashboard (rine-dev)
 - [x] File I/O subsystem with path translation and drive mapping
 - [x] Full threading and TLS support
-- [x] Registry emulation
+- [ ] Registry emulation
 - [ ] GUI subsystem (user32/gdi32 → X11/Wayland)
 - [ ] Networking (ws2_32 → POSIX sockets)
 - [ ] COM/OLE, DirectX, audio
