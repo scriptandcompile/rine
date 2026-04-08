@@ -63,6 +63,7 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("HeapDestroy", as_win_api!(memory::HeapDestroy)),
             Export::Func("HeapAlloc", as_win_api!(memory::HeapAlloc)),
             Export::Func("HeapFree", as_win_api!(memory::HeapFree)),
+            Export::Func("HeapSize", as_win_api!(memory::HeapSize)),
             Export::Func("HeapReAlloc", as_win_api!(memory::HeapReAlloc)),
             Export::Func("VirtualAlloc", as_win_api!(memory::VirtualAlloc)),
             Export::Func("VirtualFree", as_win_api!(memory::VirtualFree)),
