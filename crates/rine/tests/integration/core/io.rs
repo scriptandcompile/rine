@@ -11,6 +11,11 @@ fn write_console_a() {
 }
 
 #[test]
+fn find_close() {
+    assert_run("find_close", 0, "FindClose works");
+}
+
+#[test]
 fn write_file_stdout() {
     assert_run("write_file", 0, "WriteFile works");
 }

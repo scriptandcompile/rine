@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-07T22:54:54.381921+00:00",
+  "generatedAt": "2026-04-08T00:09:03.889786+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -339,7 +339,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 76,
+      "functionCount": 78,
       "functions": [
         {
           "name": "CloseHandle",
@@ -508,6 +508,32 @@
             "status": "implemented",
             "symbol": "sync::DeleteCriticalSection",
             "source": "kernel32 - sync.rs"
+          }
+        },
+        {
+          "name": "DeleteFileA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "file::DeleteFileA",
+            "source": "kernel32 - file.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "file::DeleteFileA",
+            "source": "kernel32 - file.rs"
+          }
+        },
+        {
+          "name": "DeleteFileW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "file::DeleteFileW",
+            "source": "kernel32 - file.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "file::DeleteFileW",
+            "source": "kernel32 - file.rs"
           }
         },
         {
@@ -2287,14 +2313,14 @@
     }
   ],
   "totals": {
-    "functions": 172,
+    "functions": 174,
     "x64": {
-      "implemented": 171,
+      "implemented": 173,
       "stubbed": 1,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 148,
+      "implemented": 150,
       "stubbed": 8,
       "unimplemented": 16
     }

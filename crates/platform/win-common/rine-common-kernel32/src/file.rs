@@ -162,6 +162,31 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
     h.as_raw()
 }
 
+/// Delete a file at the given Windows path.
+///
+/// # Arguments
+/// * `win_path`: Windows-style file path (e.g. `C:\foo\bar.txt`).
+///
+/// # Returns
+/// `TRUE` if the file was successfully deleted, `FALSE` if an error occurred (e.g. file not found).
+pub fn delete_file(win_path: &str) -> WinBool {
+    tracing::debug!(path = win_path, "DeleteFile");
+
+    let linux_path = translate_win_path(win_path);
+    let c_path = match std::ffi::CString::new(linux_path.to_string_lossy().as_bytes()) {
+        Ok(s) => s,
+        Err(_) => return WinBool::FALSE,
+    };
+
+    match unsafe { libc::unlink(c_path.as_ptr()) } {
+        0 => WinBool::TRUE,
+        _ => {
+            tracing::debug!(path = %linux_path.display(), errno = std::io::Error::last_os_error().raw_os_error(), "DeleteFile: unlink failed");
+            WinBool::FALSE
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

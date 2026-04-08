@@ -46,6 +46,8 @@ impl DllPlugin for Kernel32Plugin32 {
             ),
             Export::Func("CreateFileA", as_win_api!(file::CreateFileA)),
             Export::Func("CreateFileW", as_win_api!(file::CreateFileW)),
+            Export::Func("DeleteFileA", as_win_api!(file::DeleteFileA)),
+            Export::Func("DeleteFileW", as_win_api!(file::DeleteFileW)),
             Export::Func("ReadFile", as_win_api!(file::ReadFile)),
             Export::Func("WriteFile", as_win_api!(file::WriteFile)),
             Export::Func("WriteConsoleA", as_win_api!(console::WriteConsoleA)),

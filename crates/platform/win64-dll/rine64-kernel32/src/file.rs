@@ -81,6 +81,36 @@ pub unsafe extern "win64" fn CreateFileW(
     common::file::create_file(&path_str, desired_access, creation_disposition)
 }
 
+/// DeleteFileW — delete a file (wide/UTF-16 path).
+///
+/// # Safety
+/// `file_name` must be a valid null-terminated UTF-16LE string.
+#[allow(non_snake_case)]
+pub unsafe extern "win64" fn DeleteFileW(file_name: *const u16) -> WinBool {
+    if file_name.is_null() {
+        return WinBool::FALSE;
+    }
+
+    let wide_file_name = unsafe { read_wstr(file_name).unwrap_or_default() };
+    let path_str = wide_file_name.to_string();
+    common::file::delete_file(&path_str)
+}
+
+/// DeleteFileA — delete a file (ANSI path).
+///
+/// # Safety
+/// `file_name` must be a valid null-terminated ANSI string.
+#[allow(non_snake_case)]
+pub unsafe extern "win64" fn DeleteFileA(file_name: *const u8) -> WinBool {
+    if file_name.is_null() {
+        return WinBool::FALSE;
+    }
+
+    let c_str = unsafe { read_cstr(file_name).unwrap_or_default() };
+    let path_str = c_str.to_string();
+    common::file::delete_file(&path_str)
+}
+
 // ---------------------------------------------------------------------------
 // ReadFile
 // ---------------------------------------------------------------------------
