@@ -18,7 +18,6 @@ pub struct Kernel32Plugin32;
 win32_stub!(GetModuleHandleA, "kernel32");
 win32_stub!(GetModuleHandleW, "kernel32");
 win32_stub!(GetLastError, "kernel32");
-win32_stub!(SetUnhandledExceptionFilter, "kernel32");
 win32_stub!(LoadLibraryA, "kernel32");
 win32_stub!(GetProcAddress, "kernel32");
 win32_stub!(FreeLibrary, "kernel32");
@@ -89,6 +88,10 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("CreateEventA", as_win_api!(sync::CreateEventA)),
             Export::Func("CreateEventW", as_win_api!(sync::CreateEventW)),
             Export::Func("SetEvent", as_win_api!(sync::SetEvent)),
+            Export::Func(
+                "SetUnhandledExceptionFilter",
+                as_win_api!(process::SetUnhandledExceptionFilter),
+            ),
             Export::Func("ResetEvent", as_win_api!(sync::ResetEvent)),
             Export::Func("CreateMutexA", as_win_api!(sync::CreateMutexA)),
             Export::Func("CreateMutexW", as_win_api!(sync::CreateMutexW)),

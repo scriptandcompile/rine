@@ -96,6 +96,17 @@ pub unsafe extern "stdcall" fn ExitProcess(exit_code: u32) -> ! {
     std::process::exit(exit_code as i32);
 }
 
+/// SetUnhandledExceptionFilter — install a top-level exception filter.
+///
+/// Stub: returns NULL (no previous handler). Exception handling is not
+/// yet implemented.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn SetUnhandledExceptionFilter(
+    _filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
+) -> usize {
+    0 // NULL — no previous handler
+}
+
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn GetCommandLineA() -> *const u8 {
     common::process::cached_cmd_line().ansi.as_ptr().cast()
