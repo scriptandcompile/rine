@@ -218,9 +218,7 @@ pub fn flush_file_buffers(handle: Handle) -> WinBool {
 /// * `handle` must be a valid file handle returned by `CreateFile`.
 /// * The caller must ensure that the handle refers to a file object and not some other type of handle.
 pub fn get_file_size(handle: Handle) -> Option<u64> {
-    let Some(fd) = handle_to_fd(handle) else {
-        return None;
-    };
+    let fd = handle_to_fd(handle)?;
 
     let mut stat: libc::stat = unsafe { std::mem::zeroed() };
     if unsafe { libc::fstat(fd, &mut stat) } != 0 {

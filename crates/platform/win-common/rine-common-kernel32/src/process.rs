@@ -45,7 +45,20 @@ pub fn cached_cmd_line() -> &'static CmdLineCache {
 }
 
 /// Core spawn logic shared by CreateProcessA/W.
-pub fn do_create_process(
+///
+/// # Arguments
+/// - `exe_path`: the executable path to run (first arg).
+/// - `args`: additional command-line arguments (excluding the executable).
+/// - `env`: optional environment variables (None to inherit from parent).
+/// - `proc_info`: output parameter for process information (can be null).
+///
+/// # Safety
+/// `proc_info` must be null or point to valid memory for a ProcessInformation struct.
+/// The caller must ensure that the returned process and thread handles are eventually closed.
+///
+/// # Returns
+/// WinBool::TRUE on success, WinBool::FALSE on failure (e.g. if the executable is not found or fails to launch).
+pub unsafe fn do_create_process(
     exe_path: &str,
     args: &[String],
     env: Option<HashMap<String, String>>,
@@ -189,7 +202,18 @@ pub fn split_cmd_line(s: &str) -> Vec<String> {
 
 /// Parse a Windows ANSI environment block (null-separated, double-null
 /// terminated) into key→value pairs.
-pub fn parse_env_block(ptr: *const u8) -> HashMap<String, String> {
+///
+/// # Arguments
+/// * `ptr` - Pointer to the start of the environment block.
+///   Must be null or point to a valid block of memory containing
+///   null-separated "KEY=VALUE" strings, terminated by an additional null
+///   character (i.e. two consecutive nulls at the end).
+///
+/// # Safety
+/// * `ptr` must be null or point to a valid environment block as described above.
+/// * The caller must ensure that the memory pointed to by `ptr` remains valid for
+///   the duration of the call and that it is properly null-terminated to avoid reading out of bounds.
+pub unsafe fn parse_env_block(ptr: *const u8) -> HashMap<String, String> {
     let mut env = HashMap::new();
     if ptr.is_null() {
         return env;
@@ -219,7 +243,18 @@ pub fn parse_env_block(ptr: *const u8) -> HashMap<String, String> {
 }
 
 /// Parse a wide (UTF-16LE) Windows environment block.
-pub fn parse_env_block_wide(ptr: *const u16) -> HashMap<String, String> {
+///
+/// # Arguments
+/// * `ptr` - Pointer to the start of the environment block.
+///   Must be null or point to a valid block of memory containing
+///   null-separated "KEY=VALUE" strings, terminated by an additional null
+///   character (i.e. two consecutive nulls at the end).
+///
+/// # Safety
+/// * `ptr` must be null or point to a valid environment block as described above.
+/// * The caller must ensure that the memory pointed to by `ptr` remains valid for
+///   the duration of the call and that it is properly null-terminated to avoid reading out of bounds.
+pub unsafe fn parse_env_block_wide(ptr: *const u16) -> HashMap<String, String> {
     let mut env = HashMap::new();
     if ptr.is_null() {
         return env;
@@ -277,14 +312,14 @@ mod tests {
 
     #[test]
     fn env_block_null() {
-        let env = parse_env_block(std::ptr::null());
+        let env = unsafe { parse_env_block(std::ptr::null()) };
         assert!(env.is_empty());
     }
 
     #[test]
     fn env_block_single() {
         let block = b"FOO=bar\0\0";
-        let env = parse_env_block(block.as_ptr());
+        let env = unsafe { parse_env_block(block.as_ptr()) };
         assert_eq!(env.get("FOO").unwrap(), "bar");
         assert_eq!(env.len(), 1);
     }
@@ -292,7 +327,7 @@ mod tests {
     #[test]
     fn env_block_multiple() {
         let block = b"A=1\0B=2\0C=hello\0\0";
-        let env = parse_env_block(block.as_ptr());
+        let env = unsafe { parse_env_block(block.as_ptr()) };
         assert_eq!(env.len(), 3);
         assert_eq!(env["A"], "1");
         assert_eq!(env["B"], "2");
@@ -303,14 +338,14 @@ mod tests {
 
     #[test]
     fn env_block_wide_null() {
-        let env = parse_env_block_wide(std::ptr::null());
+        let env = unsafe { parse_env_block_wide(std::ptr::null()) };
         assert!(env.is_empty());
     }
 
     #[test]
     fn env_block_wide_single() {
         let block: Vec<u16> = "KEY=val\0\0".encode_utf16().collect();
-        let env = parse_env_block_wide(block.as_ptr());
+        let env = unsafe { parse_env_block_wide(block.as_ptr()) };
         assert_eq!(env.get("KEY").unwrap(), "val");
     }
 }

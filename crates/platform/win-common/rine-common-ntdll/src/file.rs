@@ -10,6 +10,7 @@ use rine_types::os::IoStatusBlock;
 ///
 /// # Safety
 /// All pointer parameters must be valid.
+#[allow(clippy::too_many_arguments)]
 pub unsafe fn nt_create_file(
     file_handle: *mut isize,  // PHANDLE (out)
     desired_access: u32,      // ACCESS_MASK

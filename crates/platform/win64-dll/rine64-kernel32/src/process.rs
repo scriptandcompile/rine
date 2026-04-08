@@ -158,10 +158,10 @@ pub unsafe extern "win64" fn CreateProcessA(
     let env = if environment.is_null() {
         None
     } else {
-        Some(common::process::parse_env_block(environment))
+        unsafe { Some(common::process::parse_env_block(environment)) }
     };
 
-    common::process::do_create_process(&exe, &args, env, process_info)
+    unsafe { common::process::do_create_process(&exe, &args, env, process_info) }
 }
 
 /// CreateProcessW — create a child process (wide).
@@ -199,10 +199,10 @@ pub unsafe extern "win64" fn CreateProcessW(
     let env = if environment.is_null() {
         None
     } else {
-        Some(common::process::parse_env_block_wide(environment))
+        unsafe { Some(common::process::parse_env_block_wide(environment)) }
     };
 
-    common::process::do_create_process(&exe, &args, env, process_info)
+    unsafe { common::process::do_create_process(&exe, &args, env, process_info) }
 }
 
 // ---------------------------------------------------------------------------
