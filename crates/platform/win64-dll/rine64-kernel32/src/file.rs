@@ -5,7 +5,7 @@ use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{
     self, FindDataState, Handle, HandleEntry, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE,
-    Win32FindDataA, Win32FindDataW, handle_table, handle_to_fd,
+    Win32FindDataA, Win32FindDataW, handle_table,
 };
 use rine_types::strings::{read_cstr, read_wstr};
 
@@ -128,19 +128,8 @@ pub unsafe extern "win64" fn ReadFile(
     _overlapped: *mut core::ffi::c_void,
 ) -> WinBool {
     let handle = Handle::from_raw(file);
-    let Some(fd) = handle_to_fd(handle) else {
-        return WinBool::FALSE;
-    };
 
-    let n = unsafe { libc::read(fd, buffer.cast(), bytes_to_read as usize) };
-    if n < 0 {
-        return WinBool::FALSE;
-    }
-
-    if !bytes_read.is_null() {
-        unsafe { *bytes_read = n as u32 };
-    }
-    WinBool::TRUE
+    common::file::read_file(handle, buffer, bytes_to_read, bytes_read, _overlapped)
 }
 
 // ---------------------------------------------------------------------------

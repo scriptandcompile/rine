@@ -1,12 +1,9 @@
 use rine_common_kernel32 as common;
-use rine_dlls::win32_stub;
 use rine_types::handles::{Handle, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE};
 use rine_types::{
     errors::WinBool,
     strings::{read_cstr, read_wstr},
 };
-
-win32_stub!(ReadFile, "kernel32");
 
 /// CreateFileA — open or create a file (ANSI path).
 ///
@@ -124,6 +121,23 @@ pub unsafe extern "stdcall" fn WriteFile(
 ) -> WinBool {
     let handle = Handle::from_raw(file);
     unsafe { common::file::write_file(handle, buffer, bytes_to_write, bytes_written, _overlapped) }
+}
+
+/// ReadFile — read data from a file.
+///
+/// # Safety
+/// `buffer` must be writable for at least `bytes_to_read` bytes.
+#[allow(non_snake_case)]
+pub unsafe extern "stdcall" fn ReadFile(
+    file: isize,
+    buffer: *mut u8,
+    bytes_to_read: u32,
+    bytes_read: *mut u32,
+    _overlapped: *mut core::ffi::c_void,
+) -> WinBool {
+    let handle = Handle::from_raw(file);
+
+    common::file::read_file(handle, buffer, bytes_to_read, bytes_read, _overlapped)
 }
 
 /// FlushFileBuffers — flush a file's buffers to disk.

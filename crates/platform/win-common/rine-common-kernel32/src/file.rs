@@ -228,6 +228,41 @@ pub fn get_file_size(handle: Handle) -> Option<u64> {
     Some(stat.st_size as u64)
 }
 
+/// Read from a file handle into a buffer.
+///
+/// # Arguments
+/// * `handle` - A Windows file handle returned by `CreateFile`.
+/// * `buffer` - Pointer to a buffer to receive the data.
+/// * `bytes_to_read` - Number of bytes to read.
+/// * `bytes_read` - Optional output pointer for number of bytes actually read (can be null).
+/// * `_overlapped` - Ignored.
+///
+/// # Safety
+/// * `handle` must be a valid file handle returned by `CreateFile`.
+/// * `buffer` must point to at least `bytes_to_read` bytes of valid memory
+/// * The caller must ensure that the handle refers to a file object and not some other type of handle.
+pub fn read_file(
+    handle: Handle,
+    buffer: *mut u8,
+    bytes_to_read: u32,
+    bytes_read: *mut u32,
+    _overlapped: *mut core::ffi::c_void,
+) -> WinBool {
+    let Some(fd) = handle_to_fd(handle) else {
+        return WinBool::FALSE;
+    };
+
+    let read = unsafe { libc::read(fd, buffer.cast(), bytes_to_read as usize) };
+    if read < 0 {
+        return WinBool::FALSE;
+    }
+
+    if !bytes_read.is_null() {
+        unsafe { *bytes_read = read as u32 };
+    }
+    WinBool::TRUE
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
