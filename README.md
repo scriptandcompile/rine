@@ -72,16 +72,27 @@ rine loads x86_64 PE binaries directly into memory, resolves their imports again
 ### Build
 
 ```bash
-cargo build --release
+# Because cargo assumes only a single target platform per workspace per build process
+# we are required to specificy the two target platforms explicitly for the different executables.
+
+# build the 64bit components of rine without dev features
+cargo build --release --target x86_64-unknown-linux-gnu -p rine --no-default-features -p rine-config
+
+# build the 32bit components of rine without dev features. Required if you want to run 32bit Windows programs.
+cargo build --release -p rine32 --target i686-unknown-linux-gnu --no-default-features
 ```
 
-This produces three binaries:
+This produces two binaries:
 
 | Binary | Description |
 |--------|-------------|
 | `target/release/rine` | Main loader |
-| `target/release/rine-dev` | Developer dashboard (Tauri) |
-| `target/release/rine-config` | Config editor GUI (Tauri) |
+| `target/release/rine-config` | Config editor GUI (Tauri 2) |
+
+| Binary | Description |
+|--------|-------------|
+| `target/release/rine-dev` | Developer dashboard (Tauri 2), optionally created if default features are enabled.|
+
 
 ### Run a Windows executable
 
