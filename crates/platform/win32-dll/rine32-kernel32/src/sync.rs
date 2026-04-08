@@ -304,7 +304,7 @@ pub unsafe extern "stdcall" fn CreateSemaphoreA(
         &format!("initial={initial_count}, max={maximum_count}")
     ));
 
-    handle as isize
+    handle
 }
 
 /// Create a semaphore object with the specified initial and maximum counts, and an optional (UTF-16) name.
@@ -340,7 +340,7 @@ pub unsafe extern "stdcall" fn CreateSemaphoreW(
         &format!("initial={initial_count}, max={maximum_count}")
     ));
 
-    handle as isize
+    handle
 }
 
 /// Release a semaphore, incrementing its count by `release_count` and potentially unblocking waiters.

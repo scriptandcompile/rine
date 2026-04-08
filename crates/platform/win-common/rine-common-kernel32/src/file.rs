@@ -241,7 +241,7 @@ pub fn get_file_size(handle: Handle) -> Option<u64> {
 /// * `handle` must be a valid file handle returned by `CreateFile`.
 /// * `buffer` must point to at least `bytes_to_read` bytes of valid memory
 /// * The caller must ensure that the handle refers to a file object and not some other type of handle.
-pub fn read_file(
+pub unsafe fn read_file(
     handle: Handle,
     buffer: *mut u8,
     bytes_to_read: u32,

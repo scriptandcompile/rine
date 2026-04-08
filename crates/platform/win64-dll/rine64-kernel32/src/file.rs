@@ -129,7 +129,7 @@ pub unsafe extern "win64" fn ReadFile(
 ) -> WinBool {
     let handle = Handle::from_raw(file);
 
-    common::file::read_file(handle, buffer, bytes_to_read, bytes_read, _overlapped)
+    unsafe { common::file::read_file(handle, buffer, bytes_to_read, bytes_read, _overlapped) }
 }
 
 // ---------------------------------------------------------------------------
