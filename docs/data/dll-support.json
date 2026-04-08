@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-08T01:27:45.315197+00:00",
+  "generatedAt": "2026-04-08T01:46:35.716958+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1168,9 +1168,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "implemented",
+            "symbol": "process::SetUnhandledExceptionFilter",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -2333,9 +2333,9 @@
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 151,
+      "implemented": 152,
       "stubbed": 8,
-      "unimplemented": 16
+      "unimplemented": 15
     }
   }
 }
