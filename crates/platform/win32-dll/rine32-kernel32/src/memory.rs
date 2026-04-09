@@ -1,4 +1,3 @@
-use std::alloc::Layout;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
@@ -6,7 +5,6 @@ use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
 
-const HEAP_ZERO_MEMORY: u32 = 0x0000_0008;
 const MEM_COMMIT: u32 = 0x0000_1000;
 const MEM_RESERVE: u32 = 0x0000_2000;
 const MEM_RELEASE: u32 = 0x0000_8000;
@@ -147,54 +145,41 @@ pub unsafe extern "stdcall" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *m
     unsafe { common::memory::heap_free(handle, _flags, ptr) }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Reallocate a block of memory from a heap by HeapReAlloc.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap from which the memory was allocated, returned by HeapCreate or GetProcessHeap.
+/// * `flags` - Allocation options. Supported flags:
+///   * `HEAP_ZERO_MEMORY` (0x00000008): If this flag is specified and the new size is larger than the old size,
+///     the additional memory will be initialized to zero.
+/// * `ptr` - A pointer to a memory block allocated from the heap by HeapAlloc or HeapReAlloc.
+///   If this parameter is `NULL`, the function behaves like HeapAlloc.
+/// * `new_size` - The new size of the memory block in bytes. If this parameter is zero, the function allocates
+///   the minimum possible size (1 byte).
+///
+/// # Safety
+/// The caller must ensure that `heap_handle` is a valid handle returned by HeapCreate or GetProcessHeap, and that there
+/// are no outstanding allocations from the heap. The caller must also ensure that `ptr` is either `NULL` or a pointer
+/// returned by HeapAlloc or HeapReAlloc from the specified heap, and that it has not already been freed.
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to the reallocated memory block, which may be the same
+/// as `ptr` or a different location. If the function fails, the return value is `NULL`, and extended error
+/// information should be (but currently cannot) be obtained by calling GetLastError.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn HeapReAlloc(
     heap_handle: isize,
     flags: u32,
     ptr: *mut u8,
     new_size: usize,
 ) -> *mut u8 {
-    if ptr.is_null() {
-        return unsafe { HeapAlloc(heap_handle, flags, new_size) };
-    }
-
     let handle = Handle::from_raw(heap_handle);
-    let actual_new_size = if new_size == 0 { 1 } else { new_size };
-    let old_info = handle_table().with_heap(handle, |state| {
-        state
-            .allocations
-            .lock()
-            .unwrap()
-            .get(&(ptr as usize))
-            .copied()
-    });
 
-    let (old_size, old_align) = match old_info {
-        Some(Some(info)) => info,
-        _ => return std::ptr::null_mut(),
-    };
-
-    let old_layout = match Layout::from_size_align(old_size, old_align) {
-        Ok(l) => l,
-        Err(_) => return std::ptr::null_mut(),
-    };
-
-    let new_ptr = unsafe { std::alloc::realloc(ptr, old_layout, actual_new_size) };
-    if new_ptr.is_null() {
-        return std::ptr::null_mut();
+    if ptr.is_null() {
+        return common::memory::heap_alloc(handle, flags, new_size);
     }
 
-    if flags & HEAP_ZERO_MEMORY != 0 && actual_new_size > old_size {
-        unsafe { std::ptr::write_bytes(new_ptr.add(old_size), 0, actual_new_size - old_size) };
-    }
-
-    handle_table().with_heap(handle, |state| {
-        let mut allocs = state.allocations.lock().unwrap();
-        allocs.remove(&(ptr as usize));
-        allocs.insert(new_ptr as usize, (actual_new_size, old_align));
-    });
-
-    new_ptr
+    unsafe { common::memory::heap_realloc(handle, flags, ptr, new_size) }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]

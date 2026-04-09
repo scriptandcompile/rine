@@ -5,7 +5,7 @@ use std::sync::{LazyLock, Mutex};
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, HeapState, handle_table};
 
-const HEAP_ZERO_MEMORY: u32 = 0x00000008;
+pub const HEAP_ZERO_MEMORY: u32 = 0x00000008;
 
 pub const PAGE_NOACCESS: u32 = 0x01;
 pub const PAGE_READONLY: u32 = 0x02;
@@ -107,6 +107,88 @@ pub unsafe fn heap_free(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> WinBo
         }
         _ => WinBool::FALSE,
     }
+}
+
+/// Reallocate a block of memory from a heap by HeapReAlloc.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap from which the memory was allocated, returned by HeapCreate or GetProcessHeap.
+/// * `flags` - Allocation options. Supported flags:
+///   * `HEAP_ZERO_MEMORY` (0x00000008): If this flag is specified and the new size is larger than the old size,
+///     the additional memory will be initialized to zero.
+/// * `ptr` - A pointer to a memory block allocated from the heap by HeapAlloc or HeapReAlloc.
+///   If this parameter is `NULL`, the function behaves like HeapAlloc.
+/// * `new_size` - The new size of the memory block in bytes. If this parameter is zero, the function allocates
+///   the minimum possible size (1 byte).
+///
+/// # Safety
+/// The caller must ensure that `heap_handle` is a valid handle returned by HeapCreate or GetProcessHeap, and that there
+/// are no outstanding allocations from the heap. The caller must also ensure that `ptr` is either `NULL` or a pointer
+/// returned by HeapAlloc or HeapReAlloc from the specified heap, and that it has not already been freed.
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to the reallocated memory block, which may be the same
+/// as `ptr` or a different location. If the function fails, the return value is `NULL`, and extended error
+/// information should be (but currently cannot) be obtained by calling GetLastError.
+pub unsafe fn heap_realloc(
+    heap_handle: Handle,
+    flags: u32,
+    ptr: *mut u8,
+    new_size: usize,
+) -> *mut u8 {
+    if ptr.is_null() {
+        return heap_alloc(heap_handle, flags, new_size);
+    }
+
+    let actual_new_size = if new_size == 0 { 1 } else { new_size };
+
+    // Look up old allocation.
+    let old_info = handle_table().with_heap(heap_handle, |state| {
+        state
+            .allocations
+            .lock()
+            .unwrap()
+            .get(&(ptr as usize))
+            .copied()
+    });
+
+    let (old_size, old_align) = match old_info {
+        Some(Some(info)) => info,
+        _ => return std::ptr::null_mut(),
+    };
+
+    let old_layout = match Layout::from_size_align(old_size, old_align) {
+        Ok(l) => l,
+        Err(_) => return std::ptr::null_mut(),
+    };
+
+    let new_ptr = unsafe { std::alloc::realloc(ptr, old_layout, actual_new_size) };
+    if new_ptr.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    // Zero the extra bytes if requested.
+    if flags & HEAP_ZERO_MEMORY != 0 && actual_new_size > old_size {
+        unsafe {
+            std::ptr::write_bytes(new_ptr.add(old_size), 0, actual_new_size - old_size);
+        }
+    }
+
+    // Update tracking.
+    handle_table().with_heap(heap_handle, |state| {
+        let mut allocs = state.allocations.lock().unwrap();
+        allocs.remove(&(ptr as usize));
+        allocs.insert(new_ptr as usize, (actual_new_size, old_align));
+    });
+
+    rine_types::dev_notify!(on_memory_freed(ptr as u64, old_size as u64, "HeapReAlloc"));
+    rine_types::dev_notify!(on_memory_allocated(
+        new_ptr as u64,
+        actual_new_size as u64,
+        "HeapReAlloc"
+    ));
+
+    new_ptr
 }
 
 /// Destroy a heap created by HeapCreate, freeing all outstanding allocations from the heap in the process.
