@@ -185,6 +185,11 @@ pub fn get_current_process() -> isize {
     -1
 }
 
+/// Get the last error code for the current thread. Currently always returns 0 (ERROR_SUCCESS).
+pub fn get_last_error() -> u32 {
+    0
+}
+
 // ---------------------------------------------------------------------------
 // CreateProcess helpers
 // ---------------------------------------------------------------------------

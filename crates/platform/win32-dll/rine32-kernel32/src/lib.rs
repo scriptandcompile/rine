@@ -17,7 +17,6 @@ pub struct Kernel32Plugin32;
 
 win32_stub!(GetModuleHandleA, "kernel32");
 win32_stub!(GetModuleHandleW, "kernel32");
-win32_stub!(GetLastError, "kernel32");
 win32_stub!(LoadLibraryA, "kernel32");
 win32_stub!(GetProcAddress, "kernel32");
 win32_stub!(FreeLibrary, "kernel32");
@@ -30,6 +29,7 @@ impl DllPlugin for Kernel32Plugin32 {
     fn exports(&self) -> Vec<Export> {
         vec![
             Export::Func("ExitProcess", as_win_api!(process::ExitProcess)),
+            Export::Func("GetLastError", as_win_api!(process::GetLastError)),
             Export::Func("GetCommandLineA", as_win_api!(process::GetCommandLineA)),
             Export::Func("GetCommandLineW", as_win_api!(process::GetCommandLineW)),
             Export::Func("CreateProcessA", as_win_api!(process::CreateProcessA)),

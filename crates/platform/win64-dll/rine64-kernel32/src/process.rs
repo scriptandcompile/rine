@@ -99,13 +99,10 @@ pub unsafe extern "win64" fn GetModuleHandleW(module_name: *const u16) -> usize 
     0
 }
 
-/// GetLastError — return the last-error code for the calling thread.
-///
-/// Stub: always returns 0 (ERROR_SUCCESS). A real per-thread last-error
-/// store will be added with the threading subsystem.
+/// Get the last error code for the current thread. Currently always returns 0 (ERROR_SUCCESS).
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn GetLastError() -> u32 {
-    0
+    common::process::get_last_error()
 }
 
 /// SetUnhandledExceptionFilter — install a top-level exception filter.
