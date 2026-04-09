@@ -122,9 +122,18 @@ pub unsafe extern "stdcall" fn GetCurrentProcessId() -> u32 {
     std::process::id()
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Gets the pseudo-handle for the current process, which is currently always -1 in our implementation.
+///
+/// # Safety
+/// This function is unsafe because it returns a raw handle value that must be used correctly by the caller.
+/// The caller must ensure that the returned handle is not misused, as it is a sentinel value representing
+/// the current process and not a real handle that can be manipulated or closed.
+///
+/// # Returns
+/// The pseudo-handle for the current process, which is currently always -1.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn GetCurrentProcess() -> isize {
-    -1
+    common::process::get_current_process()
 }
 
 /// GetLastError — return the last-error code for the calling thread.

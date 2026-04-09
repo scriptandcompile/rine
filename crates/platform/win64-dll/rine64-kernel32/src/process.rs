@@ -215,13 +215,18 @@ pub unsafe extern "win64" fn GetCurrentProcessId() -> u32 {
     std::process::id()
 }
 
-/// GetCurrentProcess — return a pseudo-handle for the current process.
+/// Gets the pseudo-handle for the current process, which is currently always -1 in our implementation.
 ///
-/// Windows defines this as `(HANDLE)-1`; it is not a real handle but a
-/// sentinel that APIs accept to mean "this process".
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// # Safety
+/// This function is unsafe because it returns a raw handle value that must be used correctly by the caller.
+/// The caller must ensure that the returned handle is not misused, as it is a sentinel value representing
+/// the current process and not a real handle that can be manipulated or closed.
+///
+/// # Returns
+/// The pseudo-handle for the current process, which is currently always -1.
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn GetCurrentProcess() -> isize {
-    -1 // pseudo-handle
+    common::process::get_current_process()
 }
 
 /// GetExitCodeProcess — read the exit code of a process handle.

@@ -172,6 +172,19 @@ pub fn reap_child(
     cvar.notify_all();
 }
 
+/// Gets the pseudo-handle for the current process, which is currently always -1 in our implementation.
+///
+/// # Safety
+/// This function is unsafe because it returns a raw handle value that must be used correctly by the caller.
+/// The caller must ensure that the returned handle is not misused, as it is a sentinel value representing
+/// the current process and not a real handle that can be manipulated or closed.
+///
+/// # Returns
+/// The pseudo-handle for the current process, which is currently always -1.
+pub fn get_current_process() -> isize {
+    -1
+}
+
 // ---------------------------------------------------------------------------
 // CreateProcess helpers
 // ---------------------------------------------------------------------------
