@@ -5,6 +5,7 @@ pub mod memory;
 pub mod process;
 pub mod sync;
 pub mod thread;
+pub mod version;
 
 use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
 
@@ -113,6 +114,7 @@ impl DllPlugin for Kernel32Plugin32 {
                 as_win_api!(thread::GetCurrentThreadId),
             ),
             Export::Func("GetExitCodeThread", as_win_api!(thread::GetExitCodeThread)),
+            Export::Func("Sleep", as_win_api!(thread::Sleep)),
             Export::Func(
                 "WaitForSingleObject",
                 as_win_api!(thread::WaitForSingleObject),
@@ -153,7 +155,7 @@ impl DllPlugin for Kernel32Plugin32 {
                 "FreeEnvironmentStringsW",
                 as_win_api!(environment::FreeEnvironmentStringsW),
             ),
-            Export::Func("Sleep", as_win_api!(thread::Sleep)),
+            Export::Func("GetVersion", as_win_api!(version::GetVersion)),
         ]
     }
 }

@@ -1,5 +1,6 @@
 //! kernel32 version functions: GetVersionExA/W, GetVersion.
 
+use rine_common_kernel32 as common;
 use rine_types::os::{
     OsVersionInfoA, OsVersionInfoExA, OsVersionInfoExW, OsVersionInfoW, SIZEOF_OSVERSIONINFOA,
     SIZEOF_OSVERSIONINFOEXA, SIZEOF_OSVERSIONINFOEXW, SIZEOF_OSVERSIONINFOW, get_version,
@@ -112,13 +113,8 @@ pub unsafe extern "win64" fn GetVersionExA(info: *mut OsVersionInfoA) -> i32 {
 /// Called from PE code via the Windows ABI. The caller must ensure the
 /// global version info has been initialised before entry.
 #[allow(non_snake_case)]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetVersion() -> u32 {
-    let ver = get_version();
-    debug!("GetVersion: {}.{}.{}", ver.major, ver.minor, ver.build);
-    let lo = (ver.major & 0xFF) | ((ver.minor & 0xFF) << 8);
-    let hi = ver.build & 0xFFFF;
-    (hi << 16) | lo
+    common::version::get_version_packed()
 }
 
 // ---------------------------------------------------------------------------
