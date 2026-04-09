@@ -77,6 +77,10 @@ impl DllPlugin for Kernel32Plugin32 {
                 as_win_api!(sync::InitializeCriticalSectionAndSpinCount),
             ),
             Export::Func(
+                "TryEnterCriticalSection",
+                as_win_api!(sync::TryEnterCriticalSection),
+            ),
+            Export::Func(
                 "EnterCriticalSection",
                 as_win_api!(sync::EnterCriticalSection),
             ),

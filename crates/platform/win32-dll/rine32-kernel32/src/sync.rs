@@ -53,25 +53,21 @@ pub unsafe extern "stdcall" fn EnterCriticalSection(cs: *mut u8) {
 }
 
 /// TryEnterCriticalSection — non-blocking lock attempt.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+///
+/// # Arguments
+/// * `cs` - pointer to the CRITICAL_SECTION structure representing the mutex to attempt to lock. Must not be null.
+///
+/// # Safety
+/// The caller must ensure that `cs` points to a valid CRITICAL_SECTION structure.
+/// Passing an invalid pointer or a pointer to an improperly initialized CRITICAL_SECTION may lead to undefined behavior.
+/// The caller is responsible for ensuring that the CRITICAL_SECTION is properly initialized before calling this function.
+///
+/// # Returns
+/// Returns TRUE if the lock was successfully acquired, or FALSE if the critical section is already owned by another
+/// thread or if an error occurred (e.g. invalid pointer).
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
-    if cs.is_null() {
-        return WinBool::FALSE;
-    }
-
-    unsafe {
-        let mutex = common::sync::get_mutex(cs);
-
-        if mutex.is_null() {
-            return WinBool::FALSE;
-        }
-
-        if libc::pthread_mutex_trylock(mutex) == 0 {
-            WinBool::TRUE
-        } else {
-            WinBool::FALSE
-        }
-    }
+    unsafe { common::sync::try_enter_critical_section(cs) }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
