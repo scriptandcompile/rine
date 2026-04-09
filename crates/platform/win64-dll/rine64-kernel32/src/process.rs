@@ -161,7 +161,7 @@ pub unsafe extern "win64" fn CreateProcessA(
         unsafe { Some(common::process::parse_env_block(environment)) }
     };
 
-    unsafe { common::process::do_create_process(&exe, &args, env, process_info) }
+    unsafe { common::process::create_process(&exe, &args, env, process_info) }
 }
 
 /// CreateProcessW — create a child process (wide).
@@ -202,7 +202,7 @@ pub unsafe extern "win64" fn CreateProcessW(
         unsafe { Some(common::process::parse_env_block_wide(environment)) }
     };
 
-    unsafe { common::process::do_create_process(&exe, &args, env, process_info) }
+    unsafe { common::process::create_process(&exe, &args, env, process_info) }
 }
 
 // ---------------------------------------------------------------------------

@@ -44,7 +44,7 @@ pub unsafe extern "stdcall" fn CreateProcessA(
         unsafe { Some(common::process::parse_env_block(environment)) }
     };
 
-    unsafe { common::process::do_create_process(&exe, &args, env, process_info) }
+    unsafe { common::process::create_process(&exe, &args, env, process_info) }
 }
 
 /// CreateProcessW — create a child process (wide).
@@ -85,7 +85,7 @@ pub unsafe extern "stdcall" fn CreateProcessW(
         unsafe { Some(common::process::parse_env_block_wide(environment)) }
     };
 
-    unsafe { common::process::do_create_process(&exe, &args, env, process_info) }
+    unsafe { common::process::create_process(&exe, &args, env, process_info) }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]

@@ -58,7 +58,7 @@ pub fn cached_cmd_line() -> &'static CmdLineCache {
 ///
 /// # Returns
 /// WinBool::TRUE on success, WinBool::FALSE on failure (e.g. if the executable is not found or fails to launch).
-pub unsafe fn do_create_process(
+pub unsafe fn create_process(
     exe_path: &str,
     args: &[String],
     env: Option<HashMap<String, String>>,
