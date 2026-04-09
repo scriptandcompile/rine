@@ -18,6 +18,11 @@ pub const PAGE_EXECUTE: u32 = 0x10;
 pub const PAGE_EXECUTE_READ: u32 = 0x20;
 pub const PAGE_EXECUTE_READWRITE: u32 = 0x40;
 
+#[allow(dead_code)]
+const HEAP_GENERATE_EXCEPTIONS: u32 = 0x00000004;
+#[allow(dead_code)]
+const HEAP_NO_SERIALIZE: u32 = 0x00000001;
+
 /// VirtualAlloc region tracking
 /// This is used to track memory regions allocated by VirtualAlloc so that VirtualFree can unmap them.
 /// It maps the base address of each allocated region to its size.
@@ -379,6 +384,77 @@ pub unsafe fn virtual_alloc(
     ));
 
     ptr
+}
+
+/// Free or decommit memory in the virtual address space of the calling process.
+///
+/// # Arguments
+/// * `address` - A pointer to the base address of the region of pages to be freed or decommitted.
+///   This must be a pointer returned by VirtualAlloc.
+/// * `size` - The size of the region of pages to be freed or decommitted, in bytes.
+///   If `MEM_RELEASE` is specified in `free_type`, this parameter must be 0 (zero), and the
+///   function will free the entire region allocated by VirtualAlloc. If `MEM_DECOMMIT` is
+///   specified in `free_type`, this parameter must be greater than 0, and the function will
+///   decommit the specified range of pages, making them inaccessible but keeping the reservation intact.
+/// * `free_type` - Freeing options. Supported flags:
+///   * `MEM_DECOMMIT` (0x00004000): Decommit the specified region of committed pages, making them
+///     inaccessible and releasing the physical storage but keeping the reservation intact.
+///     The function fails if any pages in the specified range are not committed.
+///   * `MEM_RELEASE` (0x00008000): Release the entire region of pages allocated by VirtualAlloc,
+///     starting at the specified address. The function fails if the specified address is not the
+///     base address returned by VirtualAlloc or if any pages in the region are still committed.
+///     `MEM_RELEASE` cannot be used with `MEM_DECOMMIT` or with a non-zero `size` parameter, as it
+///     always releases the entire region allocated by VirtualAlloc.
+///
+/// # Safety
+/// The caller is responsible for ensuring that the specified address range is valid and was allocated by VirtualAlloc.
+/// The caller must also ensure that the `free_type` parameter is set to a valid combination of flags, as invalid
+/// combinations may result in undefined behavior. For example, `MEM_RELEASE` cannot be used with `MEM_DECOMMIT`
+/// or with a non-zero `size` parameter, as it always releases the entire region allocated by VirtualAlloc.
+/// Additionally, the caller must ensure that the memory being freed or decommitted is not currently in use by
+/// any threads, as accessing memory after it has been freed or decommitted may result in undefined behavior.
+/// Finally, the caller must ensure that the function is not called on memory that has already been freed or decommitted,
+/// as this may also result in undefined behavior.
+///
+/// # Returns
+/// If the function succeeds, the return value is `TRUE`.
+/// If the function fails, the return value is `FALSE`, and extended error information should
+/// be (but currently cannot be) obtained by calling GetLastError.
+pub unsafe fn virtual_free(address: *mut u8, _size: usize, free_type: u32) -> WinBool {
+    if address.is_null() {
+        return WinBool::FALSE;
+    }
+
+    // MEM_RELEASE: release the entire region (size must be 0 on Windows,
+    // but we're lenient).
+    if free_type & MEM_RELEASE != 0 {
+        let region_size = match VIRTUAL_REGIONS.lock().unwrap().remove(&(address as usize)) {
+            Some(s) => s,
+            None => return WinBool::FALSE,
+        };
+
+        let result = unsafe { libc::munmap(address.cast(), region_size) };
+        if result == 0 {
+            rine_types::dev_notify!(on_memory_freed(
+                address as u64,
+                region_size as u64,
+                "VirtualFree"
+            ));
+        }
+        return if result == 0 {
+            WinBool::TRUE
+        } else {
+            WinBool::FALSE
+        };
+    }
+
+    // MEM_DECOMMIT: just madvise DONTNEED (keeps reservation).
+    let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize };
+    let rounded = (_size + page_size - 1) & !(page_size - 1);
+    if rounded > 0 {
+        unsafe { libc::madvise(address.cast(), rounded, libc::MADV_DONTNEED) };
+    }
+    WinBool::TRUE
 }
 
 /// Query information about a range of pages in the virtual address space of the calling process.

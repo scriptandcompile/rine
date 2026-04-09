@@ -7,19 +7,6 @@ use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, HeapState, handle_table};
 
-// ---------------------------------------------------------------------------
-// Windows constants
-// ---------------------------------------------------------------------------
-
-#[allow(dead_code)]
-const HEAP_GENERATE_EXCEPTIONS: u32 = 0x00000004;
-#[allow(dead_code)]
-const HEAP_NO_SERIALIZE: u32 = 0x00000001;
-
-// ---------------------------------------------------------------------------
-// Heap API
-// ---------------------------------------------------------------------------
-
 /// GetProcessHeap — return the default process heap handle.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn GetProcessHeap() -> isize {
