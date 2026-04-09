@@ -7,12 +7,22 @@ use rine_types::handles::{Handle, HandleEntry, HeapState, handle_table};
 
 pub const HEAP_ZERO_MEMORY: u32 = 0x00000008;
 
+pub const MEM_COMMIT: u32 = 0x00001000;
+pub const MEM_RESERVE: u32 = 0x00002000;
+pub const MEM_RELEASE: u32 = 0x00008000;
+
 pub const PAGE_NOACCESS: u32 = 0x01;
 pub const PAGE_READONLY: u32 = 0x02;
 pub const PAGE_READWRITE: u32 = 0x04;
 pub const PAGE_EXECUTE: u32 = 0x10;
 pub const PAGE_EXECUTE_READ: u32 = 0x20;
 pub const PAGE_EXECUTE_READWRITE: u32 = 0x40;
+
+/// VirtualAlloc region tracking
+/// This is used to track memory regions allocated by VirtualAlloc so that VirtualFree can unmap them.
+/// It maps the base address of each allocated region to its size.
+pub static VIRTUAL_REGIONS: LazyLock<Mutex<HashMap<usize, usize>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// The default process heap, used by HeapAlloc with a null heap handle.
 /// This is lazily initialized on first use.
@@ -291,6 +301,84 @@ pub fn win_protect_to_linux(protect: u32) -> i32 {
         PAGE_EXECUTE_READWRITE => libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC,
         _ => libc::PROT_READ | libc::PROT_WRITE,
     }
+}
+
+/// Allocate memory in the virtual address space of the calling process.
+///
+/// # Arguments
+/// * `address` - The desired starting address of the allocated region. If `NULL`, the system determines where to allocate the region.
+/// * `size` - The size of the region in bytes. If this parameter is zero, the function fails.
+/// * `alloc_type` - Allocation options. Supported flags:
+///   * `MEM_COMMIT` (0x00001000): Allocate physical storage in memory or the paging file for the specified region of pages.
+///     The actual allocation of memory for the pages is deferred until the pages are accessed.
+///   * `MEM_RESERVE` (0x00002000): Reserve a range of the process's virtual address space without allocating any actual physical storage.
+///     The reserved range cannot be used until it is committed.
+/// * `protect` - Memory protection options. Supported flags:
+///   * `PAGE_READWRITE` (0x04): Enables read and write access to the committed region of pages. If an attempt is made to write to a
+///     page that is committed with `PAGE_READWRITE` protection, the system raises a guard page exception.
+///
+/// # Safety
+/// The caller is responsible for ensuring that the specified address range is valid and does not overlap with any existing allocations.
+/// The caller must also ensure that the allocated memory is freed using VirtualFree when it is no longer needed. Failure to do so may
+/// result in memory leaks or other undefined behavior. Additionally, the caller must ensure that the `alloc_type` and `protect`
+/// parameters are set to valid combinations of flags, as invalid combinations may result in undefined behavior.
+/// For example, `MEM_RELEASE` cannot be used with `MEM_COMMIT` or `MEM_RESERVE`, and `PAGE_EXECUTE` cannot be used with
+/// `MEM_RESERVE` alone.
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to the allocated memory region. If the function fails, the return value is
+/// `NULL`, and extended error information should be (but currently cannot be) obtained by calling GetLastError.
+pub unsafe fn virtual_alloc(
+    address: *mut u8,
+    size: usize,
+    alloc_type: u32,
+    protect: u32,
+) -> *mut u8 {
+    // We only handle MEM_COMMIT, MEM_RESERVE, or both.
+    if alloc_type & (MEM_COMMIT | MEM_RESERVE) == 0 {
+        return std::ptr::null_mut();
+    }
+
+    let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize };
+    let alloc_size = (size + page_size - 1) & !(page_size - 1);
+    if alloc_size == 0 {
+        return std::ptr::null_mut();
+    }
+
+    let prot = win_protect_to_linux(protect);
+
+    let addr_hint = if address.is_null() {
+        std::ptr::null_mut()
+    } else {
+        address.cast()
+    };
+
+    let mut flags = libc::MAP_PRIVATE | libc::MAP_ANONYMOUS;
+    if !address.is_null() {
+        flags |= libc::MAP_FIXED;
+    }
+
+    let result = unsafe { libc::mmap(addr_hint, alloc_size, prot, flags, -1, 0) };
+
+    if result == libc::MAP_FAILED {
+        return std::ptr::null_mut();
+    }
+
+    let ptr = result as *mut u8;
+
+    // Track the region so VirtualFree can unmap it.
+    VIRTUAL_REGIONS
+        .lock()
+        .unwrap()
+        .insert(ptr as usize, alloc_size);
+
+    rine_types::dev_notify!(on_memory_allocated(
+        ptr as u64,
+        alloc_size as u64,
+        "VirtualAlloc"
+    ));
+
+    ptr
 }
 
 /// Query information about a range of pages in the virtual address space of the calling process.

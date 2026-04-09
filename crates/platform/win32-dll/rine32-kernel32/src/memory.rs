@@ -1,16 +1,10 @@
 use std::collections::HashMap;
-use std::sync::{LazyLock, Mutex};
+use std::sync::Mutex;
 
 use rine_common_kernel32 as common;
+use rine_common_kernel32::memory::virtual_alloc;
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
-
-const MEM_COMMIT: u32 = 0x0000_1000;
-const MEM_RESERVE: u32 = 0x0000_2000;
-const MEM_RELEASE: u32 = 0x0000_8000;
-
-static VIRTUAL_REGIONS: LazyLock<Mutex<HashMap<usize, usize>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn GetProcessHeap() -> isize {
@@ -182,46 +176,39 @@ pub unsafe extern "stdcall" fn HeapReAlloc(
     unsafe { common::memory::heap_realloc(handle, flags, ptr, new_size) }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Allocate memory in the virtual address space of the calling process.
+///
+/// # Arguments
+/// * `address` - The desired starting address of the allocated region. If `NULL`, the system determines where to allocate the region.
+/// * `size` - The size of the region in bytes. If this parameter is zero, the function fails.
+/// * `alloc_type` - Allocation options. Supported flags:
+///   * `MEM_COMMIT` (0x00001000): Allocate physical storage in memory or the paging file for the specified region of pages.
+///     The actual allocation of memory for the pages is deferred until the pages are accessed.
+///   * `MEM_RESERVE` (0x00002000): Reserve a range of the process's virtual address space without allocating any actual physical storage.
+///     The reserved range cannot be used until it is committed.
+/// * `protect` - Memory protection options. Supported flags:
+///   * `PAGE_READWRITE` (0x04): Enables read and write access to the committed region of pages. If an attempt is made to write to a
+///     page that is committed with `PAGE_READWRITE` protection, the system raises a guard page exception.
+///
+/// # Safety
+/// The caller is responsible for ensuring that the specified address range is valid and does not overlap with any existing allocations.
+/// The caller must also ensure that the allocated memory is freed using VirtualFree when it is no longer needed. Failure to do so may
+/// result in memory leaks or other undefined behavior. Additionally, the caller must ensure that the `alloc_type` and `protect`
+/// parameters are set to valid combinations of flags, as invalid combinations may result in undefined behavior.
+/// For example, `MEM_RELEASE` cannot be used with `MEM_COMMIT` or `MEM_RESERVE`, and `PAGE_EXECUTE` cannot be used with
+/// `MEM_RESERVE` alone.
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to the allocated memory region. If the function fails, the return value is
+/// `NULL`, and extended error information should be (but currently cannot be) obtained by calling GetLastError.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn VirtualAlloc(
     address: *mut u8,
     size: usize,
     alloc_type: u32,
     protect: u32,
 ) -> *mut u8 {
-    if alloc_type & (MEM_COMMIT | MEM_RESERVE) == 0 {
-        return std::ptr::null_mut();
-    }
-
-    let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize };
-    let alloc_size = (size + page_size - 1) & !(page_size - 1);
-    if alloc_size == 0 {
-        return std::ptr::null_mut();
-    }
-
-    let prot = common::memory::win_protect_to_linux(protect);
-    let addr_hint = if address.is_null() {
-        std::ptr::null_mut()
-    } else {
-        address.cast()
-    };
-
-    let mut flags = libc::MAP_PRIVATE | libc::MAP_ANONYMOUS;
-    if !address.is_null() {
-        flags |= libc::MAP_FIXED;
-    }
-
-    let result = unsafe { libc::mmap(addr_hint, alloc_size, prot, flags, -1, 0) };
-    if result == libc::MAP_FAILED {
-        return std::ptr::null_mut();
-    }
-
-    let ptr = result as *mut u8;
-    VIRTUAL_REGIONS
-        .lock()
-        .unwrap()
-        .insert(ptr as usize, alloc_size);
-    ptr
+    unsafe { virtual_alloc(address, size, alloc_type, protect) }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
@@ -234,8 +221,12 @@ pub unsafe extern "stdcall" fn VirtualFree(
         return WinBool::FALSE;
     }
 
-    if free_type & MEM_RELEASE != 0 {
-        let region_size = match VIRTUAL_REGIONS.lock().unwrap().remove(&(address as usize)) {
+    if free_type & common::memory::MEM_RELEASE != 0 {
+        let region_size = match common::memory::VIRTUAL_REGIONS
+            .lock()
+            .unwrap()
+            .remove(&(address as usize))
+        {
             Some(s) => s,
             None => return WinBool::FALSE,
         };
