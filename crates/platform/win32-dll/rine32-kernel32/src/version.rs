@@ -1,4 +1,5 @@
 use rine_common_kernel32 as common;
+use rine_types::os::OsVersionInfoW;
 
 /// `GetVersion` — return a packed `DWORD` encoding the OS version.
 ///
@@ -12,4 +13,20 @@ use rine_common_kernel32 as common;
 #[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn GetVersion() -> u32 {
     common::version::get_version_packed()
+}
+
+/// `GetVersionExW` — fill an `OSVERSIONINFOW` or `OSVERSIONINFOEXW` with the
+/// spoofed Windows version.
+///
+/// The caller sets `dwOSVersionInfoSize` to indicate which struct variant
+/// they allocated. We accept both the base and Ex sizes.
+///
+/// Returns `TRUE` (1) on success, `FALSE` (0) on failure.
+///
+/// # Safety
+/// `info` must point to a valid, writable `OSVERSIONINFOW` or
+/// `OSVERSIONINFOEXW` whose `dwOSVersionInfoSize` field is set correctly.
+#[allow(non_snake_case)]
+pub unsafe extern "stdcall" fn GetVersionExW(info: *mut OsVersionInfoW) -> i32 {
+    unsafe { common::version::get_version_ex_w(info) }
 }

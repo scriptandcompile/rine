@@ -2,8 +2,8 @@
 
 use rine_common_kernel32 as common;
 use rine_types::os::{
-    OsVersionInfoA, OsVersionInfoExA, OsVersionInfoExW, OsVersionInfoW, SIZEOF_OSVERSIONINFOA,
-    SIZEOF_OSVERSIONINFOEXA, SIZEOF_OSVERSIONINFOEXW, SIZEOF_OSVERSIONINFOW, get_version,
+    OsVersionInfoA, OsVersionInfoExA, OsVersionInfoW, SIZEOF_OSVERSIONINFOA,
+    SIZEOF_OSVERSIONINFOEXA, get_version,
 };
 use tracing::{debug, warn};
 
@@ -23,37 +23,8 @@ use tracing::{debug, warn};
 /// `info` must point to a valid, writable `OSVERSIONINFOW` or
 /// `OSVERSIONINFOEXW` whose `dwOSVersionInfoSize` field is set correctly.
 #[allow(non_snake_case)]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetVersionExW(info: *mut OsVersionInfoW) -> i32 {
-    if info.is_null() {
-        return 0;
-    }
-
-    let ver = get_version();
-    let size = unsafe { (*info).os_version_info_size };
-
-    match size {
-        SIZEOF_OSVERSIONINFOW => {
-            debug!(
-                "GetVersionExW: {}.{}.{} (OSVERSIONINFOW)",
-                ver.major, ver.minor, ver.build
-            );
-            unsafe { ver.fill_w(info) };
-            1
-        }
-        SIZEOF_OSVERSIONINFOEXW => {
-            debug!(
-                "GetVersionExW: {}.{}.{} SP{}.{} (OSVERSIONINFOEXW)",
-                ver.major, ver.minor, ver.build, ver.service_pack_major, ver.service_pack_minor
-            );
-            unsafe { ver.fill_ex_w(info.cast::<OsVersionInfoExW>()) };
-            1
-        }
-        _ => {
-            warn!("GetVersionExW: unexpected size {size}");
-            0
-        }
-    }
+    unsafe { common::version::get_version_ex_w(info) }
 }
 
 // ---------------------------------------------------------------------------
@@ -126,7 +97,10 @@ mod tests {
     use super::*;
     use std::ptr;
 
-    use rine_types::os::{self, VER_NT_WORKSTATION, VER_PLATFORM_WIN32_NT, VersionInfo};
+    use rine_types::os::{
+        self, OsVersionInfoExW, OsVersionInfoW, SIZEOF_OSVERSIONINFOEXW, SIZEOF_OSVERSIONINFOW,
+        VER_NT_WORKSTATION, VER_PLATFORM_WIN32_NT, VersionInfo,
+    };
     use serial_test::serial;
 
     #[test]
