@@ -22,7 +22,6 @@ win32_stub!(LoadLibraryA, "kernel32");
 win32_stub!(GetProcAddress, "kernel32");
 win32_stub!(FreeLibrary, "kernel32");
 win32_stub!(GetCurrentProcess, "kernel32");
-win32_stub!(VirtualQuery, "kernel32");
 
 impl DllPlugin for Kernel32Plugin32 {
     fn dll_names(&self) -> &[&str] {
@@ -67,6 +66,7 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("HeapReAlloc", as_win_api!(memory::HeapReAlloc)),
             Export::Func("VirtualAlloc", as_win_api!(memory::VirtualAlloc)),
             Export::Func("VirtualFree", as_win_api!(memory::VirtualFree)),
+            Export::Func("VirtualQuery", as_win_api!(memory::VirtualQuery)),
             Export::Func(
                 "InitializeCriticalSection",
                 as_win_api!(sync::InitializeCriticalSection),

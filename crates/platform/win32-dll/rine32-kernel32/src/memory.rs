@@ -274,3 +274,15 @@ pub unsafe extern "stdcall" fn VirtualProtect(
         WinBool::FALSE
     }
 }
+
+/// Query information about a range of pages in the virtual address space of the calling process.
+///
+/// Stub: returns 0 (failure).
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn VirtualQuery(
+    _address: *const u8,
+    _buffer: *mut u8,
+    _length: usize,
+) -> usize {
+    unsafe { common::memory::virtual_query(_address, _buffer, _length) }
+}

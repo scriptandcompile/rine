@@ -293,6 +293,14 @@ pub fn win_protect_to_linux(protect: u32) -> i32 {
     }
 }
 
+/// Query information about a range of pages in the virtual address space of the calling process.
+///
+/// Stub: returns 0 (failure).
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe fn virtual_query(_address: *const u8, _buffer: *mut u8, _length: usize) -> usize {
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

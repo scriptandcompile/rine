@@ -296,7 +296,7 @@ pub unsafe extern "win64" fn VirtualFree(
 }
 
 // ---------------------------------------------------------------------------
-// VirtualProtect / VirtualQuery (existing Phase 1)
+// VirtualProtect / VirtualQuery
 // ---------------------------------------------------------------------------
 
 /// VirtualProtect — change the protection on a region of pages.
@@ -323,16 +323,16 @@ pub unsafe extern "win64" fn VirtualProtect(
     }
 }
 
-/// VirtualQuery — query information about a virtual memory region.
+/// Query information about a range of pages in the virtual address space of the calling process.
 ///
-/// Stub: returns 0 (failure). Full implementation in Phase 2.
+/// Stub: returns 0 (failure).
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn VirtualQuery(
     _address: *const u8,
     _buffer: *mut u8,
     _length: usize,
 ) -> usize {
-    0
+    unsafe { common::memory::virtual_query(_address, _buffer, _length) }
 }
 
 // ===========================================================================
