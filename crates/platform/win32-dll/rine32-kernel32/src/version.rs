@@ -1,5 +1,5 @@
 use rine_common_kernel32 as common;
-use rine_types::os::OsVersionInfoW;
+use rine_types::os::{OsVersionInfoA, OsVersionInfoW};
 
 /// `GetVersion` — return a packed `DWORD` encoding the OS version.
 ///
@@ -29,4 +29,17 @@ pub unsafe extern "stdcall" fn GetVersion() -> u32 {
 #[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn GetVersionExW(info: *mut OsVersionInfoW) -> i32 {
     unsafe { common::version::get_version_ex_w(info) }
+}
+
+/// `GetVersionExA` — ANSI variant of `GetVersionExW`.
+///
+/// # Arguments
+/// * `info` - pointer to an `OSVERSIONINFOA` or `OSVERSIONINFOEXA` struct, indicated by the `os_version_info_size` field.
+///
+/// # Safety
+/// `info` must point to a valid, writable `OSVERSIONINFOA` or
+/// `OSVERSIONINFOEXA` struct, and must not be null.
+#[allow(non_snake_case)]
+pub unsafe extern "stdcall" fn GetVersionExA(info: *mut OsVersionInfoA) -> i32 {
+    unsafe { common::version::get_version_ex_a(info) }
 }

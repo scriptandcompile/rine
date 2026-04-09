@@ -156,6 +156,7 @@ impl DllPlugin for Kernel32Plugin32 {
                 as_win_api!(environment::FreeEnvironmentStringsW),
             ),
             Export::Func("GetVersion", as_win_api!(version::GetVersion)),
+            Export::Func("GetVersionExA", as_win_api!(version::GetVersionExA)),
             Export::Func("GetVersionExW", as_win_api!(version::GetVersionExW)),
         ]
     }

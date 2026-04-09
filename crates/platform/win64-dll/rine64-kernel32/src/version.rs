@@ -1,11 +1,7 @@
 //! kernel32 version functions: GetVersionExA/W, GetVersion.
 
 use rine_common_kernel32 as common;
-use rine_types::os::{
-    OsVersionInfoA, OsVersionInfoExA, OsVersionInfoW, SIZEOF_OSVERSIONINFOA,
-    SIZEOF_OSVERSIONINFOEXA, get_version,
-};
-use tracing::{debug, warn};
+use rine_types::os::{OsVersionInfoA, OsVersionInfoW};
 
 // ---------------------------------------------------------------------------
 // GetVersionExW
@@ -33,41 +29,15 @@ pub unsafe extern "win64" fn GetVersionExW(info: *mut OsVersionInfoW) -> i32 {
 
 /// `GetVersionExA` — ANSI variant of `GetVersionExW`.
 ///
+/// # Arguments
+/// * `info` - pointer to an `OSVERSIONINFOA` or `OSVERSIONINFOEXA` struct, indicated by the `os_version_info_size` field.
+///
 /// # Safety
 /// `info` must point to a valid, writable `OSVERSIONINFOA` or
-/// `OSVERSIONINFOEXA`.
+/// `OSVERSIONINFOEXA` struct, and must not be null.
 #[allow(non_snake_case)]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetVersionExA(info: *mut OsVersionInfoA) -> i32 {
-    if info.is_null() {
-        return 0;
-    }
-
-    let ver = get_version();
-    let size = unsafe { (*info).os_version_info_size };
-
-    match size {
-        SIZEOF_OSVERSIONINFOA => {
-            debug!(
-                "GetVersionExA: {}.{}.{} (OSVERSIONINFOA)",
-                ver.major, ver.minor, ver.build
-            );
-            unsafe { ver.fill_a(info) };
-            1
-        }
-        SIZEOF_OSVERSIONINFOEXA => {
-            debug!(
-                "GetVersionExA: {}.{}.{} SP{}.{} (OSVERSIONINFOEXA)",
-                ver.major, ver.minor, ver.build, ver.service_pack_major, ver.service_pack_minor
-            );
-            unsafe { ver.fill_ex_a(info.cast::<OsVersionInfoExA>()) };
-            1
-        }
-        _ => {
-            warn!("GetVersionExA: unexpected size {size}");
-            0
-        }
-    }
+    unsafe { common::version::get_version_ex_a(info) }
 }
 
 // ---------------------------------------------------------------------------
@@ -98,8 +68,9 @@ mod tests {
     use std::ptr;
 
     use rine_types::os::{
-        self, OsVersionInfoExW, OsVersionInfoW, SIZEOF_OSVERSIONINFOEXW, SIZEOF_OSVERSIONINFOW,
-        VER_NT_WORKSTATION, VER_PLATFORM_WIN32_NT, VersionInfo,
+        self, OsVersionInfoExA, OsVersionInfoExW, OsVersionInfoW, SIZEOF_OSVERSIONINFOEXA,
+        SIZEOF_OSVERSIONINFOEXW, SIZEOF_OSVERSIONINFOW, VER_NT_WORKSTATION, VER_PLATFORM_WIN32_NT,
+        VersionInfo,
     };
     use serial_test::serial;
 
