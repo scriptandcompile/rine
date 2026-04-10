@@ -76,7 +76,7 @@ def parse_win32_stub_names(lib_source: str) -> set[str]:
 def parse_win32_partial_names(lib_source: str) -> set[str]:
     # Find fn partials(&self) -> Vec<PartialExport> { ... }
     match = re.search(
-        r"fn\s+partials\s*\(\s*&self\s*\)\s*->\s*Vec<PartialExport>\s*\{",
+        r"fn\s+partials\s*\(\s*&self\s*\)\s*->\s*Vec<([\w:]+::)?PartialExport>\s*\{",
         lib_source,
     )
     if not match:
@@ -163,10 +163,12 @@ def infer_status(
     stub_names: set[str],
     partial_names: set[str],
 ) -> str:
+    # Mark as stubbed if in stubs (x86 only, legacy)
     if arch == "x86" and export_name in stub_names:
         return "stubbed"
 
-    if arch == "x86" and export_name in partial_names:
+    # Mark as partial if in partials (for both arches)
+    if export_name in partial_names:
         return "partial"
 
     symbol_name = symbol_path.split("::")[-1]
@@ -211,7 +213,22 @@ def collect_arch_data(arch: str, arch_root: Path) -> list[ExportRow]:
         stub_names = parse_win32_stub_names(lib_source)
         partial_names = parse_win32_partial_names(lib_source)
 
-        for export_name, symbol_path in exports:
+        print(f"[DEBUG] arch={arch} crate={crate_dir.name} dll={dll_name}")
+        print(f"[DEBUG]   partials: {sorted(partial_names)}")
+        print(f"[DEBUG]   stubs: {sorted(stub_names)}")
+
+        # Build a map of all function names to their symbol paths (from exports)
+        export_map = {name: symbol for name, symbol in exports}
+
+        # Add all partials and stubs to the export map if not already present
+        for name in partial_names | stub_names:
+            if name not in export_map:
+                # Try to guess the symbol path (best effort: use name as symbol)
+                export_map[name] = name
+
+        # Now emit a row for every function in export_map
+        for export_name, symbol_path in export_map.items():
+            # Always emit, even if symbol_path is just the name
             source_file = find_symbol_source_file(src_dir, symbol_path)
             source_text = read_text(source_file) if source_file else None
             status = infer_status(
@@ -223,14 +240,18 @@ def collect_arch_data(arch: str, arch_root: Path) -> list[ExportRow]:
                 partial_names=partial_names,
             )
 
+            # If no symbol_path or source_file, still emit with name as symbol and source as None
+            emit_symbol = symbol_path if symbol_path else export_name
+            emit_source = to_source_label(dll_name, src_dir, source_file) if source_file else None
+
             rows.append(
                 ExportRow(
                     dll=dll_name,
                     function=export_name,
                     arch=arch,
                     status=status,
-                    symbol=symbol_path,
-                    source=to_source_label(dll_name, src_dir, source_file),
+                    symbol=emit_symbol,
+                    source=emit_source,
                 )
             )
 

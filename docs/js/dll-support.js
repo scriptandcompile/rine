@@ -8,6 +8,14 @@ const dllCount = document.getElementById("dll-count");
 const functionCount = document.getElementById("function-count");
 const x64Implemented = document.getElementById("x64-implemented");
 const x86Implemented = document.getElementById("x86-implemented");
+const x64TotalImplemented = document.getElementById("x64-total-implemented");
+const x64TotalPartial = document.getElementById("x64-total-partial");
+const x64TotalStubbed = document.getElementById("x64-total-stubbed");
+const x64TotalUnimplemented = document.getElementById("x64-total-unimplemented");
+const x86TotalImplemented = document.getElementById("x86-total-implemented");
+const x86TotalPartial = document.getElementById("x86-total-partial");
+const x86TotalStubbed = document.getElementById("x86-total-stubbed");
+const x86TotalUnimplemented = document.getElementById("x86-total-unimplemented");
 const generatedAt = document.getElementById("generated-at");
 
 const GITHUB_BLOB_ROOT = "https://github.com/scriptandcompile/rine/blob/main";
@@ -17,6 +25,35 @@ const SOURCE_ROOTS = {
 };
 
 let rows = [];
+const STATUS_ORDER = ["implemented", "partial", "stubbed", "unimplemented"];
+
+function normalizeStatus(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (STATUS_ORDER.includes(normalized)) {
+    return normalized;
+  }
+
+  if (normalized === "partially implemented" || normalized.includes("partial")) {
+    return "partial";
+  }
+
+  if (normalized === "stub" || normalized === "stubs" || normalized.includes("stubbed")) {
+    return "stubbed";
+  }
+
+  if (normalized.includes("unimplemented")) {
+    return "unimplemented";
+  }
+
+  return "implemented";
+}
+
+function safeStatusTotal(statusTotals, status) {
+  if (!statusTotals || typeof statusTotals !== "object") {
+    return 0;
+  }
+  return Number(statusTotals[status] || 0);
+}
 
 function formatGeneratedAt(value) {
   if (!value) {
@@ -161,8 +198,16 @@ async function initialize() {
 
     dllCount.textContent = String(data.dlls.length);
     functionCount.textContent = String(data.totals.functions);
-    x64Implemented.textContent = String(data.totals.x64.implemented);
-    x86Implemented.textContent = String(data.totals.x86.implemented);
+    x64Implemented.textContent = String(safeStatusTotal(data.totals.x64, "implemented"));
+    x86Implemented.textContent = String(safeStatusTotal(data.totals.x86, "implemented"));
+    x64TotalImplemented.textContent = String(safeStatusTotal(data.totals.x64, "implemented"));
+    x64TotalPartial.textContent = String(safeStatusTotal(data.totals.x64, "partial"));
+    x64TotalStubbed.textContent = String(safeStatusTotal(data.totals.x64, "stubbed"));
+    x64TotalUnimplemented.textContent = String(safeStatusTotal(data.totals.x64, "unimplemented"));
+    x86TotalImplemented.textContent = String(safeStatusTotal(data.totals.x86, "implemented"));
+    x86TotalPartial.textContent = String(safeStatusTotal(data.totals.x86, "partial"));
+    x86TotalStubbed.textContent = String(safeStatusTotal(data.totals.x86, "stubbed"));
+    x86TotalUnimplemented.textContent = String(safeStatusTotal(data.totals.x86, "unimplemented"));
     generatedAt.textContent = `Generated: ${formatGeneratedAt(data.generatedAt)}`;
 
     const dllNames = data.dlls.map((dll) => dll.name).sort((a, b) => a.localeCompare(b));
@@ -174,7 +219,20 @@ async function initialize() {
     });
 
     rows = data.dlls
-      .flatMap((dll) => dll.functions.map((fn) => ({ dll: dll.name, ...fn })))
+      .flatMap((dll) =>
+        dll.functions.map((fn) => ({
+          dll: dll.name,
+          ...fn,
+          x64: {
+            ...(fn.x64 || {}),
+            status: normalizeStatus(fn.x64?.status),
+          },
+          x86: {
+            ...(fn.x86 || {}),
+            status: normalizeStatus(fn.x86?.status),
+          },
+        }))
+      )
       .sort((a, b) => {
         if (a.dll === b.dll) {
           return a.name.localeCompare(b.name);

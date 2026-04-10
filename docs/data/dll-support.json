@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-10T19:35:59.162127+00:00",
+  "generatedAt": "2026-04-10T21:21:10.018296+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -10,7 +10,7 @@
   "dlls": [
     {
       "name": "advapi32.dll",
-      "functionCount": 5,
+      "functionCount": 9,
       "functions": [
         {
           "name": "RegCloseKey",
@@ -22,6 +22,58 @@
           "x86": {
             "status": "implemented",
             "symbol": "registry::RegCloseKey",
+            "source": "advapi32 - registry.rs"
+          }
+        },
+        {
+          "name": "RegCreateKeyExA",
+          "x64": {
+            "status": "partial",
+            "symbol": "RegCreateKeyExA",
+            "source": "advapi32 - registry.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "RegCreateKeyExA",
+            "source": "advapi32 - registry.rs"
+          }
+        },
+        {
+          "name": "RegCreateKeyExW",
+          "x64": {
+            "status": "partial",
+            "symbol": "RegCreateKeyExW",
+            "source": "advapi32 - registry.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "RegCreateKeyExW",
+            "source": "advapi32 - registry.rs"
+          }
+        },
+        {
+          "name": "RegOpenKeyExA",
+          "x64": {
+            "status": "partial",
+            "symbol": "RegOpenKeyExA",
+            "source": "advapi32 - registry.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "RegOpenKeyExA",
+            "source": "advapi32 - registry.rs"
+          }
+        },
+        {
+          "name": "RegOpenKeyExW",
+          "x64": {
+            "status": "partial",
+            "symbol": "RegOpenKeyExW",
+            "source": "advapi32 - registry.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "RegOpenKeyExW",
             "source": "advapi32 - registry.rs"
           }
         },
@@ -288,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 69,
+      "functionCount": 79,
       "functions": [
         {
           "name": "CloseHandle",
@@ -579,7 +631,7 @@
         {
           "name": "FreeEnvironmentStringsW",
           "x64": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "environment::FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           },
@@ -587,6 +639,19 @@
             "status": "partial",
             "symbol": "environment::FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
+          }
+        },
+        {
+          "name": "FreeLibrary",
+          "x64": {
+            "status": "unimplemented",
+            "symbol": null,
+            "source": null
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "FreeLibrary",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -785,6 +850,19 @@
           }
         },
         {
+          "name": "GetProcAddress",
+          "x64": {
+            "status": "unimplemented",
+            "symbol": null,
+            "source": null
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "GetProcAddress",
+            "source": "kernel32 - process.rs"
+          }
+        },
+        {
           "name": "GetProcessHeap",
           "x64": {
             "status": "implemented",
@@ -850,6 +928,32 @@
           }
         },
         {
+          "name": "HeapAlloc",
+          "x64": {
+            "status": "partial",
+            "symbol": "HeapAlloc",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "HeapAlloc",
+            "source": "kernel32 - memory.rs"
+          }
+        },
+        {
+          "name": "HeapCreate",
+          "x64": {
+            "status": "partial",
+            "symbol": "HeapCreate",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "HeapCreate",
+            "source": "kernel32 - memory.rs"
+          }
+        },
+        {
           "name": "HeapDestroy",
           "x64": {
             "status": "implemented",
@@ -859,6 +963,45 @@
           "x86": {
             "status": "implemented",
             "symbol": "memory::HeapDestroy",
+            "source": "kernel32 - memory.rs"
+          }
+        },
+        {
+          "name": "HeapFree",
+          "x64": {
+            "status": "partial",
+            "symbol": "HeapFree",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "HeapFree",
+            "source": "kernel32 - memory.rs"
+          }
+        },
+        {
+          "name": "HeapReAlloc",
+          "x64": {
+            "status": "partial",
+            "symbol": "HeapReAlloc",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "HeapReAlloc",
+            "source": "kernel32 - memory.rs"
+          }
+        },
+        {
+          "name": "HeapSize",
+          "x64": {
+            "status": "partial",
+            "symbol": "HeapSize",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "HeapSize",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -899,6 +1042,19 @@
             "status": "implemented",
             "symbol": "sync::LeaveCriticalSection",
             "source": "kernel32 - sync.rs"
+          }
+        },
+        {
+          "name": "LoadLibraryA",
+          "x64": {
+            "status": "unimplemented",
+            "symbol": null,
+            "source": null
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "LoadLibraryA",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -1110,6 +1266,19 @@
           }
         },
         {
+          "name": "VirtualFree",
+          "x64": {
+            "status": "partial",
+            "symbol": "VirtualFree",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "VirtualFree",
+            "source": "kernel32 - memory.rs"
+          }
+        },
+        {
           "name": "VirtualProtect",
           "x64": {
             "status": "implemented",
@@ -1119,6 +1288,19 @@
           "x86": {
             "status": "implemented",
             "symbol": "memory::VirtualProtect",
+            "source": "kernel32 - memory.rs"
+          }
+        },
+        {
+          "name": "VirtualQuery",
+          "x64": {
+            "status": "implemented",
+            "symbol": "VirtualQuery",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "VirtualQuery",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -2145,17 +2327,17 @@
     }
   ],
   "totals": {
-    "functions": 161,
+    "functions": 175,
     "x64": {
       "implemented": 158,
-      "partial": 0,
+      "partial": 11,
       "stubbed": 3,
-      "unimplemented": 0
+      "unimplemented": 3
     },
     "x86": {
       "implemented": 149,
-      "partial": 1,
-      "stubbed": 10,
+      "partial": 11,
+      "stubbed": 14,
       "unimplemented": 1
     }
   }
