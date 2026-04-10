@@ -287,8 +287,24 @@ pub unsafe extern "win64" fn RegSetValueExW(
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Close a registry key handle.
+///
+/// # Arguments
+/// * `hkey`: Handle to a registry key to close.
+///   This can be a handle returned by `reg_open_key` or `reg_create_key_ex`, but not a predefined root key handle.
+///
+/// # Safety
+/// This function is unsafe because it interacts with global state and can lead to undefined behavior if used incorrectly.
+/// The caller must ensure that the handle is valid and that it is not a predefined root key handle, as closing a predefined
+/// root key is not allowed and will not have any effect.
+/// Additionally, the caller must ensure that the handle is not used after it has been closed, as this can lead to undefined
+/// behavior.
+///
+/// # Returns
+/// Returns `ERROR_SUCCESS` if the function succeeds, or `ERROR_INVALID_HANDLE` if the handle is invalid or refers to a
+/// predefined root key.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCloseKey(hkey: isize) -> u32 {
-    unsafe { common::registry::RegCloseKey(hkey) }
+    unsafe { common::registry::reg_close_key(hkey) }
 }

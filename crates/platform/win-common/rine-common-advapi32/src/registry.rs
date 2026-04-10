@@ -313,8 +313,23 @@ pub unsafe fn reg_set_value(
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe fn RegCloseKey(hkey: isize) -> u32 {
+/// Close a registry key handle.
+///
+/// # Arguments
+/// * `hkey`: Handle to a registry key to close.
+///   This can be a handle returned by `reg_open_key` or `reg_create_key_ex`, but not a predefined root key handle.
+///
+/// # Safety
+/// This function is unsafe because it interacts with global state and can lead to undefined behavior if used incorrectly.
+/// The caller must ensure that the handle is valid and that it is not a predefined root key handle, as closing a predefined
+/// root key is not allowed and will not have any effect.
+/// Additionally, the caller must ensure that the handle is not used after it has been closed, as this can lead to undefined
+/// behavior.
+///
+/// # Returns
+/// Returns `ERROR_SUCCESS` if the function succeeds, or `ERROR_INVALID_HANDLE` if the handle is invalid or refers to a
+/// predefined root key.
+pub unsafe fn reg_close_key(hkey: isize) -> u32 {
     if is_predefined_key(hkey) {
         return ERROR_SUCCESS;
     }
@@ -341,7 +356,7 @@ mod tests {
         let err = unsafe { reg_open_key(registry::HKEY_LOCAL_MACHINE, sub, 0, 0, &mut result) };
         assert_eq!(err, ERROR_SUCCESS);
         assert_ne!(result, 0);
-        unsafe { RegCloseKey(result) };
+        unsafe { reg_close_key(result) };
     }
 
     #[test]
@@ -369,6 +384,6 @@ mod tests {
         assert_eq!(reg_type, registry::REG_DWORD);
         assert_eq!(u32::from_le_bytes(data), 10);
 
-        unsafe { RegCloseKey(hkey) };
+        unsafe { reg_close_key(hkey) };
     }
 }
