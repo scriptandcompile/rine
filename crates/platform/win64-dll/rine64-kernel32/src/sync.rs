@@ -13,6 +13,7 @@ use tracing::{debug, warn};
 
 /// InitializeCriticalSection
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn InitializeCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
@@ -23,6 +24,7 @@ pub unsafe extern "win64" fn InitializeCriticalSection(cs: *mut u8) {
 
 /// InitializeCriticalSectionAndSpinCount — spin count is ignored (always 0).
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn InitializeCriticalSectionAndSpinCount(
     cs: *mut u8,
     _spin_count: u32,
@@ -38,6 +40,7 @@ pub unsafe extern "win64" fn InitializeCriticalSectionAndSpinCount(
 
 /// EnterCriticalSection — lock the recursive mutex.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn EnterCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
@@ -72,12 +75,14 @@ pub unsafe extern "win64" fn EnterCriticalSection(cs: *mut u8) {
 /// Returns TRUE if the lock was successfully acquired, or FALSE if the critical section is already owned by another
 /// thread or if an error occurred (e.g. invalid pointer).
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
     unsafe { common::sync::try_enter_critical_section(cs) }
 }
 
 /// LeaveCriticalSection — unlock the recursive mutex.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn LeaveCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
@@ -96,6 +101,7 @@ pub unsafe extern "win64" fn LeaveCriticalSection(cs: *mut u8) {
 
 /// DeleteCriticalSection — destroy and deallocate the mutex.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn DeleteCriticalSection(cs: *mut u8) {
     if cs.is_null() {
         return;
@@ -128,6 +134,7 @@ pub unsafe extern "win64" fn DeleteCriticalSection(cs: *mut u8) {
 /// );
 /// ```
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateEventA(
     _security_attrs: usize,
     manual_reset: WinBool,
@@ -152,6 +159,7 @@ pub unsafe extern "win64" fn CreateEventA(
 
 /// CreateEventW — wide-string variant (name ignored).
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateEventW(
     _security_attrs: usize,
     manual_reset: WinBool,
@@ -176,6 +184,7 @@ pub unsafe extern "win64" fn CreateEventW(
 
 /// SetEvent — signal the event and wake waiters.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
     let handle = Handle::from_raw(event_handle);
 
@@ -201,6 +210,7 @@ pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
 
 /// ResetEvent — clear the signalled state.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ResetEvent(event_handle: isize) -> WinBool {
     let handle = Handle::from_raw(event_handle);
 
@@ -236,6 +246,7 @@ pub unsafe extern "win64" fn ResetEvent(event_handle: isize) -> WinBool {
 /// The caller must ensure that `name` points to a valid null-terminated ANSI string if it is not null.
 /// The caller is responsible for managing the returned mutex handle, including closing it when no longer needed.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateMutexA(
     _security_attrs: usize,
     initial_owner: WinBool,
@@ -267,6 +278,7 @@ pub unsafe extern "win64" fn CreateMutexA(
 /// The caller must ensure that `name` points to a valid null-terminated UTF-16 string if it is not null.
 /// The caller is responsible for managing the returned mutex handle, including closing it when no longer needed.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateMutexW(
     _security_attrs: usize,
     initial_owner: WinBool,
@@ -295,6 +307,7 @@ pub unsafe extern "win64" fn CreateMutexW(
 /// The caller must ensure that `mutex_handle` is a valid handle to a mutex object that the caller currently owns.
 /// Releasing a mutex that is not owned by the caller, or using an invalid handle, will result in failure and return FALSE.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
     unsafe { common::sync::release_mutex(mutex_handle) }
 }
@@ -312,6 +325,7 @@ pub unsafe extern "win64" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
 /// );
 /// ```
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateSemaphoreA(
     _security_attrs: usize,
     initial_count: i32,
@@ -332,6 +346,7 @@ pub unsafe extern "win64" fn CreateSemaphoreA(
 
 /// CreateSemaphoreW — wide-string variant (name ignored).
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateSemaphoreW(
     _security_attrs: usize,
     initial_count: i32,
@@ -373,6 +388,7 @@ pub unsafe extern "win64" fn CreateSemaphoreW(
 /// memory location where an i32 can be stored. Releasing a semaphore with an invalid handle,
 /// or with parameters that would exceed the maximum count, will result in failure and return FALSE.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ReleaseSemaphore(
     semaphore_handle: isize,
     release_count: i32,

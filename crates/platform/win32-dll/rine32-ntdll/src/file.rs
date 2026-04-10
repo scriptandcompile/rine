@@ -17,6 +17,7 @@ use rine_types::os::IoStatusBlock;
 /// # Safety
 /// All pointer parameters must be valid.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtCreateFile(
     file_handle: *mut isize,  // PHANDLE (out)
     desired_access: u32,      // ACCESS_MASK

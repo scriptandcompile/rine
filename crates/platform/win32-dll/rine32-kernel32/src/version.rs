@@ -11,6 +11,7 @@ use rine_types::os::{OsVersionInfoA, OsVersionInfoW};
 /// Called from PE code via the Windows ABI. The caller must ensure the
 /// global version info has been initialised before entry.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetVersion() -> u32 {
     common::version::get_version_packed()
 }
@@ -27,6 +28,7 @@ pub unsafe extern "stdcall" fn GetVersion() -> u32 {
 /// `info` must point to a valid, writable `OSVERSIONINFOW` or
 /// `OSVERSIONINFOEXW` whose `dwOSVersionInfoSize` field is set correctly.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetVersionExW(info: *mut OsVersionInfoW) -> i32 {
     unsafe { common::version::get_version_ex_w(info) }
 }
@@ -40,6 +42,7 @@ pub unsafe extern "stdcall" fn GetVersionExW(info: *mut OsVersionInfoW) -> i32 {
 /// `info` must point to a valid, writable `OSVERSIONINFOA` or
 /// `OSVERSIONINFOEXA` struct, and must not be null.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetVersionExA(info: *mut OsVersionInfoA) -> i32 {
     unsafe { common::version::get_version_ex_a(info) }
 }

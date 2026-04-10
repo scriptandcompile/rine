@@ -2,6 +2,7 @@ use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, INVALID_HANDLE_VALUE, handle_to_fd, std_handle_to_fd};
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetStdHandle(nstd_handle: u32) -> isize {
     match std_handle_to_fd(nstd_handle) {
         Some(fd) => (fd as isize) + 0x1000,
@@ -10,6 +11,7 @@ pub unsafe extern "stdcall" fn GetStdHandle(nstd_handle: u32) -> isize {
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WriteConsoleA(
     console_output: isize,
     buffer: *const u8,
@@ -35,6 +37,7 @@ pub unsafe extern "stdcall" fn WriteConsoleA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WriteConsoleW(
     console_output: isize,
     buffer: *const u16,

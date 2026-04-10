@@ -13,6 +13,7 @@ use rine_common_msvcrt::{
 ///
 /// No-op: rine always runs as a console application.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __set_app_type(app_type: i32) {
     tracing::trace!("msvcrt::__set_app_type({app_type})");
     set_app_type(app_type);
@@ -22,6 +23,7 @@ pub unsafe extern "win64" fn __set_app_type(app_type: i32) {
 ///
 /// No-op: we don't support custom math error handlers.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __setusermatherr(handler: usize) {
     tracing::trace!("msvcrt::__setusermatherr");
     set_usermatherr(handler);
@@ -32,6 +34,7 @@ pub unsafe extern "win64" fn __setusermatherr(handler: usize) {
 /// Stub: returns ExceptionContinueSearch (1). Called only if an exception is
 /// thrown, which shouldn't happen in a simple hello world.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __C_specific_handler(
     _exception_record: usize,
     _establisher_frame: usize,
@@ -44,22 +47,26 @@ pub unsafe extern "win64" fn __C_specific_handler(
 
 /// _commode — return a pointer to the commit mode variable.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _commode() -> *mut i32 {
     commode_ptr()
 }
 
 /// Return the raw pointer to the _commode variable for data-export registration.
+#[unsafe(no_mangle)]
 pub fn commode_data_ptr() -> *mut i32 {
     commode_ptr()
 }
 
 /// _fmode — return a pointer to the default file translation mode.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _fmode() -> *mut i32 {
     fmode_ptr()
 }
 
 /// Return the raw pointer to the _fmode variable for data-export registration.
+#[unsafe(no_mangle)]
 pub fn fmode_data_ptr() -> *mut i32 {
     fmode_ptr()
 }
@@ -69,11 +76,13 @@ pub fn fmode_data_ptr() -> *mut i32 {
 /// Returns a pointer to a NULL pointer (empty environment at CRT level;
 /// the real environment is provided via `__getmainargs`).
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
     initenv_ptr() as *const *const i8
 }
 
 /// Return the raw pointer to the __initenv variable for data-export registration.
+#[unsafe(no_mangle)]
 pub fn initenv_data_ptr() -> *mut usize {
     initenv_ptr()
 }
@@ -84,6 +93,7 @@ pub fn initenv_data_ptr() -> *mut usize {
 /// stdout (1), stderr (2). We store a marker fd in the first field of
 /// each entry so fwrite/fprintf can identify the stream.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
     fake_iob_64_ptr()
 }
@@ -93,6 +103,7 @@ pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
 /// Stub: returns the function pointer (success) but does not actually
 /// register it for later calling. Full atexit support in a later phase.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
     tracing::trace!("msvcrt::_onexit");
     onexit(func)
@@ -100,12 +111,14 @@ pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
 
 /// _amsg_exit — display a runtime error message and abort.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _amsg_exit(msg_num: i32) {
     amsg_exit(msg_num)
 }
 
 /// abort — abnormally terminate the process.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn abort() {
     tracing::debug!("msvcrt::abort");
     abort_process()
@@ -116,6 +129,7 @@ pub unsafe extern "win64" fn abort() {
 /// Stub: returns SIG_DFL (0). Minimal implementation since Windows signals
 /// are rarely used in practice.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn signal(
     sig: i32,
     handler: usize, // void (*)(int)
@@ -127,6 +141,7 @@ pub unsafe extern "win64" fn signal(
 ///
 /// No-op for single-threaded Phase 1.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _lock(locknum: i32) {
     lock(locknum);
 }
@@ -135,6 +150,7 @@ pub unsafe extern "win64" fn _lock(locknum: i32) {
 ///
 /// No-op for single-threaded Phase 1.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _unlock(locknum: i32) {
     unlock(locknum);
 }
@@ -143,6 +159,7 @@ pub unsafe extern "win64" fn _unlock(locknum: i32) {
 ///
 /// Returns a pointer to libc's errno, which is thread-local.
 #[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _errno() -> *mut i32 {
     errno_location()
 }
@@ -151,6 +168,7 @@ pub unsafe extern "win64" fn _errno() -> *mut i32 {
 ///
 /// Returns a pointer to a NULL pointer (minimal stub).
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
     initenv_ptr() as *const *const *const i8
 }
@@ -159,6 +177,7 @@ pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
 ///
 /// Returns the same pointer as `_fmode()`.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
     fmode_ptr()
 }
@@ -167,6 +186,7 @@ pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
 ///
 /// Returns the same pointer as `_commode()`.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
     commode_ptr()
 }

@@ -1,6 +1,7 @@
 use rine_common_advapi32::registry as common;
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegOpenKeyExA(
     hkey: isize,
     sub_key: *const u8,
@@ -12,6 +13,7 @@ pub unsafe extern "stdcall" fn RegOpenKeyExA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegOpenKeyExW(
     hkey: isize,
     sub_key: *const u16,
@@ -23,6 +25,7 @@ pub unsafe extern "stdcall" fn RegOpenKeyExW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegCreateKeyExA(
     hkey: isize,
     sub_key: *const u8,
@@ -50,6 +53,7 @@ pub unsafe extern "stdcall" fn RegCreateKeyExA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegCreateKeyExW(
     hkey: isize,
     sub_key: *const u16,
@@ -77,6 +81,7 @@ pub unsafe extern "stdcall" fn RegCreateKeyExW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegQueryValueExA(
     hkey: isize,
     value_name: *const u8,
@@ -89,6 +94,7 @@ pub unsafe extern "stdcall" fn RegQueryValueExA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegQueryValueExW(
     hkey: isize,
     value_name: *const u16,
@@ -101,6 +107,7 @@ pub unsafe extern "stdcall" fn RegQueryValueExW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegSetValueExA(
     hkey: isize,
     value_name: *const u8,
@@ -113,6 +120,7 @@ pub unsafe extern "stdcall" fn RegSetValueExA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegSetValueExW(
     hkey: isize,
     value_name: *const u16,
@@ -125,6 +133,7 @@ pub unsafe extern "stdcall" fn RegSetValueExW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegCloseKey(hkey: isize) -> u32 {
     unsafe { common::RegCloseKey(hkey) }
 }

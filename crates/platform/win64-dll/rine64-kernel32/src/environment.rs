@@ -23,6 +23,7 @@ use tracing::debug;
 /// `name` must be a valid null-terminated ANSI string.
 /// `buffer` must point to at least `size` writable bytes, or be null.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentVariableA(
     name: *const u8,
     buffer: *mut u8,
@@ -47,6 +48,7 @@ pub unsafe extern "win64" fn GetEnvironmentVariableA(
 /// `name` must be a valid null-terminated UTF-16LE string.
 /// `buffer` must point to at least `size` writable u16 elements, or be null.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentVariableW(
     name: *const u16,
     buffer: *mut u16,
@@ -77,6 +79,7 @@ pub unsafe extern "win64" fn GetEnvironmentVariableW(
 /// `name` must be a valid null-terminated ANSI string.
 /// `value` must be null or a valid null-terminated ANSI string.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetEnvironmentVariableA(name: *const u8, value: *const u8) -> WinBool {
     let var_name = match unsafe { read_cstr(name) } {
         Some(n) => n,
@@ -95,6 +98,7 @@ pub unsafe extern "win64" fn SetEnvironmentVariableA(name: *const u8, value: *co
 /// `name` must be a valid null-terminated UTF-16LE string.
 /// `value` must be null or a valid null-terminated UTF-16LE string.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetEnvironmentVariableW(
     name: *const u16,
     value: *const u16,
@@ -124,6 +128,7 @@ pub unsafe extern "win64" fn SetEnvironmentVariableW(
 /// `src` must be a valid null-terminated ANSI string.
 /// `dst` must be null or point to at least `dst_size` writable bytes.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ExpandEnvironmentStringsA(
     src: *const u8,
     dst: *mut u8,
@@ -154,6 +159,7 @@ pub unsafe extern "win64" fn ExpandEnvironmentStringsA(
 /// `src` must be a valid null-terminated UTF-16LE string.
 /// `dst` must be null or point to at least `dst_size` writable u16 elements.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ExpandEnvironmentStringsW(
     src: *const u16,
     dst: *mut u16,
@@ -206,6 +212,7 @@ static ENV_BLOCK_W: OnceLock<SyncPtr> = OnceLock::new();
 /// # Safety
 /// The returned pointer is valid for the process lifetime.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentStringsW() -> *mut u16 {
     ENV_BLOCK_W
         .get_or_init(|| {
@@ -225,6 +232,7 @@ pub unsafe extern "win64" fn GetEnvironmentStringsW() -> *mut u16 {
 /// `block` should be a pointer previously returned by
 /// `GetEnvironmentStringsW` (or NULL).
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FreeEnvironmentStringsW(_block: *mut u16) -> WinBool {
     // No-op: the block is leaked for the process lifetime.
     WinBool::TRUE

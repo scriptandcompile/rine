@@ -7,6 +7,7 @@ use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetProcessHeap() -> isize {
     common::memory::DEFAULT_HEAP.as_raw()
 }
@@ -28,6 +29,7 @@ pub unsafe extern "stdcall" fn GetProcessHeap() -> isize {
 /// The default process heap returned by GetProcessHeap cannot be created or destroyed using
 /// HeapCreate or HeapDestroy, and attempting to do so will fail.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn HeapCreate(
     options: u32,
     _initial_size: usize,
@@ -57,6 +59,7 @@ pub unsafe extern "stdcall" fn HeapCreate(
 /// The default process heap cannot be destroyed, and attempting to do so will fail.
 /// This does not free any outstanding allocations from the heap; it is the caller's responsibility to free them first.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn HeapDestroy(heap_handle: isize) -> WinBool {
     let handle = Handle::from_raw(heap_handle);
     rine_types::dev_notify!(on_handle_closed(heap_handle as i64));
@@ -82,6 +85,7 @@ pub unsafe extern "stdcall" fn HeapDestroy(heap_handle: isize) -> WinBool {
 /// # Note
 /// * `HEAP_NO_SERIALIZE` (0x00000001) and `HEAP_GENERATE_EXCEPTIONS` (0x00000004) are accepted but have no effect in this implementation.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn HeapAlloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
     let handle = Handle::from_raw(heap_handle);
     if size == 0 {
@@ -101,6 +105,7 @@ pub unsafe extern "stdcall" fn HeapAlloc(heap_handle: isize, flags: u32, size: u
 /// # Returns
 /// The size of the allocated block in bytes, or `-1` (usize::MAX) if the handle or pointer is invalid.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn HeapSize(heap_handle: isize, _flags: u32, ptr: *const u8) -> usize {
     let handle = Handle::from_raw(heap_handle);
 
@@ -130,6 +135,7 @@ pub unsafe extern "stdcall" fn HeapSize(heap_handle: isize, _flags: u32, ptr: *c
 /// * The default process heap cannot be destroyed, and attempting to do so will fail, but this function can still be used
 ///   to free allocations from the default heap.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut u8) -> WinBool {
     if ptr.is_null() {
         return WinBool::TRUE;
@@ -161,6 +167,7 @@ pub unsafe extern "stdcall" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *m
 /// as `ptr` or a different location. If the function fails, the return value is `NULL`, and extended error
 /// information should be (but currently cannot) be obtained by calling GetLastError.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn HeapReAlloc(
     heap_handle: isize,
     flags: u32,
@@ -202,6 +209,7 @@ pub unsafe extern "stdcall" fn HeapReAlloc(
 /// If the function succeeds, the return value is a pointer to the allocated memory region. If the function fails, the return value is
 /// `NULL`, and extended error information should be (but currently cannot be) obtained by calling GetLastError.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn VirtualAlloc(
     address: *mut u8,
     size: usize,
@@ -246,6 +254,7 @@ pub unsafe extern "stdcall" fn VirtualAlloc(
 /// If the function fails, the return value is `FALSE`, and extended error information should
 /// be (but currently cannot be) obtained by calling GetLastError.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn VirtualFree(
     address: *mut u8,
     _size: usize,
@@ -294,6 +303,7 @@ pub unsafe extern "stdcall" fn VirtualFree(
 /// If the function succeeds, the return value is `TRUE`. If the function fails, the return value is `FALSE`, and extended
 /// error information should be (but currently cannot be) obtained by calling GetLastError.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn VirtualProtect(
     address: *mut u8,
     size: usize,
@@ -307,6 +317,7 @@ pub unsafe extern "stdcall" fn VirtualProtect(
 ///
 /// Stub: returns 0 (failure).
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn VirtualQuery(
     _address: *const u8,
     _buffer: *mut u8,

@@ -5,6 +5,7 @@ use rine_common_advapi32::registry as common;
 // ---------------------------------------------------------------------------
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegOpenKeyExA(
     hkey: isize,
     sub_key: *const u8,
@@ -16,6 +17,7 @@ pub unsafe extern "win64" fn RegOpenKeyExA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegOpenKeyExW(
     hkey: isize,
     sub_key: *const u16,
@@ -27,6 +29,7 @@ pub unsafe extern "win64" fn RegOpenKeyExW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCreateKeyExA(
     hkey: isize,
     sub_key: *const u8,
@@ -54,6 +57,7 @@ pub unsafe extern "win64" fn RegCreateKeyExA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCreateKeyExW(
     hkey: isize,
     sub_key: *const u16,
@@ -81,6 +85,7 @@ pub unsafe extern "win64" fn RegCreateKeyExW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegQueryValueExA(
     hkey: isize,
     value_name: *const u8,
@@ -93,6 +98,7 @@ pub unsafe extern "win64" fn RegQueryValueExA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegQueryValueExW(
     hkey: isize,
     value_name: *const u16,
@@ -105,6 +111,7 @@ pub unsafe extern "win64" fn RegQueryValueExW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegSetValueExA(
     hkey: isize,
     value_name: *const u8,
@@ -117,6 +124,7 @@ pub unsafe extern "win64" fn RegSetValueExA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegSetValueExW(
     hkey: isize,
     value_name: *const u16,
@@ -129,6 +137,7 @@ pub unsafe extern "win64" fn RegSetValueExW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCloseKey(hkey: isize) -> u32 {
     unsafe { common::RegCloseKey(hkey) }
 }

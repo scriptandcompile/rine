@@ -10,6 +10,7 @@ unsafe impl Sync for SyncPtr {}
 static ENV_BLOCK_W: OnceLock<SyncPtr> = OnceLock::new();
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetEnvironmentVariableA(
     name: *const u8,
     buffer: *mut u8,
@@ -27,6 +28,7 @@ pub unsafe extern "stdcall" fn GetEnvironmentVariableA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetEnvironmentVariableW(
     name: *const u16,
     buffer: *mut u16,
@@ -44,6 +46,7 @@ pub unsafe extern "stdcall" fn GetEnvironmentVariableW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetEnvironmentVariableA(
     name: *const u8,
     value: *const u8,
@@ -58,6 +61,7 @@ pub unsafe extern "stdcall" fn SetEnvironmentVariableA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetEnvironmentVariableW(
     name: *const u16,
     value: *const u16,
@@ -72,6 +76,7 @@ pub unsafe extern "stdcall" fn SetEnvironmentVariableW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ExpandEnvironmentStringsA(
     src: *const u8,
     dst: *mut u8,
@@ -97,6 +102,7 @@ pub unsafe extern "stdcall" fn ExpandEnvironmentStringsA(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ExpandEnvironmentStringsW(
     src: *const u16,
     dst: *mut u16,
@@ -123,6 +129,7 @@ pub unsafe extern "stdcall" fn ExpandEnvironmentStringsW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetEnvironmentStringsW() -> *mut u16 {
     ENV_BLOCK_W
         .get_or_init(|| {
@@ -134,6 +141,7 @@ pub unsafe extern "stdcall" fn GetEnvironmentStringsW() -> *mut u16 {
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FreeEnvironmentStringsW(_block: *mut u16) -> WinBool {
     WinBool::TRUE
 }
