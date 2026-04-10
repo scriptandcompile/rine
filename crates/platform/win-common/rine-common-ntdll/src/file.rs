@@ -2,6 +2,42 @@ use rine_types::errors::NtStatus;
 use rine_types::handles::{GENERIC_READ, GENERIC_WRITE, HandleEntry, handle_table};
 use rine_types::os::IoStatusBlock;
 
+pub fn nt_read_file() -> u32 {
+    tracing::warn!(
+        api = "NtReadFile",
+        dll = "ntdll",
+        "NtReadFile stub called. Returned 0 bytes read"
+    );
+    0
+}
+
+pub fn nt_write_file() -> u32 {
+    tracing::warn!(
+        api = "NtWriteFile",
+        dll = "ntdll",
+        "NtWriteFile stub called. Returned 0 bytes written"
+    );
+    0
+}
+
+pub fn nt_close() -> u32 {
+    tracing::warn!(
+        api = "NtClose",
+        dll = "ntdll",
+        "NtClose stub called. Returned success"
+    );
+    0
+}
+
+pub fn nt_query_information_file() -> u32 {
+    tracing::warn!(
+        api = "NtQueryInformationFile",
+        dll = "ntdll",
+        "NtQueryInformationFile stub called. Returned 0 bytes read"
+    );
+    0
+}
+
 /// NtCreateFile — open or create a file via the NT native API.
 ///
 /// This is a simplified implementation: it extracts the path from

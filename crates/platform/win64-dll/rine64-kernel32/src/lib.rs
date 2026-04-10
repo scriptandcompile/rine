@@ -7,7 +7,7 @@ pub mod sync;
 pub mod thread;
 pub mod version;
 
-use rine_dlls::{DllPlugin, Export, as_win_api};
+use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
 
 pub struct Kernel32Plugin;
 
@@ -15,40 +15,14 @@ impl DllPlugin for Kernel32Plugin {
     fn dll_names(&self) -> &[&str] {
         &["kernel32.dll"]
     }
-
     fn exports(&self) -> Vec<Export> {
         vec![
-            // Console
-            Export::Func("GetStdHandle", as_win_api!(console::GetStdHandle)),
-            Export::Func("WriteConsoleA", as_win_api!(console::WriteConsoleA)),
-            Export::Func("WriteConsoleW", as_win_api!(console::WriteConsoleW)),
-            // File I/O
-            Export::Func("CreateFileA", as_win_api!(file::CreateFileA)),
-            Export::Func("CreateFileW", as_win_api!(file::CreateFileW)),
-            Export::Func("DeleteFileA", as_win_api!(file::DeleteFileA)),
-            Export::Func("DeleteFileW", as_win_api!(file::DeleteFileW)),
-            Export::Func("ReadFile", as_win_api!(file::ReadFile)),
-            Export::Func("WriteFile", as_win_api!(file::WriteFile)),
-            Export::Func("CloseHandle", as_win_api!(file::CloseHandle)),
-            Export::Func("GetFileSize", as_win_api!(file::GetFileSize)),
-            Export::Func("SetFilePointer", as_win_api!(file::SetFilePointer)),
-            Export::Func("FlushFileBuffers", as_win_api!(file::FlushFileBuffers)),
-            Export::Func("FindFirstFileA", as_win_api!(file::FindFirstFileA)),
-            Export::Func("FindFirstFileW", as_win_api!(file::FindFirstFileW)),
-            Export::Func("FindNextFileA", as_win_api!(file::FindNextFileA)),
-            Export::Func("FindNextFileW", as_win_api!(file::FindNextFileW)),
-            Export::Func("FindClose", as_win_api!(file::FindClose)),
-            // Process
             Export::Func("ExitProcess", as_win_api!(process::ExitProcess)),
+            Export::Func("GetLastError", as_win_api!(process::GetLastError)),
             Export::Func("GetCommandLineA", as_win_api!(process::GetCommandLineA)),
             Export::Func("GetCommandLineW", as_win_api!(process::GetCommandLineW)),
             Export::Func("GetModuleHandleA", as_win_api!(process::GetModuleHandleA)),
             Export::Func("GetModuleHandleW", as_win_api!(process::GetModuleHandleW)),
-            Export::Func("GetLastError", as_win_api!(process::GetLastError)),
-            Export::Func(
-                "SetUnhandledExceptionFilter",
-                as_win_api!(process::SetUnhandledExceptionFilter),
-            ),
             Export::Func("CreateProcessA", as_win_api!(process::CreateProcessA)),
             Export::Func("CreateProcessW", as_win_api!(process::CreateProcessW)),
             Export::Func(
@@ -60,7 +34,24 @@ impl DllPlugin for Kernel32Plugin {
                 "GetExitCodeProcess",
                 as_win_api!(process::GetExitCodeProcess),
             ),
-            // Synchronization — critical sections
+            Export::Func("CreateFileA", as_win_api!(file::CreateFileA)),
+            Export::Func("CreateFileW", as_win_api!(file::CreateFileW)),
+            Export::Func("DeleteFileA", as_win_api!(file::DeleteFileA)),
+            Export::Func("DeleteFileW", as_win_api!(file::DeleteFileW)),
+            Export::Func("GetFileSize", as_win_api!(file::GetFileSize)),
+            Export::Func("CloseHandle", as_win_api!(file::CloseHandle)),
+            Export::Func("SetFilePointer", as_win_api!(file::SetFilePointer)),
+            Export::Func("FindFirstFileA", as_win_api!(file::FindFirstFileA)),
+            Export::Func("FindClose", as_win_api!(file::FindClose)),
+            Export::Func("ReadFile", as_win_api!(file::ReadFile)),
+            Export::Func("WriteFile", as_win_api!(file::WriteFile)),
+            Export::Func("FlushFileBuffers", as_win_api!(file::FlushFileBuffers)),
+            Export::Func("WriteConsoleA", as_win_api!(console::WriteConsoleA)),
+            Export::Func("WriteConsoleW", as_win_api!(console::WriteConsoleW)),
+            Export::Func("GetStdHandle", as_win_api!(console::GetStdHandle)),
+            Export::Func("GetProcessHeap", as_win_api!(memory::GetProcessHeap)),
+            Export::Func("HeapDestroy", as_win_api!(memory::HeapDestroy)),
+            Export::Func("VirtualAlloc", as_win_api!(memory::VirtualAlloc)),
             Export::Func(
                 "InitializeCriticalSection",
                 as_win_api!(sync::InitializeCriticalSection),
@@ -70,12 +61,12 @@ impl DllPlugin for Kernel32Plugin {
                 as_win_api!(sync::InitializeCriticalSectionAndSpinCount),
             ),
             Export::Func(
-                "EnterCriticalSection",
-                as_win_api!(sync::EnterCriticalSection),
-            ),
-            Export::Func(
                 "TryEnterCriticalSection",
                 as_win_api!(sync::TryEnterCriticalSection),
+            ),
+            Export::Func(
+                "EnterCriticalSection",
+                as_win_api!(sync::EnterCriticalSection),
             ),
             Export::Func(
                 "LeaveCriticalSection",
@@ -85,31 +76,33 @@ impl DllPlugin for Kernel32Plugin {
                 "DeleteCriticalSection",
                 as_win_api!(sync::DeleteCriticalSection),
             ),
-            // Synchronization — events
             Export::Func("CreateEventA", as_win_api!(sync::CreateEventA)),
             Export::Func("CreateEventW", as_win_api!(sync::CreateEventW)),
             Export::Func("SetEvent", as_win_api!(sync::SetEvent)),
+            Export::Func(
+                "SetUnhandledExceptionFilter",
+                as_win_api!(process::SetUnhandledExceptionFilter),
+            ),
             Export::Func("ResetEvent", as_win_api!(sync::ResetEvent)),
-            // Synchronization — mutexes
             Export::Func("CreateMutexA", as_win_api!(sync::CreateMutexA)),
             Export::Func("CreateMutexW", as_win_api!(sync::CreateMutexW)),
             Export::Func("ReleaseMutex", as_win_api!(sync::ReleaseMutex)),
-            // Synchronization — semaphores
             Export::Func("CreateSemaphoreA", as_win_api!(sync::CreateSemaphoreA)),
             Export::Func("CreateSemaphoreW", as_win_api!(sync::CreateSemaphoreW)),
             Export::Func("ReleaseSemaphore", as_win_api!(sync::ReleaseSemaphore)),
-            // Threading
-            Export::Func("CreateThread", as_win_api!(thread::CreateThread)),
+            Export::Func("VirtualProtect", as_win_api!(memory::VirtualProtect)),
             Export::Func("TlsAlloc", as_win_api!(thread::TlsAlloc)),
             Export::Func("TlsFree", as_win_api!(thread::TlsFree)),
             Export::Func("TlsGetValue", as_win_api!(thread::TlsGetValue)),
             Export::Func("TlsSetValue", as_win_api!(thread::TlsSetValue)),
+            Export::Func("CreateThread", as_win_api!(thread::CreateThread)),
             Export::Func("GetCurrentThread", as_win_api!(thread::GetCurrentThread)),
             Export::Func(
                 "GetCurrentThreadId",
                 as_win_api!(thread::GetCurrentThreadId),
             ),
             Export::Func("GetExitCodeThread", as_win_api!(thread::GetExitCodeThread)),
+            Export::Func("Sleep", as_win_api!(thread::Sleep)),
             Export::Func(
                 "WaitForSingleObject",
                 as_win_api!(thread::WaitForSingleObject),
@@ -118,8 +111,6 @@ impl DllPlugin for Kernel32Plugin {
                 "WaitForMultipleObjects",
                 as_win_api!(thread::WaitForMultipleObjects),
             ),
-            Export::Func("Sleep", as_win_api!(thread::Sleep)),
-            // Environment
             Export::Func(
                 "GetEnvironmentVariableA",
                 as_win_api!(environment::GetEnvironmentVariableA),
@@ -152,22 +143,49 @@ impl DllPlugin for Kernel32Plugin {
                 "FreeEnvironmentStringsW",
                 as_win_api!(environment::FreeEnvironmentStringsW),
             ),
-            // Memory
-            Export::Func("GetProcessHeap", as_win_api!(memory::GetProcessHeap)),
-            Export::Func("HeapCreate", as_win_api!(memory::HeapCreate)),
-            Export::Func("HeapDestroy", as_win_api!(memory::HeapDestroy)),
-            Export::Func("HeapAlloc", as_win_api!(memory::HeapAlloc)),
-            Export::Func("HeapFree", as_win_api!(memory::HeapFree)),
-            Export::Func("HeapReAlloc", as_win_api!(memory::HeapReAlloc)),
-            Export::Func("HeapSize", as_win_api!(memory::HeapSize)),
-            Export::Func("VirtualAlloc", as_win_api!(memory::VirtualAlloc)),
-            Export::Func("VirtualFree", as_win_api!(memory::VirtualFree)),
-            Export::Func("VirtualProtect", as_win_api!(memory::VirtualProtect)),
-            Export::Func("VirtualQuery", as_win_api!(memory::VirtualQuery)),
-            // Version
+            Export::Func("GetVersion", as_win_api!(version::GetVersion)),
             Export::Func("GetVersionExA", as_win_api!(version::GetVersionExA)),
             Export::Func("GetVersionExW", as_win_api!(version::GetVersionExW)),
-            Export::Func("GetVersion", as_win_api!(version::GetVersion)),
+        ]
+    }
+
+    fn stubs(&self) -> Vec<StubExport> {
+        vec![StubExport {
+            name: "VirtualQuery",
+            func: as_win_api!(memory::VirtualQuery),
+        }]
+    }
+
+    fn partials(&self) -> Vec<PartialExport> {
+        vec![
+            PartialExport {
+                name: "FreeEnvironmentStringsW",
+                func: as_win_api!(environment::FreeEnvironmentStringsW),
+            },
+            PartialExport {
+                name: "HeapCreate",
+                func: as_win_api!(memory::HeapCreate),
+            },
+            PartialExport {
+                name: "HeapAlloc",
+                func: as_win_api!(memory::HeapAlloc),
+            },
+            PartialExport {
+                name: "HeapSize",
+                func: as_win_api!(memory::HeapSize),
+            },
+            PartialExport {
+                name: "HeapFree",
+                func: as_win_api!(memory::HeapFree),
+            },
+            PartialExport {
+                name: "HeapReAlloc",
+                func: as_win_api!(memory::HeapReAlloc),
+            },
+            PartialExport {
+                name: "VirtualFree",
+                func: as_win_api!(memory::VirtualFree),
+            },
         ]
     }
 }

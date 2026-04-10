@@ -49,7 +49,56 @@ def parse_dll_name(lib_source: str) -> str:
 
 
 def parse_win32_stub_names(lib_source: str) -> set[str]:
-    return set(re.findall(r"win32_stub!\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,", lib_source))
+    # Find fn stubs(&self) -> Vec<StubExport> { ... }
+    match = re.search(r"fn\s+stubs\s*\(\s*&self\s*\)\s*->\s*Vec<StubExport>\s*\{", lib_source)
+    if not match:
+        return set()
+
+    start = match.end()
+    # Find the closing brace of this function
+    depth = 1
+    end = start
+    for index in range(start, len(lib_source)):
+        ch = lib_source[index]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end = index
+                break
+
+    stubs_block = lib_source[start:end]
+    # Extract all string literals that are function names
+    return set(re.findall(r'name:\s*"([^"]+)"', stubs_block))
+
+
+def parse_win32_partial_names(lib_source: str) -> set[str]:
+    # Find fn partials(&self) -> Vec<PartialExport> { ... }
+    match = re.search(
+        r"fn\s+partials\s*\(\s*&self\s*\)\s*->\s*Vec<PartialExport>\s*\{",
+        lib_source,
+    )
+    if not match:
+        return set()
+
+    start = match.end()
+    # Find the closing brace of this function
+    depth = 1
+    end = start
+    for index in range(start, len(lib_source)):
+        ch = lib_source[index]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end = index
+                break
+
+    partials_block = lib_source[start:end]
+    # Extract all string literals that are function names
+    return set(re.findall(r'name:\s*"([^"]+)"', partials_block))
 
 
 def parse_exports(lib_source: str) -> list[tuple[str, str]]:
@@ -112,9 +161,13 @@ def infer_status(
     symbol_path: str,
     source_text: str | None,
     stub_names: set[str],
+    partial_names: set[str],
 ) -> str:
     if arch == "x86" and export_name in stub_names:
         return "stubbed"
+
+    if arch == "x86" and export_name in partial_names:
+        return "partial"
 
     symbol_name = symbol_path.split("::")[-1]
     body = find_function_body(source_text, symbol_name) if source_text else None
@@ -123,6 +176,11 @@ def infer_status(
 
     if re.search(r"\b(todo!|unimplemented!)\s*\(", body):
         return "unimplemented"
+
+    if re.search(r"\bpartial\b", body, re.IGNORECASE) or re.search(
+        r"\bpartially\s+implemented\b", body, re.IGNORECASE
+    ):
+        return "partial"
 
     if re.search(r"\bstub\b", body, re.IGNORECASE) or re.search(
         r"\bnot\s+implemented\b", body, re.IGNORECASE
@@ -151,6 +209,7 @@ def collect_arch_data(arch: str, arch_root: Path) -> list[ExportRow]:
         dll_name = parse_dll_name(lib_source)
         exports = parse_exports(lib_source)
         stub_names = parse_win32_stub_names(lib_source)
+        partial_names = parse_win32_partial_names(lib_source)
 
         for export_name, symbol_path in exports:
             source_file = find_symbol_source_file(src_dir, symbol_path)
@@ -161,6 +220,7 @@ def collect_arch_data(arch: str, arch_root: Path) -> list[ExportRow]:
                 symbol_path=symbol_path,
                 source_text=source_text,
                 stub_names=stub_names,
+                partial_names=partial_names,
             )
 
             rows.append(
@@ -211,8 +271,8 @@ def build_dataset() -> dict:
 
     totals = {
         "functions": 0,
-        "x64": {"implemented": 0, "stubbed": 0, "unimplemented": 0},
-        "x86": {"implemented": 0, "stubbed": 0, "unimplemented": 0},
+        "x64": {"implemented": 0, "partial": 0, "stubbed": 0, "unimplemented": 0},
+        "x86": {"implemented": 0, "partial": 0, "stubbed": 0, "unimplemented": 0},
     }
 
     for dll in dlls:
@@ -224,7 +284,7 @@ def build_dataset() -> dict:
     return {
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "generator": "scripts/generate-dll-support.py",
-        "statusOrder": ["implemented", "stubbed", "unimplemented"],
+        "statusOrder": ["implemented", "partial", "stubbed", "unimplemented"],
         "dlls": dlls,
         "totals": totals,
     }

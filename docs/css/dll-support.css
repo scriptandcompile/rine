@@ -7,8 +7,10 @@
   --muted: #adc1df;
   --implemented-bg: rgba(53, 199, 141, 0.18);
   --implemented-fg: #86f5c5;
-  --stubbed-bg: rgba(242, 180, 80, 0.2);
-  --stubbed-fg: #ffd590;
+  --partial-bg: rgba(220, 180, 50, 0.2);
+  --partial-fg: #ffd966;
+  --stubbed-bg: rgba(196, 125, 11, 0.445);
+  --stubbed-fg: #ffa81b;
   --unimplemented-bg: rgba(231, 103, 103, 0.2);
   --unimplemented-fg: #ffb0b0;
 }
@@ -211,11 +213,38 @@ tbody tr:nth-child(even) {
   font-size: 0.82rem;
   font-weight: 700;
   text-transform: lowercase;
+  cursor: help;
+  position: relative;
+}
+
+.status-pill:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 0.5rem 0.75rem;
+  background: rgba(20, 30, 50, 0.95);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: none;
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .implemented {
   background: var(--implemented-bg);
   color: var(--implemented-fg);
+}
+
+.partial {
+  background: var(--partial-bg);
+  color: var(--partial-fg);
 }
 
 .stubbed {

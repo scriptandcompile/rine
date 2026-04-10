@@ -1,6 +1,7 @@
 pub mod file;
+pub mod process;
 
-use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
+use rine_dlls::{DllPlugin, Export, StubExport, as_win_api};
 
 use crate::file::NtCreateFile;
 
@@ -11,14 +12,6 @@ compile_error!(
 
 pub struct NtdllPlugin32;
 
-win32_stub!(NtReadFile, "ntdll");
-win32_stub!(NtWriteFile, "ntdll");
-win32_stub!(NtClose, "ntdll");
-win32_stub!(NtQueryInformationFile, "ntdll");
-win32_stub!(NtTerminateProcess, "ntdll");
-win32_stub!(RtlInitUnicodeString, "ntdll");
-win32_stub!(RtlGetVersion, "ntdll");
-
 impl DllPlugin for NtdllPlugin32 {
     fn dll_names(&self) -> &[&str] {
         &["ntdll.dll"]
@@ -27,16 +20,55 @@ impl DllPlugin for NtdllPlugin32 {
     fn exports(&self) -> Vec<Export> {
         vec![
             Export::Func("NtCreateFile", as_win_api!(NtCreateFile)),
-            Export::Func("NtReadFile", as_win_api!(NtReadFile)),
-            Export::Func("NtWriteFile", as_win_api!(NtWriteFile)),
-            Export::Func("NtClose", as_win_api!(NtClose)),
+            Export::Func("NtReadFile", as_win_api!(file::NtReadFile)),
+            Export::Func("NtWriteFile", as_win_api!(file::NtWriteFile)),
+            Export::Func("NtClose", as_win_api!(file::NtClose)),
             Export::Func(
                 "NtQueryInformationFile",
-                as_win_api!(NtQueryInformationFile),
+                as_win_api!(file::NtQueryInformationFile),
             ),
-            Export::Func("NtTerminateProcess", as_win_api!(NtTerminateProcess)),
-            Export::Func("RtlInitUnicodeString", as_win_api!(RtlInitUnicodeString)),
-            Export::Func("RtlGetVersion", as_win_api!(RtlGetVersion)),
+            Export::Func(
+                "NtTerminateProcess",
+                as_win_api!(process::NtTerminateProcess),
+            ),
+            Export::Func(
+                "RtlInitUnicodeString",
+                as_win_api!(process::RtlInitUnicodeString),
+            ),
+            Export::Func("RtlGetVersion", as_win_api!(process::RtlGetVersion)),
+        ]
+    }
+
+    fn stubs(&self) -> Vec<StubExport> {
+        vec![
+            StubExport {
+                name: "NtReadFile",
+                func: as_win_api!(file::NtReadFile),
+            },
+            StubExport {
+                name: "NtWriteFile",
+                func: as_win_api!(file::NtWriteFile),
+            },
+            StubExport {
+                name: "NtClose",
+                func: as_win_api!(file::NtClose),
+            },
+            StubExport {
+                name: "NtQueryInformationFile",
+                func: as_win_api!(file::NtQueryInformationFile),
+            },
+            StubExport {
+                name: "NtTerminateProcess",
+                func: as_win_api!(process::NtTerminateProcess),
+            },
+            StubExport {
+                name: "RtlInitUnicodeString",
+                func: as_win_api!(process::RtlInitUnicodeString),
+            },
+            StubExport {
+                name: "RtlGetVersion",
+                func: as_win_api!(process::RtlGetVersion),
+            },
         ]
     }
 }

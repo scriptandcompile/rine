@@ -4,6 +4,34 @@
 use rine_common_ntdll as common;
 use rine_types::os::IoStatusBlock;
 
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn NtReadFile() -> u32 {
+    tracing::warn!(api = "NtReadFile", dll = "ntdll", "win32 stub called");
+    0
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn NtWriteFile() -> u32 {
+    tracing::warn!(api = "NtWriteFile", dll = "ntdll", "win32 stub called");
+    0
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn NtClose() -> u32 {
+    tracing::warn!(api = "NtClose", dll = "ntdll", "win32 stub called");
+    0
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn NtQueryInformationFile() -> u32 {
+    tracing::warn!(
+        api = "NtQueryInformationFile",
+        dll = "ntdll",
+        "win32 stub called"
+    );
+    0
+}
+
 // ---------------------------------------------------------------------------
 // NtCreateFile
 // ---------------------------------------------------------------------------

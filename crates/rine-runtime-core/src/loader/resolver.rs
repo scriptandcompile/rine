@@ -138,8 +138,28 @@ pub fn resolve_imports(
                     summary.resolved_names.push(func_name);
                     write_iat_entry(iat_slot_va, func as usize, pe_format);
                 }
+                LookupResult::Partial(func) => {
+                    warn!(
+                        dll = dll_name,
+                        func = func_name,
+                        "partial import implementation"
+                    );
+                    summary.stubbed += 1;
+                    summary.stubbed_names.push(func_name);
+                    write_iat_entry(iat_slot_va, func as usize, pe_format);
+                }
                 LookupResult::Stub(func) => {
-                    debug!(
+                    warn!(
+                        dll = dll_name,
+                        func = func_name,
+                        "stub import implementation"
+                    );
+                    summary.stubbed += 1;
+                    summary.stubbed_names.push(func_name);
+                    write_iat_entry(iat_slot_va, func as usize, pe_format);
+                }
+                LookupResult::Unimplemented(func) => {
+                    warn!(
                         dll = dll_name,
                         func = func_name,
                         addr = format_args!("{iat_slot_va}"),

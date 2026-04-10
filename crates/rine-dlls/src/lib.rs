@@ -29,6 +29,18 @@ pub enum Export {
 unsafe impl Send for Export {}
 unsafe impl Sync for Export {}
 
+/// A stub function declaration with its name.
+pub struct StubExport {
+    pub name: &'static str,
+    pub func: WinApiFunc,
+}
+
+/// A partially implemented function declaration with its name.
+pub struct PartialExport {
+    pub name: &'static str,
+    pub func: WinApiFunc,
+}
+
 /// Trait implemented by each DLL crate to declare its exports.
 ///
 /// The registry calls [`exports()`](DllPlugin::exports) once at startup to
@@ -40,6 +52,18 @@ pub trait DllPlugin {
 
     /// Return all exports this plugin provides.
     fn exports(&self) -> Vec<Export>;
+
+    /// Return all stub functions. Stubs return default values (usually 0) to let
+    /// programs continue. Optional; default is empty.
+    fn stubs(&self) -> Vec<StubExport> {
+        vec![]
+    }
+
+    /// Return all partially implemented functions. Partials have some missing features
+    /// but can still be used for basic scenarios. Optional; default is empty.
+    fn partials(&self) -> Vec<PartialExport> {
+        vec![]
+    }
 }
 
 /// Define a win32 DLL stub function with centralized ABI selection.
@@ -81,7 +105,11 @@ macro_rules! win32_partial {
         #[allow(non_snake_case)]
         #[allow(clippy::missing_safety_doc)]
         pub unsafe extern "C" fn $name() -> u32 {
-            tracing::warn!(api = stringify!($name), dll = $target, "win32 partial function called");
+            tracing::warn!(
+                api = stringify!($name),
+                dll = $target,
+                "win32 partial function called"
+            );
             0
         }
 
@@ -89,7 +117,11 @@ macro_rules! win32_partial {
         #[allow(non_snake_case)]
         #[allow(clippy::missing_safety_doc)]
         pub unsafe extern "win64" fn $name() -> u32 {
-            tracing::warn!(api = stringify!($name), dll = $target, "win32 partial function called");
+            tracing::warn!(
+                api = stringify!($name),
+                dll = $target,
+                "win32 partial function called"
+            );
             0
         }
     };

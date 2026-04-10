@@ -32,7 +32,14 @@ function formatGeneratedAt(value) {
 }
 
 function createStatusPill(status) {
-  return `<span class="status-pill ${status}">${status}</span>`;
+  const tooltips = {
+    implemented: "Fully functional and feature complete",
+    partial: "Partially implemented with some missing features",
+    stubbed: "Returns default values, allows programs to continue",
+    unimplemented: "Not implemented",
+  };
+  const tooltip = tooltips[status] || status;
+  return `<span class="status-pill ${status}" data-tooltip="${escapeHtml(tooltip)}">${status}</span>`;
 }
 
 function escapeHtml(value) {

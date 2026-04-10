@@ -7,7 +7,7 @@ pub mod sync;
 pub mod thread;
 pub mod version;
 
-use rine_dlls::{DllPlugin, Export, as_win_api, win32_stub};
+use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
 
 #[cfg(not(target_pointer_width = "32"))]
 compile_error!(
@@ -15,10 +15,6 @@ compile_error!(
 );
 
 pub struct Kernel32Plugin32;
-
-win32_stub!(LoadLibraryA, "kernel32");
-win32_stub!(GetProcAddress, "kernel32");
-win32_stub!(FreeLibrary, "kernel32");
 
 impl DllPlugin for Kernel32Plugin32 {
     fn dll_names(&self) -> &[&str] {
@@ -59,15 +55,8 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("FindClose", as_win_api!(file::FindClose)),
             Export::Func("GetStdHandle", as_win_api!(console::GetStdHandle)),
             Export::Func("GetProcessHeap", as_win_api!(memory::GetProcessHeap)),
-            Export::Func("HeapCreate", as_win_api!(memory::HeapCreate)),
             Export::Func("HeapDestroy", as_win_api!(memory::HeapDestroy)),
-            Export::Func("HeapAlloc", as_win_api!(memory::HeapAlloc)),
-            Export::Func("HeapFree", as_win_api!(memory::HeapFree)),
-            Export::Func("HeapSize", as_win_api!(memory::HeapSize)),
-            Export::Func("HeapReAlloc", as_win_api!(memory::HeapReAlloc)),
             Export::Func("VirtualAlloc", as_win_api!(memory::VirtualAlloc)),
-            Export::Func("VirtualFree", as_win_api!(memory::VirtualFree)),
-            Export::Func("VirtualQuery", as_win_api!(memory::VirtualQuery)),
             Export::Func(
                 "InitializeCriticalSection",
                 as_win_api!(sync::InitializeCriticalSection),
@@ -162,6 +151,60 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("GetVersion", as_win_api!(version::GetVersion)),
             Export::Func("GetVersionExA", as_win_api!(version::GetVersionExA)),
             Export::Func("GetVersionExW", as_win_api!(version::GetVersionExW)),
+        ]
+    }
+
+    fn stubs(&self) -> Vec<StubExport> {
+        vec![
+            StubExport {
+                name: "LoadLibraryA",
+                func: as_win_api!(process::LoadLibraryA),
+            },
+            StubExport {
+                name: "GetProcAddress",
+                func: as_win_api!(process::GetProcAddress),
+            },
+            StubExport {
+                name: "FreeLibrary",
+                func: as_win_api!(process::FreeLibrary),
+            },
+            StubExport {
+                name: "VirtualQuery",
+                func: as_win_api!(memory::VirtualQuery),
+            },
+        ]
+    }
+
+    fn partials(&self) -> Vec<PartialExport> {
+        vec![
+            PartialExport {
+                name: "FreeEnvironmentStringsW",
+                func: as_win_api!(environment::FreeEnvironmentStringsW),
+            },
+            PartialExport {
+                name: "HeapCreate",
+                func: as_win_api!(memory::HeapCreate),
+            },
+            PartialExport {
+                name: "HeapAlloc",
+                func: as_win_api!(memory::HeapAlloc),
+            },
+            PartialExport {
+                name: "HeapSize",
+                func: as_win_api!(memory::HeapSize),
+            },
+            PartialExport {
+                name: "HeapFree",
+                func: as_win_api!(memory::HeapFree),
+            },
+            PartialExport {
+                name: "HeapReAlloc",
+                func: as_win_api!(memory::HeapReAlloc),
+            },
+            PartialExport {
+                name: "VirtualFree",
+                func: as_win_api!(memory::VirtualFree),
+            },
         ]
     }
 }

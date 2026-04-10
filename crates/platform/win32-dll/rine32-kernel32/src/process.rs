@@ -6,6 +6,28 @@ use rine_types::threading;
 
 use tracing::warn;
 
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn LoadLibraryA() -> u32 {
+    tracing::warn!(api = "LoadLibraryA", dll = "kernel32", "win32 stub called");
+    0
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn GetProcAddress() -> u32 {
+    tracing::warn!(
+        api = "GetProcAddress",
+        dll = "kernel32",
+        "win32 stub called"
+    );
+    0
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn FreeLibrary() -> u32 {
+    tracing::warn!(api = "FreeLibrary", dll = "kernel32", "win32 stub called");
+    0
+}
+
 /// CreateProcessA — create a child process (ANSI).
 ///
 /// # Safety
@@ -163,7 +185,7 @@ pub unsafe extern "stdcall" fn GetModuleHandleA(module_name: *const u8) -> usize
 ///
 /// # Arguments
 /// * `module_name` - A pointer to a null-terminated UTF-16LE string specifying the module name.
-///  If NULL, the function returns a handle to the file used to create the calling process (the main executable).
+///   If NULL, the function returns a handle to the file used to create the calling process (the main executable).
 ///
 /// # Safety
 /// `module_name` must be null or a valid null-terminated UTF-16LE string.

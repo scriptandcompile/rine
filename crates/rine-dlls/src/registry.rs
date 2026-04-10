@@ -32,6 +32,10 @@ struct DllModule {
     by_name: HashMap<&'static str, WinApiFunc>,
     /// Map from ordinal → function pointer.
     by_ordinal: HashMap<u16, WinApiFunc>,
+    /// Set of function names that are stubs (low-priority implementations).
+    stub_names: std::collections::HashSet<&'static str>,
+    /// Set of function names that are partial implementations.
+    partial_names: std::collections::HashSet<&'static str>,
 }
 
 impl DllModule {
@@ -39,6 +43,8 @@ impl DllModule {
         Self {
             by_name: HashMap::new(),
             by_ordinal: HashMap::new(),
+            stub_names: std::collections::HashSet::new(),
+            partial_names: std::collections::HashSet::new(),
         }
     }
 }
@@ -46,17 +52,24 @@ impl DllModule {
 /// Result of looking up a single import.
 #[derive(Debug, Clone, Copy)]
 pub enum LookupResult {
-    /// Found a Rust implementation for this import.
+    /// Found a fully-implemented Rust function for this import.
     Found(WinApiFunc),
-    /// No implementation exists; a stub was returned that will log and abort.
+    /// Found a partial implementation with some features missing.
+    Partial(WinApiFunc),
+    /// Found a stub implementation that provides default behavior.
     Stub(WinApiFunc),
+    /// No implementation exists; no matching export, stub, or partial found.
+    Unimplemented(WinApiFunc),
 }
 
 impl LookupResult {
-    /// Get the function pointer regardless of whether it's a real implementation or stub.
+    /// Get the function pointer regardless of implementation level.
     pub fn as_ptr(self) -> WinApiFunc {
         match self {
-            LookupResult::Found(f) | LookupResult::Stub(f) => f,
+            LookupResult::Found(f)
+            | LookupResult::Partial(f)
+            | LookupResult::Stub(f)
+            | LookupResult::Unimplemented(f) => f,
         }
     }
 }
@@ -65,7 +78,9 @@ impl DllRegistry {
     /// Build the registry from a set of DLL plugins.
     ///
     /// Each plugin declares which DLL name(s) it provides and returns its
-    /// list of exports. The registry collects everything into lookup tables.
+    /// list of exports, stubs, and partial implementations. The registry
+    /// collects everything into lookup tables and tracks them separately
+    /// to distinguish fully-implemented, partial, and stubbed functions.
     pub fn from_plugins(plugins: &[&dyn DllPlugin]) -> Self {
         let mut reg = Self {
             dlls: HashMap::new(),
@@ -74,9 +89,13 @@ impl DllRegistry {
         for plugin in plugins {
             let dll_names = plugin.dll_names();
             let exports = plugin.exports();
+            let stubs = plugin.stubs();
+            let partials = plugin.partials();
 
             for dll_name in dll_names {
                 let module = reg.get_or_create_module(dll_name);
+
+                // Register fully-implemented exports
                 for export in &exports {
                     match export {
                         Export::Func(name, func) => {
@@ -95,11 +114,27 @@ impl DllRegistry {
                         }
                     }
                 }
+
+                // Register stubs
+                for stub_export in &stubs {
+                    module.by_name.insert(stub_export.name, stub_export.func);
+                    module.stub_names.insert(stub_export.name);
+                }
+
+                // Register partials
+                for partial_export in &partials {
+                    module
+                        .by_name
+                        .insert(partial_export.name, partial_export.func);
+                    module.partial_names.insert(partial_export.name);
+                }
             }
 
             tracing::debug!(
                 dlls = ?dll_names,
                 exports = exports.len(),
+                stubs = stubs.len(),
+                partials = partials.len(),
                 "registered DLL plugin"
             );
         }
@@ -113,9 +148,15 @@ impl DllRegistry {
         if let Some(module) = self.dlls.get(key.as_str())
             && let Some(&func) = module.by_name.get(name)
         {
-            return LookupResult::Found(func);
+            if module.stub_names.contains(name) {
+                return LookupResult::Stub(func);
+            } else if module.partial_names.contains(name) {
+                return LookupResult::Partial(func);
+            } else {
+                return LookupResult::Found(func);
+            }
         }
-        LookupResult::Stub(stub_function)
+        LookupResult::Unimplemented(stub_function)
     }
 
     /// Look up a function by DLL name and ordinal number.
@@ -126,7 +167,7 @@ impl DllRegistry {
         {
             return LookupResult::Found(func);
         }
-        LookupResult::Stub(stub_function)
+        LookupResult::Unimplemented(stub_function)
     }
 
     /// Returns the list of DLL names this registry knows about.
@@ -220,17 +261,17 @@ mod tests {
         ));
         assert!(matches!(
             reg.resolve_by_name("test.dll", "Missing"),
-            LookupResult::Stub(_)
+            LookupResult::Unimplemented(_)
         ));
     }
 
     #[test]
-    fn unknown_dll_returns_stub() {
+    fn unknown_dll_returns_unimplemented() {
         let reg = DllRegistry::from_plugins(&[]);
         assert!(!reg.has_dll("imaginary.dll"));
         assert!(matches!(
             reg.resolve_by_name("imaginary.dll", "Foo"),
-            LookupResult::Stub(_)
+            LookupResult::Unimplemented(_)
         ));
     }
 }
