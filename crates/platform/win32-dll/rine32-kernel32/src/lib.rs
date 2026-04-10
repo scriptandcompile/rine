@@ -16,7 +16,6 @@ compile_error!(
 
 pub struct Kernel32Plugin32;
 
-win32_stub!(GetModuleHandleW, "kernel32");
 win32_stub!(LoadLibraryA, "kernel32");
 win32_stub!(GetProcAddress, "kernel32");
 win32_stub!(FreeLibrary, "kernel32");
@@ -33,6 +32,7 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("GetCommandLineA", as_win_api!(process::GetCommandLineA)),
             Export::Func("GetCommandLineW", as_win_api!(process::GetCommandLineW)),
             Export::Func("GetModuleHandleA", as_win_api!(process::GetModuleHandleA)),
+            Export::Func("GetModuleHandleW", as_win_api!(process::GetModuleHandleW)),
             Export::Func("CreateProcessA", as_win_api!(process::CreateProcessA)),
             Export::Func("CreateProcessW", as_win_api!(process::CreateProcessW)),
             Export::Func(

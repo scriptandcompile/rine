@@ -155,7 +155,32 @@ pub unsafe extern "stdcall" fn GetModuleHandleA(module_name: *const u8) -> usize
         let name = read_cstr(module_name).unwrap_or_default();
         tracing::warn!("GetModuleHandleA({name}) — returning 0 (not implemented)");
 
-        common::process::get_module_handle_a(&name)
+        common::process::get_module_handle(&name)
+    }
+}
+
+/// GetModuleHandleW — wide variant of `GetModuleHandleA`.
+///
+/// # Arguments
+/// * `module_name` - A pointer to a null-terminated UTF-16LE string specifying the module name.
+///  If NULL, the function returns a handle to the file used to create the calling process (the main executable).
+///
+/// # Safety
+/// `module_name` must be null or a valid null-terminated UTF-16LE string.
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GetModuleHandleW(module_name: *const u16) -> usize {
+    if module_name.is_null() {
+        // TODO: return the actual image base once the loader exposes it.
+        tracing::debug!("GetModuleHandleW(NULL) — returning 0 (placeholder)");
+        return 0;
+    }
+
+    unsafe {
+        let name = read_wstr(module_name).unwrap_or_default();
+        tracing::warn!("GetModuleHandleW({name}) — returning 0 (not implemented)");
+
+        common::process::get_module_handle(&name)
     }
 }
 

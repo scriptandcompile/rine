@@ -206,7 +206,7 @@ pub fn get_last_error() -> u32 {
 /// # Returns
 /// If `module_name` is NULL, returns 0 as a placeholder for the main executable.
 /// For non-NULL `module_name`, also returns 0 as a placeholder since module lookup is not yet implemented.
-pub unsafe fn get_module_handle_a(_module_name: &str) -> usize {
+pub unsafe fn get_module_handle(_module_name: &str) -> usize {
     0
 }
 
