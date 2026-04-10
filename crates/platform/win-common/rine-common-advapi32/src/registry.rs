@@ -146,35 +146,27 @@ pub unsafe fn reg_create_key_ex(
     ERROR_SUCCESS
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe fn RegQueryValueExA(
-    hkey: isize,
-    value_name: *const u8,
-    _reserved: *const u32,
-    value_type: *mut u32,
-    data: *mut u8,
-    data_size: *mut u32,
-) -> u32 {
-    let name = unsafe { read_cstr(value_name) }.unwrap_or_default();
-    reg_query_value_impl(hkey, &name, value_type, data, data_size)
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe fn RegQueryValueExW(
-    hkey: isize,
-    value_name: *const u16,
-    _reserved: *const u32,
-    value_type: *mut u32,
-    data: *mut u8,
-    data_size: *mut u32,
-) -> u32 {
-    let name = unsafe { read_wstr(value_name) }.unwrap_or_default();
-    reg_query_value_impl(hkey, &name, value_type, data, data_size)
-}
-
-fn reg_query_value_impl(
+/// Query the value of a registry key.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key, or one of the predefined root keys.
+/// * `value_name`: Name of the value to query.
+/// * `_reserved`: Reserved, must be a null pointer.
+/// * `value_type`: Pointer to a variable that receives the type of the value.
+/// * `data`: Pointer to a buffer that receives the value data.
+/// * `data_size`: Pointer to a variable that specifies the size of the buffer, and receives the size of the data returned.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the Windows registry,
+/// which can lead to undefined behavior or system instability if used incorrectly. The caller must ensure that the
+/// pointers are valid and that the registry operations are performed with appropriate permissions and caution.
+///
+/// # Returns
+/// Returns `ERROR_SUCCESS` if the function succeeds, or a nonzero error code if it fails.
+pub unsafe fn reg_query_value(
     hkey: isize,
     value_name: &str,
+    _reserved: *const u32,
     value_type: *mut u32,
     data: *mut u8,
     data_size: *mut u32,
@@ -367,14 +359,14 @@ mod tests {
         let err = unsafe { reg_open_key(registry::HKEY_LOCAL_MACHINE, sub, 0, 0, &mut hkey) };
         assert_eq!(err, ERROR_SUCCESS);
 
-        let name = b"CurrentMajorVersionNumber\0";
+        let name = "CurrentMajorVersionNumber";
         let mut reg_type: u32 = 0;
         let mut data = [0u8; 4];
         let mut size: u32 = 4;
         let err = unsafe {
-            RegQueryValueExA(
+            reg_query_value(
                 hkey,
-                name.as_ptr(),
+                name,
                 std::ptr::null(),
                 &mut reg_type,
                 data.as_mut_ptr(),

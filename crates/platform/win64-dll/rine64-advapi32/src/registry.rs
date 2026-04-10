@@ -155,7 +155,26 @@ pub unsafe extern "win64" fn RegCreateKeyExW(
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Retrieve the type and data for a specified value name associated with an open registry key.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key.
+/// * `value_name`: Name of the registry value to query.
+/// * `_reserved`: Reserved, must be null.
+/// * `value_type`: Pointer to a variable that receives the type of the registry value.
+/// * `data`: Pointer to a buffer that receives the data for the registry value.
+/// * `data_size`: Pointer to a variable that specifies the size of the buffer pointed to by `data`,
+///   and receives the size of the data returned.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the Windows registry,
+/// which can lead to undefined behavior or system instability if used incorrectly.
+/// The caller must ensure that the pointers are valid and that the registry operations are performed
+/// with appropriate permissions and caution.
+///
+/// # Returns
+/// Returns `ERROR_SUCCESS` if the function succeeds, or a nonzero error code if it fails.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegQueryValueExA(
     hkey: isize,
@@ -166,11 +185,31 @@ pub unsafe extern "win64" fn RegQueryValueExA(
     data_size: *mut u32,
 ) -> u32 {
     unsafe {
-        common::registry::RegQueryValueExA(hkey, value_name, _reserved, value_type, data, data_size)
+        let name = read_cstr(value_name).unwrap_or_default();
+        common::registry::reg_query_value(hkey, &name, _reserved, value_type, data, data_size)
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Retrieve the type and data for a specified value name associated with an open registry key.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key.
+/// * `value_name`: Name of the registry value to query.
+/// * `_reserved`: Reserved, must be null.
+/// * `value_type`: Pointer to a variable that receives the type of the registry value.
+/// * `data`: Pointer to a buffer that receives the data for the registry value.
+/// * `data_size`: Pointer to a variable that specifies the size of the buffer pointed to by `data`,
+///   and receives the size of the data returned.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the Windows registry,
+/// which can lead to undefined behavior or system instability if used incorrectly.
+/// The caller must ensure that the pointers are valid and that the registry operations are performed
+/// with appropriate permissions and caution.
+///
+/// # Returns
+/// Returns `ERROR_SUCCESS` if the function succeeds, or a nonzero error code if it fails.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegQueryValueExW(
     hkey: isize,
@@ -181,7 +220,8 @@ pub unsafe extern "win64" fn RegQueryValueExW(
     data_size: *mut u32,
 ) -> u32 {
     unsafe {
-        common::registry::RegQueryValueExW(hkey, value_name, _reserved, value_type, data, data_size)
+        let name = read_wstr(value_name).unwrap_or_default();
+        common::registry::reg_query_value(hkey, &name, _reserved, value_type, data, data_size)
     }
 }
 
