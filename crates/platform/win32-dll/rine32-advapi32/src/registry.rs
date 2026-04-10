@@ -1,7 +1,21 @@
 use rine_common_advapi32 as common;
 use rine_types::strings::{read_cstr, read_wstr};
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Open a registry key, returning a handle to the key in `result_key`.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key, or one of the predefined root keys.
+/// * `sub_key`: Name of the subkey to open, relative to `hkey`.
+/// * `_options`: Reserved, must be 0.
+/// * `_desired`: Access rights, currently ignored.
+/// * `result_key`: Pointer to a variable that receives the handle to the opened key.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the
+/// Windows registry, which can lead to undefined behavior or system instability if used incorrectly.
+/// The caller must ensure that the pointers are valid and that the registry operations are
+/// performed with appropriate permissions and caution.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegOpenKeyExA(
     hkey: isize,
@@ -16,7 +30,21 @@ pub unsafe extern "stdcall" fn RegOpenKeyExA(
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Open a registry key, returning a handle to the key in `result_key`.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key, or one of the predefined root keys.
+/// * `sub_key`: Name of the subkey to open, relative to `hkey`.
+/// * `_options`: Reserved, must be 0.
+/// * `_desired`: Access rights, currently ignored.
+/// * `result_key`: Pointer to a variable that receives the handle to the opened key.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the
+/// Windows registry, which can lead to undefined behavior or system instability if used incorrectly.
+/// The caller must ensure that the pointers are valid and that the registry operations are
+/// performed with appropriate permissions and caution.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RegOpenKeyExW(
     hkey: isize,
