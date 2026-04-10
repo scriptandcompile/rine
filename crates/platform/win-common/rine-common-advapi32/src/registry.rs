@@ -30,31 +30,27 @@ fn join_path(base: &str, sub: &str) -> String {
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe fn RegOpenKeyExA(
+/// Opens a registry key.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key, or one of the predefined root keys.
+/// * `sub_key`: Name of the subkey to open, relative to `hkey`.
+/// * `_options`: Reserved, must be 0.
+/// * `_desired`: Access rights, currently ignored.
+/// * `result_key`: Pointer to a variable that receives the handle to the opened key.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with global state.
+///
+/// # Returns
+/// Returns `ERROR_SUCCESS` on success, or an appropriate error code on failure.
+pub unsafe fn reg_open_key(
     hkey: isize,
-    sub_key: *const u8,
+    sub_key: &str,
     _options: u32,
     _desired: u32,
     result_key: *mut isize,
 ) -> u32 {
-    let sub = unsafe { read_cstr(sub_key) }.unwrap_or_default();
-    reg_open_key_impl(hkey, &sub, result_key)
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe fn RegOpenKeyExW(
-    hkey: isize,
-    sub_key: *const u16,
-    _options: u32,
-    _desired: u32,
-    result_key: *mut isize,
-) -> u32 {
-    let sub = unsafe { read_wstr(sub_key) }.unwrap_or_default();
-    reg_open_key_impl(hkey, &sub, result_key)
-}
-
-fn reg_open_key_impl(hkey: isize, sub_key: &str, result_key: *mut isize) -> u32 {
     if result_key.is_null() {
         return ERROR_INVALID_PARAMETER;
     }
@@ -65,6 +61,8 @@ fn reg_open_key_impl(hkey: isize, sub_key: &str, result_key: *mut isize) -> u32 
     };
 
     let full_path = join_path(&base_path, sub_key);
+
+    tracing::debug!(root, path = %full_path, "RegOpenKeyEx: opening key");
 
     let exists = registry_store()
         .with_root(root, |root_key| root_key.open_subkey(&full_path).is_some())
@@ -358,16 +356,8 @@ mod tests {
     #[test]
     fn reg_open_key_existing() {
         let mut result: isize = 0;
-        let sub = b"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\0";
-        let err = unsafe {
-            RegOpenKeyExA(
-                registry::HKEY_LOCAL_MACHINE,
-                sub.as_ptr(),
-                0,
-                0,
-                &mut result,
-            )
-        };
+        let sub = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+        let err = unsafe { reg_open_key(registry::HKEY_LOCAL_MACHINE, sub, 0, 0, &mut result) };
         assert_eq!(err, ERROR_SUCCESS);
         assert_ne!(result, 0);
         unsafe { RegCloseKey(result) };
@@ -376,9 +366,8 @@ mod tests {
     #[test]
     fn reg_query_dword_value() {
         let mut hkey: isize = 0;
-        let sub = b"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\0";
-        let err =
-            unsafe { RegOpenKeyExA(registry::HKEY_LOCAL_MACHINE, sub.as_ptr(), 0, 0, &mut hkey) };
+        let sub = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+        let err = unsafe { reg_open_key(registry::HKEY_LOCAL_MACHINE, sub, 0, 0, &mut hkey) };
         assert_eq!(err, ERROR_SUCCESS);
 
         let name = b"CurrentMajorVersionNumber\0";

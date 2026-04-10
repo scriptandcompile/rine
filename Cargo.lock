@@ -3492,6 +3492,7 @@ version = "0.1.3"
 dependencies = [
  "rine-common-advapi32",
  "rine-dlls",
+ "rine-types",
 ]
 
 [[package]]

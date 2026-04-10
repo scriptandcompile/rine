@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-10T02:24:08.788832+00:00",
+  "generatedAt": "2026-04-10T19:00:06.930294+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -10,7 +10,7 @@
   "dlls": [
     {
       "name": "advapi32.dll",
-      "functionCount": 9,
+      "functionCount": 7,
       "functions": [
         {
           "name": "RegCloseKey",
@@ -48,32 +48,6 @@
           "x86": {
             "status": "implemented",
             "symbol": "registry::RegCreateKeyExW",
-            "source": "advapi32 - registry.rs"
-          }
-        },
-        {
-          "name": "RegOpenKeyExA",
-          "x64": {
-            "status": "implemented",
-            "symbol": "registry::RegOpenKeyExA",
-            "source": "advapi32 - registry.rs"
-          },
-          "x86": {
-            "status": "implemented",
-            "symbol": "registry::RegOpenKeyExA",
-            "source": "advapi32 - registry.rs"
-          }
-        },
-        {
-          "name": "RegOpenKeyExW",
-          "x64": {
-            "status": "implemented",
-            "symbol": "registry::RegOpenKeyExW",
-            "source": "advapi32 - registry.rs"
-          },
-          "x86": {
-            "status": "implemented",
-            "symbol": "registry::RegOpenKeyExW",
             "source": "advapi32 - registry.rs"
           }
         },
@@ -2197,15 +2171,15 @@
     }
   ],
   "totals": {
-    "functions": 165,
+    "functions": 163,
     "x64": {
-      "implemented": 162,
+      "implemented": 160,
       "partial": 0,
       "stubbed": 3,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 153,
+      "implemented": 151,
       "partial": 1,
       "stubbed": 10,
       "unimplemented": 1
