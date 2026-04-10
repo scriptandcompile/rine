@@ -11,7 +11,8 @@ use tracing::warn;
 /// # Safety
 /// All pointer parameters must be null or point to valid memory of the
 /// expected layout.
-#[allow(non_snake_case, clippy::missing_safety_doc, clippy::too_many_arguments)]
+#[allow(non_snake_case, clippy::too_many_arguments)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateProcessA(
     application_name: *const u8,           // rcx
     command_line: *mut u8,                 // rdx
@@ -52,7 +53,8 @@ pub unsafe extern "stdcall" fn CreateProcessA(
 /// # Safety
 /// All pointer parameters must be null or point to valid memory of the
 /// expected layout.
-#[allow(non_snake_case, clippy::missing_safety_doc, clippy::too_many_arguments)]
+#[allow(non_snake_case, clippy::too_many_arguments)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateProcessW(
     application_name: *const u16,          // rcx
     command_line: *mut u16,                // rdx
@@ -89,6 +91,7 @@ pub unsafe extern "stdcall" fn CreateProcessW(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ExitProcess(exit_code: u32) -> ! {
     let tid = unsafe { libc::syscall(libc::SYS_gettid) as u32 };
     rine_types::dev_notify!(on_thread_exited(tid, exit_code));
@@ -101,6 +104,7 @@ pub unsafe extern "stdcall" fn ExitProcess(exit_code: u32) -> ! {
 /// Stub: returns NULL (no previous handler). Exception handling is not
 /// yet implemented.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetUnhandledExceptionFilter(
     _filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
 ) -> usize {
@@ -108,18 +112,51 @@ pub unsafe extern "stdcall" fn SetUnhandledExceptionFilter(
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCommandLineA() -> *const u8 {
     common::process::cached_cmd_line().ansi.as_ptr().cast()
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCommandLineW() -> *const u16 {
     common::process::cached_cmd_line().wide.as_ptr()
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCurrentProcessId() -> u32 {
     std::process::id()
+}
+
+/// GetModuleHandleA — retrieve the base address of a loaded module.
+///
+/// When `module_name` is NULL, returns the base address of the main
+/// executable. For now we return NULL (0) as a placeholder — the loader
+/// will need to provide the real image base once entry-point execution
+/// is wired up.
+///
+/// # Arguments
+/// * `module_name` - A pointer to a null-terminated ANSI string specifying the module name.
+///   If NULL, the function returns a handle to the file used to create the calling process (the main executable).
+///
+/// # Safety
+/// `module_name` must be null or a valid null-terminated ANSI string.
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GetModuleHandleA(module_name: *const u8) -> usize {
+    if module_name.is_null() {
+        // TODO: return the actual image base once the loader exposes it.
+        tracing::debug!("GetModuleHandleA(NULL) — returning 0 (placeholder)");
+        return 0;
+    }
+
+    unsafe {
+        let name = read_cstr(module_name).unwrap_or_default();
+        tracing::warn!("GetModuleHandleA({name}) — returning 0 (not implemented)");
+
+        common::process::get_module_handle_a(&name)
+    }
 }
 
 /// Gets the pseudo-handle for the current process, which is currently always -1 in our implementation.
@@ -132,17 +169,20 @@ pub unsafe extern "stdcall" fn GetCurrentProcessId() -> u32 {
 /// # Returns
 /// The pseudo-handle for the current process, which is currently always -1.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCurrentProcess() -> isize {
     common::process::get_current_process()
 }
 
 /// Get the last error code for the current thread. Currently always returns 0 (ERROR_SUCCESS).
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetLastError() -> u32 {
     common::process::get_last_error()
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetExitCodeProcess(
     _process_handle: isize,
     exit_code_out: *mut u32,

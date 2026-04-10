@@ -52,6 +52,10 @@ pub unsafe extern "win64" fn GetCommandLineW() -> *const u16 {
 /// will need to provide the real image base once entry-point execution
 /// is wired up.
 ///
+/// # Arguments
+/// * `module_name` - A pointer to a null-terminated ANSI string specifying the module name.
+///   If NULL, the function returns a handle to the file used to create the calling process (the main executable).
+///
 /// # Safety
 /// `module_name` must be null or a valid null-terminated ANSI string.
 #[allow(non_snake_case)]
@@ -63,12 +67,12 @@ pub unsafe extern "win64" fn GetModuleHandleA(module_name: *const u8) -> usize {
         return 0;
     }
 
-    let name = unsafe { std::ffi::CStr::from_ptr(module_name.cast()) };
-    tracing::warn!(
-        ?name,
-        "GetModuleHandleA: non-NULL module_name not yet supported"
-    );
-    0
+    unsafe {
+        let name = read_cstr(module_name).unwrap_or_default();
+        tracing::warn!("GetModuleHandleA({name}) — returning 0 (not implemented)");
+
+        common::process::get_module_handle_a(&name)
+    }
 }
 
 /// GetModuleHandleW — wide variant of `GetModuleHandleA`.
@@ -101,6 +105,7 @@ pub unsafe extern "win64" fn GetModuleHandleW(module_name: *const u16) -> usize 
 
 /// Get the last error code for the current thread. Currently always returns 0 (ERROR_SUCCESS).
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetLastError() -> u32 {
     common::process::get_last_error()
 }
@@ -110,6 +115,7 @@ pub unsafe extern "win64" fn GetLastError() -> u32 {
 /// Stub: returns NULL (no previous handler). Exception handling is not
 /// yet implemented.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetUnhandledExceptionFilter(
     _filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
 ) -> usize {
@@ -126,6 +132,7 @@ pub unsafe extern "win64" fn SetUnhandledExceptionFilter(
 /// All pointer parameters must be null or point to valid memory of the
 /// expected layout.
 #[allow(non_snake_case, clippy::missing_safety_doc, clippy::too_many_arguments)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateProcessA(
     application_name: *const u8,           // rcx
     command_line: *mut u8,                 // rdx
@@ -167,6 +174,7 @@ pub unsafe extern "win64" fn CreateProcessA(
 /// All pointer parameters must be null or point to valid memory of the
 /// expected layout.
 #[allow(non_snake_case, clippy::missing_safety_doc, clippy::too_many_arguments)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateProcessW(
     application_name: *const u16,          // rcx
     command_line: *mut u16,                // rdx
@@ -208,6 +216,7 @@ pub unsafe extern "win64" fn CreateProcessW(
 
 /// GetCurrentProcessId — return the process ID of the calling process.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetCurrentProcessId() -> u32 {
     std::process::id()
 }
@@ -222,6 +231,7 @@ pub unsafe extern "win64" fn GetCurrentProcessId() -> u32 {
 /// # Returns
 /// The pseudo-handle for the current process, which is currently always -1.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetCurrentProcess() -> isize {
     common::process::get_current_process()
 }
@@ -230,6 +240,7 @@ pub unsafe extern "win64" fn GetCurrentProcess() -> isize {
 ///
 /// Returns `STILL_ACTIVE` (259) if the process has not yet terminated.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetExitCodeProcess(process: isize, exit_code: *mut u32) -> WinBool {
     if exit_code.is_null() {
         return WinBool::FALSE;

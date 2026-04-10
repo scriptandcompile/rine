@@ -190,6 +190,26 @@ pub fn get_last_error() -> u32 {
     0
 }
 
+/// Get a module handle by name. Currently only supports NULL (main executable) and returns 0 as a placeholder.
+///
+/// When `module_name` is NULL, returns the base address of the main
+/// executable. For now we return NULL (0) as a placeholder — the loader
+/// will need to provide the real image base once entry-point execution
+/// is wired up.
+///
+/// # Arguments
+/// * `module_name` - A pointer to a null-terminated ANSI string specifying the module name.
+///
+/// # Safety
+/// `module_name` must be null or a valid null-terminated ANSI string.
+///
+/// # Returns
+/// If `module_name` is NULL, returns 0 as a placeholder for the main executable.
+/// For non-NULL `module_name`, also returns 0 as a placeholder since module lookup is not yet implemented.
+pub unsafe fn get_module_handle_a(_module_name: &str) -> usize {
+    0
+}
+
 // ---------------------------------------------------------------------------
 // CreateProcess helpers
 // ---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-09T23:37:01.699039+00:00",
+  "generatedAt": "2026-04-10T00:17:22.004764+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -851,14 +851,14 @@
         {
           "name": "GetModuleHandleA",
           "x64": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "process::GetModuleHandleA",
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "stubbed",
+            "symbol": "process::GetModuleHandleA",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -2328,14 +2328,14 @@
   "totals": {
     "functions": 175,
     "x64": {
-      "implemented": 174,
-      "stubbed": 1,
+      "implemented": 173,
+      "stubbed": 2,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 161,
-      "stubbed": 8,
-      "unimplemented": 6
+      "stubbed": 9,
+      "unimplemented": 5
     }
   }
 }
