@@ -87,39 +87,36 @@ pub unsafe fn reg_open_key(
     ERROR_SUCCESS
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc, clippy::too_many_arguments)]
-pub unsafe fn RegCreateKeyExA(
+/// Create or open a registry key, returning a handle to the key in `result_key`.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key, or one of the predefined root keys.
+/// * `sub_key`: Name of the subkey to create or open, relative to `hkey`.
+/// * `_reserved`: Reserved, must be 0.
+/// * `_class_type`: Class string, currently ignored.
+/// * `_options`: Key creation options, currently ignored.
+/// * `_desired`: Access rights, currently ignored.
+/// * `_security`: Security attributes, currently ignored.
+/// * `result_key`: Pointer to a variable that receives the handle to the created or opened key.
+/// * `_disposition`: Pointer to a variable that receives a value indicating whether the key was created or opened, currently ignored.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the
+/// Windows registry, which can lead to undefined behavior or system instability if used incorrectly.
+/// The caller must ensure that the pointers are valid and that the registry operations are
+/// performed with appropriate permissions and caution.
+#[allow(clippy::too_many_arguments)]
+pub unsafe fn reg_create_key_ex(
     hkey: isize,
-    sub_key: *const u8,
+    sub_key: &str,
     _reserved: u32,
-    _class: *const u8,
+    _class_type: &str,
     _options: u32,
     _desired: u32,
     _security: usize,
     result_key: *mut isize,
     _disposition: *mut u32,
 ) -> u32 {
-    let sub = unsafe { read_cstr(sub_key) }.unwrap_or_default();
-    reg_create_key_impl(hkey, &sub, result_key)
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc, clippy::too_many_arguments)]
-pub unsafe fn RegCreateKeyExW(
-    hkey: isize,
-    sub_key: *const u16,
-    _reserved: u32,
-    _class: *const u16,
-    _options: u32,
-    _desired: u32,
-    _security: usize,
-    result_key: *mut isize,
-    _disposition: *mut u32,
-) -> u32 {
-    let sub = unsafe { read_wstr(sub_key) }.unwrap_or_default();
-    reg_create_key_impl(hkey, &sub, result_key)
-}
-
-fn reg_create_key_impl(hkey: isize, sub_key: &str, result_key: *mut isize) -> u32 {
     if result_key.is_null() {
         return ERROR_INVALID_PARAMETER;
     }

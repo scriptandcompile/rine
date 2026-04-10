@@ -31,7 +31,25 @@ pub unsafe extern "win64" fn RegOpenKeyExW(
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Create or open a registry key, returning a handle to the key in `result_key`.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key, or one of the predefined root keys.
+/// * `sub_key`: Name of the subkey to create or open, relative to `hkey`.
+/// * `_reserved`: Reserved, must be 0.
+/// * `_class_type`: Class string, currently ignored.
+/// * `_options`: Key creation options, currently ignored.
+/// * `_desired`: Access rights, currently ignored.
+/// * `_security`: Security attributes, currently ignored.
+/// * `result_key`: Pointer to a variable that receives the handle to the created or opened key.
+/// * `_disposition`: Pointer to a variable that receives a value indicating whether the key was created or opened, currently ignored.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the
+/// Windows registry, which can lead to undefined behavior or system instability if used incorrectly.
+/// The caller must ensure that the pointers are valid and that the registry operations are
+/// performed with appropriate permissions and caution.
+#[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCreateKeyExA(
     hkey: isize,
@@ -45,11 +63,13 @@ pub unsafe extern "win64" fn RegCreateKeyExA(
     _disposition: *mut u32,
 ) -> u32 {
     unsafe {
-        common::registry::RegCreateKeyExA(
+        let sub = read_cstr(sub_key).unwrap_or_default();
+        let _class_type = read_cstr(_class).unwrap_or_default();
+        common::registry::reg_create_key_ex(
             hkey,
-            sub_key,
+            &sub,
             _reserved,
-            _class,
+            &_class_type,
             _options,
             _desired,
             _security,
@@ -59,7 +79,25 @@ pub unsafe extern "win64" fn RegCreateKeyExA(
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Create or open a registry key, returning a handle to the key in `result_key`.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key, or one of the predefined root keys.
+/// * `sub_key`: Name of the subkey to create or open, relative to `hkey`.
+/// * `_reserved`: Reserved, must be 0.
+/// * `_class_type`: Class string, currently ignored.
+/// * `_options`: Key creation options, currently ignored.
+/// * `_desired`: Access rights, currently ignored.
+/// * `_security`: Security attributes, currently ignored.
+/// * `result_key`: Pointer to a variable that receives the handle to the created or opened key.
+/// * `_disposition`: Pointer to a variable that receives a value indicating whether the key was created or opened, currently ignored.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the
+/// Windows registry, which can lead to undefined behavior or system instability if used incorrectly.
+/// The caller must ensure that the pointers are valid and that the registry operations are
+/// performed with appropriate permissions and caution.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCreateKeyExW(
     hkey: isize,
@@ -73,11 +111,13 @@ pub unsafe extern "win64" fn RegCreateKeyExW(
     _disposition: *mut u32,
 ) -> u32 {
     unsafe {
-        common::registry::RegCreateKeyExW(
+        let sub = read_wstr(sub_key).unwrap_or_default();
+        let _class_type = read_wstr(_class).unwrap_or_default();
+        common::registry::reg_create_key_ex(
             hkey,
-            sub_key,
+            &sub,
             _reserved,
-            _class,
+            &_class_type,
             _options,
             _desired,
             _security,

@@ -18,8 +18,6 @@ impl DllPlugin for Advapi32Plugin32 {
 
     fn exports(&self) -> Vec<Export> {
         vec![
-            Export::Func("RegCreateKeyExA", as_win_api!(registry::RegCreateKeyExA)),
-            Export::Func("RegCreateKeyExW", as_win_api!(registry::RegCreateKeyExW)),
             Export::Func("RegQueryValueExA", as_win_api!(registry::RegQueryValueExA)),
             Export::Func("RegQueryValueExW", as_win_api!(registry::RegQueryValueExW)),
             Export::Func("RegSetValueExA", as_win_api!(registry::RegSetValueExA)),
@@ -37,6 +35,14 @@ impl DllPlugin for Advapi32Plugin32 {
             PartialExport {
                 name: "RegOpenKeyExW",
                 func: as_win_api!(registry::RegOpenKeyExW),
+            },
+            PartialExport {
+                name: "RegCreateKeyExA",
+                func: as_win_api!(registry::RegCreateKeyExA),
+            },
+            PartialExport {
+                name: "RegCreateKeyExW",
+                func: as_win_api!(registry::RegCreateKeyExW),
             },
         ]
     }
