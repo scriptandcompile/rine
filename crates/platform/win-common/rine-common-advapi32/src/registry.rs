@@ -8,7 +8,6 @@ use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::registry::{
     self, RegistryKeyState, RegistryValue, is_predefined_key, registry_store,
 };
-use rine_types::strings::{read_cstr, read_wstr};
 
 const ERROR_MORE_DATA: u32 = 234;
 
@@ -224,35 +223,28 @@ pub unsafe fn reg_query_value(
     ERROR_SUCCESS
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe fn RegSetValueExA(
-    hkey: isize,
-    value_name: *const u8,
-    _reserved: u32,
-    value_type: u32,
-    data: *const u8,
-    data_size: u32,
-) -> u32 {
-    let name = unsafe { read_cstr(value_name) }.unwrap_or_default();
-    reg_set_value_impl(hkey, &name, value_type, data, data_size)
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe fn RegSetValueExW(
-    hkey: isize,
-    value_name: *const u16,
-    _reserved: u32,
-    value_type: u32,
-    data: *const u8,
-    data_size: u32,
-) -> u32 {
-    let name = unsafe { read_wstr(value_name) }.unwrap_or_default();
-    reg_set_value_impl(hkey, &name, value_type, data, data_size)
-}
-
-fn reg_set_value_impl(
+/// Set the value of a registry key.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key, or one of the predefined root keys.
+/// * `value_name`: Name of the value to set.
+/// * `_reserved`: Reserved, must be 0.
+/// * `value_type`: Type of the value being set (e.g., REG_DWORD, REG_SZ).
+/// * `data`: Pointer to the data to set for the value.
+/// * `data_size`: Size of the data being set, in bytes.
+///
+/// # Returns
+/// Returns `ERROR_SUCCESS` if the function succeeds, or a nonzero error code if it fails.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the Windows registry,
+/// which can lead to undefined behavior or system instability if used incorrectly.
+/// The caller must ensure that the pointers are valid and that the registry operations are performed
+/// with appropriate permissions and caution.
+pub unsafe fn reg_set_value(
     hkey: isize,
     value_name: &str,
+    _reserved: u32,
     value_type: u32,
     data: *const u8,
     data_size: u32,

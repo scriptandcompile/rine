@@ -225,7 +225,22 @@ pub unsafe extern "win64" fn RegQueryValueExW(
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Set the data and type of a specified value under an open registry key.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key.
+/// * `value_name`: Name of the registry value to set.
+/// * `_reserved`: Reserved, must be 0.
+/// * `value_type`: Type of the registry value.
+/// * `data`: Pointer to a buffer that contains the data for the registry value.
+/// * `data_size`: Size of the data pointed to by `data`.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the Windows registry,
+/// which can lead to undefined behavior or system instability if used incorrectly.
+/// The caller must ensure that the pointers are valid and that the registry operations are performed
+/// with appropriate permissions and caution.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegSetValueExA(
     hkey: isize,
@@ -236,11 +251,27 @@ pub unsafe extern "win64" fn RegSetValueExA(
     data_size: u32,
 ) -> u32 {
     unsafe {
-        common::registry::RegSetValueExA(hkey, value_name, _reserved, value_type, data, data_size)
+        let name = read_cstr(value_name).unwrap_or_default();
+        common::registry::reg_set_value(hkey, &name, _reserved, value_type, data, data_size)
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Set the data and type of a specified value under an open registry key.
+///
+/// # Arguments
+/// * `hkey`: Handle to an open registry key.
+/// * `value_name`: Name of the registry value to set.
+/// * `_reserved`: Reserved, must be 0.
+/// * `value_type`: Type of the registry value.
+/// * `data`: Pointer to a buffer that contains the data for the registry value.
+/// * `data_size`: Size of the data pointed to by `data`.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the Windows registry,
+/// which can lead to undefined behavior or system instability if used incorrectly.
+/// The caller must ensure that the pointers are valid and that the registry operations are performed
+/// with appropriate permissions and caution.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegSetValueExW(
     hkey: isize,
@@ -251,7 +282,8 @@ pub unsafe extern "win64" fn RegSetValueExW(
     data_size: u32,
 ) -> u32 {
     unsafe {
-        common::registry::RegSetValueExW(hkey, value_name, _reserved, value_type, data, data_size)
+        let name = read_wstr(value_name).unwrap_or_default();
+        common::registry::reg_set_value(hkey, &name, _reserved, value_type, data, data_size)
     }
 }
 
