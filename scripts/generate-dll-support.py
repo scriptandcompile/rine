@@ -213,9 +213,9 @@ def collect_arch_data(arch: str, arch_root: Path) -> list[ExportRow]:
         stub_names = parse_win32_stub_names(lib_source)
         partial_names = parse_win32_partial_names(lib_source)
 
-        print(f"[DEBUG] arch={arch} crate={crate_dir.name} dll={dll_name}")
-        print(f"[DEBUG]   partials: {sorted(partial_names)}")
-        print(f"[DEBUG]   stubs: {sorted(stub_names)}")
+        # print(f"[DEBUG] arch={arch} crate={crate_dir.name} dll={dll_name}")
+        # print(f"[DEBUG]   partials: {sorted(partial_names)}")
+        # print(f"[DEBUG]   stubs: {sorted(stub_names)}")
 
         # Build a map of all function names to their symbol paths (from exports)
         export_map = {name: symbol for name, symbol in exports}
