@@ -20,7 +20,6 @@ impl DllPlugin for Gdi32Plugin32 {
         vec![
             Export::Func("DeleteDC", as_win_api!(ops::DeleteDC)),
             Export::Func("CreateSolidBrush", as_win_api!(ops::CreateSolidBrush)),
-            Export::Func("CreatePen", as_win_api!(ops::create_pen)),
             Export::Func("SelectObject", as_win_api!(ops::select_object)),
             Export::Func("DeleteObject", as_win_api!(ops::delete_object)),
             Export::Func("BitBlt", as_win_api!(ops::bit_blt)),
@@ -38,6 +37,10 @@ impl DllPlugin for Gdi32Plugin32 {
             PartialExport {
                 name: "CreateCompatibleBitmap",
                 func: as_win_api!(ops::CreateCompatibleBitmap),
+            },
+            PartialExport {
+                name: "CreatePen",
+                func: as_win_api!(ops::CreatePen),
             },
         ]
     }

@@ -136,15 +136,43 @@ pub unsafe fn create_solid_brush(color: u32) -> usize {
     handle
 }
 
-#[allow(clippy::missing_safety_doc)]
-pub unsafe fn create_pen(style: i32, width: i32, color: u32) -> usize {
+/// Creates a logical pen that has the specified style, width, and color.
+///
+/// # Arguments
+/// * `_style`: The pen style. This parameter can be one of the following values:
+///   - `PS_SOLID`: The pen is solid.
+///   - `PS_DASH`: The pen is dashed.
+///   - `PS_DOT`: The pen is dotted.
+///   - `PS_DASHDOT`: The pen is dashed and dotted.
+///   - `PS_DASHDOTDOT`: The pen is dashed and double-dotted.
+///     Currently, the style parameter is ignored and the created pen is always solid.
+/// * `_width`: The width of the pen, in logical units. The pen is always drawn centered on the perimeter of a shape.
+///   Therefore, when you draw a line with a pen that has a width of 1, the line is always one pixel wide.
+///   When you draw a line with a pen that has a width of 5, the line is 5 pixels wide, with 2 pixels on either side of the theoretical center line.
+///   If `width` is zero, the pen is 1 pixel wide.
+///   If `width` is greater than 0, the pen is the specified width.
+///   If `width` is less than 0, the pen is the absolute value of `width`, but the pen width is always at least 1 pixel.
+///   Currently, the width parameter is ignored and the created pen always has a width of 1 pixel.
+///
+/// * `color`: The color of the pen, specified as an RGB value in the lower 24 bits (0x00BBGGRR).
+///
+/// # Safety
+/// The caller must ensure that `style` is a valid pen style value, and that `color` is a valid RGB color value
+/// (i.e., does not have bits set outside the lower 24 bits).
+/// The returned handle must be deleted with `delete_object` when no longer needed to avoid resource leaks.
+/// The function will fail if there are insufficient resources to create the pen.
+/// The caller is responsible for ensuring that the width is not negative to avoid unexpected results.
+///
+/// # Returns
+/// A handle to the logical pen, or 0 if the function fails.
+pub unsafe fn create_pen(_style: i32, _width: i32, color: u32) -> usize {
     let mut state = gdi_state().lock().unwrap();
     let handle = alloc_handle();
     let detail = format!(
         r##"{{"handle":{},"style":{},"width":{},"color":"#{:06X}"}}"##,
         handle,
-        style,
-        width,
+        _style,
+        _width,
         color & 0x00FF_FFFF
     );
     rine_types::dev_notify!(on_handle_created(handle as i64, "GdiPen", &detail));
