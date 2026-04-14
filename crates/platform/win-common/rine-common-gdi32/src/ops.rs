@@ -109,7 +109,18 @@ pub unsafe fn create_compatible_bitmap(_hdc: usize, width: i32, height: i32) -> 
     handle
 }
 
-#[allow(clippy::missing_safety_doc)]
+/// Creates a solid brush with the specified color.
+///
+/// # Arguments
+/// * `color`: The color of the brush, specified as an RGB value in the lower 24 bits (0x00BBGGRR).
+///
+/// # Safety
+/// The caller must ensure that the color value is valid (i.e., does not have bits set outside the lower 24 bits).
+/// The returned handle must be deleted with `delete_object` when no longer needed to avoid resource leaks.
+/// The function will fail if there are insufficient resources to create the brush.
+///
+/// # Returns
+/// A handle to the solid brush, or 0 if the function fails.
 pub unsafe fn create_solid_brush(color: u32) -> usize {
     let mut state = gdi_state().lock().unwrap();
     let handle = alloc_handle();

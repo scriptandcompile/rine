@@ -68,8 +68,21 @@ pub(crate) unsafe extern "win64" fn CreateCompatibleBitmap(
     unsafe { common::ops::create_compatible_bitmap(_hdc, width, height) }
 }
 
+/// Creates a solid brush with the specified color.
+///
+/// # Arguments
+/// * `color`: The color of the brush, specified as an RGB value in the lower 24 bits (0x00BBGGRR).
+///
+/// # Safety
+/// The caller must ensure that the color value is valid (i.e., does not have bits set outside the lower 24 bits).
+/// The returned handle must be deleted with `delete_object` when no longer needed to avoid resource leaks.
+/// The function will fail if there are insufficient resources to create the brush.
+///
+/// # Returns
+/// A handle to the solid brush, or 0 if the function fails.
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn create_solid_brush(color: u32) -> usize {
+#[allow(non_snake_case)]
+pub(crate) unsafe extern "win64" fn CreateSolidBrush(color: u32) -> usize {
     unsafe { common::create_solid_brush(color) }
 }
 
