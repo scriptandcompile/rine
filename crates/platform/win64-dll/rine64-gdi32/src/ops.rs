@@ -2,8 +2,22 @@ use rine_common_gdi32 as common;
 use rine_types::errors::WinBool;
 use rine_types::windows::Rect;
 
+/// Creates a memory device context (DC) compatible with the specified device.
+///
+/// # Arguments
+/// * `_hdc`: A handle to an existing DC.
+///   If this handle is NULL, the function creates a memory DC compatible with the application's current screen.
+///   Currently, this parameter is ignored and the created DC is always compatible with the application's current screen.
+///
+/// # Safety
+/// The caller must ensure that `_hdc` is a valid device context handle or NULL.
+/// The returned handle must be deleted with `delete_dc` when no longer needed to avoid resource leaks.
+///
+/// # Returns
+/// A handle to the compatible memory DC, or 0 if the function fails.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn create_compatible_dc(_hdc: usize) -> usize {
+pub(crate) unsafe extern "win64" fn CreateCompatibleDC(_hdc: usize) -> usize {
     unsafe { common::create_compatible_dc(_hdc) }
 }
 

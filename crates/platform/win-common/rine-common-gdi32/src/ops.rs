@@ -4,39 +4,28 @@ use rine_types::windows::Rect;
 
 use crate::objects::{Bitmap, Brush, DeviceContext, GdiObject, Pen};
 use crate::state::{alloc_handle, gdi_state, object_selected_by_any_dc, with_selected_bitmap_mut};
+use crate::telemetry::{notify_bitmap_alloc, notify_bitmap_free};
 use crate::text::draw_text;
 
 pub const SRCCOPY: u32 = 0x00CC0020;
 
-fn bitmap_bytes(bitmap: &Bitmap) -> u64 {
+pub(crate) fn bitmap_bytes(bitmap: &Bitmap) -> u64 {
     (bitmap.pixels.len() * std::mem::size_of::<u32>()) as u64
 }
 
-fn notify_bitmap_alloc(handle: usize, bitmap: &Bitmap) {
-    let detail = format!(
-        r#"{{"handle":{},"width":{},"height":{},"bytes":{}}}"#,
-        handle,
-        bitmap.width,
-        bitmap.height,
-        bitmap_bytes(bitmap)
-    );
-    rine_types::dev_notify!(on_handle_created(handle as i64, "GdiBitmap", &detail));
-    rine_types::dev_notify!(on_memory_allocated(
-        bitmap.pixels.as_ptr() as u64,
-        bitmap_bytes(bitmap),
-        "GDI Bitmap",
-    ));
-}
-
-fn notify_bitmap_free(bitmap: &Bitmap) {
-    rine_types::dev_notify!(on_memory_freed(
-        bitmap.pixels.as_ptr() as u64,
-        bitmap_bytes(bitmap),
-        "GDI Bitmap",
-    ));
-}
-
-#[allow(clippy::missing_safety_doc)]
+/// Creates a memory device context (DC) compatible with the specified device.
+///
+/// # Arguments
+/// * `_hdc`: A handle to an existing DC.
+///   If this handle is NULL, the function creates a memory DC compatible with the application's current screen.
+///   Currently, this parameter is ignored and the created DC is always compatible with the application's current screen.
+///
+/// # Safety
+/// The caller must ensure that `_hdc` is a valid device context handle or NULL.
+/// The returned handle must be deleted with `delete_dc` when no longer needed to avoid resource leaks.
+///
+/// # Returns
+/// A handle to the compatible memory DC, or 0 if the function fails.
 pub unsafe fn create_compatible_dc(_hdc: usize) -> usize {
     let mut state = gdi_state().lock().unwrap();
     let dc_handle = alloc_handle();
@@ -53,8 +42,10 @@ pub unsafe fn create_compatible_dc(_hdc: usize) -> usize {
         .insert(default_bitmap_handle, GdiObject::Bitmap(default_bitmap));
 
     state.dcs.insert(dc_handle, dc);
+
     let detail = format!(r#"{{"hdc":{}}}"#, dc_handle);
     rine_types::dev_notify!(on_handle_created(dc_handle as i64, "GdiDc", &detail));
+
     dc_handle
 }
 

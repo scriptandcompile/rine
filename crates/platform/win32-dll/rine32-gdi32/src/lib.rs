@@ -1,13 +1,13 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
+mod ops;
+
+use rine_dlls::{DllPlugin, Export, PartialExport, as_win_api};
+
 #[cfg(not(target_pointer_width = "32"))]
 compile_error!(
     "crate `rine32-gdi32` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
 );
-
-use rine_dlls::{DllPlugin, Export, as_win_api};
-
-mod ops;
 
 pub struct Gdi32Plugin32;
 
@@ -18,7 +18,6 @@ impl DllPlugin for Gdi32Plugin32 {
 
     fn exports(&self) -> Vec<Export> {
         vec![
-            Export::Func("CreateCompatibleDC", as_win_api!(ops::create_compatible_dc)),
             Export::Func("DeleteDC", as_win_api!(ops::delete_dc)),
             Export::Func(
                 "CreateCompatibleBitmap",
@@ -32,5 +31,12 @@ impl DllPlugin for Gdi32Plugin32 {
             Export::Func("TextOutA", as_win_api!(ops::text_out_a)),
             Export::Func("TextOutW", as_win_api!(ops::text_out_w)),
         ]
+    }
+
+    fn partials(&self) -> Vec<rine_dlls::PartialExport> {
+        vec![PartialExport {
+            name: "CreateCompatibleDC",
+            func: as_win_api!(ops::CreateCompatibleDC),
+        }]
     }
 }

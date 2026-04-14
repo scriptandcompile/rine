@@ -3,6 +3,7 @@
 pub mod objects;
 pub mod ops;
 pub mod state;
+pub mod telemetry;
 pub mod text;
 
 pub use ops::{

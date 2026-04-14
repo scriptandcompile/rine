@@ -1,6 +1,6 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use rine_dlls::{DllPlugin, Export, as_win_api};
+use rine_dlls::{DllPlugin, Export, PartialExport, as_win_api};
 mod ops;
 
 pub struct Gdi32Plugin;
@@ -12,7 +12,6 @@ impl DllPlugin for Gdi32Plugin {
 
     fn exports(&self) -> Vec<Export> {
         vec![
-            Export::Func("CreateCompatibleDC", as_win_api!(ops::create_compatible_dc)),
             Export::Func("DeleteDC", as_win_api!(ops::delete_dc)),
             Export::Func(
                 "CreateCompatibleBitmap",
@@ -26,5 +25,12 @@ impl DllPlugin for Gdi32Plugin {
             Export::Func("TextOutA", as_win_api!(ops::text_out_a)),
             Export::Func("TextOutW", as_win_api!(ops::text_out_w)),
         ]
+    }
+
+    fn partials(&self) -> Vec<rine_dlls::PartialExport> {
+        vec![PartialExport {
+            name: "CreateCompatibleDC",
+            func: as_win_api!(ops::CreateCompatibleDC),
+        }]
     }
 }
