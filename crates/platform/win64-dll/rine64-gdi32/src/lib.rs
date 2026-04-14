@@ -14,7 +14,7 @@ impl DllPlugin for Gdi32Plugin {
         vec![
             Export::Func("DeleteDC", as_win_api!(ops::DeleteDC)),
             Export::Func("CreateSolidBrush", as_win_api!(ops::CreateSolidBrush)),
-            Export::Func("SelectObject", as_win_api!(ops::select_object)),
+            Export::Func("SelectObject", as_win_api!(ops::SelectObject)),
             Export::Func("DeleteObject", as_win_api!(ops::delete_object)),
             Export::Func("BitBlt", as_win_api!(ops::bit_blt)),
             Export::Func("TextOutA", as_win_api!(ops::TextOutA)),

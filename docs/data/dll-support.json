@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-14T21:17:18.496471+00:00",
+  "generatedAt": "2026-04-14T21:59:56.569585+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -301,12 +301,12 @@
           "name": "SelectObject",
           "x64": {
             "status": "implemented",
-            "symbol": "ops::select_object",
+            "symbol": "ops::SelectObject",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ops::select_object",
+            "symbol": "ops::SelectObject",
             "source": "gdi32 - ops.rs"
           }
         },

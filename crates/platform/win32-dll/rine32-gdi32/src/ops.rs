@@ -45,8 +45,8 @@ pub(crate) unsafe extern "stdcall" fn DeleteDC(hdc: usize) -> WinBool {
 ///
 /// # Arguments
 /// * `_hdc`: A handle to a DC. The bitmap created will be compatible with the device associated with this DC.
-///    If this handle is NULL, the bitmap will be compatible with the application's current screen.
-///    Currently, this parameter is ignored and the created bitmap is always compatible with the application's current screen.
+///   If this handle is NULL, the bitmap will be compatible with the application's current screen.
+///   Currently, this parameter is ignored and the created bitmap is always compatible with the application's current screen.
 /// * `width`: The width of the bitmap, in pixels. Must be greater than 0.
 /// * `height`: The height of the bitmap, in pixels. Must be greater than 0.
 ///
@@ -95,7 +95,7 @@ pub(crate) unsafe extern "stdcall" fn CreateSolidBrush(color: u32) -> usize {
 ///   - `PS_DOT`: The pen is dotted.
 ///   - `PS_DASHDOT`: The pen is dashed and dotted.
 ///   - `PS_DASHDOTDOT`: The pen is dashed and double-dotted.
-///   Currently, the style parameter is ignored and the created pen is always solid.
+///     Currently, the style parameter is ignored and the created pen is always solid.
 /// * `_width`: The width of the pen, in logical units. The pen is always drawn centered on the perimeter of a shape.
 ///   Therefore, when you draw a line with a pen that has a width of 1, the line is always one pixel wide.
 ///   When you draw a line with a pen that has a width of 5, the line is 5 pixels wide, with 2 pixels on either side of the theoretical center line.
@@ -120,8 +120,30 @@ pub(crate) unsafe extern "stdcall" fn CreatePen(style: i32, width: i32, color: u
     unsafe { common::create_pen(style, width, color) }
 }
 
+/// Selects an object into the specified device context (DC). The new object replaces the previous object of the same type.
+///
+/// # Arguments
+/// * `hdc`: A handle to the DC into which the object will be selected.
+///   This handle must have been returned by a previous call to `create_compatible_dc`.
+/// * `object`: A handle to the object to be selected.
+///   This can be a bitmap, brush, or pen handle that was returned by a previous call to `create_compatible_bitmap`,
+///   `create_solid_brush`, or `create_pen`, respectively.
+///
+/// # Safety
+/// The caller must ensure that `hdc` is a valid device context handle that belongs to this runtime, and that `object`
+/// is a valid handle to a GDI object of the appropriate type.
+/// The returned handle is the handle to the object being replaced, or 0 if there was no previous object of the same type selected in the DC.
+/// If the function fails (e.g., if the handles are invalid), the return value is also 0,
+/// so the caller must check for errors before using the return value.
+/// The caller is responsible for ensuring that the selected objects are not deleted while they are still selected
+/// in any DC (including the one they are selected into) to avoid resource leaks and undefined behavior.
+///
+/// # Returns
+/// The return value is a handle to the object being replaced, or 0 if there was no previous object of the same type selected in the DC.
+/// If the function fails (e.g., if the handles are invalid), the return value is also 0.
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn select_object(hdc: usize, object: usize) -> usize {
+#[allow(non_snake_case)]
+pub(crate) unsafe extern "stdcall" fn SelectObject(hdc: usize, object: usize) -> usize {
     unsafe { common::select_object(hdc, object) }
 }
 

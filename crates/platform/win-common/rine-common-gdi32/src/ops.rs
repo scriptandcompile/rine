@@ -180,7 +180,27 @@ pub unsafe fn create_pen(_style: i32, _width: i32, color: u32) -> usize {
     handle
 }
 
-#[allow(clippy::missing_safety_doc)]
+/// Selects an object into the specified device context (DC). The new object replaces the previous object of the same type.
+///
+/// # Arguments
+/// * `hdc`: A handle to the DC into which the object will be selected.
+///   This handle must have been returned by a previous call to `create_compatible_dc`.
+/// * `object`: A handle to the object to be selected.
+///   This can be a bitmap, brush, or pen handle that was returned by a previous call to `create_compatible_bitmap`,
+///   `create_solid_brush`, or `create_pen`, respectively.
+///
+/// # Safety
+/// The caller must ensure that `hdc` is a valid device context handle that belongs to this runtime, and that `object`
+/// is a valid handle to a GDI object of the appropriate type.
+/// The returned handle is the handle to the object being replaced, or 0 if there was no previous object of the same type selected in the DC.
+/// If the function fails (e.g., if the handles are invalid), the return value is also 0,
+/// so the caller must check for errors before using the return value.
+/// The caller is responsible for ensuring that the selected objects are not deleted while they are still selected
+/// in any DC (including the one they are selected into) to avoid resource leaks and undefined behavior.
+///
+/// # Returns
+/// The return value is a handle to the object being replaced, or 0 if there was no previous object of the same type selected in the DC.
+/// If the function fails (e.g., if the handles are invalid), the return value is also 0.
 pub unsafe fn select_object(hdc: usize, object: usize) -> usize {
     let mut state = gdi_state().lock().unwrap();
 
