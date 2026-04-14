@@ -16,7 +16,6 @@ impl DllPlugin for Gdi32Plugin {
             Export::Func("CreateSolidBrush", as_win_api!(ops::CreateSolidBrush)),
             Export::Func("SelectObject", as_win_api!(ops::SelectObject)),
             Export::Func("DeleteObject", as_win_api!(ops::DeleteObject)),
-            Export::Func("BitBlt", as_win_api!(ops::bit_blt)),
             Export::Func("TextOutA", as_win_api!(ops::TextOutA)),
             Export::Func("TextOutW", as_win_api!(ops::TextOutW)),
         ]
@@ -35,6 +34,10 @@ impl DllPlugin for Gdi32Plugin {
             PartialExport {
                 name: "CreatePen",
                 func: as_win_api!(ops::CreatePen),
+            },
+            PartialExport {
+                name: "BitBlt",
+                func: as_win_api!(ops::BitBlt),
             },
         ]
     }

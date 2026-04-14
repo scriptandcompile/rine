@@ -277,7 +277,46 @@ pub unsafe fn delete_object(object: usize) -> WinBool {
     }
 }
 
-#[allow(clippy::missing_safety_doc)]
+/// Performs a bit-block transfer of the color data corresponding to a rectangle of pixels from the specified
+/// source device context into a destination device context.
+///
+/// # Arguments
+/// * `hdc_dest`: A handle to the destination DC.
+/// * `x_dest`: The x-coordinate, in logical units, of the upper-left corner of the destination rectangle.
+/// * `y_dest`: The y-coordinate, in logical units, of the upper-left corner of the destination rectangle.
+/// * `width`: The width, in logical units, of the source and destination rectangles.
+/// * `height`: The height, in logical units, of the source and destination rectangles.
+/// * `hdc_src`: A handle to the source DC.
+/// * `x_src`: The x-coordinate, in logical units, of the upper-left corner of the source rectangle.
+/// * `y_src`: The y-coordinate, in logical units, of the upper-left corner of the source rectangle.
+/// * `rop`: A raster-operation code that specifies the combinationn of source and destination colors. This parameter can be one of the following values:
+///   - `SRCCOPY`: Copies the source rectangle directly to the destination rectangle.
+///   - `SRCPAINT`: Combines the colors of the source and destination rectangles by using the Boolean OR operator.
+///   - `SRCAND`: Combines the colors of the source and destination rectangles by using the Boolean AND operator.
+///   - `SRCINVERT`: Combines the colors of the source and destination rectangles by using the Boolean XOR operator.
+///   - `SRCERASE`: Combines the inverted colors of the source rectangle with the colors of the destination rectangle by using the Boolean AND operator.
+///   - `NOTSRCCOPY`: Copies the inverted source rectangle to the destination rectangle.
+///   - `NOTSRCERASE`: Combines the colors of the source rectangle with the inverted colors of the destination rectangle by using the Boolean OR operator.
+///   - `MERGECOPY`: Combines the colors of the source rectangle with the colors of the destination rectangle by using the Boolean AND operator, and then copies the result to the destination rectangle.
+///   - `MERGEPAINT`: Combines the inverted colors of the source rectangle with the colors of the destination rectangle by using the Boolean OR operator, and then copies the result to the destination rectangle.
+///   - `PATCOPY`: Copies the brush currently selected in the destination DC to the destination rectangle using the specified raster operation.
+///   - `PATPAINT`: Combines the brush currently selected in the destination DC with the colors of the source rectangle by using the Boolean OR operator, and then copies the result to the destination rectangle using the specified raster operation.
+///   - `PATINVERT`: Combines the brush currently selected in the destination DC with the colors of the source rectangle by using the Boolean XOR operator, and then copies the result to the destination rectangle using the specified raster operation.
+///   - `DSTINVERT`: Inverts the colors of the destination rectangle.
+///   - `BLACKNESS`: Fills the destination rectangle with black.
+///   - `WHITENESS`: Fills the destination rectangle with white.
+///     Currently, only `SRCCOPY` is supported, and the function will ignore the `rop` parameter if it is set to any other value.
+///
+/// # Safety
+/// The caller must ensure that `hdc_dest` and `hdc_src` are valid device context handles that belong to this runtime, and that the specified rectangles are within the bounds of the respective device contexts.
+/// The function will fail if the handles are invalid, if the rectangles are out of bounds, or if there are insufficient resources to perform the operation.
+/// The caller is responsible for ensuring that the source and destination rectangles are properly defined to avoid unexpected results.
+/// The caller is also responsible for ensuring that the raster operation code is valid to avoid unexpected results.
+/// The caller must also ensure that the device contexts are not currently in an error state to avoid unexpected results.
+/// The caller is responsible for checking the return value to determine if the operation succeeded or failed.
+///
+/// # Returns
+/// The function returns `WinBool::TRUE` if the operation succeeded, or `WinBool::FALSE` if it failed.
 pub unsafe fn bit_blt(
     hdc_dest: usize,
     dest_rect: Rect,
