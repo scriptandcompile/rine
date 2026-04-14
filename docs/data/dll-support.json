@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-14T22:08:52.563650+00:00",
+  "generatedAt": "2026-04-14T22:28:01.488994+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -209,13 +209,13 @@
         {
           "name": "BitBlt",
           "x64": {
-            "status": "implemented",
-            "symbol": "ops::bit_blt",
+            "status": "partial",
+            "symbol": "BitBlt",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "ops::bit_blt",
+            "status": "partial",
+            "symbol": "BitBlt",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -2329,14 +2329,14 @@
   "totals": {
     "functions": 175,
     "x64": {
-      "implemented": 150,
-      "partial": 19,
+      "implemented": 149,
+      "partial": 20,
       "stubbed": 3,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 141,
-      "partial": 19,
+      "implemented": 140,
+      "partial": 20,
       "stubbed": 14,
       "unimplemented": 1
     }
