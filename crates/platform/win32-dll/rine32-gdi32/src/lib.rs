@@ -18,7 +18,7 @@ impl DllPlugin for Gdi32Plugin32 {
 
     fn exports(&self) -> Vec<Export> {
         vec![
-            Export::Func("DeleteDC", as_win_api!(ops::delete_dc)),
+            Export::Func("DeleteDC", as_win_api!(ops::DeleteDC)),
             Export::Func(
                 "CreateCompatibleBitmap",
                 as_win_api!(ops::create_compatible_bitmap),

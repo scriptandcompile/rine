@@ -22,8 +22,22 @@ pub(crate) unsafe extern "win64" fn CreateCompatibleDC(_hdc: usize) -> usize {
     unsafe { common::create_compatible_dc(_hdc) }
 }
 
+/// Deletes a device context (DC) and all GDI objects owned by it.
+///
+/// # Arguments
+/// * `hdc`: A handle to the DC to be deleted. This handle must have been returned by a previous call to `create_compatible_dc`.
+///
+/// # Safety
+/// The caller must pass a valid DC handle that belongs to this runtime.
+/// After this call, the handle and any GDI objects owned by it must not be used, as they have been freed.
+/// This function will fail if any of the DC's selected objects are still selected in any DC (including itself).
+///
+/// # Returns
+/// Returns `WinBool::TRUE` if the DC was successfully deleted,
+/// or `WinBool::FALSE` if the handle was invalid or if any selected objects are still in use.///
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn delete_dc(hdc: usize) -> WinBool {
+pub(crate) unsafe extern "win64" fn DeleteDC(hdc: usize) -> WinBool {
     unsafe { common::delete_dc(hdc) }
 }
 

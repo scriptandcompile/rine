@@ -48,7 +48,19 @@ pub unsafe fn create_compatible_dc(_hdc: usize) -> usize {
     dc_handle
 }
 
-#[allow(clippy::missing_safety_doc)]
+/// Deletes a device context (DC) and all GDI objects owned by it.
+///
+/// # Arguments
+/// * `hdc`: A handle to the DC to be deleted. This handle must have been returned by a previous call to `create_compatible_dc`.
+///
+/// # Safety
+/// The caller must pass a valid DC handle that belongs to this runtime.
+/// After this call, the handle and any GDI objects owned by it must not be used, as they have been freed.
+/// This function will fail if any of the DC's selected objects are still selected in any DC (including itself).
+///
+/// # Returns
+/// Returns `WinBool::TRUE` if the DC was successfully deleted,
+/// or `WinBool::FALSE` if the handle was invalid or if any selected objects are still in use.
 pub unsafe fn delete_dc(hdc: usize) -> WinBool {
     let mut state = gdi_state().lock().unwrap();
     let Some(dc) = state.dcs.remove(&hdc) else {

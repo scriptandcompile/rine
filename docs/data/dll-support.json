@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-14T18:36:17.906058+00:00",
+  "generatedAt": "2026-04-14T18:43:35.082747+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -275,12 +275,12 @@
           "name": "DeleteDC",
           "x64": {
             "status": "implemented",
-            "symbol": "ops::delete_dc",
+            "symbol": "ops::DeleteDC",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ops::delete_dc",
+            "symbol": "ops::DeleteDC",
             "source": "gdi32 - ops.rs"
           }
         },
