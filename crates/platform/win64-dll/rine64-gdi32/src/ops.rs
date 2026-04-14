@@ -98,6 +98,25 @@ pub(crate) unsafe extern "win64" fn bit_blt(
     unsafe { common::bit_blt(hdc_dest, dest_rect, hdc_src, src_rect, rop) }
 }
 
+/// Writes a character string at the specified location, using the currently selected font, text color, and background color.
+///
+/// # Arguments
+/// * `hdc`: A handle to the device context.
+/// * `x`: The x-coordinate of the reference point that the system uses to position the text.
+///   The reference point is the upper-left corner of the first character.
+/// * `y`: The y-coordinate of the reference point that the system uses to position the text.
+///   The reference point is the upper-left corner of the first character.
+/// * `text`: A pointer to a buffer that contains the ANSI string to be drawn.
+///   The string is not null-terminated; the `count` parameter specifies the number of characters to draw.
+/// * `count`: The number of characters in the string pointed to by `text`.
+///
+/// # Safety
+/// The caller must ensure that `hdc` is a valid device context handle that belongs to this runtime,
+/// and that `text` points to a valid buffer of at least `count` characters.
+/// The function will fail if the buffer is invalid or if the device context does not have a bitmap selected into it.
+///
+/// # Returns
+/// Returns `WinBool::TRUE` if the function succeeds, or `WinBool::FALSE` if it fails.
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn TextOutA(
     hdc: usize,
@@ -115,6 +134,25 @@ pub(crate) unsafe extern "win64" fn TextOutA(
     }
 }
 
+/// Writes a character string at the specified location, using the currently selected font, text color, and background color.
+///
+/// # Arguments
+/// * `hdc`: A handle to the device context.
+/// * `x`: The x-coordinate of the reference point that the system uses to position the text.
+///   The reference point is the upper-left corner of the first character.
+/// * `y`: The y-coordinate of the reference point that the system uses to position the text.
+///   The reference point is the upper-left corner of the first character.
+/// * `text`: A pointer to a buffer that contains the UTF-16LE string to be drawn.
+///   The string is not null-terminated; the `count` parameter specifies the number of characters to draw.
+/// * `count`: The number of characters in the string pointed to by `text`.
+///
+/// # Safety
+/// The caller must ensure that `hdc` is a valid device context handle that belongs to this runtime,
+/// and that `text` points to a valid buffer of at least `count` characters.
+/// The function will fail if the buffer is invalid or if the device context does not have a bitmap selected into it.
+///
+/// # Returns
+/// Returns `WinBool::TRUE` if the function succeeds, or `WinBool::FALSE` if it fails.
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn TextOutW(
     hdc: usize,

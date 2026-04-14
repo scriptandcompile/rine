@@ -238,6 +238,21 @@ pub unsafe fn bit_blt(
     result
 }
 
+/// Draws the specified text string at the given coordinates in the device context identified by `hdc`.
+/// # Arguments
+/// * `hdc`: A handle to the device context in which to draw the text. This DC must have a bitmap selected into it.
+/// * `x`: The x-coordinate of the reference point for the text. The interpretation of this coordinate depends on the current mapping mode of the DC.
+/// * `y`: The y-coordinate of the reference point for the text. The interpretation of this coordinate depends on the current mapping mode of the DC.
+/// * `text`: The text string to be drawn.
+///
+/// # Safety
+/// The caller must ensure that `hdc` is a valid device context handle that belongs to this runtime and has a bitmap selected into it.
+/// The caller is responsible for ensuring that the coordinates and text are appropriate for the current mapping mode and selected bitmap
+/// to avoid unexpected results.
+///
+/// # Returns
+/// Returns `WinBool::TRUE` if the text was successfully drawn,
+/// or `WinBool::FALSE` if the `hdc` was invalid or if no bitmap was selected into the DC.
 pub fn text_out(hdc: usize, x: i32, y: i32, text: &str) -> WinBool {
     let mut state = gdi_state().lock().unwrap();
     if with_selected_bitmap_mut(&mut state, hdc, |bitmap| draw_text(bitmap, x, y, text)).is_none() {
