@@ -240,7 +240,26 @@ pub unsafe fn select_object(hdc: usize, object: usize) -> usize {
     }
 }
 
-#[allow(clippy::missing_safety_doc)]
+/// Deletes a GDI object.
+///
+/// # Arguments
+/// * `object`: A handle to the GDI object to be deleted.
+///   This can be a bitmap, brush, or pen handle that was returned by a previous call to `create_compatible_bitmap`,
+///   `create_solid_brush`, or `create_pen`, respectively.
+///   This function will fail if the object is currently selected into any device context (DC),
+///   including the one it was created with, to prevent resource leaks and undefined behavior.
+///
+/// # Safety
+/// The caller must ensure that `object` is a valid handle to a GDI object that belongs to this runtime.
+/// After this call, the handle must not be used, as it has been freed. This function will fail if the object is
+/// currently selected into any device context (DC), including the one it was created with, to prevent resource leaks and undefined behavior.
+/// The caller is responsible for ensuring that the object is not selected into any DC when this function is called
+/// to avoid resource leaks and undefined behavior.
+/// The caller is also responsible for ensuring that the object handle is not used after it has been deleted to avoid undefined behavior.
+///
+/// # Returns
+/// The function will return `WinBool::FALSE` if the object is currently selected into any device context (DC), including the one it was
+/// created with, to prevent resource leaks and undefined behavior.
 pub unsafe fn delete_object(object: usize) -> WinBool {
     let mut state = gdi_state().lock().unwrap();
     if object_selected_by_any_dc(&state, object) {
