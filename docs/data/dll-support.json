@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-14T18:43:35.082747+00:00",
+  "generatedAt": "2026-04-14T21:17:18.496471+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -222,13 +222,13 @@
         {
           "name": "CreateCompatibleBitmap",
           "x64": {
-            "status": "implemented",
-            "symbol": "ops::create_compatible_bitmap",
+            "status": "partial",
+            "symbol": "CreateCompatibleBitmap",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "ops::create_compatible_bitmap",
+            "status": "partial",
+            "symbol": "CreateCompatibleBitmap",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -248,13 +248,13 @@
         {
           "name": "CreatePen",
           "x64": {
-            "status": "implemented",
-            "symbol": "ops::create_pen",
+            "status": "partial",
+            "symbol": "CreatePen",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "ops::create_pen",
+            "status": "partial",
+            "symbol": "CreatePen",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -262,12 +262,12 @@
           "name": "CreateSolidBrush",
           "x64": {
             "status": "implemented",
-            "symbol": "ops::create_solid_brush",
+            "symbol": "ops::CreateSolidBrush",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ops::create_solid_brush",
+            "symbol": "ops::CreateSolidBrush",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -2329,14 +2329,14 @@
   "totals": {
     "functions": 175,
     "x64": {
-      "implemented": 152,
-      "partial": 17,
+      "implemented": 150,
+      "partial": 19,
       "stubbed": 3,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 143,
-      "partial": 17,
+      "implemented": 141,
+      "partial": 19,
       "stubbed": 14,
       "unimplemented": 1
     }
