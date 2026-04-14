@@ -6,3 +6,7 @@ license.workspace = true
 description = "Shared architecture-neutral comdlg32 logic for rine"
 
 [dependencies]
+rine-types = { workspace = true }
+
+[target.'cfg(target_pointer_width = "64")'.dependencies]
+rfd = { workspace = true }

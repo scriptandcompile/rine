@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-10T21:21:10.018296+00:00",
+  "generatedAt": "2026-04-14T00:12:40.595248+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -138,66 +138,66 @@
         {
           "name": "CommDlgExtendedError",
           "x64": {
-            "status": "implemented",
-            "symbol": "comm_dlg_extended_error",
-            "source": "comdlg32 - lib.rs"
+            "status": "partial",
+            "symbol": "CommDlgExtendedError",
+            "source": "comdlg32 - error.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "comm_dlg_extended_error",
-            "source": "comdlg32 - lib.rs"
+            "status": "partial",
+            "symbol": "CommDlgExtendedError",
+            "source": "comdlg32 - error.rs"
           }
         },
         {
           "name": "GetOpenFileNameA",
           "x64": {
-            "status": "implemented",
-            "symbol": "get_open_file_name_a",
-            "source": "comdlg32 - lib.rs"
+            "status": "partial",
+            "symbol": "GetOpenFileNameA",
+            "source": "comdlg32 - open.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "get_open_file_name_a",
-            "source": "comdlg32 - lib.rs"
+            "status": "partial",
+            "symbol": "GetOpenFileNameA",
+            "source": "comdlg32 - open.rs"
           }
         },
         {
           "name": "GetOpenFileNameW",
           "x64": {
-            "status": "implemented",
-            "symbol": "get_open_file_name_w",
-            "source": "comdlg32 - lib.rs"
+            "status": "partial",
+            "symbol": "GetOpenFileNameW",
+            "source": "comdlg32 - open.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "get_open_file_name_w",
-            "source": "comdlg32 - lib.rs"
+            "status": "partial",
+            "symbol": "GetOpenFileNameW",
+            "source": "comdlg32 - open.rs"
           }
         },
         {
           "name": "GetSaveFileNameA",
           "x64": {
-            "status": "implemented",
-            "symbol": "get_save_file_name_a",
-            "source": "comdlg32 - lib.rs"
+            "status": "partial",
+            "symbol": "GetSaveFileNameA",
+            "source": "comdlg32 - save.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "get_save_file_name_a",
-            "source": "comdlg32 - lib.rs"
+            "status": "partial",
+            "symbol": "GetSaveFileNameA",
+            "source": "comdlg32 - save.rs"
           }
         },
         {
           "name": "GetSaveFileNameW",
           "x64": {
-            "status": "implemented",
-            "symbol": "get_save_file_name_w",
-            "source": "comdlg32 - lib.rs"
+            "status": "partial",
+            "symbol": "GetSaveFileNameW",
+            "source": "comdlg32 - save.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "get_save_file_name_w",
-            "source": "comdlg32 - lib.rs"
+            "status": "partial",
+            "symbol": "GetSaveFileNameW",
+            "source": "comdlg32 - save.rs"
           }
         }
       ]
@@ -2329,14 +2329,14 @@
   "totals": {
     "functions": 175,
     "x64": {
-      "implemented": 158,
-      "partial": 11,
+      "implemented": 153,
+      "partial": 16,
       "stubbed": 3,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 149,
-      "partial": 11,
+      "implemented": 144,
+      "partial": 16,
       "stubbed": 14,
       "unimplemented": 1
     }

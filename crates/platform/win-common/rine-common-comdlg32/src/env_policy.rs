@@ -27,6 +27,20 @@ pub struct DialogPolicy {
     pub windows_theme: WindowsTheme,
 }
 
+/// Resolves the dialog policy based on environment variables and returns a `DialogPolicy` struct.
+///
+/// # Returns
+/// A `DialogPolicy` struct containing the resolved dialog theme, native backend, and Windows theme.
+/// The resolution is based on the following environment variables:
+/// - `RINE_DIALOG_THEME`: Can be set to "windows" or "emulated" to use the Windows dialog theme,
+///   or any other value (or unset) to use the native dialog theme.
+/// - `RINE_DIALOG_MODE`: (Backward compatibility) Can be set to "emulated" or "windows" to use the
+///   Windows dialog theme, or any other value (or unset) to use the native dialog theme.
+/// - `RINE_DIALOG_NATIVE_BACKEND`: Can be set to "gtk", "kde", or "portal" (or "auto") to specify
+///   the native backend to use. Defaults to "portal" if unset or unrecognized.
+/// - `RINE_DIALOG_EMULATED_THEME`: Can be set to "xp", "win7", "win10", "win11", or "windows_version"
+///   (or "auto") to specify the Windows theme to use when the dialog theme is set to Windows.
+///   Defaults to "windows_version" (auto) if unset or unrecognized.
 pub fn resolve_dialog_policy() -> DialogPolicy {
     DialogPolicy {
         theme: resolve_theme(),
