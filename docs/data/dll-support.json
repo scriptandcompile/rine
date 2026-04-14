@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-14T00:12:40.595248+00:00",
+  "generatedAt": "2026-04-14T18:36:17.906058+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -235,13 +235,13 @@
         {
           "name": "CreateCompatibleDC",
           "x64": {
-            "status": "implemented",
-            "symbol": "ops::create_compatible_dc",
+            "status": "partial",
+            "symbol": "CreateCompatibleDC",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "ops::create_compatible_dc",
+            "status": "partial",
+            "symbol": "CreateCompatibleDC",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -314,12 +314,12 @@
           "name": "TextOutA",
           "x64": {
             "status": "implemented",
-            "symbol": "ops::text_out_a",
+            "symbol": "ops::TextOutA",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ops::text_out_a",
+            "symbol": "ops::TextOutA",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -327,12 +327,12 @@
           "name": "TextOutW",
           "x64": {
             "status": "implemented",
-            "symbol": "ops::text_out_w",
+            "symbol": "ops::TextOutW",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
             "status": "implemented",
-            "symbol": "ops::text_out_w",
+            "symbol": "ops::TextOutW",
             "source": "gdi32 - ops.rs"
           }
         }
@@ -2329,14 +2329,14 @@
   "totals": {
     "functions": 175,
     "x64": {
-      "implemented": 153,
-      "partial": 16,
+      "implemented": 152,
+      "partial": 17,
       "stubbed": 3,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 144,
-      "partial": 16,
+      "implemented": 143,
+      "partial": 17,
       "stubbed": 14,
       "unimplemented": 1
     }

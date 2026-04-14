@@ -1,5 +1,4 @@
 use rine_types::errors::WinBool;
-use rine_types::strings::{read_cstr_counted, read_wstr_counted};
 use rine_types::windows::Rect;
 
 use crate::objects::{Bitmap, Brush, DeviceContext, GdiObject, Pen};
@@ -227,30 +226,9 @@ pub unsafe fn bit_blt(
     result
 }
 
-#[allow(clippy::missing_safety_doc)]
-pub unsafe fn text_out_a(hdc: usize, x: i32, y: i32, text: *const u8, count: i32) -> WinBool {
-    let Some(text) = (unsafe { read_cstr_counted(text, count) }) else {
-        return WinBool::FALSE;
-    };
-
+pub fn text_out(hdc: usize, x: i32, y: i32, text: &str) -> WinBool {
     let mut state = gdi_state().lock().unwrap();
-    if with_selected_bitmap_mut(&mut state, hdc, |bitmap| draw_text(bitmap, x, y, &text)).is_none()
-    {
-        return WinBool::FALSE;
-    }
-
-    WinBool::TRUE
-}
-
-#[allow(clippy::missing_safety_doc)]
-pub unsafe fn text_out_w(hdc: usize, x: i32, y: i32, text: *const u16, count: i32) -> WinBool {
-    let Some(text) = (unsafe { read_wstr_counted(text, count) }) else {
-        return WinBool::FALSE;
-    };
-
-    let mut state = gdi_state().lock().unwrap();
-    if with_selected_bitmap_mut(&mut state, hdc, |bitmap| draw_text(bitmap, x, y, &text)).is_none()
-    {
+    if with_selected_bitmap_mut(&mut state, hdc, |bitmap| draw_text(bitmap, x, y, text)).is_none() {
         return WinBool::FALSE;
     }
 
@@ -261,6 +239,7 @@ pub unsafe fn text_out_w(hdc: usize, x: i32, y: i32, text: *const u16, count: i3
 mod tests {
     use super::*;
     use crate::objects::GdiObject;
+    use crate::ops::text_out;
     use crate::state::gdi_state;
 
     #[test]
@@ -277,11 +256,8 @@ mod tests {
             assert_ne!(select_object(src_dc, src_bitmap), 0);
             assert_ne!(select_object(dst_dc, dst_bitmap), 0);
 
-            let hello = b"Hello";
-            assert_eq!(
-                text_out_a(src_dc, 0, 0, hello.as_ptr(), hello.len() as i32),
-                WinBool::TRUE
-            );
+            let hello = "Hello";
+            assert_eq!(text_out(src_dc, 0, 0, hello), WinBool::TRUE);
             assert_eq!(
                 bit_blt(
                     dst_dc,

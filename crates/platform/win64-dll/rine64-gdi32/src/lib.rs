@@ -22,8 +22,8 @@ impl DllPlugin for Gdi32Plugin {
             Export::Func("SelectObject", as_win_api!(ops::select_object)),
             Export::Func("DeleteObject", as_win_api!(ops::delete_object)),
             Export::Func("BitBlt", as_win_api!(ops::bit_blt)),
-            Export::Func("TextOutA", as_win_api!(ops::text_out_a)),
-            Export::Func("TextOutW", as_win_api!(ops::text_out_w)),
+            Export::Func("TextOutA", as_win_api!(ops::TextOutA)),
+            Export::Func("TextOutW", as_win_api!(ops::TextOutW)),
         ]
     }
 
