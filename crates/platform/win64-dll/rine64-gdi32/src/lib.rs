@@ -13,10 +13,6 @@ impl DllPlugin for Gdi32Plugin {
     fn exports(&self) -> Vec<Export> {
         vec![
             Export::Func("DeleteDC", as_win_api!(ops::DeleteDC)),
-            Export::Func(
-                "CreateCompatibleBitmap",
-                as_win_api!(ops::create_compatible_bitmap),
-            ),
             Export::Func("CreateSolidBrush", as_win_api!(ops::create_solid_brush)),
             Export::Func("CreatePen", as_win_api!(ops::create_pen)),
             Export::Func("SelectObject", as_win_api!(ops::select_object)),
@@ -28,9 +24,15 @@ impl DllPlugin for Gdi32Plugin {
     }
 
     fn partials(&self) -> Vec<rine_dlls::PartialExport> {
-        vec![PartialExport {
-            name: "CreateCompatibleDC",
-            func: as_win_api!(ops::CreateCompatibleDC),
-        }]
+        vec![
+            PartialExport {
+                name: "CreateCompatibleDC",
+                func: as_win_api!(ops::CreateCompatibleDC),
+            },
+            PartialExport {
+                name: "CreateCompatibleBitmap",
+                func: as_win_api!(ops::CreateCompatibleBitmap),
+            },
+        ]
     }
 }

@@ -41,13 +41,31 @@ pub(crate) unsafe extern "stdcall" fn DeleteDC(hdc: usize) -> WinBool {
     unsafe { common::delete_dc(hdc) }
 }
 
+/// Creates a bitmap compatible with the device that is associated with the specified device context (DC).
+///
+/// # Arguments
+/// * `_hdc`: A handle to a DC. The bitmap created will be compatible with the device associated with this DC.
+///    If this handle is NULL, the bitmap will be compatible with the application's current screen.
+///    Currently, this parameter is ignored and the created bitmap is always compatible with the application's current screen.
+/// * `width`: The width of the bitmap, in pixels. Must be greater than 0.
+/// * `height`: The height of the bitmap, in pixels. Must be greater than 0.
+///
+/// # Safety
+/// The caller must ensure that `_hdc` is a valid device context handle or NULL.
+/// The returned handle must be deleted with `delete_object` when no longer needed to avoid resource leaks.
+/// The caller is responsible for ensuring that the width and height are positive to avoid unexpected results.
+///
+/// # Returns
+/// A handle to the compatible bitmap, or 0 if the function fails
+/// (e.g., if the dimensions are invalid or if there are insufficient resources to create the bitmap).
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn create_compatible_bitmap(
-    hdc: usize,
+#[allow(non_snake_case)]
+pub(crate) unsafe extern "stdcall" fn CreateCompatibleBitmap(
+    _hdc: usize,
     width: i32,
     height: i32,
 ) -> usize {
-    unsafe { common::create_compatible_bitmap(hdc, width, height) }
+    unsafe { common::ops::create_compatible_bitmap(_hdc, width, height) }
 }
 
 #[unsafe(no_mangle)]
