@@ -13,7 +13,7 @@
   --radius-lg: 28px;
   --radius-md: 20px;
   --radius-sm: 14px;
-  --content-width: 1120px;
+  --content-width: 1400px;
 }
 
 * {
@@ -74,7 +74,7 @@ code {
 }
 
 .page-shell {
-  width: min(calc(100% - 2rem), var(--content-width));
+  width: min(96vw, var(--content-width));
   margin: 0 auto;
 }
 
@@ -503,7 +503,7 @@ code {
 
 @media (max-width: 760px) {
   .page-shell {
-    width: min(calc(100% - 1rem), var(--content-width));
+    width: min(96vw, var(--content-width));
   }
 
   .site-header {
