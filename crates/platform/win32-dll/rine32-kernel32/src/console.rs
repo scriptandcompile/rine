@@ -1,16 +1,24 @@
 use rine_common_kernel32 as common;
 
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, INVALID_HANDLE_VALUE, std_handle_to_fd};
+use rine_types::handles::Handle;
 use rine_types::strings::{read_cstr_counted, read_wstr_counted};
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Get a standard handle (stdin, stdout, stderr) as a raw handle value.
+///
+/// # Arguments
+/// * `nstd_handle`: STD_INPUT_HANDLE (−10), STD_OUTPUT_HANDLE (−11), STD_ERROR_HANDLE (−12).
+///
+/// # Safety
+/// No pointer arguments; always safe at the ABI level.
+///
+/// # Returns
+/// On success, returns a raw handle value corresponding to the requested standard handle.
+/// If the specified standard handle is not available, the function returns INVALID_HANDLE_VALUE.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetStdHandle(nstd_handle: u32) -> isize {
-    match std_handle_to_fd(nstd_handle) {
-        Some(fd) => (fd as isize) + 0x1000,
-        None => INVALID_HANDLE_VALUE.as_raw(),
-    }
+    unsafe { common::console::get_std_handle(nstd_handle) }
 }
 
 /// WriteConsoleA — write an ANSI (byte) string to a console handle.

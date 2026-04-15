@@ -364,14 +364,14 @@ pub fn handle_table() -> &'static HandleTable {
 }
 
 // ---------------------------------------------------------------------------
-// Compatibility shims for Phase 1 code (GetStdHandle, WriteFile, etc.)
+// Compatibility shims for (GetStdHandle, WriteFile, etc.)
 //
-// Phase 1 used a simple `fd + HANDLE_FD_BASE` encoding.  The table-based
+// Uses a simple `fd + HANDLE_FD_BASE` encoding.  The table-based
 // approach supersedes it, but we keep the old helpers so existing call
 // sites compile without changes.  They now route through the table.
 // ---------------------------------------------------------------------------
 
-const HANDLE_FD_BASE: isize = 0x1000;
+pub const HANDLE_FD_BASE: isize = 0x1000;
 
 /// Encode a Linux file descriptor as a Windows HANDLE.
 pub fn fd_to_handle(fd: i32) -> Handle {

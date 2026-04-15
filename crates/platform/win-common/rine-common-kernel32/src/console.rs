@@ -1,5 +1,29 @@
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, handle_to_fd};
+use rine_types::handles::{
+    Handle, INVALID_HANDLE_VALUE, fd_to_handle, handle_to_fd, std_handle_to_fd,
+};
+
+/// Get a standard handle (stdin, stdout, stderr) as a raw handle value.
+///
+/// # Arguments
+/// * `nstd_handle`: STD_INPUT_HANDLE (−10), STD_OUTPUT_HANDLE (−11), STD_ERROR_HANDLE (−12).
+///
+/// # Safety
+/// No pointer arguments; always safe at the ABI level.
+///
+/// # Returns
+/// On success, returns a raw handle value corresponding to the requested standard handle.
+/// If the specified standard handle is not available, the function returns INVALID_HANDLE_VALUE.
+#[unsafe(no_mangle)]
+pub unsafe fn get_std_handle(nstd_handle: u32) -> isize {
+    match std_handle_to_fd(nstd_handle) {
+        Some(fd) => fd_to_handle(fd).as_raw(),
+        None => {
+            tracing::warn!(nstd_handle, "GetStdHandle: unknown handle constant");
+            INVALID_HANDLE_VALUE.as_raw()
+        }
+    }
+}
 
 /// Write a string to a console handle.
 ///
