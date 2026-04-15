@@ -4,24 +4,34 @@
 
 use std::sync::OnceLock;
 
+use rine_common_kernel32 as common;
+
 use rine_types::environment;
 use rine_types::errors::WinBool;
-use rine_types::strings::{read_cstr, read_wstr, write_cstr, write_wstr};
+use rine_types::strings::{read_cstr, read_wstr};
 use tracing::debug;
 
-// ---------------------------------------------------------------------------
-// GetEnvironmentVariableA / W
-// ---------------------------------------------------------------------------
-
-/// GetEnvironmentVariableA — retrieve an environment variable (ANSI).
+/// Get the value of an environment variable.
 ///
-/// Returns the number of characters copied (excluding null terminator),
-/// or the required buffer size (including null terminator) if the buffer
-/// is too small. Returns 0 if the variable is not found.
+/// # Arguments
+/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable. The string is case-sensitive.
+/// * `buffer`: A pointer to a buffer that receives the value of the environment variable as a null-terminated string.
+/// * `size`: The size of the buffer, in characters.
 ///
 /// # Safety
-/// `name` must be a valid null-terminated ANSI string.
-/// `buffer` must point to at least `size` writable bytes, or be null.
+/// * `name` must be a valid pointer to a null-terminated string.
+/// * `buffer` must be a valid pointer to a buffer of at least `size` characters.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is the number of characters stored in the buffer,
+/// not including the terminating null character.
+/// If the buffer is too small to hold the value, the return value is the size of the buffer required to hold the value,
+/// including the terminating null character.
+/// If the specified environment variable is not found, the return value is zero.
+/// If the function fails for any other reason, the return value is zero.
+/// To get extended error information, call GetLastError.
+/// Currently, this implementation does not set GetLastError on failure.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentVariableA(
@@ -29,24 +39,30 @@ pub unsafe extern "win64" fn GetEnvironmentVariableA(
     buffer: *mut u8,
     size: u32,
 ) -> u32 {
-    let var_name = match unsafe { read_cstr(name) } {
-        Some(n) => n,
-        None => return 0,
-    };
-
-    debug!(name = %var_name, "GetEnvironmentVariableA");
-
-    match environment::get_var(&var_name) {
-        Some(val) => unsafe { write_cstr(buffer, size, &val) },
-        None => 0,
-    }
+    unsafe { common::environment::get_environment_variable_a(name, buffer, size) }
 }
 
-/// GetEnvironmentVariableW — retrieve an environment variable (wide).
+/// Get the value of an environment variable.
+///
+/// # Arguments
+/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable. The string is case-sensitive.
+/// * `buffer`: A pointer to a buffer that receives the value of the environment variable as a null-terminated string.
+/// * `size`: The size of the buffer, in characters.
 ///
 /// # Safety
-/// `name` must be a valid null-terminated UTF-16LE string.
-/// `buffer` must point to at least `size` writable u16 elements, or be null.
+/// * `name` must be a valid pointer to a null-terminated string.
+/// * `buffer` must be a valid pointer to a buffer of at least `size` characters.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is the number of characters stored in the buffer,
+/// not including the terminating null character.
+/// If the buffer is too small to hold the value, the return value is the size of the buffer required to hold the value,
+/// including the terminating null character.
+/// If the specified environment variable is not found, the return value is zero.
+/// If the function fails for any other reason, the return value is zero.
+/// To get extended error information, call GetLastError.
+/// Currently, this implementation does not set GetLastError on failure.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentVariableW(
@@ -54,17 +70,7 @@ pub unsafe extern "win64" fn GetEnvironmentVariableW(
     buffer: *mut u16,
     size: u32,
 ) -> u32 {
-    let var_name = match unsafe { read_wstr(name) } {
-        Some(n) => n,
-        None => return 0,
-    };
-
-    debug!(name = %var_name, "GetEnvironmentVariableW");
-
-    match environment::get_var(&var_name) {
-        Some(val) => unsafe { write_wstr(buffer, size, &val) },
-        None => 0,
-    }
+    unsafe { common::environment::get_environment_variable_w(name, buffer, size) }
 }
 
 // ---------------------------------------------------------------------------

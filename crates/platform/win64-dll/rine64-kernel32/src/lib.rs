@@ -110,14 +110,6 @@ impl DllPlugin for Kernel32Plugin {
                 as_win_api!(thread::WaitForMultipleObjects),
             ),
             Export::Func(
-                "GetEnvironmentVariableA",
-                as_win_api!(environment::GetEnvironmentVariableA),
-            ),
-            Export::Func(
-                "GetEnvironmentVariableW",
-                as_win_api!(environment::GetEnvironmentVariableW),
-            ),
-            Export::Func(
                 "SetEnvironmentVariableA",
                 as_win_api!(environment::SetEnvironmentVariableA),
             ),
@@ -191,6 +183,14 @@ impl DllPlugin for Kernel32Plugin {
             PartialExport {
                 name: "WriteConsoleW",
                 func: as_win_api!(console::WriteConsoleW),
+            },
+            PartialExport {
+                name: "GetEnvironmentVariableA",
+                func: as_win_api!(environment::GetEnvironmentVariableA),
+            },
+            PartialExport {
+                name: "GetEnvironmentVariableW",
+                func: as_win_api!(environment::GetEnvironmentVariableW),
             },
         ]
     }

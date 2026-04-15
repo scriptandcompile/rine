@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-15T09:51:28.237870+00:00",
+  "generatedAt": "2026-04-15T22:22:10.755861+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -748,26 +748,26 @@
         {
           "name": "GetEnvironmentVariableA",
           "x64": {
-            "status": "implemented",
-            "symbol": "environment::GetEnvironmentVariableA",
+            "status": "partial",
+            "symbol": "GetEnvironmentVariableA",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "environment::GetEnvironmentVariableA",
+            "status": "partial",
+            "symbol": "GetEnvironmentVariableA",
             "source": "kernel32 - environment.rs"
           }
         },
         {
           "name": "GetEnvironmentVariableW",
           "x64": {
-            "status": "implemented",
-            "symbol": "environment::GetEnvironmentVariableW",
+            "status": "partial",
+            "symbol": "GetEnvironmentVariableW",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "environment::GetEnvironmentVariableW",
+            "status": "partial",
+            "symbol": "GetEnvironmentVariableW",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -2329,14 +2329,14 @@
   "totals": {
     "functions": 175,
     "x64": {
-      "implemented": 147,
-      "partial": 22,
+      "implemented": 145,
+      "partial": 24,
       "stubbed": 3,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 138,
-      "partial": 22,
+      "implemented": 136,
+      "partial": 24,
       "stubbed": 14,
       "unimplemented": 1
     }
