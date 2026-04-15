@@ -165,9 +165,17 @@ function renderTable() {
     return;
   }
 
-  supportBody.innerHTML = filtered
-    .map(
-      (row) => `
+  let previousDll = "";
+  const markup = filtered
+    .map((row) => {
+      const groupDivider =
+        row.dll !== previousDll
+          ? `<tr class="dll-divider-row"><th colspan="6" scope="colgroup">${escapeHtml(row.dll)}</th></tr>`
+          : "";
+
+      previousDll = row.dll;
+
+      return `${groupDivider}
       <tr>
         <td><span class="dll-name">${row.dll}</span></td>
         <td>${row.name}</td>
@@ -175,9 +183,11 @@ function renderTable() {
         <td>${createStatusPill(row.x86.status)}</td>
         <td>${createSourceCell("x64", row.dll, row.x64)}</td>
         <td>${createSourceCell("x86", row.dll, row.x86)}</td>
-      </tr>`
-    )
+      </tr>`;
+    })
     .join("");
+
+  supportBody.innerHTML = markup;
 }
 
 function wireFilters() {
