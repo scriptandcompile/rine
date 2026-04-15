@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-14T23:40:11.073083+00:00",
+  "generatedAt": "2026-04-15T09:51:28.237870+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1333,26 +1333,26 @@
         {
           "name": "WriteConsoleA",
           "x64": {
-            "status": "implemented",
-            "symbol": "console::WriteConsoleA",
+            "status": "partial",
+            "symbol": "WriteConsoleA",
             "source": "kernel32 - console.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "console::WriteConsoleA",
+            "status": "partial",
+            "symbol": "WriteConsoleA",
             "source": "kernel32 - console.rs"
           }
         },
         {
           "name": "WriteConsoleW",
           "x64": {
-            "status": "implemented",
-            "symbol": "console::WriteConsoleW",
+            "status": "partial",
+            "symbol": "WriteConsoleW",
             "source": "kernel32 - console.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "console::WriteConsoleW",
+            "status": "partial",
+            "symbol": "WriteConsoleW",
             "source": "kernel32 - console.rs"
           }
         },
@@ -2329,14 +2329,14 @@
   "totals": {
     "functions": 175,
     "x64": {
-      "implemented": 149,
-      "partial": 20,
+      "implemented": 147,
+      "partial": 22,
       "stubbed": 3,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 140,
-      "partial": 20,
+      "implemented": 138,
+      "partial": 22,
       "stubbed": 14,
       "unimplemented": 1
     }

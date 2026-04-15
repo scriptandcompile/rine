@@ -48,8 +48,6 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("ReadFile", as_win_api!(file::ReadFile)),
             Export::Func("WriteFile", as_win_api!(file::WriteFile)),
             Export::Func("FlushFileBuffers", as_win_api!(file::FlushFileBuffers)),
-            Export::Func("WriteConsoleA", as_win_api!(console::WriteConsoleA)),
-            Export::Func("WriteConsoleW", as_win_api!(console::WriteConsoleW)),
             Export::Func("CloseHandle", as_win_api!(file::CloseHandle)),
             Export::Func("SetFilePointer", as_win_api!(file::SetFilePointer)),
             Export::Func("FindClose", as_win_api!(file::FindClose)),
@@ -204,6 +202,14 @@ impl DllPlugin for Kernel32Plugin32 {
             PartialExport {
                 name: "VirtualFree",
                 func: as_win_api!(memory::VirtualFree),
+            },
+            PartialExport {
+                name: "WriteConsoleA",
+                func: as_win_api!(console::WriteConsoleA),
+            },
+            PartialExport {
+                name: "WriteConsoleW",
+                func: as_win_api!(console::WriteConsoleW),
             },
         ]
     }
