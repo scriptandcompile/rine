@@ -1,3 +1,4 @@
+use rine_types::errors::WinBool;
 use rine_types::strings::{read_cstr, read_wstr, write_cstr, write_wstr};
 
 /// Get the value of an environment variable.
@@ -64,4 +65,54 @@ pub unsafe fn get_environment_variable_w(name: *const u16, buffer: *mut u16, siz
         Some(val) => unsafe { write_wstr(buffer, size, &val) },
         None => 0,
     }
+}
+
+/// Set the value of an environment variable.
+///
+/// # Arguments
+/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable. The string is case-sensitive.
+/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable. If this parameter is NULL, the variable is deleted from the environment.
+///
+/// # Safety
+/// * `name` must be a valid pointer to a null-terminated string.
+/// * `value` must be null or a valid pointer to a null-terminated string.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is TRUE.
+/// If the function fails, the return value is FALSE.
+pub unsafe fn set_environment_variable_a(name: *const u8, value: *const u8) -> WinBool {
+    let var_name = match unsafe { read_cstr(name) } {
+        Some(n) => n,
+        None => return WinBool::FALSE,
+    };
+
+    let var_value = unsafe { read_cstr(value) };
+    rine_types::environment::set_var(&var_name, var_value.as_deref());
+    WinBool::TRUE
+}
+
+/// Set the value of an environment variable.
+///
+/// # Arguments
+/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable. The string is case-sensitive.
+/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable. If this parameter is NULL, the variable is deleted from the environment.
+///
+/// # Safety
+/// * `name` must be a valid pointer to a null-terminated string.
+/// * `value` must be null or a valid pointer to a null-terminated string.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is TRUE.
+/// If the function fails, the return value is FALSE.
+pub unsafe fn set_environment_variable_w(name: *const u16, value: *const u16) -> WinBool {
+    let var_name = match unsafe { read_wstr(name) } {
+        Some(n) => n,
+        None => return WinBool::FALSE,
+    };
+
+    let var_value = unsafe { read_wstr(value) };
+    rine_types::environment::set_var(&var_name, var_value.as_deref());
+    WinBool::TRUE
 }

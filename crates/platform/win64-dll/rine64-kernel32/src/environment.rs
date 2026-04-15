@@ -9,7 +9,6 @@ use rine_common_kernel32 as common;
 use rine_types::environment;
 use rine_types::errors::WinBool;
 use rine_types::strings::{read_cstr, read_wstr};
-use tracing::debug;
 
 /// Get the value of an environment variable.
 ///
@@ -73,51 +72,47 @@ pub unsafe extern "win64" fn GetEnvironmentVariableW(
     unsafe { common::environment::get_environment_variable_w(name, buffer, size) }
 }
 
-// ---------------------------------------------------------------------------
-// SetEnvironmentVariableA / W
-// ---------------------------------------------------------------------------
-
-/// SetEnvironmentVariableA — set or delete an environment variable (ANSI).
+/// Set the value of an environment variable.
 ///
-/// If `value` is NULL the variable is deleted. Returns TRUE on success.
+/// # Arguments
+/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable. The string is case-sensitive.
+/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable. If this parameter is NULL, the variable is deleted from the environment.
 ///
 /// # Safety
-/// `name` must be a valid null-terminated ANSI string.
-/// `value` must be null or a valid null-terminated ANSI string.
+/// * `name` must be a valid pointer to a null-terminated string.
+/// * `value` must be null or a valid pointer to a null-terminated string.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is TRUE.
+/// If the function fails, the return value is FALSE.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetEnvironmentVariableA(name: *const u8, value: *const u8) -> WinBool {
-    let var_name = match unsafe { read_cstr(name) } {
-        Some(n) => n,
-        None => return WinBool::FALSE,
-    };
-    let var_value = unsafe { read_cstr(value) };
-
-    debug!(name = %var_name, value = ?var_value, "SetEnvironmentVariableA");
-    environment::set_var(&var_name, var_value.as_deref());
-    WinBool::TRUE
+    unsafe { common::environment::set_environment_variable_a(name, value) }
 }
 
-/// SetEnvironmentVariableW — set or delete an environment variable (wide).
+/// Set the value of an environment variable.
+///
+/// # Arguments
+/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable. The string is case-sensitive.
+/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable. If this parameter is NULL, the variable is deleted from the environment.
 ///
 /// # Safety
-/// `name` must be a valid null-terminated UTF-16LE string.
-/// `value` must be null or a valid null-terminated UTF-16LE string.
+/// * `name` must be a valid pointer to a null-terminated string.
+/// * `value` must be null or a valid pointer to a null-terminated string.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is TRUE.
+/// If the function fails, the return value is FALSE.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetEnvironmentVariableW(
     name: *const u16,
     value: *const u16,
 ) -> WinBool {
-    let var_name = match unsafe { read_wstr(name) } {
-        Some(n) => n,
-        None => return WinBool::FALSE,
-    };
-    let var_value = unsafe { read_wstr(value) };
-
-    debug!(name = %var_name, value = ?var_value, "SetEnvironmentVariableW");
-    environment::set_var(&var_name, var_value.as_deref());
-    WinBool::TRUE
+    unsafe { common::environment::set_environment_variable_w(name, value) }
 }
 
 // ---------------------------------------------------------------------------
