@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-15T22:22:10.755861+00:00",
+  "generatedAt": "2026-04-15T23:39:48.291746+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -566,26 +566,26 @@
         {
           "name": "ExpandEnvironmentStringsA",
           "x64": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "environment::ExpandEnvironmentStringsA",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "environment::ExpandEnvironmentStringsA",
+            "status": "partial",
+            "symbol": "ExpandEnvironmentStringsA",
             "source": "kernel32 - environment.rs"
           }
         },
         {
           "name": "ExpandEnvironmentStringsW",
           "x64": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "environment::ExpandEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "environment::ExpandEnvironmentStringsW",
+            "status": "partial",
+            "symbol": "ExpandEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -2329,14 +2329,14 @@
   "totals": {
     "functions": 175,
     "x64": {
-      "implemented": 145,
-      "partial": 24,
+      "implemented": 143,
+      "partial": 26,
       "stubbed": 3,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 136,
-      "partial": 24,
+      "implemented": 134,
+      "partial": 26,
       "stubbed": 14,
       "unimplemented": 1
     }

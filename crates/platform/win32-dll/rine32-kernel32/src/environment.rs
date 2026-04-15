@@ -3,7 +3,6 @@ use std::sync::OnceLock;
 use rine_common_kernel32 as common;
 
 use rine_types::errors::WinBool;
-use rine_types::strings::{read_cstr, read_wstr};
 
 struct SyncPtr(*mut u16);
 unsafe impl Send for SyncPtr {}
@@ -119,57 +118,72 @@ pub unsafe extern "stdcall" fn SetEnvironmentVariableW(
     unsafe { common::environment::set_environment_variable_w(name, value) }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Expand environment-variable strings and replaces them with the values defined for the current user.
+/// For more information, see Environment Variables.
+///
+/// # Arguments
+/// * `src`: A pointer to a null-terminated string that contains environment-variable strings of the form `%VAR%`.
+///   The string is case-sensitive.
+/// * `dst`: A pointer to a buffer that receives the expanded string.
+///   If the buffer is not large enough to hold the expanded string, the function fails and returns the
+///   required buffer size, in characters, including the terminating null character.
+/// * `dst_size`: The size of the buffer pointed to by `dst`, in characters.
+///
+/// # Safety
+/// * `src` must be a valid pointer to a null-terminated string.
+/// * `dst` must be a valid pointer to a buffer of at least `dst_size` characters.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is the number of characters stored in the buffer,
+/// not including the terminating null character.
+/// If the buffer is too small to hold the expanded string, the return value is the size of the buffer required to hold
+/// the expanded string, including the terminating null character.
+/// If the function fails for any other reason, the return value is zero.
+/// To get extended error information, call GetLastError.
+/// Currently, this implementation does not set GetLastError on failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ExpandEnvironmentStringsA(
     src: *const u8,
     dst: *mut u8,
     dst_size: u32,
 ) -> u32 {
-    let input = match unsafe { read_cstr(src) } {
-        Some(s) => s,
-        None => return 0,
-    };
-
-    let expanded = rine_types::environment::expand_vars(&input);
-    let needed = expanded.len() as u32 + 1;
-
-    if dst.is_null() || dst_size < needed {
-        return needed;
-    }
-
-    unsafe {
-        core::ptr::copy_nonoverlapping(expanded.as_ptr(), dst, expanded.len());
-        *dst.add(expanded.len()) = 0;
-    }
-    needed
+    unsafe { common::environment::expand_environment_strings_a(src, dst, dst_size) }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Expand environment-variable strings and replaces them with the values defined for the current user.
+/// For more information, see Environment Variables.
+///
+/// # Arguments
+/// * `src`: A pointer to a null-terminated string that contains environment-variable strings of the form `%VAR%`.
+///   The string is case-sensitive.
+/// * `dst`: A pointer to a buffer that receives the expanded string.
+///   If the buffer is not large enough to hold the expanded string, the function fails and returns the
+///   required buffer size, in characters, including the terminating null character.
+/// * `dst_size`: The size of the buffer pointed to by `dst`, in characters.
+///
+/// # Safety
+/// * `src` must be a valid pointer to a null-terminated string.
+/// * `dst` must be a valid pointer to a buffer of at least `dst_size` characters.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is the number of characters stored in the buffer,
+/// not including the terminating null character.
+/// If the buffer is too small to hold the expanded string, the return value is the size of the buffer required to hold
+/// the expanded string, including the terminating null character.
+/// If the function fails for any other reason, the return value is zero.
+/// To get extended error information, call GetLastError.
+/// Currently, this implementation does not set GetLastError on failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ExpandEnvironmentStringsW(
     src: *const u16,
     dst: *mut u16,
     dst_size: u32,
 ) -> u32 {
-    let input = match unsafe { read_wstr(src) } {
-        Some(s) => s,
-        None => return 0,
-    };
-
-    let expanded = rine_types::environment::expand_vars(&input);
-    let encoded: Vec<u16> = expanded.encode_utf16().collect();
-    let needed = encoded.len() as u32 + 1;
-
-    if dst.is_null() || dst_size < needed {
-        return needed;
-    }
-
-    unsafe {
-        core::ptr::copy_nonoverlapping(encoded.as_ptr(), dst, encoded.len());
-        *dst.add(encoded.len()) = 0;
-    }
-    needed
+    unsafe { common::environment::expand_environment_strings_w(src, dst, dst_size) }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]

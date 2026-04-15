@@ -192,6 +192,14 @@ impl DllPlugin for Kernel32Plugin {
                 name: "GetEnvironmentVariableW",
                 func: as_win_api!(environment::GetEnvironmentVariableW),
             },
+            PartialExport {
+                name: "ExpandEnvironmentStringsA",
+                func: as_win_api!(environment::ExpandEnvironmentStringsA),
+            },
+            PartialExport {
+                name: "ExpandEnvironmentStringsW",
+                func: as_win_api!(environment::ExpandEnvironmentStringsW),
+            },
         ]
     }
 }
