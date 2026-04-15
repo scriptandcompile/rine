@@ -1,7 +1,7 @@
 //! MSVCRT CRT support functions needed during CRT startup.
 //!
 //! These are called by the MinGW CRT startup code before `main()` runs.
-//! Most are no-ops or minimal stubs for Phase 1.
+//! Most are no-ops or minimal stubs.
 
 use rine_common_msvcrt::{
     abort_process, amsg_exit, c_specific_handler_result, commode_ptr, errno_location,
@@ -101,7 +101,7 @@ pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
 /// _onexit — register a function to be called at exit.
 ///
 /// Stub: returns the function pointer (success) but does not actually
-/// register it for later calling. Full atexit support in a later phase.
+/// register it for later calling.
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
@@ -139,7 +139,7 @@ pub unsafe extern "win64" fn signal(
 
 /// _lock — acquire an internal CRT lock.
 ///
-/// No-op for single-threaded Phase 1.
+/// No-op for single-threaded.
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _lock(locknum: i32) {
@@ -148,7 +148,7 @@ pub unsafe extern "win64" fn _lock(locknum: i32) {
 
 /// _unlock — release an internal CRT lock.
 ///
-/// No-op for single-threaded Phase 1.
+/// No-op for single-threaded.
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _unlock(locknum: i32) {

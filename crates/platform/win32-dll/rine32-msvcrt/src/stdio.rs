@@ -8,7 +8,8 @@ use core::ffi::{c_char, c_int};
 
 /// printf — print formatted output to stdout.
 ///
-/// Stub implementation in Phase 1.
+/// Stub implementation for now; a production implementation would parse the format string and
+/// format the arguments accordingly.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn printf(_format: *const c_char) -> c_int {
     tracing::trace!("msvcrt::printf (stub)");

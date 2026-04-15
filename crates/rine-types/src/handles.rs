@@ -380,14 +380,14 @@ pub fn fd_to_handle(fd: i32) -> Handle {
 
 /// Decode a HANDLE back to a Linux fd.
 ///
-/// Tries the handle table first; falls back to the Phase-1 arithmetic
+/// Tries the handle table first; falls back to the arithmetic
 /// encoding for backwards compatibility.
 pub fn handle_to_fd(h: Handle) -> Option<i32> {
     // Try table first.
     if let Some(fd) = handle_table().get_fd(h) {
         return Some(fd);
     }
-    // Fallback: Phase-1 encoding.
+    // Fallback: arithmetic encoding.
     let raw = h.as_raw();
     if raw >= HANDLE_FD_BASE {
         Some((raw - HANDLE_FD_BASE) as i32)

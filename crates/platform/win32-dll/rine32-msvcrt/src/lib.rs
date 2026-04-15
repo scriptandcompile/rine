@@ -7,7 +7,7 @@
 //! - `memory`: malloc, calloc, realloc, free
 //! - `stdlib`: exit, _cexit
 //! - `string`: string and memory operations
-//! - `stdio`: formatted I/O (stubs in Phase 1)
+//! - `stdio`: formatted I/O
 
 use rine_common_msvcrt::{commode_ptr, fake_iob_32_ptr, fmode_ptr, initenv_ptr};
 use rine_dlls::{DllPlugin, Export, as_win_api};

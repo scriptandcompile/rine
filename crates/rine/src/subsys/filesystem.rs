@@ -45,7 +45,7 @@ pub enum PathError {
 
 /// Configurable drive mappings and path-translation options.
 ///
-/// Built from the per-app configuration (Phase 3) or sensible defaults.
+/// Built from the per-app configuration sensible defaults.
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct PathTranslator {

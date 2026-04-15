@@ -95,7 +95,7 @@ unsafe extern "C" {
 ///
 /// Minimal stub: writes the format string to the fd without substitution.
 /// Full variadic win64 → SysV ABI translation for fprintf requires runtime
-/// format string parsing, which is deferred to a later phase.
+/// format string parsing,
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn fprintf(
     stream: *mut u8, // FILE*

@@ -154,7 +154,7 @@ pub fn post_quit_message(exit_code: i32) {
 
 /// PostMessage — post a message to the thread message queue without waiting.
 ///
-/// Returns 1 always (errors are not surfaced in Phase 1).
+/// Returns 1 always.
 pub fn post_message(hwnd: usize, msg: u32, w_param: usize, l_param: isize) -> i32 {
     let message = Msg {
         hwnd: Hwnd::from_raw(hwnd),

@@ -8,7 +8,7 @@ use rine_common_msvcrt::{
 
 /// __set_app_type — set the application type (subsystem) for the CRT.
 ///
-/// This is a no-op in Phase 1; a production implementation would configure
+/// This is a no-op currently; a production implementation would configure
 /// CRT behavior based on whether the app is a console or GUI application.
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
@@ -19,7 +19,7 @@ pub unsafe extern "C" fn __set_app_type(app_type: i32) {
 
 /// __setusermatherr — set a custom math error handler.
 ///
-/// This is a no-op in Phase 1; a production implementation would let
+/// This is a no-op currently; a production implementation would let
 /// the user install a handler for floating-point errors.
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
@@ -31,7 +31,7 @@ pub unsafe extern "C" fn __setusermatherr(handler: usize) {
 /// __C_specific_handler — handle C SEH (Structured Exception Handling) exceptions.
 ///
 /// Returns a handler code (1 = continue execution, 0 = call next handler).
-/// This is a stub in Phase 1.
+/// This is a stub currently.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __C_specific_handler(
@@ -57,7 +57,7 @@ pub unsafe extern "C" fn __iob_func() -> *mut u8 {
 
 /// _onexit — register a function to be called at process exit.
 ///
-/// In Phase 1, this just returns the function pointer unchanged.
+/// Currently, this just returns the function pointer unchanged.
 /// A production implementation would add it to an atexit chain.
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
@@ -88,7 +88,7 @@ pub unsafe extern "C" fn abort() {
 
 /// signal — install a signal handler or get the current one.
 ///
-/// Returns the previous handler. This is a stub in Phase 1.
+/// Currently returns the previous handler.
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn signal(sig: i32, handler: usize) -> usize {
@@ -98,7 +98,7 @@ pub unsafe extern "C" fn signal(sig: i32, handler: usize) -> usize {
 
 /// _lock — acquire a CRT lock (for thread safety of stdio, malloc, etc.).
 ///
-/// In Phase 1, this is a no-op. A production implementation would use
+/// Currently, this is a no-op. A production implementation would use
 /// actual OS synchronization primitives.
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
@@ -109,7 +109,7 @@ pub unsafe extern "C" fn _lock(locknum: i32) {
 
 /// _unlock — release a CRT lock.
 ///
-/// In Phase 1, this is a no-op.
+/// Currently, this is a no-op.
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn _unlock(locknum: i32) {

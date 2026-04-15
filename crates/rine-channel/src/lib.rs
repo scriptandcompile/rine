@@ -33,7 +33,7 @@ pub enum DevEvent {
         total_resolved: usize,
         total_stubbed: usize,
     },
-    // ── Handle & thread tracking (phase 2) ───────────────────────
+    // ── Handle & thread tracking ───────────────────────
     HandleCreated {
         handle: i64,
         kind: String,
