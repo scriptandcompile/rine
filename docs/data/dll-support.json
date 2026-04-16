@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T22:19:54.814786+00:00",
+  "generatedAt": "2026-04-16T23:49:19.383396+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 82,
+      "functionCount": 84,
       "functions": [
         {
           "name": "CloseHandle",
@@ -625,6 +625,32 @@
           "x86": {
             "status": "implemented",
             "symbol": "file::FindFirstFileW",
+            "source": "kernel32 - file.rs"
+          }
+        },
+        {
+          "name": "FindNextFileA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "file::FindNextFileA",
+            "source": "kernel32 - file.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "file::FindNextFileA",
+            "source": "kernel32 - file.rs"
+          }
+        },
+        {
+          "name": "FindNextFileW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "file::FindNextFileW",
+            "source": "kernel32 - file.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "file::FindNextFileW",
             "source": "kernel32 - file.rs"
           }
         },
@@ -2366,15 +2392,15 @@
     }
   ],
   "totals": {
-    "functions": 178,
+    "functions": 180,
     "x64": {
-      "implemented": 134,
+      "implemented": 136,
       "partial": 34,
       "stubbed": 7,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 127,
+      "implemented": 129,
       "partial": 34,
       "stubbed": 17,
       "unimplemented": 0

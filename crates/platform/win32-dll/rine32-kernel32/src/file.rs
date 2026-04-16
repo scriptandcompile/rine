@@ -375,6 +375,60 @@ pub unsafe extern "stdcall" fn FindFirstFileW(
     }
 }
 
+/// Continue a directory search (ansi).
+///
+/// # Arguments
+/// * `handle` - A search handle returned by `FindFirstFileA`.
+/// * `find_data` - Output pointer for file data of the next matching file. Must point to a writable `WIN32_FIND_DATAA` structure.
+///
+/// # Safety
+/// `find_data` must point to a writable `WIN32_FIND_DATAA`.
+/// The caller is responsible for calling `FindClose` with the search handle when the search is finished.
+///
+/// # Returns
+/// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
+/// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn FindNextFileA(
+    find_file: isize,
+    find_data: *mut Win32FindDataA,
+) -> WinBool {
+    if find_data.is_null() {
+        return WinBool::FALSE;
+    }
+    let handle = Handle::from_raw(find_file);
+
+    unsafe { common::file::find_next_file_a(handle, find_data) }
+}
+
+/// Continue a directory search (wide).
+///
+/// # Arguments
+/// * `handle` - A search handle returned by `FindFirstFileW`.
+/// * `find_data` - Output pointer for file data of the next matching file. Must point to a writable `WIN32_FIND_DATAW` structure.
+///
+/// # Safety
+/// `find_data` must point to a writable `WIN32_FIND_DATAW`.
+/// The caller is responsible for calling `FindClose` with the search handle when the search is finished.
+///
+/// # Returns
+/// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
+/// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn FindNextFileW(
+    find_file: isize,
+    find_data: *mut Win32FindDataW,
+) -> WinBool {
+    if find_data.is_null() {
+        return WinBool::FALSE;
+    }
+    let handle = Handle::from_raw(find_file);
+
+    unsafe { common::file::find_next_file_w(handle, find_data) }
+}
+
 /// FindClose — close a search handle opened by FindFirstFile.
 ///
 /// # Arguments

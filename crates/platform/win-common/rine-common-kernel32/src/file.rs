@@ -398,6 +398,76 @@ pub unsafe fn find_first_file_w(file_path: &str, find_data: *mut Win32FindDataW)
     handle
 }
 
+/// Continue a directory search (ANSI).
+///
+/// # Arguments
+/// * `handle` - A search handle returned by `FindFirstFileA`.
+/// * `find_data` - Output pointer for file data of the next matching file. Must point to a writable `WIN32_FIND_DATAA` structure.
+///
+/// # Safety
+/// `find_data` must point to a writable `WIN32_FIND_DATAA`.
+/// The caller is responsible for calling `FindClose` with the search handle when the search is finished.
+///
+/// # Returns
+/// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
+/// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+#[unsafe(no_mangle)]
+pub unsafe fn find_next_file_a(handle: Handle, find_data: *mut Win32FindDataA) -> WinBool {
+    if find_data.is_null() {
+        return WinBool::FALSE;
+    }
+
+    let result = handle_table().with_find_data(handle, |state| {
+        if state.cursor >= state.entries.len() {
+            return false;
+        }
+        let entry = &state.entries[state.cursor];
+        unsafe { core::ptr::write(find_data, Win32FindDataA::from_entry(entry)) };
+        state.cursor += 1;
+        true
+    });
+
+    match result {
+        Some(true) => WinBool::TRUE,
+        _ => WinBool::FALSE,
+    }
+}
+
+/// Continue a directory search (wide).
+///
+/// # Arguments
+/// * `handle` - A search handle returned by `FindFirstFileW`.
+/// * `find_data` - Output pointer for file data of the next matching file. Must point to a writable `WIN32_FIND_DATAW` structure.
+///
+/// # Safety
+/// `find_data` must point to a writable `WIN32_FIND_DATAW`.
+/// The caller is responsible for calling `FindClose` with the search handle when the search is finished.
+///
+/// # Returns
+/// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
+/// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+#[unsafe(no_mangle)]
+pub unsafe fn find_next_file_w(handle: Handle, find_data: *mut Win32FindDataW) -> WinBool {
+    if find_data.is_null() {
+        return WinBool::FALSE;
+    }
+
+    let result = handle_table().with_find_data(handle, |state| {
+        if state.cursor >= state.entries.len() {
+            return false;
+        }
+        let entry = &state.entries[state.cursor];
+        unsafe { core::ptr::write(find_data, Win32FindDataW::from_entry(entry)) };
+        state.cursor += 1;
+        true
+    });
+
+    match result {
+        Some(true) => WinBool::TRUE,
+        _ => WinBool::FALSE,
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

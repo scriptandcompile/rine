@@ -4,7 +4,7 @@
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{
-    Handle, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE, Win32FindDataA, Win32FindDataW, handle_table,
+    Handle, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE, Win32FindDataA, Win32FindDataW,
 };
 use rine_types::strings::{read_cstr, read_wstr};
 
@@ -385,8 +385,20 @@ pub unsafe extern "win64" fn FindFirstFileW(
 // FindNextFileA / FindNextFileW
 // ---------------------------------------------------------------------------
 
-/// FindNextFileA — continue a directory search (ANSI).
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Continue a directory search (ansi).
+///
+/// # Arguments
+/// * `handle` - A search handle returned by `FindFirstFileA`.
+/// * `find_data` - Output pointer for file data of the next matching file. Must point to a writable `WIN32_FIND_DATAA` structure.
+///
+/// # Safety
+/// `find_data` must point to a writable `WIN32_FIND_DATAA`.
+/// The caller is responsible for calling `FindClose` with the search handle when the search is finished.
+///
+/// # Returns
+/// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
+/// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindNextFileA(
     find_file: isize,
@@ -397,24 +409,23 @@ pub unsafe extern "win64" fn FindNextFileA(
     }
     let handle = Handle::from_raw(find_file);
 
-    let result = handle_table().with_find_data(handle, |state| {
-        if state.cursor >= state.entries.len() {
-            return false;
-        }
-        let entry = &state.entries[state.cursor];
-        unsafe { core::ptr::write(find_data, Win32FindDataA::from_entry(entry)) };
-        state.cursor += 1;
-        true
-    });
-
-    match result {
-        Some(true) => WinBool::TRUE,
-        _ => WinBool::FALSE,
-    }
+    unsafe { common::file::find_next_file_a(handle, find_data) }
 }
 
-/// FindNextFileW — continue a directory search (wide).
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Continue a directory search (wide).
+///
+/// # Arguments
+/// * `handle` - A search handle returned by `FindFirstFileW`.
+/// * `find_data` - Output pointer for file data of the next matching file. Must point to a writable `WIN32_FIND_DATAW` structure.
+///
+/// # Safety
+/// `find_data` must point to a writable `WIN32_FIND_DATAW`.
+/// The caller is responsible for calling `FindClose` with the search handle when the search is finished.
+///
+/// # Returns
+/// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
+/// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindNextFileW(
     find_file: isize,
@@ -425,20 +436,7 @@ pub unsafe extern "win64" fn FindNextFileW(
     }
     let handle = Handle::from_raw(find_file);
 
-    let result = handle_table().with_find_data(handle, |state| {
-        if state.cursor >= state.entries.len() {
-            return false;
-        }
-        let entry = &state.entries[state.cursor];
-        unsafe { core::ptr::write(find_data, Win32FindDataW::from_entry(entry)) };
-        state.cursor += 1;
-        true
-    });
-
-    match result {
-        Some(true) => WinBool::TRUE,
-        _ => WinBool::FALSE,
-    }
+    unsafe { common::file::find_next_file_w(handle, find_data) }
 }
 
 /// FindClose — close a search handle opened by FindFirstFile.
