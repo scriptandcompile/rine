@@ -2,25 +2,9 @@
 //! SetEnvironmentVariableA/W, ExpandEnvironmentStringsA/W,
 //! GetEnvironmentStringsW, FreeEnvironmentStringsW.
 
-use std::sync::OnceLock;
-
 use rine_common_kernel32 as common;
 
-use rine_types::environment;
 use rine_types::errors::WinBool;
-
-/// Thin wrapper so a raw pointer can live in a `static OnceLock`.
-/// Cached wide environment block for `GetEnvironmentStringsW`.
-///
-/// In a real Windows process this block is built at startup and freed by
-/// `FreeEnvironmentStrings`. We use a `OnceLock` so the first call builds
-/// the block and subsequent calls return the same pointer. The block is
-/// leaked intentionally — it lives for the process lifetime.
-struct SyncPtr(*mut u16);
-unsafe impl Send for SyncPtr {}
-unsafe impl Sync for SyncPtr {}
-
-static ENV_BLOCK_W: OnceLock<SyncPtr> = OnceLock::new();
 
 /// Get the value of an environment variable.
 ///
@@ -195,24 +179,42 @@ pub unsafe extern "win64" fn ExpandEnvironmentStringsW(
     unsafe { common::environment::expand_environment_strings_w(src, dst, dst_size) }
 }
 
-/// GetEnvironmentStringsW — return a pointer to the wide environment block.
-///
-/// The returned pointer is a null-separated, double-null terminated block
-/// of `NAME=value` entries. The caller is expected to free it with
-/// `FreeEnvironmentStringsW`, but our implementation leaks intentionally.
+/// Get the environment strings for the current process.
 ///
 /// # Safety
-/// The returned pointer is valid for the process lifetime.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to a block of environment strings for the current process.
+/// The block is a null-terminated block of null-terminated strings.
+/// The last string is followed by a null character.
+/// The block should be freed using FreeEnvironmentStringsA when it is no longer needed.
+/// Currently, this implementation returns a pointer to a static block of environment strings that is intended to live for
+/// the duration of the process, so it does not actually allocate or free any memory, and the FreeEnvironmentStringsA
+/// function is a no-op.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn GetEnvironmentStrings() -> *mut u8 {
+    unsafe { common::environment::get_environment_strings() }
+}
+
+/// Get the environment strings for the current process.
+///
+/// # Safety
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to a block of environment strings for the current process.
+/// The block is a null-terminated block of null-terminated strings.
+/// The last string is followed by a null character.
+/// The block should be freed using FreeEnvironmentStringsW when it is no longer needed.
+/// Currently, this implementation returns a pointer to a static block of environment strings that is intended to live for
+/// the duration of the process, so it does not actually allocate or free any memory, and the FreeEnvironmentStringsW
+/// function is a no-op.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentStringsW() -> *mut u16 {
-    ENV_BLOCK_W
-        .get_or_init(|| {
-            let block = environment::build_wide_block();
-            let boxed = block.into_boxed_slice();
-            SyncPtr(Box::into_raw(boxed) as *mut u16)
-        })
-        .0
+    unsafe { common::environment::get_environment_strings_w() }
 }
 
 /// Free a block of environment strings returned by the GetEnvironmentStringsA function.

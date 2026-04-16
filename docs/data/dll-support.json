@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T01:50:09.089972+00:00",
+  "generatedAt": "2026-04-16T02:17:53.395887+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 80,
+      "functionCount": 81,
       "functions": [
         {
           "name": "CloseHandle",
@@ -567,7 +567,7 @@
           "name": "ExpandEnvironmentStringsA",
           "x64": {
             "status": "partial",
-            "symbol": "environment::ExpandEnvironmentStringsA",
+            "symbol": "ExpandEnvironmentStringsA",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
@@ -580,7 +580,7 @@
           "name": "ExpandEnvironmentStringsW",
           "x64": {
             "status": "partial",
-            "symbol": "environment::ExpandEnvironmentStringsW",
+            "symbol": "ExpandEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
@@ -636,21 +636,21 @@
             "source": "kernel32 - environment.rs"
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "FreeEnvironmentStringsA",
-            "source": "kernel32 - environment.rs"
+            "status": "unimplemented",
+            "symbol": null,
+            "source": null
           }
         },
         {
           "name": "FreeEnvironmentStringsW",
           "x64": {
             "status": "partial",
-            "symbol": "environment::FreeEnvironmentStringsW",
+            "symbol": "FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "environment::FreeEnvironmentStringsW",
+            "symbol": "FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -746,15 +746,28 @@
           }
         },
         {
-          "name": "GetEnvironmentStringsW",
+          "name": "GetEnvironmentStrings",
           "x64": {
-            "status": "implemented",
-            "symbol": "environment::GetEnvironmentStringsW",
+            "status": "partial",
+            "symbol": "GetEnvironmentStrings",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "environment::GetEnvironmentStringsW",
+            "status": "partial",
+            "symbol": "GetEnvironmentStrings",
+            "source": "kernel32 - environment.rs"
+          }
+        },
+        {
+          "name": "GetEnvironmentStringsW",
+          "x64": {
+            "status": "partial",
+            "symbol": "GetEnvironmentStringsW",
+            "source": "kernel32 - environment.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "GetEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -2340,18 +2353,18 @@
     }
   ],
   "totals": {
-    "functions": 176,
+    "functions": 177,
     "x64": {
-      "implemented": 144,
-      "partial": 26,
+      "implemented": 143,
+      "partial": 28,
       "stubbed": 3,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 134,
-      "partial": 25,
-      "stubbed": 16,
-      "unimplemented": 1
+      "implemented": 133,
+      "partial": 27,
+      "stubbed": 15,
+      "unimplemented": 2
     }
   }
 }

@@ -117,22 +117,6 @@ impl DllPlugin for Kernel32Plugin {
                 "SetEnvironmentVariableW",
                 as_win_api!(environment::SetEnvironmentVariableW),
             ),
-            Export::Func(
-                "ExpandEnvironmentStringsA",
-                as_win_api!(environment::ExpandEnvironmentStringsA),
-            ),
-            Export::Func(
-                "ExpandEnvironmentStringsW",
-                as_win_api!(environment::ExpandEnvironmentStringsW),
-            ),
-            Export::Func(
-                "GetEnvironmentStringsW",
-                as_win_api!(environment::GetEnvironmentStringsW),
-            ),
-            Export::Func(
-                "FreeEnvironmentStringsW",
-                as_win_api!(environment::FreeEnvironmentStringsW),
-            ),
             Export::Func("GetVersion", as_win_api!(version::GetVersion)),
             Export::Func("GetVersionExA", as_win_api!(version::GetVersionExA)),
             Export::Func("GetVersionExW", as_win_api!(version::GetVersionExW)),
@@ -158,6 +142,14 @@ impl DllPlugin for Kernel32Plugin {
 
     fn partials(&self) -> Vec<PartialExport> {
         vec![
+            PartialExport {
+                name: "GetEnvironmentStrings",
+                func: as_win_api!(environment::GetEnvironmentStrings),
+            },
+            PartialExport {
+                name: "GetEnvironmentStringsW",
+                func: as_win_api!(environment::GetEnvironmentStringsW),
+            },
             PartialExport {
                 name: "FreeEnvironmentStringsW",
                 func: as_win_api!(environment::FreeEnvironmentStringsW),

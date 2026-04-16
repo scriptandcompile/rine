@@ -122,14 +122,6 @@ impl DllPlugin for Kernel32Plugin32 {
                 "SetEnvironmentVariableW",
                 as_win_api!(environment::SetEnvironmentVariableW),
             ),
-            Export::Func(
-                "GetEnvironmentStringsW",
-                as_win_api!(environment::GetEnvironmentStringsW),
-            ),
-            Export::Func(
-                "FreeEnvironmentStringsW",
-                as_win_api!(environment::FreeEnvironmentStringsW),
-            ),
             Export::Func("GetVersion", as_win_api!(version::GetVersion)),
             Export::Func("GetVersionExA", as_win_api!(version::GetVersionExA)),
             Export::Func("GetVersionExW", as_win_api!(version::GetVersionExW)),
@@ -155,10 +147,6 @@ impl DllPlugin for Kernel32Plugin32 {
                 func: as_win_api!(memory::VirtualQuery),
             },
             StubExport {
-                name: "FreeEnvironmentStringsA",
-                func: as_win_api!(environment::FreeEnvironmentStringsA),
-            },
-            StubExport {
                 name: "FreeEnvironmentStringsW",
                 func: as_win_api!(environment::FreeEnvironmentStringsW),
             },
@@ -167,10 +155,6 @@ impl DllPlugin for Kernel32Plugin32 {
 
     fn partials(&self) -> Vec<PartialExport> {
         vec![
-            PartialExport {
-                name: "FreeEnvironmentStringsW",
-                func: as_win_api!(environment::FreeEnvironmentStringsW),
-            },
             PartialExport {
                 name: "HeapCreate",
                 func: as_win_api!(memory::HeapCreate),
@@ -202,6 +186,14 @@ impl DllPlugin for Kernel32Plugin32 {
             PartialExport {
                 name: "WriteConsoleW",
                 func: as_win_api!(console::WriteConsoleW),
+            },
+            PartialExport {
+                name: "GetEnvironmentStrings",
+                func: as_win_api!(environment::GetEnvironmentStrings),
+            },
+            PartialExport {
+                name: "GetEnvironmentStringsW",
+                func: as_win_api!(environment::GetEnvironmentStringsW),
             },
             PartialExport {
                 name: "GetEnvironmentVariableA",
