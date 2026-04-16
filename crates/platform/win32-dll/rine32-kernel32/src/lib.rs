@@ -43,7 +43,6 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("DeleteFileA", as_win_api!(file::DeleteFileA)),
             Export::Func("DeleteFileW", as_win_api!(file::DeleteFileW)),
             Export::Func("GetFileSize", as_win_api!(file::GetFileSize)),
-            Export::Func("SetFilePointer", as_win_api!(file::SetFilePointer)),
             Export::Func("FindClose", as_win_api!(file::FindClose)),
             Export::Func("GetStdHandle", as_win_api!(console::GetStdHandle)),
             Export::Func("GetProcessHeap", as_win_api!(memory::GetProcessHeap)),
@@ -153,6 +152,10 @@ impl DllPlugin for Kernel32Plugin32 {
 
     fn partials(&self) -> Vec<PartialExport> {
         vec![
+            PartialExport {
+                name: "SetFilePointer",
+                func: as_win_api!(file::SetFilePointer),
+            },
             PartialExport {
                 name: "CloseHandle",
                 func: as_win_api!(file::CloseHandle),

@@ -289,7 +289,14 @@ pub unsafe extern "stdcall" fn CloseHandle(object: isize) -> WinBool {
 /// * `file` must be a valid file handle returned by `CreateFile`.
 /// * `distance_to_move_high` must be null or point to a valid i32 variable if `distance_to_move` is negative
 ///   or the distance exceeds 2GB.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+///
+/// # Returns
+/// The low 32 bits of the new file pointer on success, or INVALID_SET_FILE_POINTER (0xFFFFFFFF) on failure.
+/// If the return value is INVALID_SET_FILE_POINTER, the caller should call `GetLastError` to determine
+/// if an error occurred or if the new file pointer is actually at 0xFFFFFFFF.
+/// Currently, this implementation does not set the error code, so it will return INVALID_SET_FILE_POINTER on
+/// failure and 0xFFFFFFFF on success if the new file pointer is exactly 0xFFFFFFFF.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetFilePointer(
     file: isize,

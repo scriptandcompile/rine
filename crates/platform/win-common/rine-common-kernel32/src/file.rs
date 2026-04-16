@@ -41,10 +41,10 @@ pub unsafe fn write_file(
     WinBool::TRUE
 }
 
-/// Implementation of shared SetFilePointer logic for 32-bit and 64-bit DLLs.
+/// SetFilePointer — move the file pointer for a file handle.
 ///
 /// # Arguments
-/// * `handle`: Windows file handle (must have been created by CreateFile).
+/// * `file` - The file handle whose pointer to move.
 /// * `distance_to_move` - The low 32 bits of the distance to move, in bytes. Can be negative to move backwards.
 /// * `distance_to_move_high` - Optional pointer to the high 32 bits of the distance to move.
 ///   If non-null, this is an input/output parameter that should be initialized to the high bits of the distance
@@ -55,6 +55,13 @@ pub unsafe fn write_file(
 /// * `file` must be a valid file handle returned by `CreateFile`.
 /// * `distance_to_move_high` must be null or point to a valid i32 variable if `distance_to_move` is negative
 ///   or the distance exceeds 2GB.
+///
+/// # Returns
+/// The low 32 bits of the new file pointer on success, or INVALID_SET_FILE_POINTER (0xFFFFFFFF) on failure.
+/// If the return value is INVALID_SET_FILE_POINTER, the caller should call `GetLastError` to determine
+/// if an error occurred or if the new file pointer is actually at 0xFFFFFFFF.
+/// Currently, this implementation does not set the error code, so it will return INVALID_SET_FILE_POINTER on
+/// failure and 0xFFFFFFFF on success if the new file pointer is exactly 0xFFFFFFFF.
 pub unsafe fn set_file_pointer(
     handle: Handle,
     distance_to_move: i32,           // low 32 bits
