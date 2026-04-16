@@ -168,7 +168,7 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
 /// * `win_path`: Windows-style file path (e.g. `C:\foo\bar.txt`).
 ///
 /// # Returns
-/// `TRUE` if the file was successfully deleted, `FALSE` if an error occurred (e.g. file not found).
+/// `WinBool::TRUE` if the file was successfully deleted, `WinBool::FALSE` if an error occurred (e.g. file not found).
 pub fn delete_file(win_path: &str) -> WinBool {
     tracing::debug!(path = win_path, "DeleteFile");
 

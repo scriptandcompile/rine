@@ -99,8 +99,15 @@ pub unsafe extern "win64" fn CreateFileW(
 
 /// DeleteFileW — delete a file (wide/UTF-16 path).
 ///
+/// # Arguments
+/// * `file_name`: pointer to a null-terminated UTF-16LE string with the file path.
+///
 /// # Safety
 /// `file_name` must be a valid null-terminated UTF-16LE string.
+/// The caller must ensure that the file path is valid and that the file can be deleted.
+///
+/// # Returns
+/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn DeleteFileW(file_name: *const u16) -> WinBool {
@@ -115,8 +122,15 @@ pub unsafe extern "win64" fn DeleteFileW(file_name: *const u16) -> WinBool {
 
 /// DeleteFileA — delete a file (ANSI path).
 ///
+/// # Arguments
+/// * `file_name`: pointer to a null-terminated ANSI string with the file path.
+///
 /// # Safety
 /// `file_name` must be a valid null-terminated ANSI string.
+/// The caller must ensure that the file path is valid and that the file can be deleted.
+///
+/// # Returns
+/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn DeleteFileA(file_name: *const u8) -> WinBool {
