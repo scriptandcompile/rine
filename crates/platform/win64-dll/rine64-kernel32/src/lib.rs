@@ -146,6 +146,10 @@ impl DllPlugin for Kernel32Plugin {
                 func: as_win_api!(memory::VirtualQuery),
             },
             StubExport {
+                name: "FreeEnvironmentStringsA",
+                func: as_win_api!(environment::FreeEnvironmentStringsA),
+            },
+            StubExport {
                 name: "FreeEnvironmentStringsW",
                 func: as_win_api!(environment::FreeEnvironmentStringsW),
             },

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T00:00:11.052211+00:00",
+  "generatedAt": "2026-04-16T01:50:09.089972+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 79,
+      "functionCount": 80,
       "functions": [
         {
           "name": "CloseHandle",
@@ -626,6 +626,19 @@
             "status": "implemented",
             "symbol": "file::FlushFileBuffers",
             "source": "kernel32 - file.rs"
+          }
+        },
+        {
+          "name": "FreeEnvironmentStringsA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "FreeEnvironmentStringsA",
+            "source": "kernel32 - environment.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "FreeEnvironmentStringsA",
+            "source": "kernel32 - environment.rs"
           }
         },
         {
@@ -2327,9 +2340,9 @@
     }
   ],
   "totals": {
-    "functions": 175,
+    "functions": 176,
     "x64": {
-      "implemented": 143,
+      "implemented": 144,
       "partial": 26,
       "stubbed": 3,
       "unimplemented": 3
@@ -2337,7 +2350,7 @@
     "x86": {
       "implemented": 134,
       "partial": 25,
-      "stubbed": 15,
+      "stubbed": 16,
       "unimplemented": 1
     }
   }

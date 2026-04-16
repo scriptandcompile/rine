@@ -198,6 +198,28 @@ pub unsafe extern "stdcall" fn GetEnvironmentStringsW() -> *mut u16 {
         .0
 }
 
+/// Free a block of environment strings returned by the GetEnvironmentStringsA function.
+///
+/// # Arguments
+/// * `_block`: A pointer to the environment block returned by the GetEnvironmentStringsA function. This parameter must not be NULL.
+///   Currently, this implementation does not actually free any memory, as the environment block is stored in a static variable
+///   and is intended to live for the duration of the program. This stub currently always returns `WinBool::TRUE` and does not perform
+///   any error checking, but in a more complete implementation, it should check if the provided pointer matches the one stored in
+///   `ENV_BLOCK_W` and return `WinBool::FALSE` if it does not, or if the pointer is NULL.
+///
+/// # Safety
+/// * `_block` must be a valid pointer returned by GetEnvironmentStringsA and must not be NULL.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is TRUE.
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn FreeEnvironmentStringsA(_block: *mut u8) -> WinBool {
+    // No-op: the block is leaked for the process lifetime.
+    WinBool::TRUE
+}
+
 /// Free a block of environment strings returned by the GetEnvironmentStringsW function.
 ///
 /// # Arguments
