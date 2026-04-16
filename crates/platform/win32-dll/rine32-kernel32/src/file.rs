@@ -319,6 +319,12 @@ pub unsafe extern "stdcall" fn SetFilePointer(
 /// # Safety
 /// * `find_file` must be a valid search handle returned by `FindFirstFile`.
 /// * After this call, `find_file` must not be used again.
+///
+/// # Returns
+/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+///
+/// # Note
+/// This implementation does not set the error code and will currently always return `WinBool::TRUE` at the moment.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindClose(find_file: isize) -> WinBool {

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T21:01:03.188669+00:00",
+  "generatedAt": "2026-04-16T21:07:16.134658+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -592,13 +592,13 @@
         {
           "name": "FindClose",
           "x64": {
-            "status": "implemented",
-            "symbol": "file::FindClose",
+            "status": "stubbed",
+            "symbol": "FindClose",
             "source": "kernel32 - file.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "file::FindClose",
+            "status": "stubbed",
+            "symbol": "FindClose",
             "source": "kernel32 - file.rs"
           }
         },
@@ -2355,15 +2355,15 @@
   "totals": {
     "functions": 177,
     "x64": {
-      "implemented": 134,
+      "implemented": 133,
       "partial": 34,
-      "stubbed": 6,
+      "stubbed": 7,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 126,
+      "implemented": 125,
       "partial": 34,
-      "stubbed": 16,
+      "stubbed": 17,
       "unimplemented": 1
     }
   }

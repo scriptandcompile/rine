@@ -215,6 +215,7 @@ pub fn close_handle(handle: Handle) -> WinBool {
         None => WinBool::FALSE,
     }
 }
+
 /// Delete a file at the given Windows path.
 ///
 /// # Arguments

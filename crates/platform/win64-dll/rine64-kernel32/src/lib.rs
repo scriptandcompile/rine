@@ -38,7 +38,6 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("DeleteFileW", as_win_api!(file::DeleteFileW)),
             Export::Func("GetFileSize", as_win_api!(file::GetFileSize)),
             Export::Func("FindFirstFileA", as_win_api!(file::FindFirstFileA)),
-            Export::Func("FindClose", as_win_api!(file::FindClose)),
             Export::Func("GetStdHandle", as_win_api!(console::GetStdHandle)),
             Export::Func("GetProcessHeap", as_win_api!(memory::GetProcessHeap)),
             Export::Func("HeapDestroy", as_win_api!(memory::HeapDestroy)),
@@ -118,6 +117,10 @@ impl DllPlugin for Kernel32Plugin {
 
     fn stubs(&self) -> Vec<StubExport> {
         vec![
+            StubExport {
+                name: "FindClose",
+                func: as_win_api!(file::FindClose),
+            },
             StubExport {
                 name: "VirtualQuery",
                 func: as_win_api!(memory::VirtualQuery),
