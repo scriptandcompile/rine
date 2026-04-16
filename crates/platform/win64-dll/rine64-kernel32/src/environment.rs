@@ -9,6 +9,19 @@ use rine_common_kernel32 as common;
 use rine_types::environment;
 use rine_types::errors::WinBool;
 
+/// Thin wrapper so a raw pointer can live in a `static OnceLock`.
+/// Cached wide environment block for `GetEnvironmentStringsW`.
+///
+/// In a real Windows process this block is built at startup and freed by
+/// `FreeEnvironmentStrings`. We use a `OnceLock` so the first call builds
+/// the block and subsequent calls return the same pointer. The block is
+/// leaked intentionally — it lives for the process lifetime.
+struct SyncPtr(*mut u16);
+unsafe impl Send for SyncPtr {}
+unsafe impl Sync for SyncPtr {}
+
+static ENV_BLOCK_W: OnceLock<SyncPtr> = OnceLock::new();
+
 /// Get the value of an environment variable.
 ///
 /// # Arguments
@@ -182,24 +195,6 @@ pub unsafe extern "win64" fn ExpandEnvironmentStringsW(
     unsafe { common::environment::expand_environment_strings_w(src, dst, dst_size) }
 }
 
-// ---------------------------------------------------------------------------
-// GetEnvironmentStringsW / FreeEnvironmentStringsW
-// ---------------------------------------------------------------------------
-
-// Cached wide environment block for `GetEnvironmentStringsW`.
-//
-// In a real Windows process this block is built at startup and freed by
-// `FreeEnvironmentStrings`. We use a `OnceLock` so the first call builds
-// the block and subsequent calls return the same pointer. The block is
-// leaked intentionally — it lives for the process lifetime.
-
-/// Thin wrapper so a raw pointer can live in a `static OnceLock`.
-struct SyncPtr(*mut u16);
-unsafe impl Send for SyncPtr {}
-unsafe impl Sync for SyncPtr {}
-
-static ENV_BLOCK_W: OnceLock<SyncPtr> = OnceLock::new();
-
 /// GetEnvironmentStringsW — return a pointer to the wide environment block.
 ///
 /// The returned pointer is a null-separated, double-null terminated block
@@ -220,14 +215,21 @@ pub unsafe extern "win64" fn GetEnvironmentStringsW() -> *mut u16 {
         .0
 }
 
-/// FreeEnvironmentStringsW — free a block returned by
-/// `GetEnvironmentStringsW`.
+/// Free a block of environment strings returned by the GetEnvironmentStringsW function.
 ///
-/// Our implementation is a no-op (the block is leaked on purpose).
+/// # Arguments
+/// * `_block`: A pointer to the environment block returned by the GetEnvironmentStringsW function. This parameter must not be NULL.
+///   Currently, this implementation does not actually free any memory, as the environment block is stored in a static variable
+///   and is intended to live for the duration of the program. This stub currently always returns `WinBool::TRUE` and does not perform
+///   any error checking, but in a more complete implementation, it should check if the provided pointer matches the one stored in
+///   `ENV_BLOCK_W` and return `WinBool::FALSE` if it does not, or if the pointer is NULL.
 ///
 /// # Safety
-/// `block` should be a pointer previously returned by
-/// `GetEnvironmentStringsW` (or NULL).
+/// * `_block` must be a valid pointer returned by GetEnvironmentStringsW and must not be NULL.
+/// * The function does not perform any synchronization; the caller must ensure that concurrent calls do not cause data races.
+///
+/// # Returns
+/// If the function succeeds, the return value is TRUE.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FreeEnvironmentStringsW(_block: *mut u16) -> WinBool {

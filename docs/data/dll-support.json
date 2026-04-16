@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-15T23:39:48.291746+00:00",
+  "generatedAt": "2026-04-16T00:00:11.052211+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -636,7 +636,7 @@
             "source": "kernel32 - environment.rs"
           },
           "x86": {
-            "status": "partial",
+            "status": "stubbed",
             "symbol": "environment::FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           }
@@ -2336,8 +2336,8 @@
     },
     "x86": {
       "implemented": 134,
-      "partial": 26,
-      "stubbed": 14,
+      "partial": 25,
+      "stubbed": 15,
       "unimplemented": 1
     }
   }

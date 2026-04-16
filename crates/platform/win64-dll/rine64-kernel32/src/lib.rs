@@ -140,10 +140,16 @@ impl DllPlugin for Kernel32Plugin {
     }
 
     fn stubs(&self) -> Vec<StubExport> {
-        vec![StubExport {
-            name: "VirtualQuery",
-            func: as_win_api!(memory::VirtualQuery),
-        }]
+        vec![
+            StubExport {
+                name: "VirtualQuery",
+                func: as_win_api!(memory::VirtualQuery),
+            },
+            StubExport {
+                name: "FreeEnvironmentStringsW",
+                func: as_win_api!(environment::FreeEnvironmentStringsW),
+            },
+        ]
     }
 
     fn partials(&self) -> Vec<PartialExport> {
