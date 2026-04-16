@@ -1,5 +1,7 @@
 use rine_common_kernel32 as common;
-use rine_types::handles::{Handle, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE};
+use rine_types::handles::{
+    Handle, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE, Win32FindDataA, Win32FindDataW,
+};
 use rine_types::{
     errors::WinBool,
     strings::{read_cstr, read_wstr},
@@ -308,6 +310,68 @@ pub unsafe extern "stdcall" fn SetFilePointer(
 
     unsafe {
         common::file::set_file_pointer(handle, distance_to_move, distance_to_move_high, move_method)
+    }
+}
+/// Begin searching for files matching a pattern (ansi).
+///
+/// # Arguments
+/// * `file_path` - Windows-style file path with optional wildcards (e.g. `C:\foo\*.txt`).
+/// * `find_data` - Output pointer for file data of the first matching file. Must point to a writable `WIN32_FIND_DATAA` structure.
+///
+/// # Safety
+/// `find_data` must point to a writable `WIN32_FIND_DATAA`.
+/// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
+///
+/// # Returns
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `INVALID_HANDLE_VALUE` if no
+/// matching files were found or an error occurred.
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn FindFirstFileA(
+    file_name: *const u8,
+    find_data: *mut Win32FindDataA,
+) -> isize {
+    if file_name.is_null() {
+        return INVALID_HANDLE_VALUE.as_raw();
+    }
+
+    unsafe {
+        let Some(path_str) = read_cstr(file_name) else {
+            return INVALID_HANDLE_VALUE.as_raw();
+        };
+
+        common::file::find_first_file_a(&path_str, find_data).as_raw()
+    }
+}
+
+/// Begin searching for files matching a pattern (wide).
+///
+/// # Arguments
+/// * `file_path` - Windows-style file path with optional wildcards (e.g. `C:\foo\*.txt`).
+/// * `find_data` - Output pointer for file data of the first matching file. Must point to a writable `WIN32_FIND_DATAW` structure.
+///
+/// # Safety
+/// `find_data` must point to a writable `WIN32_FIND_DATAW`.
+/// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
+///
+/// # Returns
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `INVALID_HANDLE_VALUE` if no
+/// matching files were found or an error occurred.
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn FindFirstFileW(
+    file_name: *const u16,
+    find_data: *mut Win32FindDataW,
+) -> isize {
+    if file_name.is_null() {
+        return INVALID_HANDLE_VALUE.as_raw();
+    }
+    unsafe {
+        let Some(path_str) = read_wstr(file_name) else {
+            return INVALID_HANDLE_VALUE.as_raw();
+        };
+
+        common::file::find_first_file_w(&path_str, find_data).as_raw()
     }
 }
 

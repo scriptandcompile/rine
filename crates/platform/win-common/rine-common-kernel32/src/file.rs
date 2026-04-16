@@ -1,9 +1,10 @@
 use rine_types::{
     errors::WinBool,
     handles::{
-        CREATE_ALWAYS, CREATE_NEW, FILE_BEGIN, FILE_CURRENT, FILE_END, GENERIC_READ, GENERIC_WRITE,
-        Handle, HandleEntry, INVALID_HANDLE_VALUE, INVALID_SET_FILE_POINTER, OPEN_ALWAYS,
-        OPEN_EXISTING, TRUNCATE_EXISTING, handle_table, handle_to_fd, std_handle_to_fd,
+        CREATE_ALWAYS, CREATE_NEW, FILE_BEGIN, FILE_CURRENT, FILE_END, FindDataState, GENERIC_READ,
+        GENERIC_WRITE, Handle, HandleEntry, INVALID_HANDLE_VALUE, INVALID_SET_FILE_POINTER,
+        OPEN_ALWAYS, OPEN_EXISTING, TRUNCATE_EXISTING, Win32FindDataA, Win32FindDataW,
+        collect_find_entries, handle_table, handle_to_fd, split_find_path, std_handle_to_fd,
     },
 };
 
@@ -317,6 +318,84 @@ pub unsafe fn read_file(
         unsafe { *bytes_read = read as u32 };
     }
     WinBool::TRUE
+}
+
+/// Begin searching for files matching a pattern (ANSI).
+///
+/// # Arguments
+/// * `file_path` - Windows-style file path with optional wildcards (e.g. `C:\foo\*.txt`).
+/// * `find_data` - Output pointer for file data of the first matching file. Must point to a writable `WIN32_FIND_DATAA` structure.
+///
+/// # Safety
+/// `find_data` must point to a writable `WIN32_FIND_DATAA`.
+/// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
+///
+/// # Returns
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `INVALID_HANDLE_VALUE` if no
+/// matching files were found or an error occurred.
+pub unsafe fn find_first_file_a(file_path: &str, find_data: *mut Win32FindDataA) -> Handle {
+    if find_data.is_null() {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    let (dir_part, pattern) = split_find_path(file_path);
+
+    let linux_dir = translate_find_dir(dir_part);
+    let entries = collect_find_entries(&linux_dir, pattern);
+    if entries.is_empty() {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    // Write the first entry.
+    unsafe { core::ptr::write(find_data, Win32FindDataA::from_entry(&entries[0])) };
+
+    let handle = handle_table().insert(HandleEntry::FindData(FindDataState { entries, cursor: 1 }));
+    rine_types::dev_notify!(on_handle_created(
+        handle.as_raw() as i64,
+        "FindData",
+        file_path
+    ));
+
+    handle
+}
+
+/// Begin searching for files matching a pattern (wide).
+///
+/// # Arguments
+/// * `file_path` - Windows-style file path with optional wildcards (e.g. `C:\foo\*.txt`).
+/// * `find_data` - Output pointer for file data of the first matching file. Must point to a writable `WIN32_FIND_DATAW` structure.
+///
+/// # Safety
+/// `find_data` must point to a writable `WIN32_FIND_DATAW`.
+/// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
+///
+/// # Returns
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `INVALID_HANDLE_VALUE` if no
+/// matching files were found or an error occurred.
+pub unsafe fn find_first_file_w(file_path: &str, find_data: *mut Win32FindDataW) -> Handle {
+    if find_data.is_null() {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    let (dir_part, pattern) = split_find_path(file_path);
+
+    let linux_dir = translate_find_dir(dir_part);
+    let entries = collect_find_entries(&linux_dir, pattern);
+    if entries.is_empty() {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    // Write the first entry.
+    unsafe { core::ptr::write(find_data, Win32FindDataW::from_entry(&entries[0])) };
+
+    let handle = handle_table().insert(HandleEntry::FindData(FindDataState { entries, cursor: 1 }));
+    rine_types::dev_notify!(on_handle_created(
+        handle.as_raw() as i64,
+        "FindData",
+        file_path
+    ));
+
+    handle
 }
 
 // ---------------------------------------------------------------------------

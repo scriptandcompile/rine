@@ -38,6 +38,7 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("DeleteFileW", as_win_api!(file::DeleteFileW)),
             Export::Func("GetFileSize", as_win_api!(file::GetFileSize)),
             Export::Func("FindFirstFileA", as_win_api!(file::FindFirstFileA)),
+            Export::Func("FindFirstFileW", as_win_api!(file::FindFirstFileW)),
             Export::Func("GetStdHandle", as_win_api!(console::GetStdHandle)),
             Export::Func("GetProcessHeap", as_win_api!(memory::GetProcessHeap)),
             Export::Func("HeapDestroy", as_win_api!(memory::HeapDestroy)),

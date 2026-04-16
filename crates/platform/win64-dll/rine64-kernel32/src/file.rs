@@ -4,8 +4,7 @@
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{
-    self, FindDataState, Handle, HandleEntry, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE,
-    Win32FindDataA, Win32FindDataW, handle_table,
+    Handle, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE, Win32FindDataA, Win32FindDataW, handle_table,
 };
 use rine_types::strings::{read_cstr, read_wstr};
 
@@ -319,75 +318,67 @@ pub unsafe extern "win64" fn SetFilePointer(
 // FindFirstFileA / FindFirstFileW
 // ---------------------------------------------------------------------------
 
-/// FindFirstFileA — begin searching for files matching a pattern (ANSI).
+/// Begin searching for files matching a pattern (ansi).
+///
+/// # Arguments
+/// * `file_path` - Windows-style file path with optional wildcards (e.g. `C:\foo\*.txt`).
+/// * `find_data` - Output pointer for file data of the first matching file. Must point to a writable `WIN32_FIND_DATAA` structure.
 ///
 /// # Safety
 /// `find_data` must point to a writable `WIN32_FIND_DATAA`.
+/// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
+///
+/// # Returns
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `INVALID_HANDLE_VALUE` if no
+/// matching files were found or an error occurred.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindFirstFileA(
     file_name: *const u8,
     find_data: *mut Win32FindDataA,
 ) -> isize {
-    if file_name.is_null() || find_data.is_null() {
+    if file_name.is_null() {
         return INVALID_HANDLE_VALUE.as_raw();
     }
 
-    let c_str = unsafe { std::ffi::CStr::from_ptr(file_name.cast()) };
-    let path_str = c_str.to_string_lossy();
+    unsafe {
+        let Some(path_str) = read_cstr(file_name) else {
+            return INVALID_HANDLE_VALUE.as_raw();
+        };
 
-    let (dir_part, pattern) = handles::split_find_path(&path_str);
-
-    let linux_dir = common::file::translate_find_dir(dir_part);
-    let entries = handles::collect_find_entries(&linux_dir, pattern);
-    if entries.is_empty() {
-        return INVALID_HANDLE_VALUE.as_raw();
+        common::file::find_first_file_a(&path_str, find_data).as_raw()
     }
-
-    // Write the first entry.
-    unsafe { core::ptr::write(find_data, Win32FindDataA::from_entry(&entries[0])) };
-
-    let h = handle_table().insert(HandleEntry::FindData(FindDataState { entries, cursor: 1 }));
-    rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "FindData", &path_str));
-    h.as_raw()
 }
 
-/// FindFirstFileW — begin searching for files matching a pattern (wide).
+/// Begin searching for files matching a pattern (wide).
+///
+/// # Arguments
+/// * `file_path` - Windows-style file path with optional wildcards (e.g. `C:\foo\*.txt`).
+/// * `find_data` - Output pointer for file data of the first matching file. Must point to a writable `WIN32_FIND_DATAW` structure.
 ///
 /// # Safety
 /// `find_data` must point to a writable `WIN32_FIND_DATAW`.
+/// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
+///
+/// # Returns
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `INVALID_HANDLE_VALUE` if no
+/// matching files were found or an error occurred.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindFirstFileW(
     file_name: *const u16,
     find_data: *mut Win32FindDataW,
 ) -> isize {
-    if file_name.is_null() || find_data.is_null() {
+    if file_name.is_null() {
         return INVALID_HANDLE_VALUE.as_raw();
     }
-
-    let mut len = 0;
     unsafe {
-        while *file_name.add(len) != 0 {
-            len += 1;
-        }
+        let Some(path_str) = read_wstr(file_name) else {
+            return INVALID_HANDLE_VALUE.as_raw();
+        };
+
+        common::file::find_first_file_w(&path_str, find_data).as_raw()
     }
-    let wide = unsafe { core::slice::from_raw_parts(file_name, len) };
-    let path_str = String::from_utf16_lossy(wide);
-
-    let (dir_part, pattern) = handles::split_find_path(&path_str);
-
-    let linux_dir = common::file::translate_find_dir(dir_part);
-    let entries = handles::collect_find_entries(&linux_dir, pattern);
-    if entries.is_empty() {
-        return INVALID_HANDLE_VALUE.as_raw();
-    }
-
-    unsafe { core::ptr::write(find_data, Win32FindDataW::from_entry(&entries[0])) };
-
-    let h = handle_table().insert(HandleEntry::FindData(FindDataState { entries, cursor: 1 }));
-    rine_types::dev_notify!(on_handle_created(h.as_raw() as i64, "FindData", &path_str));
-    h.as_raw()
 }
 
 // ---------------------------------------------------------------------------
