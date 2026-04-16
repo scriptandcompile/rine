@@ -168,7 +168,25 @@ pub unsafe extern "stdcall" fn GetFileSize(file: isize, file_size_high: *mut u32
     size as u32
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// WriteFile — write data to a file or I/O device.
+///
+/// # Arguments
+/// * `file` - The file handle to write to. Must be a valid file handle returned by `CreateFile`.
+/// * `buffer` - Pointer to the data to be written to the file.
+/// * `bytes_to_write` - The number of bytes to write.
+/// * `bytes_written` - Optional pointer to a variable that receives the number of bytes written.
+/// * `_overlapped` - ignored (asynchronous I/O is not supported).
+///
+/// # Safety
+/// `file` must be a valid file handle returned by `CreateFile`.
+/// `buffer` must point to at least `bytes_to_write` readable bytes.
+/// `bytes_written` must be null or point to a valid u32 variable.
+/// `_overlapped` must be null or point to a valid OVERLAPPED structure,
+/// but asynchronous I/O is not supported so it will be ignored.
+///
+/// # Returns
+/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WriteFile(
     file: isize,
