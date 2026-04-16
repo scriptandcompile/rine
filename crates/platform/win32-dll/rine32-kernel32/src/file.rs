@@ -231,13 +231,16 @@ pub unsafe extern "stdcall" fn ReadFile(
     unsafe { common::file::read_file(handle, buffer, bytes_to_read, bytes_read, _overlapped) }
 }
 
-/// FlushFileBuffers — flush a file's buffers to disk.
+/// FlushFileBuffers — flush file buffers to disk.
 ///
 /// # Arguments
 /// * `file` - The file handle to flush. Must be a valid file handle returned by `CreateFile`.
 ///
 /// # Safety
 /// `file` must be a valid file handle returned by `CreateFile`.
+///
+/// # Returns
+/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
 ///
 /// # Note
 /// This implementation does not support flushing of non-file handles (e.g. pipes, consoles).

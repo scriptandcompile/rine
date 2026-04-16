@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T05:15:47.708402+00:00",
+  "generatedAt": "2026-04-16T05:25:43.669208+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -618,13 +618,13 @@
         {
           "name": "FlushFileBuffers",
           "x64": {
-            "status": "implemented",
-            "symbol": "file::FlushFileBuffers",
+            "status": "partial",
+            "symbol": "FlushFileBuffers",
             "source": "kernel32 - file.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "file::FlushFileBuffers",
+            "status": "partial",
+            "symbol": "FlushFileBuffers",
             "source": "kernel32 - file.rs"
           }
         },
@@ -1385,13 +1385,13 @@
         {
           "name": "WriteFile",
           "x64": {
-            "status": "implemented",
-            "symbol": "file::WriteFile",
+            "status": "partial",
+            "symbol": "WriteFile",
             "source": "kernel32 - file.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "file::WriteFile",
+            "status": "partial",
+            "symbol": "WriteFile",
             "source": "kernel32 - file.rs"
           }
         }
@@ -2355,14 +2355,14 @@
   "totals": {
     "functions": 177,
     "x64": {
-      "implemented": 141,
-      "partial": 30,
+      "implemented": 139,
+      "partial": 32,
       "stubbed": 3,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 130,
-      "partial": 30,
+      "implemented": 128,
+      "partial": 32,
       "stubbed": 15,
       "unimplemented": 2
     }

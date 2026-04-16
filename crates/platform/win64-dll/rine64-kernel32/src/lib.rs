@@ -41,7 +41,6 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("SetFilePointer", as_win_api!(file::SetFilePointer)),
             Export::Func("FindFirstFileA", as_win_api!(file::FindFirstFileA)),
             Export::Func("FindClose", as_win_api!(file::FindClose)),
-            Export::Func("FlushFileBuffers", as_win_api!(file::FlushFileBuffers)),
             Export::Func("GetStdHandle", as_win_api!(console::GetStdHandle)),
             Export::Func("GetProcessHeap", as_win_api!(memory::GetProcessHeap)),
             Export::Func("HeapDestroy", as_win_api!(memory::HeapDestroy)),
@@ -153,6 +152,10 @@ impl DllPlugin for Kernel32Plugin {
             PartialExport {
                 name: "WriteFile",
                 func: as_win_api!(file::WriteFile),
+            },
+            PartialExport {
+                name: "FlushFileBuffers",
+                func: as_win_api!(file::FlushFileBuffers),
             },
             PartialExport {
                 name: "GetEnvironmentStrings",

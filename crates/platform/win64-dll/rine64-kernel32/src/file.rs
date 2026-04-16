@@ -214,6 +214,9 @@ pub unsafe extern "win64" fn WriteFile(
 /// # Safety
 /// `file` must be a valid file handle returned by `CreateFile`.
 ///
+/// # Returns
+/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+///
 /// # Note
 /// This implementation does not support flushing of non-file handles (e.g. pipes, consoles).
 #[allow(non_snake_case)]
