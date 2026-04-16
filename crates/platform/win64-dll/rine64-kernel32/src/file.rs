@@ -143,14 +143,24 @@ pub unsafe extern "win64" fn DeleteFileA(file_name: *const u8) -> WinBool {
     common::file::delete_file(&path_str)
 }
 
-// ---------------------------------------------------------------------------
-// ReadFile
-// ---------------------------------------------------------------------------
-
 /// ReadFile — read data from a file.
 ///
+/// # Arguments
+/// * `file` - The file handle to read from. Must be a valid file handle returned by `CreateFile`.
+/// * `buffer` - Pointer to a buffer that receives the data read from the file.
+/// * `bytes_to_read` - The number of bytes to read.
+/// * `bytes_read` - Optional pointer to a variable that receives the number of bytes read.
+/// * `_overlapped` - ignored (asynchronous I/O is not supported).
+///
 /// # Safety
+/// `file` must be a valid file handle returned by `CreateFile`.
 /// `buffer` must be writable for at least `bytes_to_read` bytes.
+/// `bytes_read` must be null or point to a valid u32 variable.
+/// `_overlapped` must be null or point to a valid OVERLAPPED structure,
+/// but asynchronous I/O is not supported so it will be ignored.
+///
+/// # Returns
+/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ReadFile(

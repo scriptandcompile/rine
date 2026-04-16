@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T04:57:33.085398+00:00",
+  "generatedAt": "2026-04-16T05:15:47.708402+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1086,13 +1086,13 @@
         {
           "name": "ReadFile",
           "x64": {
-            "status": "implemented",
-            "symbol": "file::ReadFile",
+            "status": "partial",
+            "symbol": "ReadFile",
             "source": "kernel32 - file.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "file::ReadFile",
+            "status": "partial",
+            "symbol": "ReadFile",
             "source": "kernel32 - file.rs"
           }
         },
@@ -2355,14 +2355,14 @@
   "totals": {
     "functions": 177,
     "x64": {
-      "implemented": 142,
-      "partial": 29,
+      "implemented": 141,
+      "partial": 30,
       "stubbed": 3,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 131,
-      "partial": 29,
+      "implemented": 130,
+      "partial": 30,
       "stubbed": 15,
       "unimplemented": 2
     }
