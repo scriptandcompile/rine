@@ -153,7 +153,10 @@ pub unsafe extern "stdcall" fn DeleteFileA(file_name: *const u8) -> WinBool {
 /// # Safety
 /// * `file` must be a valid file handle returned by `CreateFile`.
 /// * `file_size_high` must be null or point to a valid u32 variable.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+///
+/// # Returns
+/// The low 32 bits of the file size on success, or INVALID_FILE_SIZE (0xFFFFFFFF) on failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetFileSize(file: isize, file_size_high: *mut u32) -> u32 {
     let handle = Handle::from_raw(file);

@@ -247,10 +247,6 @@ pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
     common::file::close_handle(handle)
 }
 
-// ---------------------------------------------------------------------------
-// GetFileSize
-// ---------------------------------------------------------------------------
-
 /// GetFileSize — return the size of a file in bytes.
 ///
 /// Returns the low 32 bits. If `file_size_high` is non-null, the high
@@ -265,7 +261,10 @@ pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
 /// # Safety
 /// * `file` must be a valid file handle returned by `CreateFile`.
 /// * `file_size_high` must be null or point to a valid u32 variable.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+///
+/// # Returns
+/// The low 32 bits of the file size on success, or INVALID_FILE_SIZE (0xFFFFFFFF) on failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetFileSize(file: isize, file_size_high: *mut u32) -> u32 {
     let handle = Handle::from_raw(file);

@@ -255,7 +255,6 @@ pub fn flush_file_buffers(handle: Handle) -> WinBool {
 
 /// Get the size of a file in bytes.
 ///
-/// Returns `Some(size)` on success, or `None` if the handle is invalid or an error occurs.
 ///
 /// # Arguments
 /// * `handle` - A Windows file handle returned by `CreateFile`.
@@ -263,6 +262,9 @@ pub fn flush_file_buffers(handle: Handle) -> WinBool {
 /// # Safety
 /// * `handle` must be a valid file handle returned by `CreateFile`.
 /// * The caller must ensure that the handle refers to a file object and not some other type of handle.
+///
+/// # Returns
+/// The size of the file in bytes, or `None` if the handle is invalid or an error occurs.
 pub fn get_file_size(handle: Handle) -> Option<u64> {
     let fd = handle_to_fd(handle)?;
 
