@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T05:38:12.802917+00:00",
+  "generatedAt": "2026-04-16T20:22:57.378598+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -345,13 +345,13 @@
         {
           "name": "CloseHandle",
           "x64": {
-            "status": "implemented",
-            "symbol": "file::CloseHandle",
+            "status": "partial",
+            "symbol": "CloseHandle",
             "source": "kernel32 - file.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "file::CloseHandle",
+            "status": "partial",
+            "symbol": "CloseHandle",
             "source": "kernel32 - file.rs"
           }
         },
@@ -2355,14 +2355,14 @@
   "totals": {
     "functions": 177,
     "x64": {
-      "implemented": 136,
-      "partial": 32,
+      "implemented": 135,
+      "partial": 33,
       "stubbed": 6,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 128,
-      "partial": 32,
+      "implemented": 127,
+      "partial": 33,
       "stubbed": 16,
       "unimplemented": 1
     }

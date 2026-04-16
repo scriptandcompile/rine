@@ -162,6 +162,52 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
     h.as_raw()
 }
 
+/// CloseHandle — close an open object handle (e.g. file handle).
+///
+/// # Arguments
+/// * `handle` - The handle to close. Must be a valid handle returned by `CreateFile` or other handle-returning function.
+///
+/// # Safety
+/// `handle` must be a valid handle returned by `CreateFile` or other handle-returning function.
+/// After this call, `handle` must not be used again.
+///
+/// # Returns
+/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+///
+/// # Note
+/// This implementation only supports closing of file handles.
+/// Currently it does not support closing of other handle types tracked in the handle table
+/// (threads, events, processes, mutexes, semaphores, heaps, registry keys, and FindFirstFile find data).
+/// It does not support closing of window handles, which are not tracked in the handle table.
+#[allow(non_snake_case)]
+pub fn close_handle(handle: Handle) -> WinBool {
+    match handle_table().remove(handle) {
+        Some(HandleEntry::Thread(_)) => WinBool::TRUE,
+        Some(HandleEntry::Event(_)) => WinBool::TRUE,
+        Some(HandleEntry::Process(_)) => WinBool::TRUE,
+        Some(HandleEntry::Mutex(_)) => WinBool::TRUE,
+        Some(HandleEntry::Semaphore(_)) => WinBool::TRUE,
+        Some(HandleEntry::Heap(_)) => WinBool::TRUE,
+        Some(HandleEntry::RegistryKey(_)) => WinBool::TRUE,
+        Some(HandleEntry::FindData(_)) => WinBool::TRUE,
+        Some(HandleEntry::File(object)) => {
+            let Some(fd) = std_handle_to_fd(object as u32) else {
+                return WinBool::FALSE;
+            };
+
+            // 'fd' should be the linux file descriptor.
+            // If it's a standard stream, we don't actually want to close it.
+            if fd == libc::STDERR_FILENO || fd == libc::STDOUT_FILENO || fd == libc::STDIN_FILENO {
+                WinBool::TRUE
+            } else {
+                unsafe { libc::close(fd) };
+                WinBool::TRUE
+            }
+        }
+        Some(HandleEntry::Window(_)) => WinBool::FALSE,
+        None => WinBool::FALSE,
+    }
+}
 /// Delete a file at the given Windows path.
 ///
 /// # Arguments
@@ -313,35 +359,6 @@ fn translate_win_path(win_path: &str) -> std::path::PathBuf {
 
     // Relative or unrecognized — return as-is with normalized slashes.
     std::path::PathBuf::from(stripped)
-}
-
-pub fn close_handle(handle: Handle) -> WinBool {
-    match handle_table().remove(handle) {
-        Some(HandleEntry::Thread(_)) => WinBool::TRUE,
-        Some(HandleEntry::Event(_)) => WinBool::TRUE,
-        Some(HandleEntry::Process(_)) => WinBool::TRUE,
-        Some(HandleEntry::Mutex(_)) => WinBool::TRUE,
-        Some(HandleEntry::Semaphore(_)) => WinBool::TRUE,
-        Some(HandleEntry::Heap(_)) => WinBool::TRUE,
-        Some(HandleEntry::RegistryKey(_)) => WinBool::TRUE,
-        Some(HandleEntry::FindData(_)) => WinBool::TRUE,
-        Some(HandleEntry::File(object)) => {
-            let Some(fd) = std_handle_to_fd(object as u32) else {
-                return WinBool::FALSE;
-            };
-
-            // 'fd' should be the linux file descriptor.
-            // If it's a standard stream, we don't actually want to close it.
-            if fd == libc::STDERR_FILENO || fd == libc::STDOUT_FILENO || fd == libc::STDIN_FILENO {
-                WinBool::TRUE
-            } else {
-                unsafe { libc::close(fd) };
-                WinBool::TRUE
-            }
-        }
-        Some(HandleEntry::Window(_)) => WinBool::FALSE,
-        None => WinBool::FALSE,
-    }
 }
 
 #[cfg(test)]

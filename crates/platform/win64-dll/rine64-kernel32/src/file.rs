@@ -226,12 +226,18 @@ pub unsafe extern "win64" fn FlushFileBuffers(file: isize) -> WinBool {
     common::file::flush_file_buffers(handle)
 }
 
-// ---------------------------------------------------------------------------
-// CloseHandle
-// ---------------------------------------------------------------------------
-
-/// CloseHandle — close an open handle (file, find-data, etc.).
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// CloseHandle — close an open object handle (e.g. file handle).
+///
+/// # Arguments
+/// * `object` - The handle to close. Must be a valid handle returned by `CreateFile` or other handle-returning function.
+///
+/// # Safety
+/// `object` must be a valid handle returned by `CreateFile` or other handle-returning function.
+/// After this call, `object` must not be used again.
+///
+/// # Returns
+/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CloseHandle(object: isize) -> WinBool {
     let handle = Handle::from_raw(object);

@@ -11,9 +11,10 @@ impl DllPlugin for NtdllPlugin32 {
     }
 
     fn exports(&self) -> Vec<Export> {
-        vec![
-            Export::Func("NtCreateFile", as_win_api!(file::nt_create_file)),
-        ]
+        vec![Export::Func(
+            "NtCreateFile",
+            as_win_api!(file::nt_create_file),
+        )]
     }
 
     fn stubs(&self) -> Vec<StubExport> {
