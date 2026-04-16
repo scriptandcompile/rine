@@ -3378,6 +3378,7 @@ name = "rine-common-ntdll"
 version = "0.1.3"
 dependencies = [
  "libc",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
  "tracing",
@@ -3428,6 +3429,13 @@ dependencies = [
  "rine-runtime-core",
  "rine-types",
  "tracing",
+]
+
+[[package]]
+name = "rine-dll-build"
+version = "0.1.3"
+dependencies = [
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -3495,6 +3503,7 @@ name = "rine32-advapi32"
 version = "0.1.3"
 dependencies = [
  "rine-common-advapi32",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
 ]
@@ -3504,6 +3513,7 @@ name = "rine32-comdlg32"
 version = "0.1.3"
 dependencies = [
  "rine-common-comdlg32",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
  "tracing",
@@ -3514,6 +3524,7 @@ name = "rine32-gdi32"
 version = "0.1.3"
 dependencies = [
  "rine-common-gdi32",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
 ]
@@ -3524,6 +3535,7 @@ version = "0.1.3"
 dependencies = [
  "libc",
  "rine-common-kernel32",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
  "tracing",
@@ -3535,6 +3547,7 @@ version = "0.1.3"
 dependencies = [
  "libc",
  "rine-common-msvcrt",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
  "tracing",
@@ -3545,6 +3558,7 @@ name = "rine32-ntdll"
 version = "0.1.3"
 dependencies = [
  "rine-common-ntdll",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
  "tracing",
@@ -3555,6 +3569,7 @@ name = "rine32-user32"
 version = "0.1.3"
 dependencies = [
  "rine-common-user32",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
 ]
@@ -3564,6 +3579,7 @@ name = "rine64-advapi32"
 version = "0.1.3"
 dependencies = [
  "rine-common-advapi32",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
  "tracing",
@@ -3574,6 +3590,7 @@ name = "rine64-comdlg32"
 version = "0.1.3"
 dependencies = [
  "rine-common-comdlg32",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
 ]
@@ -3583,6 +3600,7 @@ name = "rine64-gdi32"
 version = "0.1.3"
 dependencies = [
  "rine-common-gdi32",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
 ]
@@ -3594,6 +3612,7 @@ dependencies = [
  "libc",
  "nix 0.31.2",
  "rine-common-kernel32",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
  "serial_test",
@@ -3606,6 +3625,7 @@ version = "0.1.3"
 dependencies = [
  "libc",
  "rine-common-msvcrt",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
  "tracing",
@@ -3618,6 +3638,7 @@ dependencies = [
  "libc",
  "nix 0.31.2",
  "rine-common-ntdll",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
  "serial_test",
@@ -3629,6 +3650,7 @@ name = "rine64-user32"
 version = "0.1.3"
 dependencies = [
  "rine-common-user32",
+ "rine-dll-build",
  "rine-dlls",
  "rine-types",
  "winit",
@@ -3638,6 +3660,7 @@ dependencies = [
 name = "rine64-ws2_32"
 version = "0.1.3"
 dependencies = [
+ "rine-dll-build",
  "rine-dlls",
 ]
 

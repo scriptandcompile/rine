@@ -4,9 +4,13 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "Win32 ntdll export plugin scaffold"
+build = "build.rs"
 
 [dependencies]
 rine-types = { workspace = true }
 rine-common-ntdll = { workspace = true }
 rine-dlls = { workspace = true }
 tracing = { workspace = true }
+
+[build-dependencies]
+rine-dll-build = { workspace = true }

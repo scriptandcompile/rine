@@ -6,6 +6,7 @@ members = [
     "crates/rine-dev-bridge",
     "crates/rine-runtime-core",
     "crates/rine-dlls",
+    "crates/rine-dll-build",
     "crates/rine-types",
     "crates/rine-config",
     "crates/rine-channel",
@@ -58,6 +59,7 @@ edition = "2024"
 license = "MIT"
 
 [workspace.dependencies]
+rine-dll-build = { path = "crates/rine-dll-build" }
 rine-dlls = { path = "crates/rine-dlls" }
 rine-types = { path = "crates/rine-types" }
 rine-channel = { path = "crates/rine-channel" }
@@ -98,6 +100,7 @@ tracing-subscriber = "0.3.23"
 memmap2 = "0.9.10"
 bitflags = "2.11.0"
 thiserror = "2.0.18"
+syn = { version = "2.0.106", features = ["full"] }
 serial_test = "3.4.0"
 rfd = "0.17.2"
 tauri = { version = "2.10.3", features = [] }

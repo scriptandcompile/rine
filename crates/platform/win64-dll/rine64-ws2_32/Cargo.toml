@@ -4,6 +4,10 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "ws2_32.dll implementation for rine"
+build = "build.rs"
 
 [dependencies]
 rine-dlls = { workspace = true }
+
+[build-dependencies]
+rine-dll-build = { workspace = true }

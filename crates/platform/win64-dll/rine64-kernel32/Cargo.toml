@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "kernel32.dll implementation for rine"
+build = "build.rs"
 
 [dependencies]
 rine-dlls = { workspace = true }
@@ -15,3 +16,6 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 serial_test = { workspace = true }
+
+[build-dependencies]
+rine-dll-build = { workspace = true }

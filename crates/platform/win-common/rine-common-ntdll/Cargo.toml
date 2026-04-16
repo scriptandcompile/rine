@@ -4,9 +4,13 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "Shared architecture-neutral ntdll logic for rine"
+build = "build.rs"
 
 [dependencies]
 rine-types = { workspace = true }
 rine-dlls = { workspace = true }
 libc = { workspace = true }
 tracing = { workspace = true }
+
+[build-dependencies]
+rine-dll-build = { workspace = true }

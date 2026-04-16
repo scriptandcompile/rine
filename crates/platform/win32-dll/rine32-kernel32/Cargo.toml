@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "Win32 kernel32 export plugin scaffold"
+build = "build.rs"
 
 [dependencies]
 rine-dlls = { workspace = true }
@@ -11,3 +12,6 @@ rine-common-kernel32 = { workspace = true }
 rine-types = { workspace = true }
 libc = { workspace = true }
 tracing = { workspace = true }
+
+[build-dependencies]
+rine-dll-build = { workspace = true }

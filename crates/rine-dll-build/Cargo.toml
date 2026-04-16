@@ -1,0 +1,9 @@
+[package]
+name = "rine-dll-build"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Build-time validation helpers for rine DLL plugin metadata"
+
+[dependencies]
+syn = { workspace = true }

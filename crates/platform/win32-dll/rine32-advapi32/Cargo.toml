@@ -4,8 +4,12 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "advapi32.dll implementation for rine32"
+build = "build.rs"
 
 [dependencies]
 rine-dlls = { workspace = true }
 rine-types = { workspace = true }
 rine-common-advapi32 = { workspace = true }
+
+[build-dependencies]
+rine-dll-build = { workspace = true }

@@ -4,9 +4,13 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "Win32 comdlg32 export plugin scaffold"
+build = "build.rs"
 
 [dependencies]
 rine-dlls = { workspace = true }
 rine-types = { workspace = true }
 rine-common-comdlg32 = { workspace = true }
 tracing = { workspace = true }
+
+[build-dependencies]
+rine-dll-build = { workspace = true }

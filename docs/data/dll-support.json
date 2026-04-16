@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T02:17:53.395887+00:00",
+  "generatedAt": "2026-04-16T02:27:33.886348+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -644,7 +644,7 @@
         {
           "name": "FreeEnvironmentStringsW",
           "x64": {
-            "status": "partial",
+            "status": "implemented",
             "symbol": "FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           },
@@ -1845,7 +1845,7 @@
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "file::NtClose",
+            "symbol": "NtClose",
             "source": "ntdll - file.rs"
           }
         },
@@ -1871,7 +1871,7 @@
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "file::NtQueryInformationFile",
+            "symbol": "NtQueryInformationFile",
             "source": "ntdll - file.rs"
           }
         },
@@ -1884,7 +1884,7 @@
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "file::NtReadFile",
+            "symbol": "NtReadFile",
             "source": "ntdll - file.rs"
           }
         },
@@ -1897,7 +1897,7 @@
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "process::NtTerminateProcess",
+            "symbol": "NtTerminateProcess",
             "source": "ntdll - process.rs"
           }
         },
@@ -1910,7 +1910,7 @@
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "file::NtWriteFile",
+            "symbol": "NtWriteFile",
             "source": "ntdll - file.rs"
           }
         },
@@ -1923,7 +1923,7 @@
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "process::RtlGetVersion",
+            "symbol": "RtlGetVersion",
             "source": "ntdll - process.rs"
           }
         },
@@ -1936,7 +1936,7 @@
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "process::RtlInitUnicodeString",
+            "symbol": "RtlInitUnicodeString",
             "source": "ntdll - process.rs"
           }
         }
@@ -2355,8 +2355,8 @@
   "totals": {
     "functions": 177,
     "x64": {
-      "implemented": 143,
-      "partial": 28,
+      "implemented": 144,
+      "partial": 27,
       "stubbed": 3,
       "unimplemented": 3
     },

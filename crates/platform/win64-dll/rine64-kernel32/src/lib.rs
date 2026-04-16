@@ -151,10 +151,6 @@ impl DllPlugin for Kernel32Plugin {
                 func: as_win_api!(environment::GetEnvironmentStringsW),
             },
             PartialExport {
-                name: "FreeEnvironmentStringsW",
-                func: as_win_api!(environment::FreeEnvironmentStringsW),
-            },
-            PartialExport {
                 name: "HeapCreate",
                 func: as_win_api!(memory::HeapCreate),
             },
