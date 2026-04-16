@@ -34,8 +34,6 @@ impl DllPlugin for Kernel32Plugin {
                 "GetExitCodeProcess",
                 as_win_api!(process::GetExitCodeProcess),
             ),
-            Export::Func("CreateFileA", as_win_api!(file::CreateFileA)),
-            Export::Func("CreateFileW", as_win_api!(file::CreateFileW)),
             Export::Func("DeleteFileA", as_win_api!(file::DeleteFileA)),
             Export::Func("DeleteFileW", as_win_api!(file::DeleteFileW)),
             Export::Func("GetFileSize", as_win_api!(file::GetFileSize)),
@@ -142,6 +140,14 @@ impl DllPlugin for Kernel32Plugin {
 
     fn partials(&self) -> Vec<PartialExport> {
         vec![
+            PartialExport {
+                name: "CreateFileA",
+                func: as_win_api!(file::CreateFileA),
+            },
+            PartialExport {
+                name: "CreateFileW",
+                func: as_win_api!(file::CreateFileW),
+            },
             PartialExport {
                 name: "GetEnvironmentStrings",
                 func: as_win_api!(environment::GetEnvironmentStrings),

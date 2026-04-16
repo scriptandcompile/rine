@@ -9,10 +9,6 @@ use rine_types::handles::{
 };
 use rine_types::strings::{read_cstr, read_wstr};
 
-// ---------------------------------------------------------------------------
-// CreateFileA / CreateFileW
-// ---------------------------------------------------------------------------
-
 /// CreateFileA — open or create a file (ANSI path).
 ///
 /// # Arguments
@@ -26,17 +22,16 @@ use rine_types::strings::{read_cstr, read_wstr};
 ///
 /// # Safety
 /// `file_name` must be a valid null-terminated ANSI string.
-///
 /// The caller must ensure that the file path is valid and that the desired
 /// access and creation disposition are appropriate.
+///
+/// # Returns
+/// A file handle on success, or INVALID_HANDLE_VALUE on failure.
 ///
 /// # Note
 /// This implementation does not support all features of the Windows API, such as
 /// sharing modes, security attributes, or file attributes. It focuses on basic
 /// file creation and opening functionality.
-///
-/// dev_emit! are handled in the common::create_file implementation, so that they
-/// are emitted for both CreateFileA and CreateFileW in rine & rine32.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateFileA(
@@ -60,18 +55,37 @@ pub unsafe extern "win64" fn CreateFileA(
 
 /// CreateFileW — open or create a file (wide/UTF-16 path).
 ///
+/// # Arguments
+/// * `file_name`: pointer to a null-terminated UTF-16LE string with the file path.
+/// * `desired_access`: bitmask of GENERIC_READ, GENERIC_WRITE, etc.
+/// * `creation_disposition`: action to take on files that exist or do not exist.
+/// * _share_mode - ignored
+/// * _security_attributes - ignored
+/// * _flags_and_attributes - ignored
+/// * _template_file - ignored
+///
 /// # Safety
 /// `file_name` must be a valid null-terminated UTF-16LE string.
+/// The caller must ensure that the file path is valid and that the desired
+/// access and creation disposition are appropriate.
+///
+/// # Returns
+/// A file handle on success, or INVALID_HANDLE_VALUE on failure.
+///
+/// # Note
+/// This implementation does not support all features of the Windows API, such as
+/// sharing modes, security attributes, or file attributes. It focuses on basic
+/// file creation and opening functionality.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateFileW(
     file_name: *const u16,
     desired_access: u32,
     _share_mode: u32,
-    _security_attributes: usize,
+    _security_attributes: usize, // LPSECURITY_ATTRIBUTES (ignored)
     creation_disposition: u32,
     _flags_and_attributes: u32,
-    _template_file: isize,
+    _template_file: isize, // HANDLE (ignored)
 ) -> isize {
     if file_name.is_null() {
         return INVALID_HANDLE_VALUE.as_raw();
