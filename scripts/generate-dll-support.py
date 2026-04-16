@@ -163,8 +163,8 @@ def infer_status(
     stub_names: set[str],
     partial_names: set[str],
 ) -> str:
-    # Mark as stubbed if in stubs (x86 only, legacy)
-    if arch == "x86" and export_name in stub_names:
+    # Mark as stubbed if explicitly listed in stubs.
+    if export_name in stub_names:
         return "stubbed"
 
     # Mark as partial if in partials (for both arches)

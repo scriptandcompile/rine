@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T05:31:37.012565+00:00",
+  "generatedAt": "2026-04-16T05:38:12.802917+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -631,7 +631,7 @@
         {
           "name": "FreeEnvironmentStringsA",
           "x64": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "FreeEnvironmentStringsA",
             "source": "kernel32 - environment.rs"
           },
@@ -644,7 +644,7 @@
         {
           "name": "FreeEnvironmentStringsW",
           "x64": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           },
@@ -1320,7 +1320,7 @@
         {
           "name": "VirtualQuery",
           "x64": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "VirtualQuery",
             "source": "kernel32 - memory.rs"
           },
@@ -2355,9 +2355,9 @@
   "totals": {
     "functions": 177,
     "x64": {
-      "implemented": 139,
+      "implemented": 136,
       "partial": 32,
-      "stubbed": 3,
+      "stubbed": 6,
       "unimplemented": 3
     },
     "x86": {
