@@ -3,8 +3,6 @@
 //! This is mostly a thin wrapper around the common implementations in `rine-common-kernel32`,
 //! but also includes the Windows API entry points and some handle table integration.
 
-use std::ptr;
-
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, handle_table};
@@ -120,25 +118,19 @@ pub unsafe extern "win64" fn LeaveCriticalSection(cs: *mut u8) {
     unsafe { common::sync::leave_critical_section(cs) };
 }
 
-/// DeleteCriticalSection — destroy and deallocate the mutex.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Destroy and deallocate the mutex.
+///
+/// # Arguments
+/// * `cs` - A pointer to the critical section to delete. Must have been initialized with `InitializeCriticalSection`.
+///
+/// # Safety
+/// The caller must ensure that `cs` points to a valid CRITICAL_SECTION structure that has been
+/// properly initialized and is not currently in use.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn DeleteCriticalSection(cs: *mut u8) {
-    if cs.is_null() {
-        return;
-    }
-
     unsafe {
-        let mutex = common::sync::get_mutex(cs);
-
-        if mutex.is_null() {
-            return;
-        }
-
-        libc::pthread_mutex_destroy(mutex);
-
-        drop(Box::from_raw(mutex));
-        ptr::write(cs as *mut *mut libc::pthread_mutex_t, ptr::null_mut());
+        common::sync::delete_critical_section(cs);
     }
 }
 

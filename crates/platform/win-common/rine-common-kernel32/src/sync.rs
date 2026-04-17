@@ -135,6 +135,33 @@ pub unsafe fn leave_critical_section(cs: *mut u8) {
     }
 }
 
+/// Destroy and deallocate the mutex.
+///
+/// # Arguments
+/// * `cs` - A pointer to the critical section to delete. Must have been initialized with `init_critical_section`.
+///
+/// # Safety
+/// The caller must ensure that `cs` points to a valid CRITICAL_SECTION structure that has been
+/// properly initialized and is not currently in use.
+pub unsafe fn delete_critical_section(cs: *mut u8) {
+    if cs.is_null() {
+        return;
+    }
+
+    unsafe {
+        let mutex = get_mutex(cs);
+
+        if mutex.is_null() {
+            return;
+        }
+
+        libc::pthread_mutex_destroy(mutex);
+
+        drop(Box::from_raw(mutex));
+        ptr::write(cs as *mut *mut libc::pthread_mutex_t, ptr::null_mut());
+    }
+}
+
 /// Read the mutex pointer from a CRITICAL_SECTION.
 ///
 /// # Safety
