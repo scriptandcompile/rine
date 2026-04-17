@@ -43,6 +43,33 @@ pub unsafe fn init_critical_section(cs: *mut u8) {
     }
 }
 
+/// Enter a critical section by locking the underlying mutex.
+///
+/// # Arguments
+/// * `cs` - A pointer to the critical section to enter. Must have been initialized with `init_critical_section`.
+///
+/// # Safety
+/// The caller must ensure that `cs` is a valid pointer to a critical section that has been properly initialized.
+/// The caller must also ensure that the critical section is not used after being deleted.
+/// If `cs` is null, this function does nothing and returns immediately.
+/// Otherwise, it will block until the mutex can be locked.
+pub unsafe fn enter_critical_section(cs: *mut u8) {
+    if cs.is_null() {
+        return;
+    }
+
+    unsafe {
+        let mut mutex = get_mutex(cs);
+
+        if mutex.is_null() {
+            init_critical_section(cs);
+            mutex = get_mutex(cs);
+        }
+
+        libc::pthread_mutex_lock(mutex);
+    }
+}
+
 /// Try to enter a critical section by locking the underlying mutex without blocking.
 ///
 /// # Arguments

@@ -61,26 +61,21 @@ pub unsafe extern "win64" fn InitializeCriticalSectionAndSpinCount(
     WinBool::TRUE
 }
 
-/// EnterCriticalSection — lock the recursive mutex.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Enter a critical section by locking the underlying mutex.
+///
+/// # Arguments
+/// * `cs` - A pointer to the critical section to enter. Must have been initialized with `init_critical_section`.
+///
+/// # Safety
+/// The caller must ensure that `cs` is a valid pointer to a critical section that has been properly initialized.
+/// The caller must also ensure that the critical section is not used after being deleted.
+/// If `cs` is null, this function does nothing and returns immediately.
+/// Otherwise, it will block until the mutex can be locked.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn EnterCriticalSection(cs: *mut u8) {
-    if cs.is_null() {
-        return;
-    }
-
     unsafe {
-        let mutex = common::sync::get_mutex(cs);
-
-        if mutex.is_null() {
-            // Lazy init for zero-initialised CRITICAL_SECTIONs.
-            common::sync::init_critical_section(cs);
-            let mutex = common::sync::get_mutex(cs);
-            libc::pthread_mutex_lock(mutex);
-            return;
-        }
-
-        libc::pthread_mutex_lock(mutex);
+        common::sync::enter_critical_section(cs);
     }
 }
 
