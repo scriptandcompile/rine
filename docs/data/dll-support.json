@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-17T18:03:01.656600+00:00",
+  "generatedAt": "2026-04-17T18:47:21.965218+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -436,26 +436,26 @@
         {
           "name": "CreateProcessA",
           "x64": {
-            "status": "implemented",
-            "symbol": "process::CreateProcessA",
+            "status": "partial",
+            "symbol": "CreateProcessA",
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "process::CreateProcessA",
+            "status": "partial",
+            "symbol": "CreateProcessA",
             "source": "kernel32 - process.rs"
           }
         },
         {
           "name": "CreateProcessW",
           "x64": {
-            "status": "implemented",
-            "symbol": "process::CreateProcessW",
+            "status": "partial",
+            "symbol": "CreateProcessW",
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "process::CreateProcessW",
+            "status": "partial",
+            "symbol": "CreateProcessW",
             "source": "kernel32 - process.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 132,
-      "partial": 36,
+      "implemented": 130,
+      "partial": 38,
       "stubbed": 11,
       "unimplemented": 2
     },
     "x86": {
-      "implemented": 125,
-      "partial": 36,
+      "implemented": 123,
+      "partial": 38,
       "stubbed": 19,
       "unimplemented": 1
     }
