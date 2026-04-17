@@ -196,6 +196,34 @@ pub fn get_last_error() -> u32 {
     ERROR_SUCCESS
 }
 
+/// Install a top-level exception filter.
+///
+/// # Arguments
+/// * `_filter` - A pointer to a function that will be called when an unhandled exception occurs in the process.
+///   The function should match the `LPTOP_LEVEL_EXCEPTION_FILTER` type, which takes a pointer to an `EXCEPTION_POINTERS`
+///   structure and returns a `LONG` value indicating how the exception should be handled.
+///
+/// # Safety
+/// This function is unsafe because it involves raw pointer parameters that must be used correctly by the caller.
+///
+/// # Returns
+/// The SetUnhandledExceptionFilter function returns the address of the previous exception filter established with the function.
+/// A NULL return value means that there is no current top-level exception handler.
+///
+/// # Notes
+/// Stub: returns NULL (no previous handler). Exception handling is not
+/// yet implemented.
+pub fn set_unhandled_exception_filter(_filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
+) -> usize {
+    tracing::warn!(
+        api = "SetUnhandledExceptionFilter",
+        dll = "kernel32",
+        "stub called — exceptions are not yet implemented"
+    );
+
+    0 // NULL — no previous handler
+}
+
 /// Get a module handle by name. Currently only supports NULL (main executable) and returns 0 as a placeholder.
 ///
 /// When `module_name` is NULL, returns the base address of the main

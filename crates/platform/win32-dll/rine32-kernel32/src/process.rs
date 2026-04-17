@@ -173,16 +173,29 @@ pub unsafe extern "stdcall" fn ExitProcess(exit_code: u32) -> ! {
     std::process::exit(exit_code as i32);
 }
 
-/// SetUnhandledExceptionFilter — install a top-level exception filter.
+/// Install a top-level exception filter.
 ///
+/// # Arguments
+/// * `_filter` - A pointer to a function that will be called when an unhandled exception occurs in the process.
+///   The function should match the `LPTOP_LEVEL_EXCEPTION_FILTER` type, which takes a pointer to an `EXCEPTION_POINTERS`
+///   structure and returns a `LONG` value indicating how the exception should be handled.
+///
+/// # Safety
+/// This function is unsafe because it involves raw pointer parameters that must be used correctly by the caller.
+///
+/// # Returns
+/// The SetUnhandledExceptionFilter function returns the address of the previous exception filter established with the function.
+/// A NULL return value means that there is no current top-level exception handler.
+///
+/// # Notes
 /// Stub: returns NULL (no previous handler). Exception handling is not
 /// yet implemented.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetUnhandledExceptionFilter(
     _filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
 ) -> usize {
-    0 // NULL — no previous handler
+    common::process::set_unhandled_exception_filter(_filter)
 }
 
 /// Gets a pointer to the ANSI command-line string.

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-17T17:51:17.335870+00:00",
+  "generatedAt": "2026-04-17T18:03:01.656600+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -883,9 +883,9 @@
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "process::GetLastError",
-            "source": "kernel32 - process.rs"
+            "status": "unimplemented",
+            "symbol": null,
+            "source": null
           }
         },
         {
@@ -1242,13 +1242,13 @@
         {
           "name": "SetUnhandledExceptionFilter",
           "x64": {
-            "status": "implemented",
-            "symbol": "process::SetUnhandledExceptionFilter",
+            "status": "stubbed",
+            "symbol": "SetUnhandledExceptionFilter",
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "process::SetUnhandledExceptionFilter",
+            "status": "stubbed",
+            "symbol": "SetUnhandledExceptionFilter",
             "source": "kernel32 - process.rs"
           }
         },
@@ -2407,16 +2407,16 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 133,
+      "implemented": 132,
       "partial": 36,
-      "stubbed": 10,
+      "stubbed": 11,
       "unimplemented": 2
     },
     "x86": {
-      "implemented": 127,
+      "implemented": 125,
       "partial": 36,
-      "stubbed": 18,
-      "unimplemented": 0
+      "stubbed": 19,
+      "unimplemented": 1
     }
   }
 }

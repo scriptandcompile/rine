@@ -24,7 +24,6 @@ impl DllPlugin for Kernel32Plugin32 {
     fn exports(&self) -> Vec<Export> {
         vec![
             Export::Func("ExitProcess", as_win_api!(process::ExitProcess)),
-            Export::Func("GetLastError", as_win_api!(process::GetLastError)),
             Export::Func("GetCommandLineA", as_win_api!(process::GetCommandLineA)),
             Export::Func("GetCommandLineW", as_win_api!(process::GetCommandLineW)),
             Export::Func("CreateProcessA", as_win_api!(process::CreateProcessA)),
@@ -75,10 +74,6 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("CreateEventA", as_win_api!(sync::CreateEventA)),
             Export::Func("CreateEventW", as_win_api!(sync::CreateEventW)),
             Export::Func("SetEvent", as_win_api!(sync::SetEvent)),
-            Export::Func(
-                "SetUnhandledExceptionFilter",
-                as_win_api!(process::SetUnhandledExceptionFilter),
-            ),
             Export::Func("ResetEvent", as_win_api!(sync::ResetEvent)),
             Export::Func("CreateMutexA", as_win_api!(sync::CreateMutexA)),
             Export::Func("CreateMutexW", as_win_api!(sync::CreateMutexW)),
@@ -149,6 +144,10 @@ impl DllPlugin for Kernel32Plugin32 {
             StubExport {
                 name: "FreeLibrary",
                 func: as_win_api!(process::FreeLibrary),
+            },
+            StubExport {
+                name: "SetUnhandledExceptionFilter",
+                func: as_win_api!(process::SetUnhandledExceptionFilter),
             },
             StubExport {
                 name: "VirtualQuery",
