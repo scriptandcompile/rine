@@ -212,8 +212,10 @@ pub unsafe fn release_mutex(mutex_handle: isize) -> WinBool {
 /// Creates a synchronization event.
 ///
 /// # Arguments
-/// * `manual_reset` - If true, the event remains signaled until manually reset; if false, it resets automatically after a single wait.
-/// * `initial_state` - If true, the event starts in a signaled state; if false, it starts non-signaled.
+/// * `manual_reset` - If true, the event remains signaled until manually reset;
+///   if false, it resets automatically after a single wait.
+/// * `initial_state` - If true, the event starts in a signaled state;
+///   if false, it starts non-signaled.
 ///
 /// # Returns
 /// A handle to the newly created event.

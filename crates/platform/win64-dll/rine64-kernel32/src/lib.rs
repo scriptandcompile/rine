@@ -58,8 +58,6 @@ impl DllPlugin for Kernel32Plugin {
                 "DeleteCriticalSection",
                 as_win_api!(sync::DeleteCriticalSection),
             ),
-            Export::Func("CreateEventA", as_win_api!(sync::CreateEventA)),
-            Export::Func("CreateEventW", as_win_api!(sync::CreateEventW)),
             Export::Func("SetEvent", as_win_api!(sync::SetEvent)),
             Export::Func("ResetEvent", as_win_api!(sync::ResetEvent)),
             Export::Func("CreateMutexA", as_win_api!(sync::CreateMutexA)),
@@ -256,6 +254,14 @@ impl DllPlugin for Kernel32Plugin {
             PartialExport {
                 name: "InitializeCriticalSectionAndSpinCount",
                 func: as_win_api!(sync::InitializeCriticalSectionAndSpinCount),
+            },
+            PartialExport {
+                name: "CreateEventA",
+                func: as_win_api!(sync::CreateEventA),
+            },
+            PartialExport {
+                name: "CreateEventW",
+                func: as_win_api!(sync::CreateEventW),
             },
         ]
     }

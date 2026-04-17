@@ -133,7 +133,23 @@ pub unsafe extern "stdcall" fn DeleteCriticalSection(cs: *mut u8) {
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Create an event object, which can be in a signaled or non-signaled state and can be waited on by threads.
+///
+/// # Arguments
+/// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
+/// * `manual_reset` - If `WinBool::TRUE`, the event is a manual-reset event that remains signaled until explicitly reset.
+///   If `WinBool::FALSE`, it is an auto-reset event that automatically resets to non-signaled after releasing a single waiting thread.
+/// * `initial_state` - If `WinBool::TRUE`, the event is initially signaled; if `WinBool::FALSE`, it is initially non-signaled.
+/// * `_name` - Currently ignored, as named events are not implemented, but it is still read for dev notification purposes.
+///
+/// # Safety
+/// The caller must ensure that if `_name` is not null, it points to a valid null-terminated string
+/// (ANSI for CreateEventA, UTF-16 for CreateEventW).
+/// The caller is responsible for managing the returned event handle, including closing it when no longer needed.
+///
+/// # Returns
+/// Returns a handle to the created event, or 0 on failure (e.g. invalid parameters).
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateEventA(
     _security_attrs: usize,
@@ -157,7 +173,23 @@ pub unsafe extern "stdcall" fn CreateEventA(
     h.as_raw()
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Create an event object, which can be in a signaled or non-signaled state and can be waited on by threads.
+///
+/// # Arguments
+/// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
+/// * `manual_reset` - If `WinBool::TRUE`, the event is a manual-reset event that remains signaled until explicitly reset.
+///   If `WinBool::FALSE`, it is an auto-reset event that automatically resets to non-signaled after releasing a single waiting thread.
+/// * `initial_state` - If `WinBool::TRUE`, the event is initially signaled; if `WinBool::FALSE`, it is initially non-signaled.
+/// * `_name` - Currently ignored, as named events are not implemented, but it is still read for dev notification purposes.
+///
+/// # Safety
+/// The caller must ensure that if `_name` is not null, it points to a valid null-terminated string
+/// (ANSI for CreateEventA, UTF-16 for CreateEventW).
+/// The caller is responsible for managing the returned event handle, including closing it when no longer needed.
+///
+/// # Returns
+/// Returns a handle to the created event, or 0 on failure (e.g. invalid parameters).
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateEventW(
     _security_attrs: usize,

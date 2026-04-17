@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-17T19:34:05.658983+00:00",
+  "generatedAt": "2026-04-17T22:26:32.548854+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -358,26 +358,26 @@
         {
           "name": "CreateEventA",
           "x64": {
-            "status": "implemented",
-            "symbol": "sync::CreateEventA",
+            "status": "partial",
+            "symbol": "CreateEventA",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "sync::CreateEventA",
+            "status": "partial",
+            "symbol": "CreateEventA",
             "source": "kernel32 - sync.rs"
           }
         },
         {
           "name": "CreateEventW",
           "x64": {
-            "status": "implemented",
-            "symbol": "sync::CreateEventW",
+            "status": "partial",
+            "symbol": "CreateEventW",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "sync::CreateEventW",
+            "status": "partial",
+            "symbol": "CreateEventW",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 128,
-      "partial": 39,
+      "implemented": 126,
+      "partial": 41,
       "stubbed": 12,
       "unimplemented": 2
     },
     "x86": {
-      "implemented": 121,
-      "partial": 39,
+      "implemented": 119,
+      "partial": 41,
       "stubbed": 20,
       "unimplemented": 1
     }
