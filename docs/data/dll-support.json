@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T23:49:19.383396+00:00",
+  "generatedAt": "2026-04-17T02:16:43.446145+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1320,13 +1320,13 @@
         {
           "name": "VirtualAlloc",
           "x64": {
-            "status": "implemented",
-            "symbol": "memory::VirtualAlloc",
+            "status": "partial",
+            "symbol": "VirtualAlloc",
             "source": "kernel32 - memory.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "memory::VirtualAlloc",
+            "status": "partial",
+            "symbol": "VirtualAlloc",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -2394,14 +2394,14 @@
   "totals": {
     "functions": 180,
     "x64": {
-      "implemented": 136,
-      "partial": 34,
+      "implemented": 135,
+      "partial": 35,
       "stubbed": 7,
       "unimplemented": 3
     },
     "x86": {
-      "implemented": 129,
-      "partial": 34,
+      "implemented": 128,
+      "partial": 35,
       "stubbed": 17,
       "unimplemented": 0
     }

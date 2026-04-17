@@ -50,7 +50,6 @@ impl DllPlugin for Kernel32Plugin32 {
             Export::Func("GetStdHandle", as_win_api!(console::GetStdHandle)),
             Export::Func("GetProcessHeap", as_win_api!(memory::GetProcessHeap)),
             Export::Func("HeapDestroy", as_win_api!(memory::HeapDestroy)),
-            Export::Func("VirtualAlloc", as_win_api!(memory::VirtualAlloc)),
             Export::Func(
                 "InitializeCriticalSection",
                 as_win_api!(sync::InitializeCriticalSection),
@@ -206,6 +205,10 @@ impl DllPlugin for Kernel32Plugin32 {
             PartialExport {
                 name: "HeapReAlloc",
                 func: as_win_api!(memory::HeapReAlloc),
+            },
+            PartialExport {
+                name: "VirtualAlloc",
+                func: as_win_api!(memory::VirtualAlloc),
             },
             PartialExport {
                 name: "VirtualFree",
