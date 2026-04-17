@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-17T22:26:32.548854+00:00",
+  "generatedAt": "2026-04-17T23:04:53.888400+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -410,26 +410,26 @@
         {
           "name": "CreateMutexA",
           "x64": {
-            "status": "implemented",
-            "symbol": "sync::CreateMutexA",
+            "status": "partial",
+            "symbol": "CreateMutexA",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "sync::CreateMutexA",
+            "status": "partial",
+            "symbol": "CreateMutexA",
             "source": "kernel32 - sync.rs"
           }
         },
         {
           "name": "CreateMutexW",
           "x64": {
-            "status": "implemented",
-            "symbol": "sync::CreateMutexW",
+            "status": "partial",
+            "symbol": "CreateMutexW",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "sync::CreateMutexW",
+            "status": "partial",
+            "symbol": "CreateMutexW",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 126,
-      "partial": 41,
+      "implemented": 124,
+      "partial": 43,
       "stubbed": 12,
       "unimplemented": 2
     },
     "x86": {
-      "implemented": 119,
-      "partial": 41,
+      "implemented": 117,
+      "partial": 43,
       "stubbed": 20,
       "unimplemented": 1
     }

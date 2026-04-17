@@ -60,8 +60,6 @@ impl DllPlugin for Kernel32Plugin {
             ),
             Export::Func("SetEvent", as_win_api!(sync::SetEvent)),
             Export::Func("ResetEvent", as_win_api!(sync::ResetEvent)),
-            Export::Func("CreateMutexA", as_win_api!(sync::CreateMutexA)),
-            Export::Func("CreateMutexW", as_win_api!(sync::CreateMutexW)),
             Export::Func("ReleaseMutex", as_win_api!(sync::ReleaseMutex)),
             Export::Func("CreateSemaphoreA", as_win_api!(sync::CreateSemaphoreA)),
             Export::Func("CreateSemaphoreW", as_win_api!(sync::CreateSemaphoreW)),
@@ -262,6 +260,14 @@ impl DllPlugin for Kernel32Plugin {
             PartialExport {
                 name: "CreateEventW",
                 func: as_win_api!(sync::CreateEventW),
+            },
+            PartialExport {
+                name: "CreateMutexA",
+                func: as_win_api!(sync::CreateMutexA),
+            },
+            PartialExport {
+                name: "CreateMutexW",
+                func: as_win_api!(sync::CreateMutexW),
             },
         ]
     }
