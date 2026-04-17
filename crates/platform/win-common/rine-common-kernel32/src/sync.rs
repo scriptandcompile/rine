@@ -239,6 +239,37 @@ pub fn create_event(manual_reset: WinBool, initial_state: WinBool) -> Handle {
     handle_table().insert(HandleEntry::Event(waitable))
 }
 
+/// Set an event to the signaled state, releasing any waiting threads.
+///
+/// # Arguments
+/// * `event_handle` - A handle to the event to set. The caller must have appropriate access rights to the event.
+///
+/// # Safety
+/// The caller must ensure that `event_handle` is a valid handle to an event object and that the
+/// caller has appropriate access rights to set it.
+///
+/// # Returns
+/// Setting an event with an invalid handle will result in failure and return `WinBool::FALSE`.
+/// If the event is successfully set to the signaled state, the function returns `WinBool::TRUE`
+/// and any waiting threads are released according to the event's reset mode (manual or auto).
+pub fn set_event(event_handle: Handle) -> WinBool {
+    let waitable = match handle_table().get_waitable(event_handle) {
+        Some(Waitable::Event(e)) => e,
+        _ => return WinBool::FALSE,
+    };
+
+    let mut signaled = waitable.inner.signaled.lock().unwrap();
+    *signaled = true;
+
+    if waitable.inner.manual_reset {
+        waitable.inner.condvar.notify_all();
+    } else {
+        waitable.inner.condvar.notify_one();
+    }
+
+    WinBool::TRUE
+}
+
 /// Creates a named or unnamed mutex.
 ///
 /// # Arguments

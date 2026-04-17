@@ -216,30 +216,25 @@ pub unsafe extern "win64" fn CreateEventW(
     handle.as_raw()
 }
 
-/// SetEvent — signal the event and wake waiters.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Set an event to the signaled state, releasing any waiting threads.
+///
+/// # Arguments
+/// * `event_handle` - A handle to the event to set. The caller must have appropriate access rights to the event.
+///
+/// # Safety
+/// The caller must ensure that `event_handle` is a valid handle to an event object and that the
+/// caller has appropriate access rights to set it.
+///
+/// # Returns
+/// Setting an event with an invalid handle will result in failure and return `WinBool::FALSE`.
+/// If the event is successfully set to the signaled state, the function returns `WinBool::TRUE`
+/// and any waiting threads are released according to the event's reset mode (manual or auto).
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
     let handle = Handle::from_raw(event_handle);
 
-    let waitable = match handle_table().get_waitable(handle) {
-        Some(rine_types::threading::Waitable::Event(e)) => e,
-        _ => {
-            warn!(handle = event_handle, "SetEvent: invalid handle");
-            return WinBool::FALSE;
-        }
-    };
-
-    let mut signaled = waitable.inner.signaled.lock().unwrap();
-
-    *signaled = true;
-    if waitable.inner.manual_reset {
-        waitable.inner.condvar.notify_all();
-    } else {
-        waitable.inner.condvar.notify_one();
-    }
-
-    WinBool::TRUE
+    common::sync::set_event(handle)
 }
 
 /// ResetEvent — clear the signalled state.
