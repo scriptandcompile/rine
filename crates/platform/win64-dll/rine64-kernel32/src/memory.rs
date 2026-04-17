@@ -73,8 +73,25 @@ pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
     common::memory::heap_destroy(handle)
 }
 
-/// HeapAlloc — allocate a block from a heap.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Allocate a block from a heap.
+///
+/// # Arguments
+/// * `heap_handle` - A handle to the heap from which the memory will be allocated, returned by HeapCreate or GetProcessHeap.
+/// * `flags` - Allocation options. Supported flags:
+///     * `HEAP_ZERO_MEMORY` (0x00000008): If this flag is specified, the allocated memory will be initialized to zero.
+/// * `size` - The number of bytes to allocate. If this parameter is zero, the function allocates the minimum possible size (1 byte).
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to the allocated memory block.
+/// If the function fails, the return value is `NULL`.
+///
+/// # Safety
+/// The caller must ensure that `heap_handle` is a valid handle returned by HeapCreate or GetProcessHeap, and that the heap has not been
+/// destroyed. The caller is responsible for freeing the allocated memory using HeapFree when it is no longer needed.
+///
+/// # Note
+/// * `HEAP_NO_SERIALIZE` (0x00000001) and `HEAP_GENERATE_EXCEPTIONS` (0x00000004) are accepted but have no effect in this implementation.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn HeapAlloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
     let handle = Handle::from_raw(heap_handle);
