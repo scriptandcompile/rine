@@ -4,7 +4,7 @@ use std::process::Command;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 
-use rine_types::errors::WinBool;
+use rine_types::errors::{ERROR_SUCCESS, WinBool};
 use rine_types::handles::{HandleEntry, handle_table};
 use rine_types::os::ProcessInformation;
 use rine_types::threading::{ProcessWaitable, STILL_ACTIVE};
@@ -185,9 +185,15 @@ pub fn get_current_process() -> isize {
     -1
 }
 
-/// Get the last error code for the current thread. Currently always returns 0 (ERROR_SUCCESS).
+/// Get the last error code for the current thread.
+///
+/// # Returns
+/// Currently always returns 0 (ERROR_SUCCESS).
+///
+/// # Note
+/// Stub implementation which always indicates success.
 pub fn get_last_error() -> u32 {
-    0
+    ERROR_SUCCESS
 }
 
 /// Get a module handle by name. Currently only supports NULL (main executable) and returns 0 as a placeholder.

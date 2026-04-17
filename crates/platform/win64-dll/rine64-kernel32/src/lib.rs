@@ -18,7 +18,6 @@ impl DllPlugin for Kernel32Plugin {
     fn exports(&self) -> Vec<Export> {
         vec![
             Export::Func("ExitProcess", as_win_api!(process::ExitProcess)),
-            Export::Func("GetLastError", as_win_api!(process::GetLastError)),
             Export::Func("GetCommandLineA", as_win_api!(process::GetCommandLineA)),
             Export::Func("GetCommandLineW", as_win_api!(process::GetCommandLineW)),
             Export::Func("CreateProcessA", as_win_api!(process::CreateProcessA)),
@@ -135,6 +134,10 @@ impl DllPlugin for Kernel32Plugin {
             StubExport {
                 name: "LoadLibraryW",
                 func: as_win_api!(process::LoadLibraryW),
+            },
+            StubExport {
+                name: "GetLastError",
+                func: as_win_api!(process::GetLastError),
             },
             StubExport {
                 name: "VirtualQuery",

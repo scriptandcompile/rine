@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-17T05:39:59.026320+00:00",
+  "generatedAt": "2026-04-17T17:51:17.335870+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -878,8 +878,8 @@
         {
           "name": "GetLastError",
           "x64": {
-            "status": "implemented",
-            "symbol": "process::GetLastError",
+            "status": "stubbed",
+            "symbol": "GetLastError",
             "source": "kernel32 - process.rs"
           },
           "x86": {
@@ -2407,9 +2407,9 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 134,
+      "implemented": 133,
       "partial": 36,
-      "stubbed": 9,
+      "stubbed": 10,
       "unimplemented": 2
     },
     "x86": {

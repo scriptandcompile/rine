@@ -302,8 +302,22 @@ pub unsafe extern "stdcall" fn GetCurrentProcess() -> isize {
     common::process::get_current_process()
 }
 
-/// Get the last error code for the current thread. Currently always returns 0 (ERROR_SUCCESS).
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Get the last error code for the current thread.
+///
+/// # Safety
+/// This is only unsafe because the caller may need to ensure thread-safety when calling it from multiple threads,
+/// as the error code is typically stored in thread-local storage.
+/// However, in our current implementation, we always return 0 (ERROR_SUCCESS), so there are no actual safety concerns
+/// with the current behavior.
+/// The function is marked as unsafe to reflect the typical usage pattern of GetLastError in Windows API, where it is
+/// often called after other API functions that may set the error code.
+///
+/// # Returns
+/// Currently always returns 0 (ERROR_SUCCESS).
+///
+/// # Note
+/// Stub implementation which always indicates success.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetLastError() -> u32 {
     common::process::get_last_error()
