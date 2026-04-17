@@ -82,7 +82,6 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("CreateSemaphoreA", as_win_api!(sync::CreateSemaphoreA)),
             Export::Func("CreateSemaphoreW", as_win_api!(sync::CreateSemaphoreW)),
             Export::Func("ReleaseSemaphore", as_win_api!(sync::ReleaseSemaphore)),
-            Export::Func("VirtualProtect", as_win_api!(memory::VirtualProtect)),
             Export::Func("TlsAlloc", as_win_api!(thread::TlsAlloc)),
             Export::Func("TlsFree", as_win_api!(thread::TlsFree)),
             Export::Func("TlsGetValue", as_win_api!(thread::TlsGetValue)),
@@ -203,6 +202,10 @@ impl DllPlugin for Kernel32Plugin {
             PartialExport {
                 name: "VirtualFree",
                 func: as_win_api!(memory::VirtualFree),
+            },
+            PartialExport {
+                name: "VirtualProtect",
+                func: as_win_api!(memory::VirtualProtect),
             },
             PartialExport {
                 name: "WriteConsoleA",
