@@ -4,8 +4,15 @@ use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::Handle;
 
-/// GetProcessHeap — return the default process heap handle.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Get the default process heap handle.
+///
+/// # Safety
+/// The caller must not call HeapDestroy on the returned handle, and must not use the heap after it has been destroyed by the system.
+/// The caller is responsible for freeing any memory allocated from the heap using HeapFree before the process exits.
+///
+/// # Returns
+/// A handle to the default process heap. This handle is valid for the lifetime of the process and should not be closed by the caller.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetProcessHeap() -> isize {
     common::memory::DEFAULT_HEAP.as_raw()
