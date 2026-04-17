@@ -1,11 +1,8 @@
 //! kernel32 memory functions: Heap API and VirtualAlloc/VirtualFree/VirtualProtect/VirtualQuery.
 
-use std::collections::HashMap;
-use std::sync::Mutex;
-
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, HandleEntry, HeapState, handle_table};
+use rine_types::handles::Handle;
 
 /// GetProcessHeap — return the default process heap handle.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
@@ -18,7 +15,8 @@ pub unsafe extern "win64" fn GetProcessHeap() -> isize {
 ///
 /// # Arguments
 /// * `options`: heap flags (HEAP_GENERATE_EXCEPTIONS, HEAP_NO_SERIALIZE, etc.)
-/// * `initial_size` / `maximum_size`: ignored — we use the Rust allocator.
+/// * `_initial_size`: ignored.
+/// * `_maximum_size`: ignored.
 ///
 /// # Safety
 /// The caller must eventually call HeapDestroy on the returned handle, and must not use the heap after it has been destroyed.
@@ -37,18 +35,10 @@ pub unsafe extern "win64" fn HeapCreate(
     _initial_size: usize,
     _maximum_size: usize,
 ) -> isize {
-    let heap = HeapState {
-        allocations: Mutex::new(HashMap::new()),
-        flags: options,
-    };
-    let h = handle_table().insert(HandleEntry::Heap(heap));
-
-    rine_types::dev_notify!(on_handle_created(
-        h.as_raw() as i64,
-        "Heap",
-        &format!("flags={options:#x}")
-    ));
-    h.as_raw()
+    match unsafe { common::memory::heap_create(options) } {
+        Some(handle) => handle.as_raw(),
+        None => 0,
+    }
 }
 
 /// HeapDestroy — destroy a private heap.

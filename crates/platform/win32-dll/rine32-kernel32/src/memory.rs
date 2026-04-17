@@ -1,10 +1,6 @@
-use std::collections::HashMap;
-use std::sync::Mutex;
-
 use rine_common_kernel32 as common;
-use rine_common_kernel32::memory::virtual_alloc;
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, HandleEntry, handle_table};
+use rine_types::handles::Handle;
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
@@ -16,7 +12,8 @@ pub unsafe extern "stdcall" fn GetProcessHeap() -> isize {
 ///
 /// # Arguments
 /// * `options`: heap flags (HEAP_GENERATE_EXCEPTIONS, HEAP_NO_SERIALIZE, etc.)
-/// * `initial_size` / `maximum_size`: ignored — we use the Rust allocator.
+/// * `_initial_size`: ignored.
+/// * `_maximum_size`: ignored.
 ///
 /// # Safety
 /// The caller must eventually call HeapDestroy on the returned handle, and must not use the heap after it has been destroyed.
@@ -35,11 +32,10 @@ pub unsafe extern "stdcall" fn HeapCreate(
     _initial_size: usize,
     _maximum_size: usize,
 ) -> isize {
-    let heap = rine_types::handles::HeapState {
-        allocations: Mutex::new(HashMap::new()),
-        flags: options,
-    };
-    handle_table().insert(HandleEntry::Heap(heap)).as_raw()
+    match unsafe { common::memory::heap_create(options) } {
+        Some(handle) => handle.as_raw(),
+        None => 0,
+    }
 }
 
 /// HeapDestroy — destroy a private heap.
@@ -216,7 +212,7 @@ pub unsafe extern "stdcall" fn VirtualAlloc(
     alloc_type: u32,
     protect: u32,
 ) -> *mut u8 {
-    unsafe { virtual_alloc(address, size, alloc_type, protect) }
+    unsafe { common::memory::virtual_alloc(address, size, alloc_type, protect) }
 }
 
 /// Free or decommit memory in the virtual address space of the calling process.

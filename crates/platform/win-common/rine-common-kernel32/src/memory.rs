@@ -38,6 +38,39 @@ pub static DEFAULT_HEAP: LazyLock<Handle> = LazyLock::new(|| {
     }))
 });
 
+/// Create a new private heap.
+///
+/// # Arguments
+/// * `options`: heap flags (HEAP_GENERATE_EXCEPTIONS, HEAP_NO_SERIALIZE, etc.)
+/// * `_initial_size`: ignored.
+/// * `_maximum_size`: ignored.
+///
+/// # Safety
+/// The caller must eventually call HeapDestroy on the returned handle, and must not use the heap after it has been destroyed.
+/// The caller is responsible for freeing any memory allocated from the heap using HeapFree before destroying the heap.
+///
+/// # Returns
+/// On success, returns a handle to the newly created heap. On failure, returns `None`.
+///
+/// # Note
+/// The default process heap returned by GetProcessHeap cannot be created or destroyed using
+/// HeapCreate or HeapDestroy, and attempting to do so will fail.
+pub unsafe fn heap_create(options: u32) -> Option<Handle> {
+    let heap = HeapState {
+        allocations: Mutex::new(HashMap::new()),
+        flags: options,
+    };
+    let handle = handle_table().insert(HandleEntry::Heap(heap));
+
+    rine_types::dev_notify!(on_handle_created(
+        handle.as_raw() as i64,
+        "Heap",
+        &format!("flags={options:#x}")
+    ));
+
+    Some(handle)
+}
+
 /// The default process heap, used by HeapAlloc with a null heap handle.
 /// This is lazily initialized on first use.
 ///
