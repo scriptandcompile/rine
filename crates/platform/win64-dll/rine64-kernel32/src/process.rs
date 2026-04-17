@@ -2,11 +2,9 @@
 //! GetCommandLineA/W, GetModuleHandleA/W, GetCurrentProcessId,
 //! GetExitCodeProcess.
 
-use std::sync::atomic::Ordering;
-
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, handle_table};
+use rine_types::handles::Handle;
 use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
 use rine_types::strings::{read_cstr, read_wstr};
 
@@ -392,23 +390,38 @@ pub unsafe extern "win64" fn GetCurrentProcess() -> isize {
     common::process::get_current_process()
 }
 
-/// GetExitCodeProcess — read the exit code of a process handle.
+/// Gets the exit code of a process handle.
 ///
-/// Returns `STILL_ACTIVE` (259) if the process has not yet terminated.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// # Arguments
+/// * `process` - A handle to the process.
+///   This handle must have the `PROCESS_QUERY_INFORMATION` or `PROCESS_QUERY_LIMITED_INFORMATION` access right.
+/// * `exit_code` - A pointer to a variable that receives the process's exit code.
+///   If the function succeeds, the exit code is stored in the variable pointed to by `exit_code`.
+///   If the function fails, the contents of the variable pointed to by `exit_code` are undefined.
+///   A process that is still active returns the `STILL_ACTIVE` (259) exit code.
+///
+/// # Safety
+/// The caller must ensure that the `process` handle is valid and has the appropriate access rights to query
+/// information about the process.
+/// The caller must also ensure that the `exit_code` pointer is valid and points to a writable memory location.
+///
+/// # Returns
+/// If the function succeeds, the return value is `WinBool::TRUE`.
+/// If the function fails, the return value is `WinBool::FALSE`.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetExitCodeProcess(process: isize, exit_code: *mut u32) -> WinBool {
     if exit_code.is_null() {
         return WinBool::FALSE;
     }
 
-    let h = Handle::from_raw(process);
-    if let Some(rine_types::threading::Waitable::Process(p)) = handle_table().get_waitable(h) {
-        unsafe { *exit_code = p.exit_code.load(Ordering::Acquire) };
+    let handle = Handle::from_raw(process);
+    if let Some(code) = common::process::get_exit_code_process(handle) {
+        unsafe { *exit_code = code };
         return WinBool::TRUE;
-    }
+    };
 
-    warn!(handle = ?h, "GetExitCodeProcess: invalid handle");
+    warn!(handle = ?handle, "GetExitCodeProcess: invalid handle");
     WinBool::FALSE
 }
 

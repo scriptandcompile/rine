@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 
 use rine_types::errors::{ERROR_SUCCESS, WinBool};
-use rine_types::handles::{HandleEntry, handle_table};
+use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::os::ProcessInformation;
 use rine_types::threading::{ProcessWaitable, STILL_ACTIVE};
 
@@ -198,6 +198,35 @@ pub fn reap_child(
 /// The pseudo-handle for the current process, which is currently always -1.
 pub fn get_current_process() -> isize {
     -1
+}
+
+/// Gets the exit code of a process handle.
+///
+/// # Arguments
+/// * `process_handle` - A handle to the process.
+///   This handle must have the `PROCESS_QUERY_INFORMATION` or `PROCESS_QUERY_LIMITED_INFORMATION` access right.
+/// * `exit_code` - A pointer to a variable that receives the process's exit code.
+///   If the function succeeds, the exit code is stored in the variable pointed to by `exit_code`.
+///   If the function fails, the contents of the variable pointed to by `exit_code` are undefined.
+///   A process that is still active returns the `STILL_ACTIVE` (259) exit code.
+///
+/// # Safety
+/// The caller must ensure that the `process` handle is valid and has the appropriate access rights to query
+/// information about the process.
+/// The caller must also ensure that the `exit_code` pointer is valid and points to a writable memory location.
+///
+/// # Returns
+/// If the function succeeds, the return value is nonzero `WinBool::TRUE`.
+/// If the function fails, the return value is zero `WinBool::FALSE`.
+pub fn get_exit_code_process(process_handle: Handle) -> Option<u32> {
+    if let Some(rine_types::threading::Waitable::Process(p)) =
+        handle_table().get_waitable(process_handle)
+    {
+        return Some(p.exit_code.load(Ordering::Acquire));
+    }
+
+    warn!(handle = ?process_handle, "GetExitCodeProcess: invalid handle");
+    None
 }
 
 /// Get the last error code for the current thread.

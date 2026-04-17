@@ -1,8 +1,8 @@
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
+use rine_types::handles::Handle;
 use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
 use rine_types::strings::{read_cstr, read_wstr};
-use rine_types::threading;
 
 use tracing::warn;
 
@@ -394,15 +394,37 @@ pub unsafe extern "stdcall" fn GetLastError() -> u32 {
     common::process::get_last_error()
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Gets the exit code of a process handle.
+///
+/// # Arguments
+/// * `process` - A handle to the process.
+///   This handle must have the `PROCESS_QUERY_INFORMATION` or `PROCESS_QUERY_LIMITED_INFORMATION` access right.
+/// * `exit_code` - A pointer to a variable that receives the process's exit code.
+///   If the function succeeds, the exit code is stored in the variable pointed to by `exit_code`.
+///   If the function fails, the contents of the variable pointed to by `exit_code` are undefined.
+///   A process that is still active returns the `STILL_ACTIVE` (259) exit code.
+///
+/// # Safety
+/// The caller must ensure that the `process` handle is valid and has the appropriate access rights to query
+/// information about the process.
+/// The caller must also ensure that the `exit_code` pointer is valid and points to a writable memory location.
+///
+/// # Returns
+/// If the function succeeds, the return value is `WinBool::TRUE`.
+/// If the function fails, the return value is `WinBool::FALSE`.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetExitCodeProcess(
-    _process_handle: isize,
-    exit_code_out: *mut u32,
-) -> WinBool {
-    if exit_code_out.is_null() {
+pub unsafe extern "stdcall" fn GetExitCodeProcess(process: isize, exit_code: *mut u32) -> WinBool {
+    if exit_code.is_null() {
         return WinBool::FALSE;
     }
-    unsafe { *exit_code_out = threading::STILL_ACTIVE };
-    WinBool::TRUE
+
+    let handle = Handle::from_raw(process);
+    if let Some(code) = common::process::get_exit_code_process(handle) {
+        unsafe { *exit_code = code };
+        return WinBool::TRUE;
+    };
+
+    warn!(handle = ?handle, "GetExitCodeProcess: invalid handle");
+    WinBool::FALSE
 }
