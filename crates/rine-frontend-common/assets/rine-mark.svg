@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220" role="img" aria-labelledby="title desc">
+  <title id="title">Rine brand mark</title>
+  <desc id="desc">Rounded square gradient icon with a centered capital R matching the docs site header mark.</desc>
+  <defs>
+    <linearGradient id="rineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7df9c6"/>
+      <stop offset="100%" stop-color="#49b8ff"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="220" height="220" rx="75" ry="75" fill="url(#rineGradient)"/>
+  <path fill="#07131f" d="M66 0V700H370Q436 700 485.0 677.0Q534 654 561.0 612.0Q588 570 588 513V501Q588 438 558.0 399.0Q528 360 484 342V324Q524 322 546.0 296.5Q568 271 568 229V0H436V210Q436 234 423.5 249.0Q411 264 382 264H198V0ZM198 384H356Q403 384 429.5 409.5Q456 435 456 477V487Q456 529 430.0 554.5Q404 580 356 580H198Z" transform="translate(78.4000 142.6000) scale(0.100000 -0.100000)"/>
+</svg>

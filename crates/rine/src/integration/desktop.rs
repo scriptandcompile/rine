@@ -18,11 +18,14 @@ use super::errors::DesktopError;
 /// Name used for the .desktop entry (without extension).
 const APP_ID: &str = "rine";
 const DESKTOP_FILE_NAME: &str = "rine.desktop";
+const ICON_NAME: &str = "rine";
+const ICON_FILE_NAME: &str = "rine.svg";
 const MIME_TYPES: [&str; 3] = [
     "application/x-dosexec",
     "application/x-ms-dos-executable",
     "application/vnd.microsoft.portable-executable",
 ];
+const ICON_SVG: &str = include_str!("../../../rine-frontend-common/assets/rine-mark.svg");
 
 /// Return `$XDG_DATA_HOME` or fall back to `$HOME/.local/share`.
 fn xdg_data_home() -> Result<PathBuf, DesktopError> {
@@ -51,10 +54,12 @@ struct Paths {
     desktop_file: PathBuf,
     mime_xml: PathBuf,
     mimeapps_list: PathBuf,
+    icon_file: PathBuf,
     applications_dir: PathBuf,
     mime_packages_dir: PathBuf,
     mime_dir: PathBuf,
     config_dir: PathBuf,
+    icons_dir: PathBuf,
 }
 
 impl Paths {
@@ -62,16 +67,19 @@ impl Paths {
         let data = xdg_data_home()?;
         let config_dir = xdg_config_home()?;
         let applications_dir = data.join("applications");
+        let icons_dir = data.join("icons/hicolor/scalable/apps");
         let mime_packages_dir = data.join("mime/packages");
         let mime_dir = data.join("mime");
         Ok(Self {
             desktop_file: applications_dir.join(DESKTOP_FILE_NAME),
             mime_xml: mime_packages_dir.join(format!("{APP_ID}-exe.xml")),
             mimeapps_list: config_dir.join("mimeapps.list"),
+            icon_file: icons_dir.join(ICON_FILE_NAME),
             applications_dir,
             mime_packages_dir,
             mime_dir,
             config_dir,
+            icons_dir,
         })
     }
 }
@@ -87,11 +95,13 @@ fn desktop_entry(interpreter: &Path) -> String {
          Name=rine\n\
          Comment=Run Windows executables on Linux\n\
          Exec={interpreter} %f\n\
+         Icon={icon_name}\n\
          Terminal=true\n\
          NoDisplay=true\n\
          MimeType=application/x-dosexec;application/x-ms-dos-executable;application/vnd.microsoft.portable-executable;\n\
          Categories=System;Emulator;\n",
         interpreter = interpreter.display(),
+        icon_name = ICON_NAME,
     )
 }
 
@@ -367,12 +377,16 @@ pub fn install(interpreter_override: Option<&Path>) -> Result<PathBuf, DesktopEr
     // Create directories if they don't exist.
     fs::create_dir_all(&paths.applications_dir)?;
     fs::create_dir_all(&paths.mime_packages_dir)?;
+    fs::create_dir_all(&paths.icons_dir)?;
 
     // Write the .desktop file.
     fs::write(&paths.desktop_file, desktop_entry(&interpreter))?;
 
     // Write the MIME type XML.
     fs::write(&paths.mime_xml, MIME_XML)?;
+
+    // Install the icon so desktop environments can resolve the Icon= entry.
+    fs::write(&paths.icon_file, ICON_SVG)?;
 
     // Set rine as the default opener for supported Windows executable MIME types.
     set_default_handler(&paths)?;
@@ -399,6 +413,9 @@ pub fn uninstall() -> Result<(), DesktopError> {
     }
     if has_mime {
         fs::remove_file(&paths.mime_xml)?;
+    }
+    if paths.icon_file.exists() {
+        fs::remove_file(&paths.icon_file)?;
     }
 
     remove_default_handler(&paths)?;

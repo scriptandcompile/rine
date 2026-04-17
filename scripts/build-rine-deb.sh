@@ -42,7 +42,13 @@ esac
 
 OUT_DIR="$REPO_ROOT/target/debian"
 STAGING_DIR="$OUT_DIR/.staging"
+BRAND_ICON_SOURCE="$REPO_ROOT/crates/rine-frontend-common/assets/rine-mark.svg"
 mkdir -p "$OUT_DIR" "$STAGING_DIR"
+
+if [[ ! -f "$BRAND_ICON_SOURCE" ]]; then
+    echo "error: expected brand icon not found: $BRAND_ICON_SOURCE" >&2
+    exit 1
+fi
 
 echo "==> Building release binaries for plain rine (dev feature disabled)"
 cargo build --release -p rine --no-default-features -p rine-config
@@ -70,6 +76,17 @@ done
 
 write_desktop_and_mime_assets() {
     local pkg_dir="$1"
+    local include_rine_dev_bin="$2"
+
+    mkdir -p "$pkg_dir/usr/share/icons/hicolor/scalable/apps"
+
+    install -m 0644 "$BRAND_ICON_SOURCE" "$pkg_dir/usr/share/icons/hicolor/scalable/apps/rine.svg"
+    install -m 0644 "$BRAND_ICON_SOURCE" "$pkg_dir/usr/share/icons/hicolor/scalable/apps/rine32.svg"
+    install -m 0644 "$BRAND_ICON_SOURCE" "$pkg_dir/usr/share/icons/hicolor/scalable/apps/rine-config.svg"
+
+    if [[ "$include_rine_dev_bin" == "yes" ]]; then
+        install -m 0644 "$BRAND_ICON_SOURCE" "$pkg_dir/usr/share/icons/hicolor/scalable/apps/rine-dev.svg"
+    fi
 
     cat > "$pkg_dir/usr/share/applications/rine.desktop" <<'EOF'
 [Desktop Entry]
@@ -77,11 +94,48 @@ Type=Application
 Name=rine
 Comment=Run Windows executables on Linux
 Exec=rine %f
+Icon=rine
 Terminal=true
 NoDisplay=true
-MimeType=application/x-dosexec;application/x-ms-dos-executable;
+MimeType=application/x-dosexec;application/x-ms-dos-executable;application/vnd.microsoft.portable-executable;
 Categories=System;Emulator;
 EOF
+
+    cat > "$pkg_dir/usr/share/applications/rine32.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=rine32
+Comment=Run 32-bit Windows executables on Linux
+Exec=rine32 %f
+Icon=rine32
+Terminal=true
+NoDisplay=true
+Categories=System;Emulator;
+EOF
+
+    cat > "$pkg_dir/usr/share/applications/rine-config.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=rine Configuration Editor
+Comment=Edit rine application settings
+Exec=rine-config
+Icon=rine-config
+Terminal=false
+Categories=Settings;Utility;
+EOF
+
+    if [[ "$include_rine_dev_bin" == "yes" ]]; then
+        cat > "$pkg_dir/usr/share/applications/rine-dev.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=rine Developer Dashboard
+Comment=Inspect and debug rine runtime state
+Exec=rine-dev
+Icon=rine-dev
+Terminal=false
+Categories=Development;Debugger;
+EOF
+    fi
 
     cat > "$pkg_dir/usr/share/mime/packages/rine-exe.xml" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -91,6 +145,10 @@ EOF
         <glob pattern="*.exe"/>
     </mime-type>
     <mime-type type="application/x-ms-dos-executable">
+        <comment>Windows executable</comment>
+        <glob pattern="*.exe"/>
+    </mime-type>
+    <mime-type type="application/vnd.microsoft.portable-executable">
         <comment>Windows executable</comment>
         <glob pattern="*.exe"/>
     </mime-type>
@@ -156,6 +214,10 @@ fi
 
 if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database /usr/share/applications || true
+fi
+
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
 fi
 
 if [[ "${1:-}" == "configure" ]] && [[ -x /usr/bin/rine ]]; then
@@ -238,6 +300,10 @@ fi
 if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database /usr/share/applications || true
 fi
+
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+fi
 EOF
 
     chmod 0755 "$debian_dir/postinst" "$debian_dir/prerm" "$debian_dir/postrm"
@@ -256,6 +322,7 @@ build_package() {
         "$debian_dir" \
         "$pkg_dir/usr/bin" \
         "$pkg_dir/usr/share/applications" \
+        "$pkg_dir/usr/share/icons/hicolor/scalable/apps" \
         "$pkg_dir/usr/share/mime/packages" \
         "$pkg_dir/usr/share/doc/$package_name"
 
@@ -268,7 +335,7 @@ build_package() {
         install -m 0755 "$BIN_RINE_DEV_DASH" "$pkg_dir/usr/bin/rine-dev"
     fi
 
-    write_desktop_and_mime_assets "$pkg_dir"
+    write_desktop_and_mime_assets "$pkg_dir" "$include_rine_dev_bin"
 
     if [[ "$package_name" == "rine" ]]; then
         cat > "$debian_dir/control" <<EOF
