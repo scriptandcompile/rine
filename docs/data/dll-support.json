@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-17T18:47:21.965218+00:00",
+  "generatedAt": "2026-04-17T18:55:28.234599+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -735,13 +735,13 @@
         {
           "name": "GetCurrentProcess",
           "x64": {
-            "status": "implemented",
-            "symbol": "process::GetCurrentProcess",
+            "status": "stubbed",
+            "symbol": "GetCurrentProcess",
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "process::GetCurrentProcess",
+            "status": "stubbed",
+            "symbol": "GetCurrentProcess",
             "source": "kernel32 - process.rs"
           }
         },
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 130,
+      "implemented": 129,
       "partial": 38,
-      "stubbed": 11,
+      "stubbed": 12,
       "unimplemented": 2
     },
     "x86": {
-      "implemented": 123,
+      "implemented": 122,
       "partial": 38,
-      "stubbed": 19,
+      "stubbed": 20,
       "unimplemented": 1
     }
   }

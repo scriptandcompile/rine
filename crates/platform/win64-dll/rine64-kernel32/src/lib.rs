@@ -24,7 +24,6 @@ impl DllPlugin for Kernel32Plugin {
                 "GetCurrentProcessId",
                 as_win_api!(process::GetCurrentProcessId),
             ),
-            Export::Func("GetCurrentProcess", as_win_api!(process::GetCurrentProcess)),
             Export::Func(
                 "GetExitCodeProcess",
                 as_win_api!(process::GetExitCodeProcess),
@@ -136,6 +135,10 @@ impl DllPlugin for Kernel32Plugin {
             StubExport {
                 name: "SetUnhandledExceptionFilter",
                 func: as_win_api!(process::SetUnhandledExceptionFilter),
+            },
+            StubExport {
+                name: "GetCurrentProcess",
+                func: as_win_api!(process::GetCurrentProcess),
             },
             StubExport {
                 name: "VirtualQuery",
