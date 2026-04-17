@@ -173,16 +173,22 @@ pub unsafe extern "win64" fn HeapReAlloc(
     unsafe { common::memory::heap_realloc(handle, flags, ptr, new_size) }
 }
 
-/// HeapSize — return the size of a heap allocation.
+/// Get the size of a heap allocation.
 ///
 /// # Arguments
 /// * `heap_handle` - A handle to the heap from which the memory was allocated, returned by HeapCreate or GetProcessHeap.
 /// * `_flags` - Ignored in this implementation.
 /// * `ptr` - A pointer to a memory block allocated from the heap by HeapAlloc or HeapReAlloc.
 ///
+/// # Safety
+/// The caller must ensure that `heap_handle` is a valid handle returned by HeapCreate or GetProcessHeap,
+/// and that the heap has not been destroyed.
+/// The caller must also ensure that `ptr` is a pointer returned by HeapAlloc or HeapReAlloc from the specified heap,
+/// and that it has not already been freed. An invalid handle or pointer results in undefined behavior.
+///
 /// # Returns
 /// The size of the allocated block in bytes, or `-1` (usize::MAX) if the handle or pointer is invalid.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn HeapSize(heap_handle: isize, _flags: u32, ptr: *const u8) -> usize {
     let handle = Handle::from_raw(heap_handle);
