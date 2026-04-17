@@ -185,13 +185,29 @@ pub unsafe extern "stdcall" fn SetUnhandledExceptionFilter(
     0 // NULL — no previous handler
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Gets a pointer to the ANSI command-line string.
+///
+/// # Safety
+/// The returned pointer is valid for the lifetime of the process.
+///
+/// # Returns
+/// A pointer to a null-terminated ANSI string containing the command line for the current process.
+/// The caller should not attempt to modify the contents of the string, as it may be shared and is not owned by the caller.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCommandLineA() -> *const u8 {
     common::process::cached_cmd_line().ansi.as_ptr().cast()
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Gets a pointer to the wide command-line string.
+///
+/// # Safety
+/// The returned pointer is valid for the lifetime of the process.
+///
+/// # Returns
+/// A pointer to a null-terminated UTF-16LE string containing the command line for the current process.
+/// The caller should not attempt to modify the contents of the string, as it may be shared and is not owned by the caller.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCommandLineW() -> *const u16 {
     common::process::cached_cmd_line().wide.as_ptr()
