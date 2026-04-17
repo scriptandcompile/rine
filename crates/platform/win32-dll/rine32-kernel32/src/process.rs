@@ -266,10 +266,28 @@ pub unsafe extern "stdcall" fn GetCommandLineW() -> *const u16 {
     common::process::cached_cmd_line().wide.as_ptr()
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Gets the process ID of the calling process.
+///
+/// # Safety
+/// This function is unsafe because it is a raw FFI function that can be called from C code.
+/// However, there are no specific safety concerns with the current implementation, as it simply
+/// returns the process ID using Rust's standard library.
+/// The function is marked as unsafe to reflect the typical usage pattern of Windows API functions,
+/// which are often unsafe due to their FFI nature and potential for misuse by callers.
+///
+/// # Returns
+/// The process ID of the calling process.
+/// This value is a non-negative integer that uniquely identifies the process within the system.
+/// The process ID can be used in various API calls that require a process identifier, such as
+/// `OpenProcess` or `WaitForSingleObject`.
+///
+/// # Note
+/// Process IDs can be reused by the system after a process terminates, so they should not
+/// be assumed to be unique over time.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCurrentProcessId() -> u32 {
-    std::process::id()
+    common::process::get_current_process_id()
 }
 
 /// Retrieve the base address of a loaded module.

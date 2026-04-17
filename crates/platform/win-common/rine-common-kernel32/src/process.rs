@@ -147,6 +147,21 @@ pub unsafe fn create_process(
     WinBool::TRUE
 }
 
+/// Gets the process ID of the calling process.
+///
+/// # Returns
+/// The process ID of the calling process.
+/// This value is a non-negative integer that uniquely identifies the process within the system.
+/// The process ID can be used in various API calls that require a process identifier, such as
+/// `OpenProcess` or `WaitForSingleObject`.
+///
+/// # Note
+/// Process IDs can be reused by the system after a process terminates, so they should not
+/// be assumed to be unique over time.
+pub fn get_current_process_id() -> u32 {
+    std::process::id()
+}
+
 /// Find the path to the running `rine` binary.
 pub fn rine_exe() -> std::path::PathBuf {
     std::env::current_exe().unwrap_or_else(|_| "rine".into())
