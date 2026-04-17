@@ -100,7 +100,7 @@ pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
 /// Leave a critical section by unlocking the underlying mutex.
 ///
 /// # Arguments
-/// * `cs` - A pointer to the critical section to leave. Must have been initialized with `init_critical_section`.
+/// * `cs` - A pointer to the critical section to leave. Must have been initialized with `InitializeCriticalSection`.
 ///
 /// # Safety
 /// The caller must ensure that `cs` is a valid pointer to a critical section that has been properly initialized.
@@ -119,6 +119,12 @@ pub unsafe extern "stdcall" fn LeaveCriticalSection(cs: *mut u8) {
     unsafe { common::sync::leave_critical_section(cs) };
 }
 
+/// Delete a critical section by destroying the underlying mutex and freeing resources.
+///
+/// # Arguments
+/// * `cs` - A pointer to the critical section to delete. Must have been initialized with `InitializeCriticalSection`.
+///
+/// # Safety
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn DeleteCriticalSection(cs: *mut u8) {
