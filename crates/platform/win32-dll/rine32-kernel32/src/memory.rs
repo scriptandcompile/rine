@@ -326,8 +326,30 @@ pub unsafe extern "stdcall" fn VirtualProtect(
 
 /// Query information about a range of pages in the virtual address space of the calling process.
 ///
-/// Stub: returns 0 (failure).
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// # Arguments
+/// * `_address` - A pointer to the base address of the region of pages to be queried.
+///   This can be any address in the process's virtual address space, and does not need to be the base address of an allocated region.
+/// * `_buffer` - A pointer to a buffer that receives information about the specified page range.
+///   The structure of this buffer is implementation-defined and may not match the MEMORY_BASIC_INFORMATION
+///   structure used by the Windows API.
+/// * `_length` - The size of the buffer in bytes.
+///   The function fails if this parameter is smaller than the size of the information returned by the function.
+///
+/// # Safety
+/// The caller is responsible for ensuring that the specified address range is valid and that the buffer is large
+/// enough to receive the information returned by the function.
+/// The caller must also ensure that the function is not called on memory that has already been freed or decommitted,
+/// as this may result in undefined behavior.
+/// Additionally, the caller must ensure that the buffer pointed to by `_buffer` is properly aligned for the information
+/// returned by the function, as misaligned access may result in undefined behavior.
+/// Finally, the caller must ensure that the function is not called concurrently from multiple threads with overlapping
+/// address ranges, as this may also result in undefined behavior.
+///
+/// # Returns
+/// The function returns the size of the information returned in bytes, or `-1` (usize::MAX) if the specified address is
+/// invalid or if the buffer is too small to receive the information.
+/// Extended error information should be (but currently cannot be) obtained by calling GetLastError.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn VirtualQuery(
     _address: *const u8,
