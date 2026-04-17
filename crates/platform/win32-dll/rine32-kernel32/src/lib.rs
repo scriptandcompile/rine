@@ -49,10 +49,6 @@ impl DllPlugin for Kernel32Plugin32 {
                 as_win_api!(sync::InitializeCriticalSection),
             ),
             Export::Func(
-                "InitializeCriticalSectionAndSpinCount",
-                as_win_api!(sync::InitializeCriticalSectionAndSpinCount),
-            ),
-            Export::Func(
                 "TryEnterCriticalSection",
                 as_win_api!(sync::TryEnterCriticalSection),
             ),
@@ -266,6 +262,10 @@ impl DllPlugin for Kernel32Plugin32 {
             PartialExport {
                 name: "CreateProcessW",
                 func: as_win_api!(process::CreateProcessW),
+            },
+            PartialExport {
+                name: "InitializeCriticalSectionAndSpinCount",
+                func: as_win_api!(sync::InitializeCriticalSectionAndSpinCount),
             },
         ]
     }

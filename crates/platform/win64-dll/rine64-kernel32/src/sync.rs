@@ -11,8 +11,17 @@ use rine_types::handles::{Handle, handle_table};
 
 use tracing::{debug, warn};
 
-/// InitializeCriticalSection
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Initialize a critical section.
+///
+/// # Arguments
+/// * `cs` - pointer to a CRITICAL_SECTION structure to initialize. Must not be null.
+///
+/// # Safety
+/// The caller must ensure that `cs` points to a valid memory location for a CRITICAL_SECTION structure.
+/// Initializing a critical section on an invalid pointer may lead to undefined behavior.
+/// The caller is responsible for ensuring that the CRITICAL_SECTION is properly deleted with
+/// `DeleteCriticalSection` when no longer needed.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn InitializeCriticalSection(cs: *mut u8) {
     if cs.is_null() {
@@ -22,8 +31,22 @@ pub unsafe extern "win64" fn InitializeCriticalSection(cs: *mut u8) {
     unsafe { common::sync::init_critical_section(cs) };
 }
 
-/// InitializeCriticalSectionAndSpinCount — spin count is ignored (always 0).
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Initialize a critical section with a spin count.
+///
+/// # Arguments
+/// * `cs` - pointer to a CRITICAL_SECTION structure to initialize. Must not be null.
+/// * `_spin_count` - The spin count is currently ignored, as our critical section implementation does not support spinning.
+///
+/// # Safety
+/// The caller must ensure that `cs` points to a valid memory location for a CRITICAL_SECTION structure.
+/// Initializing a critical section on an invalid pointer may lead to undefined behavior.
+/// The caller is responsible for ensuring that the CRITICAL_SECTION is properly deleted with
+/// `DeleteCriticalSection` when no longer needed.
+///
+/// # Returns
+/// If the critical section was successfully initialized, the function returns `WinBool::TRUE`.
+/// If the `cs` pointer is null, the function returns `WinBool::FALSE` and does not perform any initialization.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn InitializeCriticalSectionAndSpinCount(
     cs: *mut u8,

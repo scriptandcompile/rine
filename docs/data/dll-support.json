@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-17T18:55:28.234599+00:00",
+  "generatedAt": "2026-04-17T19:34:05.658983+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1086,13 +1086,13 @@
         {
           "name": "InitializeCriticalSectionAndSpinCount",
           "x64": {
-            "status": "implemented",
-            "symbol": "sync::InitializeCriticalSectionAndSpinCount",
+            "status": "partial",
+            "symbol": "InitializeCriticalSectionAndSpinCount",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "sync::InitializeCriticalSectionAndSpinCount",
+            "status": "partial",
+            "symbol": "InitializeCriticalSectionAndSpinCount",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 129,
-      "partial": 38,
+      "implemented": 128,
+      "partial": 39,
       "stubbed": 12,
       "unimplemented": 2
     },
     "x86": {
-      "implemented": 122,
-      "partial": 38,
+      "implemented": 121,
+      "partial": 39,
       "stubbed": 20,
       "unimplemented": 1
     }
