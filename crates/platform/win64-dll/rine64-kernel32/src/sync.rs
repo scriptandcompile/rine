@@ -98,23 +98,26 @@ pub unsafe extern "win64" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
     unsafe { common::sync::try_enter_critical_section(cs) }
 }
 
-/// LeaveCriticalSection — unlock the recursive mutex.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Leave a critical section by unlocking the underlying mutex.
+///
+/// # Arguments
+/// * `cs` - A pointer to the critical section to leave. Must have been initialized with `init_critical_section`.
+///
+/// # Safety
+/// The caller must ensure that `cs` is a valid pointer to a critical section that has been properly initialized.
+/// The caller must also ensure that the critical section is not used after being deleted.
+/// If `cs` is null, this function does nothing and returns immediately.
+///
+/// # Returns
+/// If the critical section was successfully left, the function returns `WinBool::TRUE`.
+/// If the `cs` pointer is null, the function returns `WinBool::FALSE` and does not perform any operation.
+///
+/// # Notes
+/// If the critical section was not owned by the calling thread, the behavior is undefined and may result in an error or deadlock.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn LeaveCriticalSection(cs: *mut u8) {
-    if cs.is_null() {
-        return;
-    }
-
-    unsafe {
-        let mutex = common::sync::get_mutex(cs);
-
-        if mutex.is_null() {
-            return;
-        }
-
-        libc::pthread_mutex_unlock(mutex);
-    }
+    unsafe { common::sync::leave_critical_section(cs) };
 }
 
 /// DeleteCriticalSection — destroy and deallocate the mutex.

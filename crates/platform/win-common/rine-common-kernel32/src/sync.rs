@@ -103,6 +103,38 @@ pub unsafe fn try_enter_critical_section(cs: *mut u8) -> WinBool {
     }
 }
 
+/// Leave a critical section by unlocking the underlying mutex.
+///
+/// # Arguments
+/// * `cs` - A pointer to the critical section to leave. Must have been initialized with `init_critical_section`.
+///
+/// # Safety
+/// The caller must ensure that `cs` is a valid pointer to a critical section that has been properly initialized.
+/// The caller must also ensure that the critical section is not used after being deleted.
+/// If `cs` is null, this function does nothing and returns immediately.
+///
+/// # Returns
+/// If the critical section was successfully left, the function returns `WinBool::TRUE`.
+/// If the `cs` pointer is null, the function returns `WinBool::FALSE` and does not perform any operation.
+///
+/// # Notes
+/// If the critical section was not owned by the calling thread, the behavior is undefined and may result in an error or deadlock.
+pub unsafe fn leave_critical_section(cs: *mut u8) {
+    if cs.is_null() {
+        return;
+    }
+
+    unsafe {
+        let mutex = get_mutex(cs);
+
+        if mutex.is_null() {
+            return;
+        }
+
+        libc::pthread_mutex_unlock(mutex);
+    }
+}
+
 /// Read the mutex pointer from a CRITICAL_SECTION.
 ///
 /// # Safety
