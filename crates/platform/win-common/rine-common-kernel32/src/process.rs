@@ -44,7 +44,7 @@ pub fn cached_cmd_line() -> &'static CmdLineCache {
     })
 }
 
-/// Core spawn logic shared by CreateProcessA/W.
+/// Create a child process.
 ///
 /// # Arguments
 /// - `exe_path`: the executable path to run (first arg).

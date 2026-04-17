@@ -70,11 +70,31 @@ pub unsafe extern "stdcall" fn FreeLibrary() -> u32 {
     0
 }
 
-/// CreateProcessA — create a child process (ANSI).
+/// Create a child process (ANSI).
+///
+/// # Arguments
+/// * `application_name` - A pointer to a null-terminated ANSI string specifying the module to execute.
+///   If NULL, the module name must be the first token in `command_line`.
+/// * `command_line` - A pointer to a null-terminated ANSI string specifying the command line to execute.
+///   The module name must be the first token if `application_name` is NULL.
+/// * `_process_attrs` - A pointer to a `SECURITY_ATTRIBUTES` structure that determines whether the returned
+///   handle to the new process object can be inherited by child processes. Can be NULL.
+/// * `_thread_attrs` - A pointer to a `SECURITY_ATTRIBUTES` structure that determines whether the returned
+///   handle to the new thread object can be inherited by child processes. Can be NULL.
+/// * `_inherit_handles` - If TRUE, each inheritable handle in the calling process is inherited by the new process.
+///   If FALSE, the handles are not inherited.
+/// * `_creation_flags` - The flags that control the priority class and the creation of the process.
+/// * `environment` - A pointer to the environment block for the new process. Can be NULL.
+/// * `_current_directory` - The full path to the current directory for the process. Can be NULL.
+/// * `_startup_info` - A pointer to a `STARTUPINFOA` structure.
+/// * `process_info` - A pointer to a `PROCESS_INFORMATION` structure that receives identification information about the new process.
 ///
 /// # Safety
-/// All pointer parameters must be null or point to valid memory of the
-/// expected layout.
+/// All pointer parameters must be null or point to valid memory of the expected layout.
+///
+/// # Returns
+/// If the function succeeds, the return value is nonzero (TRUE). If the function fails, the return value is zero (FALSE).
+/// To get extended error information, call `GetLastError`. Currently, out implementation does not set any error codes.
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateProcessA(
@@ -112,11 +132,31 @@ pub unsafe extern "stdcall" fn CreateProcessA(
     unsafe { common::process::create_process(&exe, &args, env, process_info) }
 }
 
-/// CreateProcessW — create a child process (wide).
+/// Create a child process (wide).
+///
+/// # Arguments
+/// * `application_name` - A pointer to a null-terminated wide string specifying the module to execute.
+///   If NULL, the module name must be the first token in `command_line`.
+/// * `command_line` - A pointer to a null-terminated wide string specifying the command line to execute.
+///   The module name must be the first token if `application_name` is NULL.
+/// * `_process_attrs` - A pointer to a `SECURITY_ATTRIBUTES` structure that determines whether the returned
+///   handle to the new process object can be inherited by child processes. Can be NULL.
+/// * `_thread_attrs` - A pointer to a `SECURITY_ATTRIBUTES` structure that determines whether the returned
+///   handle to the new thread object can be inherited by child processes. Can be NULL.
+/// * `_inherit_handles` - If TRUE, each inheritable handle in the calling process is inherited by the new process.
+///   If FALSE, the handles are not inherited.
+/// * `_creation_flags` - The flags that control the priority class and the creation of the process.
+/// * `environment` - A pointer to the environment block for the new process. Can be NULL.
+/// * `_current_directory` - The full path to the current directory for the process. Can be NULL.
+/// * `_startup_info` - A pointer to a `STARTUPINFOW` structure.
+/// * `process_info` - A pointer to a `PROCESS_INFORMATION` structure that receives identification information about the new process.
 ///
 /// # Safety
-/// All pointer parameters must be null or point to valid memory of the
-/// expected layout.
+/// All pointer parameters must be null or point to valid memory of the expected layout.
+///
+/// # Returns
+/// If the function succeeds, the return value is nonzero (TRUE). If the function fails, the return value is zero (FALSE).
+/// To get extended error information, call `GetLastError`. Currently, out implementation does not set any error codes.
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateProcessW(

@@ -20,8 +20,6 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("ExitProcess", as_win_api!(process::ExitProcess)),
             Export::Func("GetCommandLineA", as_win_api!(process::GetCommandLineA)),
             Export::Func("GetCommandLineW", as_win_api!(process::GetCommandLineW)),
-            Export::Func("CreateProcessA", as_win_api!(process::CreateProcessA)),
-            Export::Func("CreateProcessW", as_win_api!(process::CreateProcessW)),
             Export::Func(
                 "GetCurrentProcessId",
                 as_win_api!(process::GetCurrentProcessId),
@@ -247,6 +245,14 @@ impl DllPlugin for Kernel32Plugin {
             PartialExport {
                 name: "ExpandEnvironmentStringsW",
                 func: as_win_api!(environment::ExpandEnvironmentStringsW),
+            },
+            PartialExport {
+                name: "CreateProcessA",
+                func: as_win_api!(process::CreateProcessA),
+            },
+            PartialExport {
+                name: "CreateProcessW",
+                func: as_win_api!(process::CreateProcessW),
             },
         ]
     }
