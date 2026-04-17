@@ -133,6 +133,10 @@ impl DllPlugin for Kernel32Plugin32 {
                 func: as_win_api!(process::LoadLibraryA),
             },
             StubExport {
+                name: "LoadLibraryW",
+                func: as_win_api!(process::LoadLibraryW),
+            },
+            StubExport {
                 name: "GetProcAddress",
                 func: as_win_api!(process::GetProcAddress),
             },

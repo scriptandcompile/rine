@@ -6,9 +6,51 @@ use rine_types::threading;
 
 use tracing::warn;
 
+/// Load a DLL into the process's address space.
+///
+/// # Arguments
+/// * `_file_name` - A pointer to a null-terminated ANSI string specifying the name of the DLL to load.
+///   If the string does not specify an absolute path, the system searches for the DLL in a specific order of directories.
+///   If the function fails to find the DLL, it returns NULL (0).
+///
+/// # Safety
+/// This function is unsafe because it involves raw pointer parameters that must be used correctly by the caller.
+/// The caller must ensure that the `library_name` parameter is either null or points to a valid null-terminated
+/// ANSI string representing the name of the library to load.
+/// Additionally, the caller must handle the returned handle correctly, as it is a raw pointer that may need to
+/// be closed with `FreeLibrary` when it is no longer needed. Misuse of the returned handle can lead to resource
+/// leaks or other unintended consequences.
+///
+/// # Returns
+/// A handle to the loaded DLL module, or NULL (0) if the function fails to find the DLL.
+/// The returned handle can be used in subsequent calls to `GetProcAddress` and `FreeLibrary`.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn LoadLibraryA() -> u32 {
+pub unsafe extern "stdcall" fn LoadLibraryA(_file_name: *const u8) -> u32 {
     tracing::warn!(api = "LoadLibraryA", dll = "kernel32", "win32 stub called");
+    0
+}
+
+/// Load a DLL into the process's address space.
+///
+/// # Arguments
+/// * `_file_name` - A pointer to a null-terminated UTF-16LE string specifying the name of the DLL to load.
+///   If the string does not specify an absolute path, the system searches for the DLL in a specific order of directories.
+///   If the function fails to find the DLL, it returns NULL (0).
+///
+/// # Safety
+/// This function is unsafe because it involves raw pointer parameters that must be used correctly by the caller.
+/// The caller must ensure that the `library_name` parameter is either null or points to a valid null-terminated
+/// UTF-16LE string representing the name of the library to load.
+/// Additionally, the caller must handle the returned handle correctly, as it is a raw pointer that may need to
+/// be closed with `FreeLibrary` when it is no longer needed. Misuse of the returned handle can lead to resource
+/// leaks or other unintended consequences.
+///
+/// # Returns
+/// A handle to the loaded DLL module, or NULL (0) if the function fails to find the DLL.
+/// The returned handle can be used in subsequent calls to `GetProcAddress` and `FreeLibrary`.
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn LoadLibraryW(_file_name: *const u16) -> u32 {
+    tracing::warn!(api = "LoadLibraryW", dll = "kernel32", "win32 stub called");
     0
 }
 

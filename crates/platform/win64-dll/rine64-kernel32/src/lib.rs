@@ -123,6 +123,14 @@ impl DllPlugin for Kernel32Plugin {
                 func: as_win_api!(file::FindClose),
             },
             StubExport {
+                name: "LoadLibraryA",
+                func: as_win_api!(process::LoadLibraryA),
+            },
+            StubExport {
+                name: "LoadLibraryW",
+                func: as_win_api!(process::LoadLibraryW),
+            },
+            StubExport {
                 name: "VirtualQuery",
                 func: as_win_api!(memory::VirtualQuery),
             },
