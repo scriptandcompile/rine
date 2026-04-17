@@ -21,8 +21,6 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("GetLastError", as_win_api!(process::GetLastError)),
             Export::Func("GetCommandLineA", as_win_api!(process::GetCommandLineA)),
             Export::Func("GetCommandLineW", as_win_api!(process::GetCommandLineW)),
-            Export::Func("GetModuleHandleA", as_win_api!(process::GetModuleHandleA)),
-            Export::Func("GetModuleHandleW", as_win_api!(process::GetModuleHandleW)),
             Export::Func("CreateProcessA", as_win_api!(process::CreateProcessA)),
             Export::Func("CreateProcessW", as_win_api!(process::CreateProcessW)),
             Export::Func(
@@ -121,6 +119,14 @@ impl DllPlugin for Kernel32Plugin {
             StubExport {
                 name: "FindClose",
                 func: as_win_api!(file::FindClose),
+            },
+            StubExport {
+                name: "GetModuleHandleA",
+                func: as_win_api!(process::GetModuleHandleA),
+            },
+            StubExport {
+                name: "GetModuleHandleW",
+                func: as_win_api!(process::GetModuleHandleW),
             },
             StubExport {
                 name: "LoadLibraryA",

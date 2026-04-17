@@ -107,12 +107,7 @@ pub unsafe extern "win64" fn GetCommandLineW() -> *const u16 {
     common::process::cached_cmd_line().wide.as_ptr()
 }
 
-/// GetModuleHandleA — retrieve the base address of a loaded module.
-///
-/// When `module_name` is NULL, returns the base address of the main
-/// executable. For now we return NULL (0) as a placeholder — the loader
-/// will need to provide the real image base once entry-point execution
-/// is wired up.
+/// Retrieve the base address of a loaded module.
 ///
 /// # Arguments
 /// * `module_name` - A pointer to a null-terminated ANSI string specifying the module name.
@@ -120,6 +115,15 @@ pub unsafe extern "win64" fn GetCommandLineW() -> *const u16 {
 ///
 /// # Safety
 /// `module_name` must be null or a valid null-terminated ANSI string.
+///
+/// # Returns
+/// The base address of the specified module, or NULL (0) if the module is not found.
+/// If `module_name` is NULL, returns the base address of the main executable.
+///
+/// * Note
+///   When `module_name` is NULL, returns the base address of the main executable.
+///   For now we return NULL (0) as a placeholder — the loader will need to provide the real image base
+///   once entry-point execution is wired up.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetModuleHandleA(module_name: *const u8) -> usize {
@@ -131,13 +135,13 @@ pub unsafe extern "win64" fn GetModuleHandleA(module_name: *const u8) -> usize {
 
     unsafe {
         let name = read_cstr(module_name).unwrap_or_default();
-        tracing::warn!("GetModuleHandleA({name}) — returning 0 (not implemented)");
+        tracing::warn!("GetModuleHandleA({name}) — returning 0 (stubbed)");
 
         common::process::get_module_handle(&name)
     }
 }
 
-/// GetModuleHandleW — wide variant of `GetModuleHandleA`.
+/// Retrieve the base address of a loaded module.
 ///
 /// # Arguments
 /// * `module_name` - A pointer to a null-terminated UTF-16LE string specifying the module name.
@@ -145,6 +149,15 @@ pub unsafe extern "win64" fn GetModuleHandleA(module_name: *const u8) -> usize {
 ///
 /// # Safety
 /// `module_name` must be null or a valid null-terminated UTF-16LE string.
+///
+/// # Returns
+/// The base address of the specified module, or NULL (0) if the module is not found.
+/// If `module_name` is NULL, returns the base address of the main executable.
+///
+/// * Note
+///   When `module_name` is NULL, returns the base address of the main executable.
+///   For now we return NULL (0) as a placeholder — the loader will need to provide the real image base
+///   once entry-point execution is wired up.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetModuleHandleW(module_name: *const u16) -> usize {
@@ -156,7 +169,7 @@ pub unsafe extern "win64" fn GetModuleHandleW(module_name: *const u16) -> usize 
 
     unsafe {
         let name = read_wstr(module_name).unwrap_or_default();
-        tracing::warn!("GetModuleHandleW({name}) — returning 0 (not implemented)");
+        tracing::warn!("GetModuleHandleW({name}) — returning 0 (stubbed)");
 
         common::process::get_module_handle(&name)
     }
