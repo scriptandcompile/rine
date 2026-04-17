@@ -325,21 +325,24 @@ pub unsafe extern "win64" fn CreateMutexW(
 
 /// Release a mutex, decrementing its ownership count and potentially unblocking waiters.
 ///
-/// Returns TRUE on success, FALSE on failure (e.g. invalid handle, not a mutex, or not owned by the caller).
-///
 /// # Arguments
-///
 /// * `mutex_handle` - A handle to the mutex to release. The caller must have ownership of
 ///   the mutex (i.e. have previously acquired it and not yet released it).
 ///
 /// # Safety
-///
 /// The caller must ensure that `mutex_handle` is a valid handle to a mutex object that the caller currently owns.
-/// Releasing a mutex that is not owned by the caller, or using an invalid handle, will result in failure and return FALSE.
+/// Releasing a mutex that is not owned by the caller, or using an invalid handle, will result in failure and return `WinBool::FALSE`.
+///
+/// # Returns
+/// If the mutex is successfully released, the function returns `WinBool::TRUE` and any waiting threads
+/// are unblocked according to the mutex's behavior.
+/// If the mutex handle is invalid or the caller does not have ownership of the mutex,
+/// the function returns `WinBool::FALSE` and no action is taken.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
-    unsafe { common::sync::release_mutex(mutex_handle) }
+    let handle = Handle::from_raw(mutex_handle);
+    unsafe { common::sync::release_mutex(handle) }
 }
 
 // ── Semaphores ───────────────────────────────────────────────────
