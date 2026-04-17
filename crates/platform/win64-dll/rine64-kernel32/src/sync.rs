@@ -5,9 +5,9 @@
 
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, handle_table};
+use rine_types::handles::Handle;
 
-use tracing::{debug, warn};
+use tracing::debug;
 
 /// Initialize a critical section.
 ///
@@ -237,24 +237,25 @@ pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
     common::sync::set_event(handle)
 }
 
-/// ResetEvent — clear the signalled state.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Reset an event to the non-signaled state, causing threads that wait on it to block until it is set again.
+///
+/// # Arguments
+/// * `event_handle` - A handle to the event to reset. The caller must have appropriate access rights to the event.
+///
+/// # Safety
+/// The caller must ensure that `event_handle` is a valid handle to an event object and that the caller has
+/// appropriate access rights to reset it.
+///
+/// # Returns
+/// Resetting an event with an invalid handle will result in failure and return `WinBool::FALSE`.
+/// If the event is successfully reset to the non-signaled state, the function returns `WinBool::TRUE`
+/// and any threads that wait on it will block until it is set again.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ResetEvent(event_handle: isize) -> WinBool {
     let handle = Handle::from_raw(event_handle);
 
-    let waitable = match handle_table().get_waitable(handle) {
-        Some(rine_types::threading::Waitable::Event(e)) => e,
-        _ => {
-            warn!(handle = event_handle, "ResetEvent: invalid handle");
-            return WinBool::FALSE;
-        }
-    };
-
-    let mut signaled = waitable.inner.signaled.lock().unwrap();
-
-    *signaled = false;
-    WinBool::TRUE
+    common::sync::reset_event(handle)
 }
 
 // ── Mutexes ──────────────────────────────────────────────────────
@@ -429,6 +430,7 @@ pub unsafe extern "win64" fn ReleaseSemaphore(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rine_types::handles::handle_table;
     use rine_types::threading::{WaitStatus, wait_on};
 
     use std::ptr;
