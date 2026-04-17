@@ -70,19 +70,19 @@ pub unsafe fn enter_critical_section(cs: *mut u8) {
     }
 }
 
-/// Try to enter a critical section by locking the underlying mutex without blocking.
+/// Try a non-blocking lock attempt.
 ///
 /// # Arguments
-/// * `cs` - A pointer to the critical section to enter. Must have been initialized with `init_critical_section`.
+/// * `cs` - pointer to the CRITICAL_SECTION structure representing the mutex to attempt to lock. Must not be null.
 ///
 /// # Safety
-/// The caller must ensure that `cs` is a valid pointer to a critical section that has been properly initialized.
-/// The caller must also ensure that the critical section is not used after being deleted.
+/// The caller must ensure that `cs` points to a valid CRITICAL_SECTION structure.
+/// Passing an invalid pointer or a pointer to an improperly initialized CRITICAL_SECTION may lead to undefined behavior.
+/// The caller is responsible for ensuring that the CRITICAL_SECTION is properly initialized before calling this function.
 ///
 /// # Returns
-/// Returns `TRUE` if the critical section was successfully entered (i.e., the mutex was successfully locked), or
-/// `FALSE` if the critical section could not be entered (e.g., if the mutex is already owned by another thread or
-/// if `cs` is null).
+/// Returns `WinBool::TRUE` if the lock was successfully acquired, or `WinBool::FALSE`
+/// if the critical section is already owned by another thread or if an error occurred (e.g. invalid pointer).
 pub unsafe fn try_enter_critical_section(cs: *mut u8) -> WinBool {
     if cs.is_null() {
         return WinBool::FALSE;

@@ -78,7 +78,7 @@ pub unsafe extern "stdcall" fn EnterCriticalSection(cs: *mut u8) {
     }
 }
 
-/// TryEnterCriticalSection — non-blocking lock attempt.
+/// Try a non-blocking lock attempt.
 ///
 /// # Arguments
 /// * `cs` - pointer to the CRITICAL_SECTION structure representing the mutex to attempt to lock. Must not be null.
@@ -89,8 +89,8 @@ pub unsafe extern "stdcall" fn EnterCriticalSection(cs: *mut u8) {
 /// The caller is responsible for ensuring that the CRITICAL_SECTION is properly initialized before calling this function.
 ///
 /// # Returns
-/// Returns TRUE if the lock was successfully acquired, or FALSE if the critical section is already owned by another
-/// thread or if an error occurred (e.g. invalid pointer).
+/// Returns `WinBool::TRUE` if the lock was successfully acquired, or `WinBool::FALSE`
+/// if the critical section is already owned by another thread or if an error occurred (e.g. invalid pointer).
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
