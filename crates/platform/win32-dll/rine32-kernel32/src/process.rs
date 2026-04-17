@@ -154,7 +154,17 @@ pub unsafe extern "stdcall" fn CreateProcessW(
     unsafe { common::process::create_process(&exe, &args, env, process_info) }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// ExitProcess — terminate the current process.
+///
+/// # Arguments
+/// * `exit_code` - The exit code for the process. This value is returned to the operating system and can be used by
+/// other processes to determine the reason for termination.
+/// By convention, an exit code of 0 typically indicates successful completion,
+/// while non-zero values indicate various error conditions or specific exit statuses defined by the application.
+///
+/// # Safety
+/// Does not return.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ExitProcess(exit_code: u32) -> ! {
     let tid = unsafe { libc::syscall(libc::SYS_gettid) as u32 };

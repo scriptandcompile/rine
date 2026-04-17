@@ -62,6 +62,12 @@ pub unsafe extern "win64" fn LoadLibraryW(_file_name: *const u16) -> u32 {
 
 /// ExitProcess — terminate the current process.
 ///
+/// # Arguments
+/// * `exit_code` - The exit code for the process. This value is returned to the operating system and can be used by
+///   other processes to determine the reason for termination.
+///   By convention, an exit code of 0 typically indicates successful completion,
+///   while non-zero values indicate various error conditions or specific exit statuses defined by the application.
+///
 /// # Safety
 /// Does not return.
 #[allow(non_snake_case)]
