@@ -5,7 +5,7 @@ pub mod stdio;
 pub mod stdlib;
 pub mod string;
 
-use rine_dlls::{DllPlugin, Export, as_win_api};
+use rine_dlls::{DllPlugin, Export, StubExport, as_win_api};
 
 /// Primary msvcrt.dll plugin.
 pub struct MsvcrtPlugin;
@@ -31,7 +31,6 @@ impl DllPlugin for MsvcrtPlugin {
             Export::Func("_initterm", as_win_api!(crt_init::_initterm)),
             Export::Func("_initterm_e", as_win_api!(crt_init::_initterm_e)),
             // crt_support — functions
-            Export::Func("__set_app_type", as_win_api!(crt_support::__set_app_type)),
             Export::Func(
                 "__setusermatherr",
                 as_win_api!(crt_support::__setusermatherr),
@@ -68,6 +67,16 @@ impl DllPlugin for MsvcrtPlugin {
             Export::Func("strncmp", as_win_api!(string::strncmp)),
         ]
     }
+
+    fn stubs(&self) -> Vec<StubExport> {
+        vec![
+            // crt_support — functions
+            StubExport {
+                name: "__set_app_type",
+                func: as_win_api!(crt_support::__set_app_type),
+            },
+        ]
+    }
 }
 
 /// CRT API-set forwarder plugin. Registers the same functions under the
@@ -100,6 +109,16 @@ impl DllPlugin for CrtForwarderPlugin {
             Export::Func("_cexit", as_win_api!(stdlib::_cexit)),
             Export::Func("_initterm", as_win_api!(crt_init::_initterm)),
             Export::Func("_initterm_e", as_win_api!(crt_init::_initterm_e)),
+        ]
+    }
+
+    fn stubs(&self) -> Vec<StubExport> {
+        vec![
+            // crt_support — functions
+            StubExport {
+                name: "__set_app_type",
+                func: as_win_api!(crt_support::__set_app_type),
+            },
         ]
     }
 }

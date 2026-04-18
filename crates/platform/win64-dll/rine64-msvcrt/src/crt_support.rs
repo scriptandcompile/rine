@@ -9,10 +9,24 @@ use rine_common_msvcrt::{
     signal_default, unlock,
 };
 
-/// __set_app_type — set the application type (console/GUI).
+/// An internal function used at startup to tell the CRT what type of application we're running (console, GUI, etc).
 ///
-/// No-op: rine always runs as a console application.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `app_type`: An integer representing the application type. The CRT uses this to configure its behavior accordingly.
+///   The specific values and their meanings are defined by the CRT, but common values include:
+///   0 = _crt_unknown_app
+///   1 = _crt_console_app
+///   2 = _crt_gui_app
+///   3 = _crt_cui_app
+///   4 = _crt_app_type_max
+///
+/// # Safety
+/// Called by the CRT intitialization code and unknown values may cause undefined behavior.
+///
+/// # Note
+/// This is called by the CRT initialization code before `main()` runs. We currently ignore the app type since
+/// we always run as a console application, but a production implementation would use this to configure CRT behavior accordingly.
+/// Currently, this is just a no-op.
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __set_app_type(app_type: i32) {
     tracing::trace!("msvcrt::__set_app_type({app_type})");

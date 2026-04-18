@@ -10,7 +10,7 @@
 //! - `stdio`: formatted I/O
 
 use rine_common_msvcrt::{commode_ptr, fake_iob_32_ptr, fmode_ptr, initenv_ptr};
-use rine_dlls::{DllPlugin, Export, as_win_api};
+use rine_dlls::{DllPlugin, Export, StubExport, as_win_api};
 
 #[cfg(not(target_pointer_width = "32"))]
 compile_error!(
@@ -54,7 +54,6 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("__getmainargs", as_win_api!(__getmainargs)),
             Export::Func("_initterm", as_win_api!(_initterm)),
             Export::Func("_initterm_e", as_win_api!(_initterm_e)),
-            Export::Func("__set_app_type", as_win_api!(__set_app_type)),
             Export::Func("__setusermatherr", as_win_api!(__setusermatherr)),
             Export::Func("__C_specific_handler", as_win_api!(__C_specific_handler)),
             Export::Func("__iob_func", as_win_api!(__iob_func)),
@@ -81,6 +80,20 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("strlen", as_win_api!(strlen)),
             Export::Func("strcmp", as_win_api!(strcmp)),
             Export::Func("strncmp", as_win_api!(strncmp)),
+        ]
+    }
+
+    fn stubs(&self) -> Vec<StubExport> {
+        vec![
+            // crt_support — functions
+            StubExport {
+                name: "_set_app_type",
+                func: as_win_api!(crt_support::__set_app_type),
+            },
+            StubExport {
+                name: "__set_app_type",
+                func: as_win_api!(crt_support::__set_app_type),
+            },
         ]
     }
 }
@@ -111,6 +124,16 @@ impl DllPlugin for CrtForwarderPlugin32 {
             Export::Func("_cexit", as_win_api!(_cexit)),
             Export::Func("_initterm", as_win_api!(_initterm)),
             Export::Func("_initterm_e", as_win_api!(_initterm_e)),
+        ]
+    }
+
+    fn stubs(&self) -> Vec<StubExport> {
+        vec![
+            // crt_support — functions
+            StubExport {
+                name: "__set_app_type",
+                func: as_win_api!(crt_support::__set_app_type),
+            },
         ]
     }
 }

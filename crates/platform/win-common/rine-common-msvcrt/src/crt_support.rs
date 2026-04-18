@@ -1,5 +1,20 @@
 use std::sync::LazyLock;
 
+/// An internal function used at startup to tell the CRT what type of application we're running (console, GUI, etc).
+///
+/// # Arguments
+/// * `app_type`: An integer representing the application type. The CRT uses this to configure its behavior accordingly.
+///   The specific values and their meanings are defined by the CRT, but common values include:
+///   0 = _crt_unknown_app
+///   1 = _crt_console_app
+///   2 = _crt_gui_app
+///   3 = _crt_cui_app
+///   4 = _crt_app_type_max
+///
+/// # Note
+/// This is called by the CRT initialization code before `main()` runs. We currently ignore the app type since
+/// we always run as a console application, but a production implementation would use this to configure CRT behavior accordingly.
+/// Currently, this is just a no-op.
 pub fn set_app_type(_app_type: i32) {}
 
 pub fn set_usermatherr(_handler: usize) {}

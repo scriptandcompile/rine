@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T05:19:33.370140+00:00",
+  "generatedAt": "2026-04-18T19:59:24.575733+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1451,7 +1451,7 @@
     },
     {
       "name": "msvcrt.dll",
-      "functionCount": 33,
+      "functionCount": 34,
       "functions": [
         {
           "name": "__C_specific_handler",
@@ -1534,12 +1534,12 @@
         {
           "name": "__set_app_type",
           "x64": {
-            "status": "implemented",
-            "symbol": "crt_support::__set_app_type",
+            "status": "stubbed",
+            "symbol": "__set_app_type",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "__set_app_type",
             "source": "msvcrt - crt_support.rs"
           }
@@ -1646,6 +1646,19 @@
             "status": "implemented",
             "symbol": "_onexit",
             "source": "msvcrt - crt_support.rs"
+          }
+        },
+        {
+          "name": "_set_app_type",
+          "x64": {
+            "status": "unimplemented",
+            "symbol": null,
+            "source": null
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "_set_app_type",
+            "source": null
           }
         },
         {
@@ -2405,17 +2418,17 @@
     }
   ],
   "totals": {
-    "functions": 181,
+    "functions": 182,
     "x64": {
-      "implemented": 118,
+      "implemented": 117,
       "partial": 48,
-      "stubbed": 15,
-      "unimplemented": 0
+      "stubbed": 16,
+      "unimplemented": 1
     },
     "x86": {
-      "implemented": 111,
+      "implemented": 110,
       "partial": 48,
-      "stubbed": 22,
+      "stubbed": 24,
       "unimplemented": 0
     }
   }
