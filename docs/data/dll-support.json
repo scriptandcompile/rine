@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T01:06:13.194567+00:00",
+  "generatedAt": "2026-04-18T03:48:48.545664+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -488,13 +488,13 @@
         {
           "name": "CreateThread",
           "x64": {
-            "status": "implemented",
-            "symbol": "thread::CreateThread",
+            "status": "partial",
+            "symbol": "CreateThread",
             "source": "kernel32 - thread.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "thread::CreateThread",
+            "status": "partial",
+            "symbol": "CreateThread",
             "source": "kernel32 - thread.rs"
           }
         },
@@ -761,13 +761,13 @@
         {
           "name": "GetCurrentThread",
           "x64": {
-            "status": "implemented",
-            "symbol": "thread::GetCurrentThread",
+            "status": "stubbed",
+            "symbol": "GetCurrentThread",
             "source": "kernel32 - thread.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "thread::GetCurrentThread",
+            "status": "stubbed",
+            "symbol": "GetCurrentThread",
             "source": "kernel32 - thread.rs"
           }
         },
@@ -852,13 +852,13 @@
         {
           "name": "GetExitCodeThread",
           "x64": {
-            "status": "implemented",
-            "symbol": "thread::GetExitCodeThread",
+            "status": "partial",
+            "symbol": "GetExitCodeThread",
             "source": "kernel32 - thread.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "thread::GetExitCodeThread",
+            "status": "partial",
+            "symbol": "GetExitCodeThread",
             "source": "kernel32 - thread.rs"
           }
         },
@@ -1294,13 +1294,13 @@
         {
           "name": "TlsGetValue",
           "x64": {
-            "status": "implemented",
-            "symbol": "thread::TlsGetValue",
+            "status": "partial",
+            "symbol": "TlsGetValue",
             "source": "kernel32 - thread.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "thread::TlsGetValue",
+            "status": "partial",
+            "symbol": "TlsGetValue",
             "source": "kernel32 - thread.rs"
           }
         },
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 122,
-      "partial": 45,
-      "stubbed": 12,
+      "implemented": 118,
+      "partial": 48,
+      "stubbed": 13,
       "unimplemented": 2
     },
     "x86": {
-      "implemented": 115,
-      "partial": 45,
-      "stubbed": 20,
+      "implemented": 111,
+      "partial": 48,
+      "stubbed": 21,
       "unimplemented": 1
     }
   }

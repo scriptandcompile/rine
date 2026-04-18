@@ -64,15 +64,11 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("ReleaseSemaphore", as_win_api!(sync::ReleaseSemaphore)),
             Export::Func("TlsAlloc", as_win_api!(thread::TlsAlloc)),
             Export::Func("TlsFree", as_win_api!(thread::TlsFree)),
-            Export::Func("TlsGetValue", as_win_api!(thread::TlsGetValue)),
             Export::Func("TlsSetValue", as_win_api!(thread::TlsSetValue)),
-            Export::Func("CreateThread", as_win_api!(thread::CreateThread)),
-            Export::Func("GetCurrentThread", as_win_api!(thread::GetCurrentThread)),
             Export::Func(
                 "GetCurrentThreadId",
                 as_win_api!(thread::GetCurrentThreadId),
             ),
-            Export::Func("GetExitCodeThread", as_win_api!(thread::GetExitCodeThread)),
             Export::Func("Sleep", as_win_api!(thread::Sleep)),
             Export::Func(
                 "WaitForSingleObject",
@@ -141,6 +137,10 @@ impl DllPlugin for Kernel32Plugin {
             StubExport {
                 name: "FreeEnvironmentStringsW",
                 func: as_win_api!(environment::FreeEnvironmentStringsW),
+            },
+            StubExport {
+                name: "GetCurrentThread",
+                func: as_win_api!(thread::GetCurrentThread),
             },
         ]
     }
@@ -274,6 +274,18 @@ impl DllPlugin for Kernel32Plugin {
             PartialExport {
                 name: "CreateSemaphoreW",
                 func: as_win_api!(sync::CreateSemaphoreW),
+            },
+            PartialExport {
+                name: "CreateThread",
+                func: as_win_api!(thread::CreateThread),
+            },
+            PartialExport {
+                name: "TlsGetValue",
+                func: as_win_api!(thread::TlsGetValue),
+            },
+            PartialExport {
+                name: "GetExitCodeThread",
+                func: as_win_api!(thread::GetExitCodeThread),
             },
         ]
     }
