@@ -6,7 +6,7 @@
 use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::Handle;
-use tracing::debug;
+use tracing::{debug, warn};
 
 /// Initialize a critical section.
 ///
@@ -426,9 +426,6 @@ pub unsafe extern "stdcall" fn CreateSemaphoreW(
 
 /// Release a semaphore, incrementing its count by `release_count` and potentially unblocking waiters.
 ///
-/// Returns TRUE on success, FALSE on failure (e.g. invalid handle, not a semaphore, or
-/// release would exceed max count).
-///
 /// # Arguments
 /// * `semaphore_handle` - A handle to the semaphore to release. The caller must have
 ///   appropriate access to the semaphore.
@@ -442,10 +439,15 @@ pub unsafe extern "stdcall" fn CreateSemaphoreW(
 /// that the caller has appropriate access rights to release it. The caller must also ensure
 /// that `release_count` is greater than 0 and that releasing the semaphore by this amount
 /// will not cause its count to exceed the semaphore's maximum count.
-///
 /// If `previous_count` is not null, the caller must ensure that it points to a valid writable
 /// memory location where an i32 can be stored. Releasing a semaphore with an invalid handle,
 /// or with parameters that would exceed the maximum count, will result in failure and return FALSE.
+///
+/// # Returns
+/// If the semaphore is successfully released, the function returns `WinBool::TRUE` and any waiting threads
+/// are unblocked according to the semaphore's behavior.
+/// If the semaphore handle is invalid, the caller does not have appropriate access, or if releasing the
+/// semaphore would exceed its maximum count, the function returns `WinBool::FALSE` and no action is taken.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ReleaseSemaphore(
@@ -453,7 +455,13 @@ pub unsafe extern "stdcall" fn ReleaseSemaphore(
     release_count: i32,
     previous_count: *mut i32,
 ) -> WinBool {
-    unsafe { common::sync::release_semaphore(semaphore_handle, release_count, previous_count) }
+    if release_count <= 0 {
+        warn!(release_count, "ReleaseSemaphore: release_count must be > 0");
+        return WinBool::FALSE;
+    }
+
+    let handle = Handle::from_raw(semaphore_handle);
+    unsafe { common::sync::release_semaphore(handle, release_count, previous_count) }
 }
 
 #[cfg(test)]

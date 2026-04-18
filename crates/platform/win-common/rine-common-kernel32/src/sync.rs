@@ -391,9 +391,6 @@ pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> isize {
 
 /// Release a semaphore, incrementing its count by `release_count` and potentially unblocking waiters.
 ///
-/// Returns TRUE on success, FALSE on failure (e.g. invalid handle, not a semaphore, or
-/// release would exceed max count).
-///
 /// # Arguments
 /// * `semaphore_handle` - A handle to the semaphore to release. The caller must have
 ///   appropriate access to the semaphore.
@@ -407,29 +404,24 @@ pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> isize {
 /// that the caller has appropriate access rights to release it. The caller must also ensure
 /// that `release_count` is greater than 0 and that releasing the semaphore by this amount
 /// will not cause its count to exceed the semaphore's maximum count.
-///
 /// If `previous_count` is not null, the caller must ensure that it points to a valid writable
 /// memory location where an i32 can be stored. Releasing a semaphore with an invalid handle,
 /// or with parameters that would exceed the maximum count, will result in failure and return FALSE.
+///
+/// # Returns
+/// If the semaphore is successfully released, the function returns `WinBool::TRUE` and any waiting threads
+/// are unblocked according to the semaphore's behavior.
+/// If the semaphore handle is invalid, the caller does not have appropriate access, or if releasing the
+/// semaphore would exceed its maximum count, the function returns `WinBool::FALSE` and no action is taken.
 pub unsafe fn release_semaphore(
-    semaphore_handle: isize,
+    handle: Handle,
     release_count: i32,
     previous_count: *mut i32,
 ) -> WinBool {
-    if release_count <= 0 {
-        warn!(release_count, "ReleaseSemaphore: release_count must be > 0");
-        return WinBool::FALSE;
-    }
-
-    let handle = Handle::from_raw(semaphore_handle);
-
     let waitable = match handle_table().get_waitable(handle) {
         Some(Waitable::Semaphore(s)) => s,
         _ => {
-            warn!(
-                handle = semaphore_handle,
-                "ReleaseSemaphore: invalid handle"
-            );
+            warn!(handle = handle.as_raw(), "ReleaseSemaphore: invalid handle");
             return WinBool::FALSE;
         }
     };
