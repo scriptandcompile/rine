@@ -54,7 +54,6 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("__getmainargs", as_win_api!(__getmainargs)),
             Export::Func("_initterm", as_win_api!(_initterm)),
             Export::Func("_initterm_e", as_win_api!(_initterm_e)),
-            Export::Func("__setusermatherr", as_win_api!(__setusermatherr)),
             Export::Func("__C_specific_handler", as_win_api!(__C_specific_handler)),
             Export::Func("__iob_func", as_win_api!(__iob_func)),
             Export::Func("_onexit", as_win_api!(_onexit)),
@@ -87,12 +86,12 @@ impl DllPlugin for MsvcrtPlugin32 {
         vec![
             // crt_support — functions
             StubExport {
-                name: "_set_app_type",
+                name: "__set_app_type",
                 func: as_win_api!(crt_support::__set_app_type),
             },
             StubExport {
-                name: "__set_app_type",
-                func: as_win_api!(crt_support::__set_app_type),
+                name: "__setusermatherr",
+                func: as_win_api!(crt_support::__setusermatherr),
             },
         ]
     }
@@ -133,6 +132,10 @@ impl DllPlugin for CrtForwarderPlugin32 {
             StubExport {
                 name: "__set_app_type",
                 func: as_win_api!(crt_support::__set_app_type),
+            },
+            StubExport {
+                name: "__setusermatherr",
+                func: as_win_api!(crt_support::__setusermatherr),
             },
         ]
     }

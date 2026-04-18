@@ -2,7 +2,7 @@
 
 use rine_common_msvcrt::{
     abort_process, amsg_exit, c_specific_handler_result, commode_ptr, errno_location,
-    fake_iob_32_ptr, fmode_ptr, initenv_ptr, lock, onexit, set_app_type, set_usermatherr,
+    fake_iob_32_ptr, fmode_ptr, initenv_ptr, lock, onexit, set_app_type, set_user_math_err,
     signal_default, unlock,
 };
 
@@ -30,15 +30,22 @@ pub unsafe extern "C" fn __set_app_type(app_type: i32) {
     set_app_type(app_type);
 }
 
-/// __setusermatherr — set a custom math error handler.
+/// Set a custom math error handler.
 ///
-/// This is a no-op currently; a production implementation would let
-/// the user install a handler for floating-point errors.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `handler`: A pointer to a user-defined math error handler function.
+///   The CRT will call this function when a math error occurs (like divide-by-zero or overflow).
+///
+/// # Safety
+/// This is unsafe because the handler must follow the correct calling convention and behavior expected by the CRT.
+/// Installing an invalid handler could cause undefined behavior when math errors occur.
+///
+/// # Notes
+/// This is a no-op currently; a production implementation would let the user install a handler for floating-point errors.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __setusermatherr(handler: usize) {
     tracing::trace!(handler, "msvcrt::__setusermatherr");
-    set_usermatherr(handler);
+    set_user_math_err(handler);
 }
 
 /// __C_specific_handler — handle C SEH (Structured Exception Handling) exceptions.

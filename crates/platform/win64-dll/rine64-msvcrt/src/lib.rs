@@ -32,10 +32,6 @@ impl DllPlugin for MsvcrtPlugin {
             Export::Func("_initterm_e", as_win_api!(crt_init::_initterm_e)),
             // crt_support — functions
             Export::Func(
-                "__setusermatherr",
-                as_win_api!(crt_support::__setusermatherr),
-            ),
-            Export::Func(
                 "__C_specific_handler",
                 as_win_api!(crt_support::__C_specific_handler),
             ),
@@ -74,6 +70,10 @@ impl DllPlugin for MsvcrtPlugin {
             StubExport {
                 name: "__set_app_type",
                 func: as_win_api!(crt_support::__set_app_type),
+            },
+            StubExport {
+                name: "__setusermatherr",
+                func: as_win_api!(crt_support::__setusermatherr),
             },
         ]
     }
@@ -118,6 +118,10 @@ impl DllPlugin for CrtForwarderPlugin {
             StubExport {
                 name: "__set_app_type",
                 func: as_win_api!(crt_support::__set_app_type),
+            },
+            StubExport {
+                name: "__setusermatherr",
+                func: as_win_api!(crt_support::__setusermatherr),
             },
         ]
     }

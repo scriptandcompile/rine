@@ -17,7 +17,19 @@ use std::sync::LazyLock;
 /// Currently, this is just a no-op.
 pub fn set_app_type(_app_type: i32) {}
 
-pub fn set_usermatherr(_handler: usize) {}
+/// Set a custom math error handler.
+///
+/// # Arguments
+/// * `handler`: A pointer to a user-defined math error handler function.
+///   The CRT will call this function when a math error occurs (like divide-by-zero or overflow).
+///
+/// # Safety
+/// This is unsafe because the handler must follow the correct calling convention and behavior expected by the CRT.
+/// Installing an invalid handler could cause undefined behavior when math errors occur.
+///
+/// # Notes
+/// This is a no-op currently; a production implementation would let the user install a handler for floating-point errors.
+pub fn set_user_math_err(_handler: usize) {}
 
 pub fn c_specific_handler_result() -> i32 {
     1
