@@ -61,8 +61,6 @@ impl DllPlugin for Kernel32Plugin {
             Export::Func("SetEvent", as_win_api!(sync::SetEvent)),
             Export::Func("ResetEvent", as_win_api!(sync::ResetEvent)),
             Export::Func("ReleaseMutex", as_win_api!(sync::ReleaseMutex)),
-            Export::Func("CreateSemaphoreA", as_win_api!(sync::CreateSemaphoreA)),
-            Export::Func("CreateSemaphoreW", as_win_api!(sync::CreateSemaphoreW)),
             Export::Func("ReleaseSemaphore", as_win_api!(sync::ReleaseSemaphore)),
             Export::Func("TlsAlloc", as_win_api!(thread::TlsAlloc)),
             Export::Func("TlsFree", as_win_api!(thread::TlsFree)),
@@ -268,6 +266,14 @@ impl DllPlugin for Kernel32Plugin {
             PartialExport {
                 name: "CreateMutexW",
                 func: as_win_api!(sync::CreateMutexW),
+            },
+            PartialExport {
+                name: "CreateSemaphoreA",
+                func: as_win_api!(sync::CreateSemaphoreA),
+            },
+            PartialExport {
+                name: "CreateSemaphoreW",
+                func: as_win_api!(sync::CreateSemaphoreW),
             },
         ]
     }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-17T23:04:53.888400+00:00",
+  "generatedAt": "2026-04-18T01:06:13.194567+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -462,26 +462,26 @@
         {
           "name": "CreateSemaphoreA",
           "x64": {
-            "status": "implemented",
-            "symbol": "sync::CreateSemaphoreA",
+            "status": "partial",
+            "symbol": "CreateSemaphoreA",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "sync::CreateSemaphoreA",
+            "status": "partial",
+            "symbol": "CreateSemaphoreA",
             "source": "kernel32 - sync.rs"
           }
         },
         {
           "name": "CreateSemaphoreW",
           "x64": {
-            "status": "implemented",
-            "symbol": "sync::CreateSemaphoreW",
+            "status": "partial",
+            "symbol": "CreateSemaphoreW",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "sync::CreateSemaphoreW",
+            "status": "partial",
+            "symbol": "CreateSemaphoreW",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 124,
-      "partial": 43,
+      "implemented": 122,
+      "partial": 45,
       "stubbed": 12,
       "unimplemented": 2
     },
     "x86": {
-      "implemented": 117,
-      "partial": 43,
+      "implemented": 115,
+      "partial": 45,
       "stubbed": 20,
       "unimplemented": 1
     }

@@ -347,17 +347,25 @@ pub unsafe extern "win64" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
 
 // ── Semaphores ───────────────────────────────────────────────────
 
-/// CreateSemaphoreA — create a named or unnamed semaphore (name ignored).
+/// Create a semaphore object with the specified initial and maximum count, and with an optional (ANSI) name.
 ///
-/// ```c
-/// HANDLE CreateSemaphoreA(
-///     LPSECURITY_ATTRIBUTES lpSemaphoreAttributes,  // rcx (ignored)
-///     LONG  lInitialCount,                           // rdx
-///     LONG  lMaximumCount,                           // r8
-///     LPCSTR lpName                                  // r9 (ignored)
-/// );
-/// ```
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// # Arguments
+/// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
+/// * `initial_count` - The initial count for the semaphore. Must be non-negative and less than or equal to `maximum_count`.
+/// * `maximum_count` - The maximum count for the semaphore. Must be greater than 0.
+/// * `name` - Currently ignored, as named semaphores are not implemented, but it is still read and logged for dev notification purposes.
+///
+/// Returns a handle to the created semaphore, or 0 on failure (e.g. invalid parameters).
+///
+/// # Safety
+/// The caller must ensure that `name` points to a valid null-terminated ANSI string if it is not null.
+/// The caller is responsible for managing the returned semaphore handle, including closing it when no longer needed.
+///
+/// # Returns
+/// If the parameters are valid and the semaphore is successfully created, the function returns a handle to the semaphore.
+/// If `initial_count` is negative, greater than `maximum_count`, or if `maximum_count` is not greater than 0,
+/// the function returns 0 (NULL) to indicate failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateSemaphoreA(
     _security_attrs: usize,
@@ -377,8 +385,25 @@ pub unsafe extern "win64" fn CreateSemaphoreA(
     handle
 }
 
-/// CreateSemaphoreW — wide-string variant (name ignored).
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Create a semaphore object with the specified initial and maximum count, and with an optional (UTF-16LE) name.
+///
+/// # Arguments
+/// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
+/// * `initial_count` - The initial count for the semaphore. Must be non-negative and less than or equal to `maximum_count`.
+/// * `maximum_count` - The maximum count for the semaphore. Must be greater than 0.
+/// * `name` - Currently ignored, as named semaphores are not implemented, but it is still read and logged for dev notification purposes.
+///
+/// Returns a handle to the created semaphore, or 0 on failure (e.g. invalid parameters).
+///
+/// # Safety
+/// The caller must ensure that `name` points to a valid null-terminated UTF-16LE string if it is not null.
+/// The caller is responsible for managing the returned semaphore handle, including closing it when no longer needed.
+///
+/// # Returns
+/// If the parameters are valid and the semaphore is successfully created, the function returns a handle to the semaphore.
+/// If `initial_count` is negative, greater than `maximum_count`, or if `maximum_count` is not greater than 0,
+/// the function returns 0 (NULL) to indicate failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateSemaphoreW(
     _security_attrs: usize,

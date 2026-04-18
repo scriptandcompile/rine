@@ -340,7 +340,7 @@ pub unsafe extern "stdcall" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
     unsafe { common::sync::release_mutex(handle) }
 }
 
-/// Create a semaphore object with the specified initial and maximum counts, and an optional (ANSI) name.
+/// Create a semaphore object with the specified initial and maximum count, and with an optional (ANSI) name.
 ///
 /// # Arguments
 /// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
@@ -353,7 +353,12 @@ pub unsafe extern "stdcall" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
 /// # Safety
 /// The caller must ensure that `name` points to a valid null-terminated ANSI string if it is not null.
 /// The caller is responsible for managing the returned semaphore handle, including closing it when no longer needed.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+///
+/// # Returns
+/// If the parameters are valid and the semaphore is successfully created, the function returns a handle to the semaphore.
+/// If `initial_count` is negative, greater than `maximum_count`, or if `maximum_count` is not greater than 0,
+/// the function returns 0 (NULL) to indicate failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateSemaphoreA(
     _security_attrs: usize,
@@ -377,7 +382,7 @@ pub unsafe extern "stdcall" fn CreateSemaphoreA(
     handle
 }
 
-/// Create a semaphore object with the specified initial and maximum counts, and an optional (UTF-16) name.
+/// Create a semaphore object with the specified initial and maximum count, and with an optional (UTF-16LE) name.
 ///
 /// # Arguments
 /// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
@@ -388,9 +393,14 @@ pub unsafe extern "stdcall" fn CreateSemaphoreA(
 /// Returns a handle to the created semaphore, or 0 on failure (e.g. invalid parameters).
 ///
 /// # Safety
-/// The caller must ensure that `name` points to a valid null-terminated UTF-16 string if it is not null.
+/// The caller must ensure that `name` points to a valid null-terminated UTF-16LE string if it is not null.
 /// The caller is responsible for managing the returned semaphore handle, including closing it when no longer needed.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+///
+/// # Returns
+/// If the parameters are valid and the semaphore is successfully created, the function returns a handle to the semaphore.
+/// If `initial_count` is negative, greater than `maximum_count`, or if `maximum_count` is not greater than 0,
+/// the function returns 0 (NULL) to indicate failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateSemaphoreW(
     _security_attrs: usize,
