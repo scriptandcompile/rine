@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T05:13:51.689950+00:00",
+  "generatedAt": "2026-04-18T05:19:33.370140+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -917,9 +917,9 @@
         {
           "name": "GetProcAddress",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "stubbed",
+            "symbol": "GetProcAddress",
+            "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "stubbed",
@@ -2409,8 +2409,8 @@
     "x64": {
       "implemented": 118,
       "partial": 48,
-      "stubbed": 14,
-      "unimplemented": 1
+      "stubbed": 15,
+      "unimplemented": 0
     },
     "x86": {
       "implemented": 111,
