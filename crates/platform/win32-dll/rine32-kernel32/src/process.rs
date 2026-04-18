@@ -24,10 +24,27 @@ use tracing::warn;
 /// # Returns
 /// A handle to the loaded DLL module, or NULL (0) if the function fails to find the DLL.
 /// The returned handle can be used in subsequent calls to `GetProcAddress` and `FreeLibrary`.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+///
+/// # Notes
+/// Currently, our implementation always returns NULL (0) as a placeholder since we do not actually load any
+/// modules in this stub implementation.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn LoadLibraryA(_file_name: *const u8) -> u32 {
-    tracing::warn!(api = "LoadLibraryA", dll = "kernel32", "win32 stub called");
-    0
+    tracing::warn!(
+        api = "LoadLibraryA",
+        dll = "kernel32",
+        "LoadLibraryA stub called"
+    );
+
+    unsafe {
+        let file_name = if _file_name.is_null() {
+            return 0;
+        } else {
+            read_cstr(_file_name).unwrap_or_default()
+        };
+
+        common::process::load_library(&file_name)
+    }
 }
 
 /// Load a DLL into the process's address space.
@@ -48,10 +65,27 @@ pub unsafe extern "stdcall" fn LoadLibraryA(_file_name: *const u8) -> u32 {
 /// # Returns
 /// A handle to the loaded DLL module, or NULL (0) if the function fails to find the DLL.
 /// The returned handle can be used in subsequent calls to `GetProcAddress` and `FreeLibrary`.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+///
+/// # Notes
+/// Currently, our implementation always returns NULL (0) as a placeholder since we do not actually load any
+/// modules in this stub implementation.
+#[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn LoadLibraryW(_file_name: *const u16) -> u32 {
-    tracing::warn!(api = "LoadLibraryW", dll = "kernel32", "win32 stub called");
-    0
+    tracing::warn!(
+        api = "LoadLibraryW",
+        dll = "kernel32",
+        "LoadLibraryW stub called"
+    );
+
+    unsafe {
+        let file_name = if _file_name.is_null() {
+            return 0;
+        } else {
+            read_wstr(_file_name).unwrap_or_default()
+        };
+
+        common::process::load_library(&file_name)
+    }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]

@@ -168,6 +168,19 @@ pub fn rine_exe() -> std::path::PathBuf {
 }
 
 /// Wait for a child to exit and store the result.
+///
+/// # Arguments
+/// * `child` - The child process to wait on. This should be a `std::process::Child` representing the spawned process.
+/// * `exit_code` - An `Arc<AtomicU32>` where the exit code of the child process will be stored once it exits.
+///   The exit code will be set to the actual exit code of the child process if it terminates normally,
+///   or 1 if there is an error while waiting for the child process.
+/// * `completed` - An `Arc<(Mutex<bool>, Condvar)>` used to signal when the child process has exited and the exit code has been stored.
+///   The mutex protects a boolean flag indicating whether the child process has completed, and the condition variable is used to
+///   notify any waiting threads that the child process has exited and the exit code is available.
+///
+/// # Notes
+/// This function will block until the child process exits.
+/// It should be run in a separate thread to avoid blocking the main thread of execution.
 pub fn reap_child(
     mut child: std::process::Child,
     exit_code: Arc<AtomicU32>,
@@ -185,6 +198,32 @@ pub fn reap_child(
     let mut done = lock.lock().unwrap();
     *done = true;
     cvar.notify_all();
+}
+
+/// Load a DLL into the process's address space.
+///
+/// # Arguments
+/// * `_file_name` - A string slice specifying the name of the DLL to load.
+///   If the string does not specify an absolute path, the system searches for the DLL in a specific order of directories.
+///   If the function fails to find the DLL, it returns NULL (0).
+///
+/// # Safety
+/// This function is unsafe because it involves raw pointer parameters that must be used correctly by the caller.
+/// The caller must ensure that the `library_name` parameter is either null or points to a valid null-terminated
+/// ANSI string representing the name of the library to load.
+/// Additionally, the caller must handle the returned handle correctly, as it is a raw pointer that may need to
+/// be closed with `FreeLibrary` when it is no longer needed. Misuse of the returned handle can lead to resource
+/// leaks or other unintended consequences.
+///
+/// # Returns
+/// A handle to the loaded DLL module, or NULL (0) if the function fails to find the DLL.
+/// The returned handle can be used in subsequent calls to `GetProcAddress` and `FreeLibrary`.
+///
+/// # Notes
+/// Currently, our implementation always returns NULL (0) as a placeholder since we do not actually load any
+/// modules in this stub implementation.
+pub unsafe fn load_library(_file_name: &str) -> u32 {
+    0
 }
 
 /// Free a loaded DLL module.
