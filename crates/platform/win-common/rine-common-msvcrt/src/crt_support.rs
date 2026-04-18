@@ -31,7 +31,34 @@ pub fn set_app_type(_app_type: i32) {}
 /// This is a no-op currently; a production implementation would let the user install a handler for floating-point errors.
 pub fn set_user_math_err(_handler: usize) {}
 
-pub fn c_specific_handler_result() -> i32 {
+/// Called by the CRT when a SEH exception is thrown.
+///
+/// # Arguments
+/// * `_exception_record`: A pointer to an EXCEPTION_RECORD structure containing information about the exception.
+/// * `_establisher_frame`: A pointer to the frame of the function where the exception occurred.
+/// * `_context_record`: A pointer to a CONTEXT structure containing the CPU context at the time of the exception.
+///
+/// # Safety
+/// This is called by the CRT when a SEH exception is thrown.
+/// The arguments are pointers to CRT-defined structures with specific layouts,
+/// and the function must return a valid handler code expected by the CRT.
+/// Incorrect handling could lead to undefined behavior when exceptions occur.
+///
+/// # Returns
+/// This is a stub currently that just returns "continue search" (1).
+///
+/// # Notes
+/// This is called by the CRT when a SEH exception is thrown.
+/// We don't support SEH exceptions currently, so this is just a stub that returns "continue search" (1) to
+/// indicate that the CRT should call the next handler.
+/// In a production implementation, this would analyze the exception record and return the appropriate handler code
+/// (1 = continue execution, 0 = call next handler).
+pub fn c_specific_handler_result(
+    _exception_record: usize,
+    _establisher_frame: usize,
+    _context_record: usize,
+    _dispatcher_context: usize,
+) -> i32 {
     1
 }
 

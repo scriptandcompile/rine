@@ -51,11 +51,28 @@ pub unsafe extern "win64" fn __setusermatherr(handler: usize) {
     set_user_math_err(handler);
 }
 
-/// __C_specific_handler — SEH personality function for x64 Windows.
+/// Called by the CRT when a SEH exception is thrown.
 ///
-/// Stub: returns ExceptionContinueSearch (1). Called only if an exception is
-/// thrown, which shouldn't happen in a simple hello world.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// # Arguments
+/// * `_exception_record`: A pointer to an EXCEPTION_RECORD structure containing information about the exception.
+/// * `_establisher_frame`: A pointer to the frame of the function where the exception occurred.
+/// * `_context_record`: A pointer to a CONTEXT structure containing the CPU context at the time of the exception.
+///
+/// # Safety
+/// This is called by the CRT when a SEH exception is thrown.
+/// The arguments are pointers to CRT-defined structures with specific layouts,
+/// and the function must return a valid handler code expected by the CRT.
+/// Incorrect handling could lead to undefined behavior when exceptions occur.
+///
+/// # Returns
+/// This is a stub currently that just returns "continue search" (1).
+///
+/// # Notes
+/// This is called by the CRT when a SEH exception is thrown.
+/// We don't support SEH exceptions currently, so this is just a stub that returns "continue search" (1) to
+/// indicate that the CRT should call the next handler.
+/// In a production implementation, this would analyze the exception record and return the appropriate handler code
+/// (1 = continue execution, 0 = call next handler).
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __C_specific_handler(
     _exception_record: usize,
@@ -64,7 +81,12 @@ pub unsafe extern "win64" fn __C_specific_handler(
     _dispatcher_context: usize,
 ) -> i32 {
     tracing::warn!("msvcrt::__C_specific_handler called — exceptions not supported");
-    c_specific_handler_result()
+    c_specific_handler_result(
+        _exception_record,
+        _establisher_frame,
+        _context_record,
+        _dispatcher_context,
+    )
 }
 
 /// _commode — return a pointer to the commit mode variable.

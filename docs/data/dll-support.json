@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T20:18:13.779424+00:00",
+  "generatedAt": "2026-04-18T20:39:17.671524+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1456,12 +1456,12 @@
         {
           "name": "__C_specific_handler",
           "x64": {
-            "status": "implemented",
-            "symbol": "crt_support::__C_specific_handler",
+            "status": "stubbed",
+            "symbol": "__C_specific_handler",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "__C_specific_handler",
             "source": "msvcrt - crt_support.rs"
           }
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 116,
+      "implemented": 115,
       "partial": 48,
-      "stubbed": 17,
+      "stubbed": 18,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 109,
+      "implemented": 108,
       "partial": 48,
-      "stubbed": 24,
+      "stubbed": 25,
       "unimplemented": 0
     }
   }
