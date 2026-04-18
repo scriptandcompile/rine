@@ -187,6 +187,37 @@ pub fn reap_child(
     cvar.notify_all();
 }
 
+/// Free a loaded DLL module.
+///
+/// # Arguments
+/// * `_module` - A handle to the loaded DLL module to be freed.
+///   This handle must have been returned by a previous call to `LoadLibraryA` or `LoadLibraryW`.
+///
+/// # Safety
+/// This function is unsafe because it involves raw pointer parameters that must be used correctly by the caller.
+/// The caller must ensure that the `module` parameter is a valid handle returned by a previous call
+/// to `LoadLibraryA` or `LoadLibraryW`, and that it has not already been freed.
+/// Additionally, the caller must handle the return value correctly, as it indicates whether the operation succeeded or failed.
+/// Misuse of the returned value can lead to incorrect assumptions about the state of the loaded module and
+/// potential resource leaks if the module is not properly freed when it is no longer needed.
+///
+/// # Returns
+/// If the function succeeds, the return value is `WinBool::TRUE`.
+/// If the function fails, the return value is `WinBool::FALSE`.
+/// To get extended error information, call `GetLastError`.
+///
+/// # Notes
+/// Currently, our implementation always returns `WinBool::FALSE` as a placeholder,
+/// since we do not actually load any modules in this stub implementation.
+pub fn free_library(_module: u32) -> WinBool {
+    tracing::warn!(
+        api = "FreeLibrary",
+        dll = "kernel32",
+        "FreeLibrary stub called"
+    );
+    WinBool::FALSE
+}
+
 /// Gets the pseudo-handle for the current process, which is currently always -1 in our implementation.
 ///
 /// # Safety

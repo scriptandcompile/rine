@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T03:48:48.545664+00:00",
+  "generatedAt": "2026-04-18T04:59:56.460708+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -696,9 +696,9 @@
         {
           "name": "FreeLibrary",
           "x64": {
-            "status": "unimplemented",
-            "symbol": null,
-            "source": null
+            "status": "stubbed",
+            "symbol": "FreeLibrary",
+            "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "stubbed",
@@ -2409,8 +2409,8 @@
     "x64": {
       "implemented": 118,
       "partial": 48,
-      "stubbed": 13,
-      "unimplemented": 2
+      "stubbed": 14,
+      "unimplemented": 1
     },
     "x86": {
       "implemented": 111,
