@@ -1,11 +1,24 @@
-use rine_types::os::{
-    OsVersionInfoA, OsVersionInfoExA, OsVersionInfoExW, OsVersionInfoW, SIZEOF_OSVERSIONINFOA,
-    SIZEOF_OSVERSIONINFOEXA, SIZEOF_OSVERSIONINFOEXW, SIZEOF_OSVERSIONINFOW, get_version,
+use rine_types::{
+    errors::WinBool,
+    os::{
+        OsVersionInfoA, OsVersionInfoExA, OsVersionInfoExW, OsVersionInfoW, SIZEOF_OSVERSIONINFOA,
+        SIZEOF_OSVERSIONINFOEXA, SIZEOF_OSVERSIONINFOEXW, SIZEOF_OSVERSIONINFOW, get_version,
+    },
 };
 
 use tracing::{debug, warn};
 
-/// Read the current spoofed version info.
+/// Gets a packed `u32` encoding the OS version.
+///
+/// Layout: `LOBYTE(LOWORD)` = major, `HIBYTE(LOWORD)` = minor,
+/// `HIWORD` = build number.
+///
+/// # Safety
+/// Called from PE code via the Windows ABI. The caller must ensure the
+/// global version info has been initialised before entry.
+///
+/// # Returns
+/// Returns the version as a packed `u32` on success, or `WinBool::FALSE` (0) on failure.
 pub fn get_version_packed() -> u32 {
     let ver = get_version();
     debug!("GetVersion: {}.{}.{}", ver.major, ver.minor, ver.build);
@@ -25,9 +38,9 @@ pub fn get_version_packed() -> u32 {
 /// # Safety
 /// `info` must point to a valid, writable `OSVERSIONINFOW` or
 /// `OSVERSIONINFOEXW` whose `dwOSVersionInfoSize` field is set correctly.
-pub unsafe fn get_version_ex_w(info: *mut OsVersionInfoW) -> i32 {
+pub unsafe fn get_version_ex_w(info: *mut OsVersionInfoW) -> WinBool {
     if info.is_null() {
-        return 0;
+        return WinBool::FALSE;
     }
 
     let ver = get_version();
@@ -40,7 +53,7 @@ pub unsafe fn get_version_ex_w(info: *mut OsVersionInfoW) -> i32 {
                 ver.major, ver.minor, ver.build
             );
             unsafe { ver.fill_w(info) };
-            1
+            WinBool::TRUE
         }
         SIZEOF_OSVERSIONINFOEXW => {
             debug!(
@@ -48,11 +61,11 @@ pub unsafe fn get_version_ex_w(info: *mut OsVersionInfoW) -> i32 {
                 ver.major, ver.minor, ver.build, ver.service_pack_major, ver.service_pack_minor
             );
             unsafe { ver.fill_ex_w(info.cast::<OsVersionInfoExW>()) };
-            1
+            WinBool::TRUE
         }
         _ => {
             warn!("GetVersionExW: unexpected size {size}");
-            0
+            WinBool::FALSE
         }
     }
 }
@@ -66,10 +79,10 @@ pub unsafe fn get_version_ex_w(info: *mut OsVersionInfoW) -> i32 {
 /// `info` must point to a valid, writable `OSVERSIONINFOA` or `OSVERSIONINFOEXA` struct, and must not be null.
 ///
 /// # Returns
-/// `TRUE` (1) on success, `FALSE` (0) on failure.
-pub unsafe fn get_version_ex_a(info: *mut OsVersionInfoA) -> i32 {
+/// `WinBool::TRUE` on success, `WinBool::FALSE` (0) on failure.
+pub unsafe fn get_version_ex_a(info: *mut OsVersionInfoA) -> WinBool {
     if info.is_null() {
-        return 0;
+        return WinBool::FALSE;
     }
 
     let ver = get_version();
@@ -82,7 +95,7 @@ pub unsafe fn get_version_ex_a(info: *mut OsVersionInfoA) -> i32 {
                 ver.major, ver.minor, ver.build
             );
             unsafe { ver.fill_a(info) };
-            1
+            WinBool::TRUE
         }
         SIZEOF_OSVERSIONINFOEXA => {
             debug!(
@@ -90,11 +103,11 @@ pub unsafe fn get_version_ex_a(info: *mut OsVersionInfoA) -> i32 {
                 ver.major, ver.minor, ver.build, ver.service_pack_major, ver.service_pack_minor
             );
             unsafe { ver.fill_ex_a(info.cast::<OsVersionInfoExA>()) };
-            1
+            WinBool::TRUE
         }
         _ => {
             warn!("GetVersionExA: unexpected size {size}");
-            0
+            WinBool::FALSE
         }
     }
 }
