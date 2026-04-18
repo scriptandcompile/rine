@@ -129,6 +129,10 @@ impl DllPlugin for Kernel32Plugin32 {
                 func: as_win_api!(process::FreeLibrary),
             },
             StubExport {
+                name: "GetLastError",
+                func: as_win_api!(process::GetLastError),
+            },
+            StubExport {
                 name: "SetUnhandledExceptionFilter",
                 func: as_win_api!(process::SetUnhandledExceptionFilter),
             },
