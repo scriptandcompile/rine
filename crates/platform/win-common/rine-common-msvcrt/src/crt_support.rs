@@ -98,6 +98,14 @@ pub fn amsg_exit(msg_num: i32) -> ! {
     std::process::abort();
 }
 
+/// Abort the process immediately without unwinding or running exit handlers.
+///
+/// # Safety
+/// This is unsafe because it will terminate the process immediately without running any cleanup code or exit handlers.
+/// It should only be called in situations where the process is in an unrecoverable state and cannot continue safely.
+///
+/// # Notes
+/// This is a stub implementation that just calls `std::process::abort()`.
 pub fn abort_process() -> ! {
     std::process::abort();
 }

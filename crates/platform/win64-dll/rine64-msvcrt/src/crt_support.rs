@@ -230,8 +230,14 @@ pub unsafe extern "win64" fn _amsg_exit(msg_num: i32) {
     amsg_exit(msg_num)
 }
 
-/// abort — abnormally terminate the process.
-#[allow(clippy::missing_safety_doc)]
+/// Abort the process immediately without unwinding or running exit handlers.
+///
+/// # Safety
+/// This is unsafe because it will terminate the process immediately without running any cleanup code or exit handlers.
+/// It should only be called in situations where the process is in an unrecoverable state and cannot continue safely.
+///
+/// # Notes
+/// This is a stub implementation that just calls `std::process::abort()`
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn abort() {
     tracing::debug!("msvcrt::abort");

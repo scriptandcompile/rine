@@ -192,10 +192,14 @@ pub unsafe extern "C" fn _amsg_exit(msg_num: i32) {
     amsg_exit(msg_num)
 }
 
-/// abort — raise SIGABRT and terminate the process.
+/// Abort the process immediately without unwinding or running exit handlers.
 ///
-/// Does not return.
-#[allow(clippy::missing_safety_doc)]
+/// # Safety
+/// This is unsafe because it will terminate the process immediately without running any cleanup code or exit handlers.
+/// It should only be called in situations where the process is in an unrecoverable state and cannot continue safely.
+///
+/// # Notes
+/// This is a stub implementation that just calls `std::process::abort()`
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn abort() {
     tracing::error!("msvcrt::abort");
