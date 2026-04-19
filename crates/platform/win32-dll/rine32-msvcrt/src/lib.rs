@@ -64,7 +64,7 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("_errno", as_win_api!(_errno)),
             Export::Func("__p__environ", as_win_api!(__p__environ)),
             Export::Func("__p__fmode", as_win_api!(__p__fmode)),
-            Export::Func("__p__commode", as_win_api!(__p__commode)),
+            Export::Func("__p__commode", as_win_api!(crt_support::__p__commode)),
             Export::Data("_commode", commode_ptr() as *const ()),
             Export::Data("_fmode", fmode_ptr() as *const ()),
             Export::Data("_iob", fake_iob_32_ptr() as *const ()),

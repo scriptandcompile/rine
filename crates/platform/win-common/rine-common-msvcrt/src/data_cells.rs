@@ -17,6 +17,16 @@ static COMMODE_PTR: LazyLock<SyncPtr<*mut i32>> = LazyLock::new(|| SyncPtr(leake
 static FMODE_PTR: LazyLock<SyncPtr<*mut i32>> = LazyLock::new(|| SyncPtr(leaked_i32(0)));
 static INITENV_PTR: LazyLock<SyncPtr<*mut usize>> = LazyLock::new(|| SyncPtr(leaked_usize(0)));
 
+/// Gets a pointer to the commit mode variable.
+///
+/// # Returns
+/// A pointer to the commit mode variable, which controls how the CRT handles file buffering and flushing.
+///
+/// # Notes
+/// This is called by CRT implementations to get a pointer to the commit mode variable.
+/// We return a pointer to a variable in our data cell module..
+/// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
+/// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 pub fn commode_ptr() -> *mut i32 {
     COMMODE_PTR.0
 }

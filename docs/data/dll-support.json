@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T20:39:17.671524+00:00",
+  "generatedAt": "2026-04-19T00:02:15.972430+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1501,7 +1501,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "__p__commode",
+            "symbol": "crt_support::__p__commode",
             "source": "msvcrt - crt_support.rs"
           }
         },

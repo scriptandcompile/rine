@@ -86,6 +86,25 @@ pub unsafe extern "C" fn __C_specific_handler(
     )
 }
 
+/// Gets a pointer to the commit mode variable.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to a global variable with a specific layout.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
+///
+/// # Returns
+/// A pointer to the commit mode variable, which controls how the CRT handles file buffering and flushing.
+///
+/// # Notes
+/// This is called by CRT implementations to get a pointer to the commit mode variable.
+/// We return a pointer to a variable in our data cell module..
+/// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
+/// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn _commode() -> *mut i32 {
+    commode_ptr()
+}
+
 /// __iob_func — get the fake stdio FILE buffer table.
 ///
 /// Returns a pointer to a table of three FILE-like structures for
@@ -191,11 +210,20 @@ pub unsafe extern "C" fn __p__fmode() -> *mut i32 {
     fmode_ptr()
 }
 
-/// __p__commode — get a pointer to the file commit mode flag.
+/// Gets a pointer to the commit mode variable.
 ///
-/// Returned pointer points to a mutable `int` that controls whether files
-/// are committed to disk before write() returns.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to a global variable with a specific layout.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
+///
+/// # Returns
+/// A pointer to the commit mode variable, which controls how the CRT handles file buffering and flushing.
+///
+/// # Notes
+/// This is called by CRT implementations to get a pointer to the commit mode variable.
+/// We return a pointer to a variable in our data cell module..
+/// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
+/// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __p__commode() -> *mut i32 {
     tracing::trace!("msvcrt::__p__commode");

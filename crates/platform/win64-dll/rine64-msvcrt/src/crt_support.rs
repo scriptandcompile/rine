@@ -89,16 +89,41 @@ pub unsafe extern "win64" fn __C_specific_handler(
     )
 }
 
-/// _commode — return a pointer to the commit mode variable.
-#[allow(clippy::missing_safety_doc)]
+/// Gets a pointer to the commit mode variable.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to a global variable with a specific layout.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
+///
+/// # Returns
+/// A pointer to the commit mode variable, which controls how the CRT handles file buffering and flushing.
+///
+/// # Notes
+/// This is called by CRT implementations to get a pointer to the commit mode variable.
+/// We return a pointer to a variable in our data cell module..
+/// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
+/// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _commode() -> *mut i32 {
     commode_ptr()
 }
 
-/// Return the raw pointer to the _commode variable for data-export registration.
+/// Gets a pointer to the commit mode variable.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to a global variable with a specific layout.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
+///
+/// # Returns
+/// A pointer to the commit mode variable, which controls how the CRT handles file buffering and flushing.
+///
+/// # Notes
+/// This is called by CRT implementations to get a pointer to the commit mode variable.
+/// We return a pointer to a variable in our data cell module..
+/// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
+/// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[unsafe(no_mangle)]
-pub fn commode_data_ptr() -> *mut i32 {
+pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
     commode_ptr()
 }
 
@@ -106,12 +131,6 @@ pub fn commode_data_ptr() -> *mut i32 {
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _fmode() -> *mut i32 {
-    fmode_ptr()
-}
-
-/// Return the raw pointer to the _fmode variable for data-export registration.
-#[unsafe(no_mangle)]
-pub fn fmode_data_ptr() -> *mut i32 {
     fmode_ptr()
 }
 
@@ -123,12 +142,6 @@ pub fn fmode_data_ptr() -> *mut i32 {
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
     initenv_ptr() as *const *const i8
-}
-
-/// Return the raw pointer to the __initenv variable for data-export registration.
-#[unsafe(no_mangle)]
-pub fn initenv_data_ptr() -> *mut usize {
-    initenv_ptr()
 }
 
 /// __iob_func — return pointer to the stdio FILE table.
@@ -224,13 +237,4 @@ pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
     fmode_ptr()
-}
-
-/// __p__commode — return a pointer to the global commit mode variable.
-///
-/// Returns the same pointer as `_commode()`.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-#[unsafe(no_mangle)]
-pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
-    commode_ptr()
 }
