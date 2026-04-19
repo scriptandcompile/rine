@@ -244,11 +244,18 @@ pub unsafe extern "win64" fn abort() {
     abort_process()
 }
 
-/// signal — install a signal handler.
+/// Set a signal handler for the specified signal.
 ///
-/// Stub: returns SIG_DFL (0). Minimal implementation since Windows signals
-/// are rarely used in practice.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `sig`: The signal number to set the handler for.
+/// * `handler`: A pointer to the signal handler function to be called when the signal is raised.
+///
+/// # Safety
+/// This is unsafe because the CRT expects the handler pointer to be valid and follow the correct calling convention.
+/// Registering an invalid handler could cause undefined behavior when the signal is raised.
+///
+/// # Notes
+/// This is a stub implementation that does nothing and returns 0.
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn signal(
     sig: i32,

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-19T07:33:38.868219+00:00",
+  "generatedAt": "2026-04-19T21:10:34.033685+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1820,12 +1820,12 @@
         {
           "name": "signal",
           "x64": {
-            "status": "implemented",
-            "symbol": "crt_support::signal",
+            "status": "stubbed",
+            "symbol": "signal",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "signal",
             "source": "msvcrt - crt_support.rs"
           }
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 113,
+      "implemented": 112,
       "partial": 48,
-      "stubbed": 20,
+      "stubbed": 21,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 106,
+      "implemented": 105,
       "partial": 48,
-      "stubbed": 27,
+      "stubbed": 28,
       "unimplemented": 0
     }
   }
