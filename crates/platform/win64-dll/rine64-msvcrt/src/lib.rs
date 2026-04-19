@@ -5,7 +5,7 @@ pub mod stdio;
 pub mod stdlib;
 pub mod string;
 
-use rine_common_msvcrt::{commode_ptr, fmode_ptr, initenv_ptr};
+use rine_common_msvcrt::{commode_ptr, fake_iob_64_ptr, fmode_ptr, initenv_ptr};
 use rine_dlls::{DllPlugin, Export, StubExport, as_win_api};
 
 /// Primary msvcrt.dll plugin.
@@ -43,6 +43,7 @@ impl DllPlugin for MsvcrtPlugin {
             // crt_support — data exports
             Export::Data("_commode", commode_ptr() as *const ()),
             Export::Data("_fmode", fmode_ptr() as *const ()),
+            Export::Data("_iob", fake_iob_64_ptr() as *const ()),
             Export::Data("__initenv", initenv_ptr() as *const ()),
             // memory
             Export::Func("malloc", as_win_api!(memory::malloc)),
