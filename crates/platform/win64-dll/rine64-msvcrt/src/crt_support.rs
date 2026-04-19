@@ -144,12 +144,17 @@ pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
     initenv_ptr() as *const *const i8
 }
 
-/// __iob_func — return pointer to the stdio FILE table.
+/// Gets a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
 ///
-/// Returns a fake FILE table. The first 3 entries represent stdin (0),
-/// stdout (1), stderr (2). We store a marker fd in the first field of
-/// each entry so fwrite/fprintf can identify the stream.
-#[allow(clippy::missing_safety_doc)]
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an array of three FILE structures with a specific layout.
+/// Incorrect handling could lead to undefined behavior in CRT functions that perform standard I/O operations.
+///
+/// # Returns
+/// A pointer to an array of three FILE structures expected by the CRT for standard I/O operations.
+/// The CRT expects this to be exported as `_iob` and used by functions like `printf` and `fprintf`.
+/// The first 3 entries represent stdin (0), stdout (1), stderr (2).
+/// We store a marker fd in the first field of each entry so fwrite/fprintf can identify the stream.
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
     fake_iob_64_ptr()

@@ -69,10 +69,20 @@ pub fn c_specific_handler_result(
     1
 }
 
+/// Get a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
+///
+/// # Returns
+/// A pointer to an array of three FILE structures expected by the CRT for standard I/O operations.
+/// The CRT expects this to be exported as `_iob` and used by functions like `printf` and `fprintf`.
 pub fn fake_iob_32_ptr() -> *mut u8 {
     FAKE_IOB_32.as_ptr() as *mut u8
 }
 
+/// Get a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
+///
+/// # Returns
+/// A pointer to an array of three FILE structures expected by the CRT for standard I/O operations.
+/// The CRT expects this to be exported as `_iob` and used by functions like `printf` and `fprintf`.
 pub fn fake_iob_64_ptr() -> *mut u8 {
     FAKE_IOB_64.as_ptr() as *mut u8
 }

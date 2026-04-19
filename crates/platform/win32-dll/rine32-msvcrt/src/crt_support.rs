@@ -105,11 +105,17 @@ pub unsafe extern "C" fn _commode() -> *mut i32 {
     commode_ptr()
 }
 
-/// __iob_func — get the fake stdio FILE buffer table.
+/// Gets a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
 ///
-/// Returns a pointer to a table of three FILE-like structures for
-/// stdin, stdout, stderr. The msvcrt DLL exposes these as `_iob` data.
-#[allow(clippy::missing_safety_doc)]
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an array of three FILE structures with a specific layout.
+/// Incorrect handling could lead to undefined behavior in CRT functions that perform standard I/O operations.
+///
+/// # Returns
+/// A pointer to an array of three FILE structures expected by the CRT for standard I/O operations.
+/// The CRT expects this to be exported as `_iob` and used by functions like `printf` and `fprintf`.
+/// The first 3 entries represent stdin (0), stdout (1), stderr (2).
+/// We store a marker fd in the first field of each entry so fwrite/fprintf can identify the stream.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __iob_func() -> *mut u8 {
     tracing::trace!("msvcrt::__iob_func");
