@@ -1,4 +1,11 @@
+//! Common CRT support functions and data used by both 32-bit and 64-bit msvcrt implementations.
+//! This includes functions that are expected by the CRT but not provided by the Windows API,
+//! as well as shared data exports like `_commode` and `_fmode`.
+
 use std::sync::LazyLock;
+
+static FAKE_IOB_32: LazyLock<Box<[u8; 96]>> = LazyLock::new(build_fake_iob::<96, 32>);
+static FAKE_IOB_64: LazyLock<Box<[u8; 144]>> = LazyLock::new(build_fake_iob::<144, 48>);
 
 /// An internal function used at startup to tell the CRT what type of application we're running (console, GUI, etc).
 ///
@@ -134,6 +141,8 @@ pub fn errno_location() -> *mut i32 {
     unsafe { libc::__errno_location() }
 }
 
+/// Creates fake stdio control structures expected by the CRT,
+/// since some CRT functions expect a pointer to an array of three FILE structures for stdin, stdout, and stderr.
 fn build_fake_iob<const SIZE: usize, const ENTRY_SIZE: usize>() -> Box<[u8; SIZE]> {
     let mut buf = Box::new([0u8; SIZE]);
     buf[0..4].copy_from_slice(&0i32.to_ne_bytes());
@@ -141,9 +150,6 @@ fn build_fake_iob<const SIZE: usize, const ENTRY_SIZE: usize>() -> Box<[u8; SIZE
     buf[ENTRY_SIZE * 2..ENTRY_SIZE * 2 + 4].copy_from_slice(&2i32.to_ne_bytes());
     buf
 }
-
-static FAKE_IOB_32: LazyLock<Box<[u8; 96]>> = LazyLock::new(build_fake_iob::<96, 32>);
-static FAKE_IOB_64: LazyLock<Box<[u8; 144]>> = LazyLock::new(build_fake_iob::<144, 48>);
 
 #[cfg(test)]
 mod tests {
