@@ -70,6 +70,18 @@ pub fn fake_iob_64_ptr() -> *mut u8 {
     FAKE_IOB_64.as_ptr() as *mut u8
 }
 
+/// Register a function to be called at process exit.
+///
+/// # Arguments
+/// * `func`: A pointer to a function that takes no arguments and returns void.
+///   This function will be called when the process exits, either normally or via `exit()`.
+///
+/// # Safety
+/// This is unsafe because the CRT expects the function pointer to be valid and follow the correct calling convention.
+/// Registering an invalid function could cause undefined behavior when the process exits.
+///
+/// # Notes
+/// This is currently a no-op that just returns the function pointer unchanged.
 pub fn onexit(func: usize) -> usize {
     func
 }

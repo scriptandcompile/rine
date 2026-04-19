@@ -116,11 +116,21 @@ pub unsafe extern "C" fn __iob_func() -> *mut u8 {
     fake_iob_32_ptr()
 }
 
-/// _onexit — register a function to be called at process exit.
+/// Register a function to be called at process exit.
 ///
+/// # Arguments
+/// * `func`: A pointer to a function that takes no arguments and returns void.
+///   This function will be called when the process exits, either normally or via `exit()`.
+///
+/// # Safety
+/// This is unsafe because the CRT expects the function pointer to be valid and follow the correct calling convention.
+/// Registering an invalid function could cause undefined behavior when the process exits.
+///
+/// # Notes
+/// This is currently a no-op that just returns the function pointer unchanged.
+/// A production implementation would add it to an atexit chain and call it when the process exits.
 /// Currently, this just returns the function pointer unchanged.
 /// A production implementation would add it to an atexit chain.
-#[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn _onexit(func: usize) -> usize {
     tracing::trace!(func, "msvcrt::_onexit");

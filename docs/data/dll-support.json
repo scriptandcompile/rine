@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-19T00:02:15.972430+00:00",
+  "generatedAt": "2026-04-19T07:24:06.767472+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1638,12 +1638,12 @@
         {
           "name": "_onexit",
           "x64": {
-            "status": "implemented",
-            "symbol": "crt_support::_onexit",
+            "status": "stubbed",
+            "symbol": "_onexit",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "_onexit",
             "source": "msvcrt - crt_support.rs"
           }
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 115,
+      "implemented": 114,
       "partial": 48,
-      "stubbed": 18,
+      "stubbed": 19,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 108,
+      "implemented": 107,
       "partial": 48,
-      "stubbed": 25,
+      "stubbed": 26,
       "unimplemented": 0
     }
   }
