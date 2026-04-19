@@ -82,6 +82,10 @@ impl DllPlugin for MsvcrtPlugin {
                 name: "_amsg_exit",
                 func: as_win_api!(crt_support::_amsg_exit),
             },
+            StubExport {
+                name: "signal",
+                func: as_win_api!(crt_support::signal),
+            },
         ]
     }
 }

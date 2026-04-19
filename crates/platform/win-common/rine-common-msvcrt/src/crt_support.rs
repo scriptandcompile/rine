@@ -110,6 +110,18 @@ pub fn abort_process() -> ! {
     std::process::abort();
 }
 
+/// Set a signal handler for the specified signal.
+///
+/// # Arguments
+/// * `_sig`: The signal number to set the handler for.
+/// * `_handler`: A pointer to the signal handler function to be called when the signal is raised.
+///
+/// # Safety
+/// This is unsafe because the CRT expects the handler pointer to be valid and follow the correct calling convention.
+/// Registering an invalid handler could cause undefined behavior when the signal is raised.
+///
+/// # Notes
+/// This is a stub implementation that does nothing and returns 0.
 pub fn signal_default(_sig: i32, _handler: usize) -> usize {
     0
 }
