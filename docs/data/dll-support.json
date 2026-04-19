@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-19T07:24:06.767472+00:00",
+  "generatedAt": "2026-04-19T07:33:38.868219+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1560,12 +1560,12 @@
         {
           "name": "_amsg_exit",
           "x64": {
-            "status": "implemented",
-            "symbol": "crt_support::_amsg_exit",
+            "status": "stubbed",
+            "symbol": "_amsg_exit",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "stubbed",
             "symbol": "_amsg_exit",
             "source": "msvcrt - crt_support.rs"
           }
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 114,
+      "implemented": 113,
       "partial": 48,
-      "stubbed": 19,
+      "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 107,
+      "implemented": 106,
       "partial": 48,
-      "stubbed": 26,
+      "stubbed": 27,
       "unimplemented": 0
     }
   }

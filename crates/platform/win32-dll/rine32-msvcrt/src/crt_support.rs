@@ -137,10 +137,55 @@ pub unsafe extern "C" fn _onexit(func: usize) -> usize {
     onexit(func)
 }
 
-/// _amsg_exit — print an error message and exit the process.
+/// Prints an error message and exit the process. Called internally by the CRT when fatal errors occur.
 ///
-/// Called internally by the CRT when fatal errors occur.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `msg_num`: An integer error code representing the specific error that occurred.
+///   The CRT uses this to determine which error message to display.
+///   The specific values and their meanings are defined by the CRT, but common values include:
+///   1 = _RT_ASSERT
+///   2 = _RT_ERROR
+///   3 = _RT_INVALID_PARAM
+///   4 = _RT_HEAP_ERROR
+///   5 = _RT_TERM_SIGNAL
+///   6 = _RT_CTRL_CLOSE
+///   7 = _RT_CTRL_BREAK
+///   8 = _RT_CTRL_CONTROL
+///   9 = _RT_CTRL_LOGOFF
+///   10 = _RT_CTRL_SHUTDOWN
+///   11 = _RT_ASSERT_REPORT_WIDE
+///   12 = _RT_ASSERT_REPORT_UNICODE
+///   13 = _RT_ASSERT_REPORT_STDERR
+///   14 = _RT_ASSERT_REPORT_FILE
+///   15 = _RT_ASSERT_REPORT_THREAD
+///   16 = _RT_ASSERT_REPORT_THREAD_FILE
+///   17 = _RT_ASSERT_REPORT_THREAD_STDERR
+///   18 = _RT_ASSERT_REPORT_THREAD_WIDE
+///   19 = _RT_ASSERT_REPORT_THREAD_UNICODE
+///   20 = _RT_ASSERT_REPORT_FILE_WIDE
+///   21 = _RT_ASSERT_REPORT_FILE_UNICODE
+///   22 = _RT_ASSERT_REPORT_STDERR_WIDE
+///   23 = _RT_ASSERT_REPORT_STDERR_UNICODE
+///   24 = _RT_ASSERT_REPORT_THREAD_FILE_WIDE
+///   25 = _RT_ASSERT_REPORT_THREAD_FILE_UNICODE
+///   26 = _RT_ASSERT_REPORT_THREAD_STDERR_WIDE
+///   27 = _RT_ASSERT_REPORT_THREAD_STDERR_UNICODE
+///   28 = _RT_ASSERT_REPORT_THREAD_WIDE
+///   29 = _RT_ASSERT_REPORT_THREAD_UNICODE
+///   30 = _RT_ASSERT_REPORT_FILE_WIDE
+///   31 = _RT_ASSERT_REPORT_FILE_UNICODE
+///   32 = _RT_ASSERT_REPORT_STDERR_WIDE
+///   33 = _RT_ASSERT_REPORT_STDERR_UNICODE
+///
+/// # Safety
+/// This is unsafe because it will terminate the process and should only be called by the CRT when a fatal error occurs.
+/// Calling this function will cause the process to exit immediately, so it should be used with caution.
+///
+/// # Notes
+/// This is called by the CRT when fatal errors occur.
+/// We currently just print a message and abort the process, but a production implementation would display a message
+/// box with the error and possibly allow the user to choose whether to abort or debug.
+/// The `msg_num` argument can be used to determine the specific error that occurred and display an appropriate message.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn _amsg_exit(msg_num: i32) {
     tracing::trace!(msg_num, "msvcrt::_amsg_exit");

@@ -86,6 +86,13 @@ pub fn onexit(func: usize) -> usize {
     func
 }
 
+/// Display a CRT error message and abort the process.
+///
+/// # Arguments
+/// * `msg_num`: An integer representing the error message number. The CRT uses this to determine which error message to display.
+///
+/// # Notes
+/// This is a stub implementation that just prints the message number and aborts the process.
 pub fn amsg_exit(msg_num: i32) -> ! {
     eprintln!("rine: msvcrt runtime error (msg_num={msg_num})");
     std::process::abort();

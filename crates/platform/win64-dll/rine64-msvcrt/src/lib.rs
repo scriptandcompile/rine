@@ -33,7 +33,6 @@ impl DllPlugin for MsvcrtPlugin {
             Export::Func("_initterm_e", as_win_api!(crt_init::_initterm_e)),
             // crt_support — functions
             Export::Func("__iob_func", as_win_api!(crt_support::__iob_func)),
-            Export::Func("_amsg_exit", as_win_api!(crt_support::_amsg_exit)),
             Export::Func("abort", as_win_api!(crt_support::abort)),
             Export::Func("signal", as_win_api!(crt_support::signal)),
             Export::Func("_lock", as_win_api!(crt_support::_lock)),
@@ -78,6 +77,10 @@ impl DllPlugin for MsvcrtPlugin {
             StubExport {
                 name: "_onexit",
                 func: as_win_api!(crt_support::_onexit),
+            },
+            StubExport {
+                name: "_amsg_exit",
+                func: as_win_api!(crt_support::_amsg_exit),
             },
         ]
     }
