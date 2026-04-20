@@ -15,10 +15,6 @@ impl DllPlugin for NtdllPlugin {
     fn exports(&self) -> Vec<Export> {
         vec![
             Export::Func(
-                "NtQueryInformationFile",
-                as_win_api!(file::NtQueryInformationFile),
-            ),
-            Export::Func(
                 "NtTerminateProcess",
                 as_win_api!(process::NtTerminateProcess),
             ),
@@ -48,6 +44,10 @@ impl DllPlugin for NtdllPlugin {
             PartialExport {
                 name: "NtClose",
                 func: as_win_api!(file::NtClose),
+            },
+            PartialExport {
+                name: "NtQueryInformationFile",
+                func: as_win_api!(file::NtQueryInformationFile),
             },
         ]
     }

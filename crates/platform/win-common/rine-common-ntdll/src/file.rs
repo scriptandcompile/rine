@@ -271,11 +271,84 @@ pub unsafe fn nt_close(handle: Handle) -> u32 {
     }
 }
 
-pub fn nt_query_information_file() -> u32 {
-    tracing::warn!(
-        api = "NtQueryInformationFile",
-        dll = "ntdll",
-        "NtQueryInformationFile stub called. Returned 0 bytes read"
-    );
-    0
+/// File information classes used by NtQueryInformationFile.
+#[allow(dead_code)]
+const FILE_STANDARD_INFORMATION: u32 = 5;
+
+/// Query metadata about an open file.
+///
+/// # Arguments
+/// * `file_handle`: the handle of the file to query.
+/// * `io_status_block`: pointer to an IoStatusBlock structure to receive the status.
+/// * `file_information`: pointer to a buffer to receive the file information.
+/// * `_length`: the length of the `file_information` buffer in bytes (ignored).
+/// * `file_information_class`: the class of information to query (e.g., FileStandardInformation).
+///
+/// # Safety
+/// All pointer parameters must be valid. `file_information` must point to a writable buffer of
+/// sufficient size for the requested information class.
+///
+/// # Returns
+/// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
+///
+/// # Notes
+/// Currently supports `FileStandardInformation` (class 5): returns file size, link count, etc.
+/// While, other classes return NOT_IMPLEMENTED.
+pub unsafe fn nt_query_information_file(
+    file_handle: Handle,
+    io_status_block: *mut IoStatusBlock,
+    file_information: *mut u8,
+    _length: u32,
+    file_information_class: u32,
+) -> u32 {
+    let Some(fd) = handle_to_fd(file_handle) else {
+        return NtStatus::INVALID_HANDLE.0;
+    };
+
+    match file_information_class {
+        FILE_STANDARD_INFORMATION => {
+            // FILE_STANDARD_INFORMATION layout (x64/x86):
+            //   LARGE_INTEGER AllocationSize  (offset 0, 8 bytes)
+            //   LARGE_INTEGER EndOfFile       (offset 8, 8 bytes)
+            //   ULONG         NumberOfLinks   (offset 16, 4 bytes)
+            //   BOOLEAN       DeletePending   (offset 20, 1 byte)
+            //   BOOLEAN       Directory       (offset 21, 1 byte)
+            let mut stat: libc::stat = unsafe { core::mem::zeroed() };
+            if unsafe { libc::fstat(fd, &mut stat) } != 0 {
+                return NtStatus::INVALID_PARAMETER.0;
+            }
+
+            let info = file_information;
+            let size = stat.st_size as u64;
+            let alloc_size = stat.st_blocks as u64 * 512;
+            let is_dir: u8 = if (stat.st_mode & libc::S_IFDIR) != 0 {
+                1
+            } else {
+                0
+            };
+
+            unsafe {
+                core::ptr::write_unaligned(info as *mut u64, alloc_size);
+                core::ptr::write_unaligned(info.add(8) as *mut u64, size);
+                core::ptr::write_unaligned(info.add(16) as *mut u32, stat.st_nlink as u32);
+                *info.add(20) = 0; // DeletePending = false
+                *info.add(21) = is_dir;
+            }
+
+            if !io_status_block.is_null() {
+                unsafe {
+                    (*io_status_block).status = NtStatus::SUCCESS.0;
+                    (*io_status_block).information = 24; // bytes written
+                }
+            }
+            NtStatus::SUCCESS.0
+        }
+        _ => {
+            tracing::warn!(
+                class = file_information_class,
+                "NtQueryInformationFile: unsupported information class"
+            );
+            NtStatus::NOT_IMPLEMENTED.0
+        }
+    }
 }

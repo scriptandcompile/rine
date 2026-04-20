@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T16:55:13.737090+00:00",
+  "generatedAt": "2026-04-20T17:04:39.209772+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1917,12 +1917,12 @@
         {
           "name": "NtQueryInformationFile",
           "x64": {
-            "status": "implemented",
-            "symbol": "file::NtQueryInformationFile",
+            "status": "partial",
+            "symbol": "NtQueryInformationFile",
             "source": "ntdll - file.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "NtQueryInformationFile",
             "source": "ntdll - file.rs"
           }
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 105,
-      "partial": 55,
+      "implemented": 104,
+      "partial": 56,
       "stubbed": 21,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 102,
-      "partial": 55,
-      "stubbed": 24,
+      "partial": 56,
+      "stubbed": 23,
       "unimplemented": 0
     }
   }

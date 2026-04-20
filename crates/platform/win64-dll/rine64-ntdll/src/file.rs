@@ -2,8 +2,7 @@
 //! NtQueryInformationFile.
 
 use rine_common_ntdll::file as common;
-use rine_types::errors::NtStatus;
-use rine_types::handles::{Handle, handle_to_fd};
+use rine_types::handles::Handle;
 use rine_types::os::IoStatusBlock;
 
 /// Read data from a file identified by a HANDLE.
@@ -181,22 +180,26 @@ pub unsafe extern "win64" fn NtClose(object_handle: isize) -> u32 {
     unsafe { common::nt_close(handle) }
 }
 
-// ---------------------------------------------------------------------------
-// NtQueryInformationFile
-// ---------------------------------------------------------------------------
-
-/// File information classes used by NtQueryInformationFile.
-#[allow(dead_code)]
-const FILE_STANDARD_INFORMATION: u32 = 5;
-#[allow(dead_code)]
-const FILE_POSITION_INFORMATION: u32 = 14;
-
-/// NtQueryInformationFile — query metadata about an open file.
+/// Query metadata about an open file.
 ///
-/// Currently supports:
-///  - `FileStandardInformation` (class 5): returns file size, link count, etc.
-///  - other classes: returns NOT_IMPLEMENTED
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// # Arguments
+/// * `file_handle`: the handle of the file to query.
+/// * `io_status_block`: pointer to an IoStatusBlock structure to receive the status.
+/// * `file_information`: pointer to a buffer to receive the file information.
+/// * `_length`: the length of the `file_information` buffer in bytes (ignored).
+/// * `file_information_class`: the class of information to query (e.g., FileStandardInformation).
+///
+/// # Safety
+/// All pointer parameters must be valid. `file_information` must point to a writable buffer of
+/// sufficient size for the requested information class.
+///
+/// # Returns
+/// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
+///
+/// # Notes
+/// Currently supports `FileStandardInformation` (class 5): returns file size, link count, etc.
+/// While, other classes return NOT_IMPLEMENTED.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn NtQueryInformationFile(
     file_handle: isize,
@@ -206,54 +209,13 @@ pub unsafe extern "win64" fn NtQueryInformationFile(
     file_information_class: u32,
 ) -> u32 {
     let handle = Handle::from_raw(file_handle);
-    let Some(fd) = handle_to_fd(handle) else {
-        return NtStatus::INVALID_HANDLE.0;
-    };
-
-    match file_information_class {
-        FILE_STANDARD_INFORMATION => {
-            // FILE_STANDARD_INFORMATION layout (x64):
-            //   LARGE_INTEGER AllocationSize  (offset 0, 8 bytes)
-            //   LARGE_INTEGER EndOfFile       (offset 8, 8 bytes)
-            //   ULONG         NumberOfLinks   (offset 16, 4 bytes)
-            //   BOOLEAN       DeletePending   (offset 20, 1 byte)
-            //   BOOLEAN       Directory       (offset 21, 1 byte)
-            let mut stat: libc::stat = unsafe { core::mem::zeroed() };
-            if unsafe { libc::fstat(fd, &mut stat) } != 0 {
-                return NtStatus::INVALID_PARAMETER.0;
-            }
-
-            let info = file_information;
-            let size = stat.st_size as u64;
-            let alloc_size = stat.st_blocks as u64 * 512;
-            let is_dir: u8 = if (stat.st_mode & libc::S_IFDIR) != 0 {
-                1
-            } else {
-                0
-            };
-
-            unsafe {
-                core::ptr::write_unaligned(info as *mut u64, alloc_size);
-                core::ptr::write_unaligned(info.add(8) as *mut u64, size);
-                core::ptr::write_unaligned(info.add(16) as *mut u32, stat.st_nlink as u32);
-                *info.add(20) = 0; // DeletePending = false
-                *info.add(21) = is_dir;
-            }
-
-            if !io_status_block.is_null() {
-                unsafe {
-                    (*io_status_block).status = NtStatus::SUCCESS.0;
-                    (*io_status_block).information = 24; // bytes written
-                }
-            }
-            NtStatus::SUCCESS.0
-        }
-        _ => {
-            tracing::warn!(
-                class = file_information_class,
-                "NtQueryInformationFile: unsupported information class"
-            );
-            NtStatus::NOT_IMPLEMENTED.0
-        }
+    unsafe {
+        common::nt_query_information_file(
+            handle,
+            io_status_block,
+            file_information,
+            _length,
+            file_information_class,
+        )
     }
 }

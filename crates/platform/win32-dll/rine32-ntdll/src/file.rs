@@ -180,12 +180,41 @@ pub unsafe extern "stdcall" fn NtClose(object_handle: isize) -> u32 {
     unsafe { common::nt_close(handle) }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn NtQueryInformationFile() -> u32 {
-    tracing::warn!(
-        api = "NtQueryInformationFile",
-        dll = "ntdll",
-        "win32 stub called"
-    );
-    0
+/// Query metadata about an open file.
+///
+/// # Arguments
+/// * `file_handle`: the handle of the file to query.
+/// * `io_status_block`: pointer to an IoStatusBlock structure to receive the status.
+/// * `file_information`: pointer to a buffer to receive the file information.
+/// * `_length`: the length of the `file_information` buffer in bytes (ignored).
+/// * `file_information_class`: the class of information to query (e.g., FileStandardInformation).
+///
+/// # Safety
+/// All pointer parameters must be valid. `file_information` must point to a writable buffer of
+/// sufficient size for the requested information class.
+///
+/// # Returns
+/// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
+///
+/// # Notes
+/// Currently supports `FileStandardInformation` (class 5): returns file size, link count, etc.
+/// While, other classes return NOT_IMPLEMENTED.
+#[allow(non_snake_case)]
+pub unsafe extern "stdcall" fn NtQueryInformationFile(
+    file_handle: isize,
+    io_status_block: *mut IoStatusBlock,
+    file_information: *mut u8,
+    _length: u32,
+    file_information_class: u32,
+) -> u32 {
+    let handle = Handle::from_raw(file_handle);
+    unsafe {
+        common::nt_query_information_file(
+            handle,
+            io_status_block,
+            file_information,
+            _length,
+            file_information_class,
+        )
+    }
 }
