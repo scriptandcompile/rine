@@ -3517,6 +3517,7 @@ name = "rine-common-msvcrt"
 version = "0.1.3"
 dependencies = [
  "libc",
+ "rine-types",
 ]
 
 [[package]]

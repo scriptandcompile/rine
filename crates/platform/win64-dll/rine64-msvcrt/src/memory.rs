@@ -5,21 +5,22 @@
 //! ABI translation to SysV calls internally.
 
 use core::ffi::c_void;
-use std::sync::LazyLock;
 
-use rine_common_msvcrt::AllocationTracker;
+use rine_common_msvcrt as common;
 
-static CRT_ALLOCATIONS: LazyLock<AllocationTracker> = LazyLock::new(AllocationTracker::new);
-
-/// malloc — allocate a block of memory.
-#[allow(clippy::missing_safety_doc)]
+/// Allocate a block of memory.
+///
+/// # Arguments
+/// * `size` - The size of the memory block to allocate, in bytes.
+///
+/// # Safety
+/// This is unsafe because it returns a raw pointer to a memory block. The caller must ensure
+/// that the pointer is properly managed and eventually freed to avoid memory leaks or undefined behavior.
+///
+/// # Returns
+/// A pointer to the allocated memory block, or null if the allocation fails.
 pub unsafe extern "win64" fn malloc(size: usize) -> *mut c_void {
-    let ptr = unsafe { libc::malloc(size) };
-    if !ptr.is_null() {
-        CRT_ALLOCATIONS.record(ptr, size);
-        rine_types::dev_notify!(on_memory_allocated(ptr as u64, size as u64, "malloc"));
-    }
-    ptr
+    unsafe { common::malloc(size) }
 }
 
 /// calloc — allocate and zero-initialize an array.
@@ -28,7 +29,7 @@ pub unsafe extern "win64" fn calloc(count: usize, size: usize) -> *mut c_void {
     let ptr = unsafe { libc::calloc(count, size) };
     if !ptr.is_null() {
         let total = count.saturating_mul(size);
-        CRT_ALLOCATIONS.record(ptr, total);
+        common::CRT_ALLOCATIONS.record(ptr, total);
         rine_types::dev_notify!(on_memory_allocated(ptr as u64, total as u64, "calloc"));
     }
     ptr
@@ -37,12 +38,12 @@ pub unsafe extern "win64" fn calloc(count: usize, size: usize) -> *mut c_void {
 /// realloc — resize a memory block.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
-    let old_size = CRT_ALLOCATIONS.forget(ptr);
+    let old_size = common::CRT_ALLOCATIONS.forget(ptr);
 
     let new_ptr = unsafe { libc::realloc(ptr, size) };
     if new_ptr.is_null() {
         if let Some(sz) = old_size {
-            CRT_ALLOCATIONS.restore(ptr, sz);
+            common::CRT_ALLOCATIONS.restore(ptr, sz);
         }
         return new_ptr;
     }
@@ -51,7 +52,7 @@ pub unsafe extern "win64" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_vo
         rine_types::dev_notify!(on_memory_freed(ptr as u64, sz as u64, "realloc"));
     }
 
-    CRT_ALLOCATIONS.record(new_ptr, size);
+    common::CRT_ALLOCATIONS.record(new_ptr, size);
     rine_types::dev_notify!(on_memory_allocated(new_ptr as u64, size as u64, "realloc"));
     new_ptr
 }
@@ -59,7 +60,7 @@ pub unsafe extern "win64" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_vo
 /// free — free a previously allocated memory block.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "win64" fn free(ptr: *mut c_void) {
-    if let Some(sz) = CRT_ALLOCATIONS.forget(ptr) {
+    if let Some(sz) = common::CRT_ALLOCATIONS.forget(ptr) {
         rine_types::dev_notify!(on_memory_freed(ptr as u64, sz as u64, "free"));
     }
     unsafe { libc::free(ptr) }
