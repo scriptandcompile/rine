@@ -44,16 +44,20 @@ impl DllPlugin for MsvcrtPlugin32 {
 
     fn exports(&self) -> Vec<Export> {
         vec![
+            // stdio
             Export::Func("printf", as_win_api!(printf)),
             Export::Func("puts", as_win_api!(puts)),
             Export::Func("fprintf", as_win_api!(fprintf)),
             Export::Func("vfprintf", as_win_api!(vfprintf)),
             Export::Func("fwrite", as_win_api!(fwrite)),
+            // stdlib
             Export::Func("exit", as_win_api!(exit)),
             Export::Func("_cexit", as_win_api!(_cexit)),
+            // crt_init
             Export::Func("__getmainargs", as_win_api!(__getmainargs)),
             Export::Func("_initterm", as_win_api!(_initterm)),
             Export::Func("_initterm_e", as_win_api!(_initterm_e)),
+            // crt_support — functions
             Export::Func("__iob_func", as_win_api!(__iob_func)),
             Export::Func("abort", as_win_api!(abort)),
             Export::Func("_lock", as_win_api!(_lock)),
@@ -62,16 +66,19 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("__p__environ", as_win_api!(__p__environ)),
             Export::Func("__p__fmode", as_win_api!(__p__fmode)),
             Export::Func("__p__commode", as_win_api!(crt_support::__p__commode)),
+            // crt_support — data exports
             Export::Data("_commode", commode_ptr() as *const ()),
             Export::Data("_fmode", fmode_ptr() as *const ()),
             Export::Data("_iob", fake_iob_32_ptr() as *const ()),
             Export::Data("__initenv", initenv_ptr() as *const ()),
+            // memory
             Export::Func("malloc", as_win_api!(malloc)),
             Export::Func("calloc", as_win_api!(calloc)),
             Export::Func("realloc", as_win_api!(realloc)),
             Export::Func("free", as_win_api!(free)),
             Export::Func("memcpy", as_win_api!(memcpy)),
             Export::Func("memset", as_win_api!(memset)),
+            // string
             Export::Func("strlen", as_win_api!(strlen)),
             Export::Func("strcmp", as_win_api!(strcmp)),
             Export::Func("strncmp", as_win_api!(strncmp)),
