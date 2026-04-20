@@ -90,7 +90,7 @@ pub unsafe fn register_class_w(wc: *const WndClassExW) -> ATOM {
 /// Register a window class by name.
 ///
 /// Returns 1 on success, 0 if the name is empty.
-pub fn register_class(name: String, class: WindowClass) -> ATOM {
+fn register_class(name: String, class: WindowClass) -> ATOM {
     if name.is_empty() {
         return 0;
     }
