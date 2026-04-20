@@ -23,16 +23,20 @@ pub unsafe extern "win64" fn malloc(size: usize) -> *mut c_void {
     unsafe { common::malloc(size) }
 }
 
-/// calloc — allocate and zero-initialize an array.
-#[allow(clippy::missing_safety_doc)]
+/// Allocate and zero-initialize an array.
+///
+/// # Arguments
+/// * `count` - The number of elements to allocate.
+/// * `size` - The size of each element, in bytes.
+///
+/// # Safety
+/// This is unsafe because it returns a raw pointer to a memory block. The caller must ensure
+/// that the pointer is properly managed and eventually freed to avoid memory leaks or undefined behavior.
+///
+/// # Returns
+/// A pointer to the allocated memory block, or null if the allocation fails.
 pub unsafe extern "win64" fn calloc(count: usize, size: usize) -> *mut c_void {
-    let ptr = unsafe { libc::calloc(count, size) };
-    if !ptr.is_null() {
-        let total = count.saturating_mul(size);
-        common::CRT_ALLOCATIONS.record(ptr, total);
-        rine_types::dev_notify!(on_memory_allocated(ptr as u64, total as u64, "calloc"));
-    }
-    ptr
+    unsafe { common::calloc(count, size) }
 }
 
 /// realloc — resize a memory block.
