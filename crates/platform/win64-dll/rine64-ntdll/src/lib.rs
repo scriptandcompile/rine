@@ -3,7 +3,7 @@ pub mod memory;
 pub mod process;
 pub mod rtl;
 
-use rine_dlls::{DllPlugin, Export, PartialExport, as_win_api};
+use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
 
 pub struct NtdllPlugin;
 
@@ -13,13 +13,11 @@ impl DllPlugin for NtdllPlugin {
     }
 
     fn exports(&self) -> Vec<Export> {
-        vec![
-            Export::Func(
-                "RtlInitUnicodeString",
-                as_win_api!(rtl::RtlInitUnicodeString),
-            ),
-            Export::Func("RtlGetVersion", as_win_api!(rtl::RtlGetVersion)),
-        ]
+        vec![]
+    }
+
+    fn stubs(&self) -> Vec<StubExport> {
+        vec![]
     }
 
     fn partials(&self) -> Vec<PartialExport> {
@@ -49,6 +47,15 @@ impl DllPlugin for NtdllPlugin {
             PartialExport {
                 name: "NtTerminateProcess",
                 func: as_win_api!(process::NtTerminateProcess),
+            },
+            // rtl.rs
+            PartialExport {
+                name: "RtlInitUnicodeString",
+                func: as_win_api!(rtl::RtlInitUnicodeString),
+            },
+            PartialExport {
+                name: "RtlGetVersion",
+                func: as_win_api!(rtl::RtlGetVersion),
             },
         ]
     }

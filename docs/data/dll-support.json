@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T17:16:50.654519+00:00",
+  "generatedAt": "2026-04-20T18:14:23.951592+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1969,27 +1969,27 @@
         {
           "name": "RtlGetVersion",
           "x64": {
-            "status": "implemented",
-            "symbol": "rtl::RtlGetVersion",
+            "status": "partial",
+            "symbol": "RtlGetVersion",
             "source": "ntdll - rtl.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "RtlGetVersion",
-            "source": "ntdll - process.rs"
+            "source": "ntdll - rtl.rs"
           }
         },
         {
           "name": "RtlInitUnicodeString",
           "x64": {
-            "status": "implemented",
-            "symbol": "rtl::RtlInitUnicodeString",
+            "status": "partial",
+            "symbol": "RtlInitUnicodeString",
             "source": "ntdll - rtl.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "RtlInitUnicodeString",
-            "source": "ntdll - process.rs"
+            "source": "ntdll - rtl.rs"
           }
         }
       ]
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 104,
-      "partial": 57,
+      "implemented": 102,
+      "partial": 59,
       "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 102,
-      "partial": 57,
-      "stubbed": 22,
+      "partial": 59,
+      "stubbed": 20,
       "unimplemented": 0
     }
   }

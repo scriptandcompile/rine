@@ -1,55 +1,27 @@
 //! ntdll Rtl* utility functions: RtlInitUnicodeString, RtlGetVersion.
 
+use rine_common_ntdll as common;
 use rine_types::os::{
     OsVersionInfoExW, OsVersionInfoW, SIZEOF_OSVERSIONINFOEXW, SIZEOF_OSVERSIONINFOW, get_version,
 };
 use rine_types::strings::UnicodeString;
 
-/// RtlInitUnicodeString — initialise a UNICODE_STRING from a null-terminated
-/// wide-character (UTF-16LE) source string.
+/// Initialize a `UnicodeString` structure with the given source string.
+///
+/// # Arguments
+/// * `destination_string`: pointer to the `UnicodeString` structure to initialize.
+/// * `source_string`: pointer to a null-terminated wide string (PCWSTR) to copy into the `UnicodeString`.
 ///
 /// # Safety
-/// `source` must either be null or point to a valid null-terminated `u16` array.
-/// `dest` must be a valid, writable pointer to a `UNICODE_STRING`.
+/// All pointer parameters must be valid.
+/// The `destination_string` must point to a valid `UnicodeString` structure, and `source_string` must point
+/// to a valid null-terminated wide string.
+///
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RtlInitUnicodeString(dest: *mut UnicodeString, source: *const u16) {
-    if dest.is_null() {
-        return;
-    }
-
-    if source.is_null() {
-        unsafe {
-            (*dest).length = 0;
-            (*dest).maximum_length = 0;
-            (*dest).buffer = core::ptr::null_mut();
-        }
-        return;
-    }
-
-    // Count u16 code units up to (but not including) the null terminator.
-    let mut len: usize = 0;
-    unsafe {
-        while *source.add(len) != 0 {
-            len += 1;
-        }
-    }
-
-    // Byte lengths (u16 → 2 bytes each). Cap at u16::MAX.
-    let byte_len = (len * 2).min(u16::MAX as usize);
-    // maximum_length includes the null terminator (2 extra bytes).
-    let max_byte_len = (byte_len + 2).min(u16::MAX as usize);
-
-    unsafe {
-        (*dest).length = byte_len as u16;
-        (*dest).maximum_length = max_byte_len as u16;
-        (*dest).buffer = source as *mut u16;
-    }
+    unsafe { common::rtl::rtl_init_unicode_string(dest, source) };
 }
-
-// ---------------------------------------------------------------------------
-// RtlGetVersion
-// ---------------------------------------------------------------------------
 
 /// `RtlGetVersion` — fill an `OSVERSIONINFOEXW` with the current (spoofed)
 /// Windows version. Unlike `GetVersionEx` this function is not subject to

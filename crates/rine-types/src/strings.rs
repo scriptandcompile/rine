@@ -76,6 +76,26 @@ pub unsafe fn read_wstr(ptr: *const u16) -> Option<String> {
     Some(String::from_utf16_lossy(slice))
 }
 
+/// Count UTF-16 code units in a null-terminated wide string.
+///
+/// Returns `None` if `ptr` is null.
+///
+/// # Safety
+/// `ptr` must be null or point to a valid null-terminated UTF-16 string.
+pub unsafe fn wstr_unit_len(ptr: *const u16) -> Option<usize> {
+    if ptr.is_null() {
+        return None;
+    }
+
+    let mut len = 0usize;
+    unsafe {
+        while *ptr.add(len) != 0 {
+            len += 1;
+        }
+    }
+    Some(len)
+}
+
 /// Read an ANSI string from a raw pointer with an explicit character count.
 ///
 /// Returns `None` if `ptr` is null or `count` is negative.
@@ -207,6 +227,17 @@ mod tests {
     fn read_wstr_valid() {
         let s: Vec<u16> = "hello\0".encode_utf16().collect();
         assert_eq!(unsafe { read_wstr(s.as_ptr()) }, Some("hello".into()));
+    }
+
+    #[test]
+    fn wstr_unit_len_null_returns_none() {
+        assert_eq!(unsafe { wstr_unit_len(std::ptr::null()) }, None);
+    }
+
+    #[test]
+    fn wstr_unit_len_counts_until_nul() {
+        let s: Vec<u16> = "hello\0ignored".encode_utf16().collect();
+        assert_eq!(unsafe { wstr_unit_len(s.as_ptr()) }, Some(5));
     }
 
     // ── read_cstr_counted ───────────────────────────────────────

@@ -1,5 +1,6 @@
 pub mod file;
 pub mod process;
+pub mod rtl;
 
 use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
 
@@ -20,16 +21,7 @@ impl DllPlugin for NtdllPlugin32 {
     }
 
     fn stubs(&self) -> Vec<StubExport> {
-        vec![
-            StubExport {
-                name: "RtlInitUnicodeString",
-                func: as_win_api!(process::RtlInitUnicodeString),
-            },
-            StubExport {
-                name: "RtlGetVersion",
-                func: as_win_api!(process::RtlGetVersion),
-            },
-        ]
+        vec![]
     }
 
     fn partials(&self) -> Vec<PartialExport> {
@@ -59,6 +51,15 @@ impl DllPlugin for NtdllPlugin32 {
             PartialExport {
                 name: "NtTerminateProcess",
                 func: as_win_api!(process::NtTerminateProcess),
+            },
+            // rtl.rs
+            PartialExport {
+                name: "RtlInitUnicodeString",
+                func: as_win_api!(rtl::RtlInitUnicodeString),
+            },
+            PartialExport {
+                name: "RtlGetVersion",
+                func: as_win_api!(rtl::RtlGetVersion),
             },
         ]
     }

@@ -1,5 +1,6 @@
 pub mod file;
 pub mod process;
+pub mod rtl;
 
 use rine_dlls::{DllPlugin, Export, StubExport, as_win_api};
 
@@ -39,13 +40,14 @@ impl DllPlugin for NtdllPlugin32 {
                 name: "NtTerminateProcess",
                 func: as_win_api!(process::nt_terminate_process),
             },
+            // rtl.rs
             StubExport {
                 name: "RtlInitUnicodeString",
-                func: as_win_api!(process::rtl_init_unicode_string),
+                func: as_win_api!(rtl::rtl_init_unicode_string),
             },
             StubExport {
                 name: "RtlGetVersion",
-                func: as_win_api!(process::rtl_get_version),
+                func: as_win_api!(rtl::rtl_get_version),
             },
         ]
     }
