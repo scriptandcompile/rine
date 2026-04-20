@@ -84,14 +84,35 @@ pub unsafe extern "win64" fn free(ptr: *mut c_void) {
     unsafe { common::free(ptr) }
 }
 
-/// memcpy — copy n bytes from src to dest.
-#[allow(clippy::missing_safety_doc)]
+/// Copy n bytes from src to dest.
+///
+/// # Arguments
+/// * `dest` - A pointer to the destination buffer where the content is to be copied.
+/// * `src` - A pointer to the source of data to be copied.
+/// * `n` - The number of bytes to copy.
+///
+/// # Safety
+/// This is unsafe because it operates on raw pointers.
+/// The caller must ensure that `dest` and `src` are valid pointers to memory blocks of at least `n` bytes,
+/// and that the memory regions do not overlap in a way that violates Rust's aliasing rules.
+/// Additionally, the caller must ensure that the memory pointed to by `dest` is writable and that the memory
+/// pointed to by `src` is readable to avoid undefined behavior.
+///
+/// # Returns
+/// A pointer to the destination buffer (`dest`).
+///
+/// # Notes
+/// This function performs a byte-wise copy of `n` bytes from the memory area pointed to by `src` to the
+/// memory area pointed to by `dest`.
+/// The behavior is undefined if the memory areas overlap.
+/// The caller is responsible for ensuring that the destination buffer has enough space to hold the copied
+/// data and that both pointers are valid for the specified number of bytes.
 pub unsafe extern "win64" fn memcpy(
     dest: *mut c_void,
     src: *const c_void,
     n: usize,
 ) -> *mut c_void {
-    unsafe { libc::memcpy(dest, src, n) }
+    unsafe { common::memcpy(dest, src, n) }
 }
 
 /// memset — fill memory with a byte value.

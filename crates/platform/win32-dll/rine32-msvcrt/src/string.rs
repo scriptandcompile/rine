@@ -2,12 +2,6 @@
 
 use core::ffi::c_void;
 
-/// memcpy — copy a block of memory.
-#[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void {
-    unsafe { libc::memcpy(dest, src, n) }
-}
-
 /// memset — fill a block of memory with a byte value.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn memset(dest: *mut c_void, c: i32, n: usize) -> *mut c_void {
