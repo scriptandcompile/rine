@@ -2,10 +2,57 @@
 //! This includes functions that are expected by the CRT but not provided by the Windows API,
 //! as well as shared data exports like `_commode` and `_fmode`.
 
-use std::sync::LazyLock;
+use std::collections::HashMap;
+use std::sync::{Arc, LazyLock, Mutex};
 
 static FAKE_IOB_32: LazyLock<Box<[u8; 96]>> = LazyLock::new(build_fake_iob::<96, 32>);
 static FAKE_IOB_64: LazyLock<Box<[u8; 144]>> = LazyLock::new(build_fake_iob::<144, 48>);
+static CRT_LOCKS: LazyLock<Mutex<HashMap<i32, Arc<RecursiveMutex>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+struct RecursiveMutex {
+    raw: *mut libc::pthread_mutex_t,
+}
+
+unsafe impl Send for RecursiveMutex {}
+unsafe impl Sync for RecursiveMutex {}
+
+impl RecursiveMutex {
+    fn new() -> Self {
+        unsafe {
+            let raw = Box::into_raw(Box::new(std::mem::zeroed::<libc::pthread_mutex_t>()));
+            let mut attr = std::mem::zeroed::<libc::pthread_mutexattr_t>();
+
+            libc::pthread_mutexattr_init(&mut attr);
+            libc::pthread_mutexattr_settype(&mut attr, libc::PTHREAD_MUTEX_RECURSIVE);
+            libc::pthread_mutex_init(raw, &attr);
+            libc::pthread_mutexattr_destroy(&mut attr);
+
+            Self { raw }
+        }
+    }
+
+    fn lock(&self) {
+        unsafe {
+            libc::pthread_mutex_lock(self.raw);
+        }
+    }
+
+    fn unlock(&self) {
+        unsafe {
+            libc::pthread_mutex_unlock(self.raw);
+        }
+    }
+}
+
+impl Drop for RecursiveMutex {
+    fn drop(&mut self) {
+        unsafe {
+            libc::pthread_mutex_destroy(self.raw);
+            drop(Box::from_raw(self.raw));
+        }
+    }
+}
 
 /// An internal function used at startup to tell the CRT what type of application we're running (console, GUI, etc).
 ///
@@ -143,9 +190,45 @@ pub fn signal_default(_sig: i32, _handler: usize) -> usize {
     0
 }
 
-pub fn lock(_locknum: i32) {}
+/// Acquire a CRT lock for the specified lock number.
+///
+/// # Arguments
+/// * `locknum`: The lock number to acquire. The CRT uses this to synchronize access to internal resources.
+///
+/// # Safety
+/// This is unsafe because the CRT expects locks to be properly acquired and released to avoid deadlocks and ensure thread safety.
+/// Incorrect usage could lead to undefined behavior when multiple threads access CRT resources.
+pub fn lock(locknum: i32) {
+    let mutex = {
+        let mut locks = CRT_LOCKS.lock().unwrap();
+        locks
+            .entry(locknum)
+            .or_insert_with(|| Arc::new(RecursiveMutex::new()))
+            .clone()
+    };
 
-pub fn unlock(_locknum: i32) {}
+    mutex.lock();
+}
+
+/// Release a CRT lock for the specified lock number.
+///
+/// # Arguments
+/// * `locknum`: The lock number to release. This should match a previously acquired lock number.
+///
+/// # Safety
+/// This is unsafe because the CRT expects locks to be properly acquired and released to avoid deadlocks and ensure thread safety.
+/// Incorrect usage (like unlocking a lock that wasn't acquired) could lead to undefined behavior when multiple
+/// threads access CRT resources.
+pub fn unlock(locknum: i32) {
+    let mutex = {
+        let locks = CRT_LOCKS.lock().unwrap();
+        locks.get(&locknum).cloned()
+    };
+
+    if let Some(mutex) = mutex {
+        mutex.unlock();
+    }
+}
 
 pub fn errno_location() -> *mut i32 {
     unsafe { libc::__errno_location() }
@@ -163,7 +246,10 @@ fn build_fake_iob<const SIZE: usize, const ENTRY_SIZE: usize>() -> Box<[u8; SIZE
 
 #[cfg(test)]
 mod tests {
-    use super::{fake_iob_32_ptr, fake_iob_64_ptr};
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    use super::{fake_iob_32_ptr, fake_iob_64_ptr, lock, unlock};
 
     #[test]
     fn fake_iob_32_has_expected_markers() {
@@ -181,5 +267,37 @@ mod tests {
         assert_eq!(&bytes[0..4], &0i32.to_ne_bytes());
         assert_eq!(&bytes[48..52], &1i32.to_ne_bytes());
         assert_eq!(&bytes[96..100], &2i32.to_ne_bytes());
+    }
+
+    #[test]
+    fn crt_locks_are_recursive_per_locknum() {
+        lock(11);
+        lock(11);
+        unlock(11);
+        unlock(11);
+    }
+
+    #[test]
+    fn crt_locks_block_other_threads_until_unlocked() {
+        let locknum = 23;
+        let (ready_tx, ready_rx) = mpsc::channel();
+        let (done_tx, done_rx) = mpsc::channel();
+
+        lock(locknum);
+
+        let worker = std::thread::spawn(move || {
+            ready_tx.send(()).unwrap();
+            lock(locknum);
+            unlock(locknum);
+            done_tx.send(()).unwrap();
+        });
+
+        ready_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+        assert!(done_rx.recv_timeout(Duration::from_millis(50)).is_err());
+
+        unlock(locknum);
+
+        done_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+        worker.join().unwrap();
     }
 }

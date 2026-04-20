@@ -230,21 +230,29 @@ pub unsafe extern "C" fn signal(sig: i32, handler: usize) -> usize {
     signal_default(sig, handler)
 }
 
-/// _lock — acquire a CRT lock (for thread safety of stdio, malloc, etc.).
+/// Acquire a CRT lock for the specified lock number.
 ///
-/// Currently, this is a no-op. A production implementation would use
-/// actual OS synchronization primitives.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `locknum`: The lock number to acquire. The CRT uses this to synchronize access to internal resources.
+///
+/// # Safety
+/// This is unsafe because the CRT expects locks to be properly acquired and released to avoid deadlocks and ensure thread safety.
+/// Incorrect usage could lead to undefined behavior when multiple threads access CRT resources.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn _lock(locknum: i32) {
     tracing::trace!(locknum, "msvcrt::_lock");
     lock(locknum);
 }
 
-/// _unlock — release a CRT lock.
+/// Release a CRT lock for the specified lock number.
 ///
-/// Currently, this is a no-op.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `locknum`: The lock number to release. This should match a previously acquired lock number.
+///
+/// # Safety
+/// This is unsafe because the CRT expects locks to be properly acquired and released to avoid deadlocks and ensure thread safety.
+/// Incorrect usage (like unlocking a lock that wasn't acquired) could lead to undefined behavior when multiple
+/// threads access CRT resources.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn _unlock(locknum: i32) {
     tracing::trace!(locknum, "msvcrt::_unlock");

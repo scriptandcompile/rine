@@ -269,19 +269,28 @@ pub unsafe extern "win64" fn signal(
     signal_default(sig, handler)
 }
 
-/// _lock — acquire an internal CRT lock.
+/// Acquire a CRT lock for the specified lock number.
 ///
-/// No-op for single-threaded.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `locknum`: The lock number to acquire. The CRT uses this to synchronize access to internal resources.
+///
+/// # Safety
+/// This is unsafe because the CRT expects locks to be properly acquired and released to avoid deadlocks and ensure thread safety.
+/// Incorrect usage could lead to undefined behavior when multiple threads access CRT resources.
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _lock(locknum: i32) {
     lock(locknum);
 }
 
-/// _unlock — release an internal CRT lock.
+/// Release a CRT lock for the specified lock number.
 ///
-/// No-op for single-threaded.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `locknum`: The lock number to release. This should match a previously acquired lock number.
+///
+/// # Safety
+/// This is unsafe because the CRT expects locks to be properly acquired and released to avoid deadlocks and ensure thread safety.
+/// Incorrect usage (like unlocking a lock that wasn't acquired) could lead to undefined behavior when multiple
+/// threads access CRT resources.
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _unlock(locknum: i32) {
     unlock(locknum);
