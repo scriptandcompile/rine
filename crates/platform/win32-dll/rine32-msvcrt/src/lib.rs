@@ -29,10 +29,10 @@ pub use crt_support::{
     __C_specific_handler, __iob_func, __p__commode, __p__environ, __p__fmode, __set_app_type,
     __setusermatherr, _amsg_exit, _errno, _lock, _onexit, _unlock, abort, signal,
 };
-pub use memory::{calloc, free, malloc, memcpy, realloc};
+pub use memory::{calloc, free, malloc, memcpy, memset, realloc};
 pub use stdio::{fprintf, fwrite, printf, puts, vfprintf};
 pub use stdlib::{_cexit, exit};
-pub use string::{memset, strcmp, strlen, strncmp};
+pub use string::{strcmp, strlen, strncmp};
 
 pub struct MsvcrtPlugin32;
 pub struct CrtForwarderPlugin32;

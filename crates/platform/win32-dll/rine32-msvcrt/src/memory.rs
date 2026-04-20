@@ -109,3 +109,26 @@ pub unsafe extern "C" fn free(ptr: *mut c_void) {
 pub unsafe extern "C" fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void {
     unsafe { common::memcpy(dest, src, n) }
 }
+
+/// Fill a block of memory with a byte value.
+///
+/// # Arguments
+/// * `dest` - A pointer to the destination buffer where the content is to be filled.
+/// * `c` - The byte value to fill the memory with (converted to unsigned char internally).
+/// * `n` - The number of bytes to fill.
+///
+/// # Safety
+/// This is unsafe because it operates on a raw pointer.
+/// The caller must ensure that `dest` is a valid pointer to a memory block of at least `n` bytes and that it is
+/// writable to avoid undefined behavior.
+///
+/// # Returns
+/// A pointer to the destination buffer (`dest`).
+///
+/// # Notes
+/// This function fills the first `n` bytes of the memory area pointed to by `dest` with the byte value `c`.
+/// The caller is responsible for ensuring that the destination buffer has enough space to hold the filled data
+/// and that the pointer is valid for the specified number of bytes.
+pub unsafe extern "C" fn memset(dest: *mut c_void, c: i32, n: usize) -> *mut c_void {
+    unsafe { common::memset(dest, c, n) }
+}

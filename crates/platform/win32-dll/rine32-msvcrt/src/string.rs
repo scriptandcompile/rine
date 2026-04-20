@@ -1,13 +1,5 @@
 //! MSVCRT C string and memory functions: strlen, strcmp, memcpy, memset.
 
-use core::ffi::c_void;
-
-/// memset — fill a block of memory with a byte value.
-#[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn memset(dest: *mut c_void, c: i32, n: usize) -> *mut c_void {
-    unsafe { libc::memset(dest, c, n) }
-}
-
 /// strlen — get the length of a null-terminated string.
 ///
 /// Returns 0 if `s` is null (non-standard but safe variant).

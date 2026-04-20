@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T04:31:28.572261+00:00",
+  "generatedAt": "2026-04-20T04:37:20.929629+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1775,7 +1775,7 @@
           "x86": {
             "status": "implemented",
             "symbol": "memset",
-            "source": "msvcrt - string.rs"
+            "source": "msvcrt - memory.rs"
           }
         },
         {
