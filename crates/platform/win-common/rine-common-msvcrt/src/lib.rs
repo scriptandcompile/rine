@@ -5,6 +5,7 @@ mod data_cells;
 mod init;
 mod memory;
 mod stdio;
+mod stdlib;
 
 pub use allocation::AllocationTracker;
 pub use args::{MainArgs, cached_main_args};
@@ -19,3 +20,4 @@ pub use stdio::{
     printf_win64_thunk, printf_x86_thunk, puts_to_stdout, write_buffer_to_stream,
     write_format_to_stream,
 };
+pub use stdlib::{_cexit, exit};

@@ -1,7 +1,5 @@
 //! msvcrt stdlib functions: exit, _cexit.
 
-use rine_common_msvcrt as common;
-
 /// Terminate the process with the given exit code.
 ///
 /// # Arguments
@@ -9,8 +7,12 @@ use rine_common_msvcrt as common;
 ///
 /// # Safety
 /// Does not return.
-pub unsafe extern "C" fn exit(code: i32) {
-    unsafe { common::exit(code) };
+pub unsafe fn exit(code: i32) {
+    tracing::trace!(code, "msvcrt::exit");
+    let tid = unsafe { libc::syscall(libc::SYS_gettid) as u32 };
+    rine_types::dev_notify!(on_thread_exited(tid, code as u32));
+    rine_types::dev_notify!(on_process_exiting(code));
+    std::process::exit(code);
 }
 
 /// Perform CRT cleanup without terminating the process.
@@ -21,6 +23,8 @@ pub unsafe extern "C" fn exit(code: i32) {
 /// # Notes
 /// A full implementation would also run atexit handlers and C++ destructors registered with the CRT.
 /// Currently, this function only flushes C stdio buffers.
-pub unsafe extern "C" fn _cexit() {
-    unsafe { common::_cexit() };
+pub unsafe fn _cexit() {
+    tracing::trace!("msvcrt::_cexit");
+    // Flush all open C stdio streams.
+    unsafe { libc::fflush(core::ptr::null_mut()) };
 }

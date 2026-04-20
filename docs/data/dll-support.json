@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T05:23:05.306307+00:00",
+  "generatedAt": "2026-04-20T06:21:42.364964+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1573,12 +1573,12 @@
         {
           "name": "_cexit",
           "x64": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "stdlib::_cexit",
             "source": "msvcrt - stdlib.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "_cexit",
             "source": "msvcrt - stdlib.rs"
           }
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 110,
-      "partial": 50,
+      "implemented": 109,
+      "partial": 51,
       "stubbed": 21,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 104,
-      "partial": 50,
+      "implemented": 103,
+      "partial": 51,
       "stubbed": 27,
       "unimplemented": 0
     }

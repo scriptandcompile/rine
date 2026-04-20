@@ -50,7 +50,6 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("fwrite", as_win_api!(fwrite)),
             // stdlib
             Export::Func("exit", as_win_api!(exit)),
-            Export::Func("_cexit", as_win_api!(_cexit)),
             // crt_init
             Export::Func("__getmainargs", as_win_api!(__getmainargs)),
             Export::Func("_initterm", as_win_api!(_initterm)),
@@ -123,6 +122,10 @@ impl DllPlugin for MsvcrtPlugin32 {
             PartialExport {
                 name: "vfprintf",
                 func: as_win_api!(stdio::vfprintf),
+            },
+            PartialExport {
+                name: "_cexit",
+                func: as_win_api!(stdlib::_cexit),
             },
         ]
     }
