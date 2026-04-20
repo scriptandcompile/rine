@@ -9,12 +9,12 @@
 //! in a callback for wnd_proc invocations.
 
 pub mod backend;
-pub mod class_registry;
+pub mod class_registration;
 pub mod message_queue;
 pub mod window_manager;
 pub mod window_text;
 
-pub use class_registry::{register_class, unregister_class};
+pub use class_registration::{register_class, unregister_class};
 pub use message_queue::{
     def_window_proc, dispatch_message, get_message, peek_message, post_message, post_quit_message,
     send_message, translate_message,
