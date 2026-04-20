@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T10:01:28.729417+00:00",
+  "generatedAt": "2026-04-20T10:15:28.645257+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1956,12 +1956,12 @@
         {
           "name": "NtWriteFile",
           "x64": {
-            "status": "implemented",
-            "symbol": "file::NtWriteFile",
+            "status": "partial",
+            "symbol": "NtWriteFile",
             "source": "ntdll - file.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "NtWriteFile",
             "source": "ntdll - file.rs"
           }
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 108,
-      "partial": 52,
+      "implemented": 107,
+      "partial": 53,
       "stubbed": 21,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 103,
-      "partial": 52,
-      "stubbed": 26,
+      "partial": 53,
+      "stubbed": 25,
       "unimplemented": 0
     }
   }

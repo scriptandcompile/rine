@@ -24,10 +24,6 @@ impl DllPlugin for NtdllPlugin32 {
     fn stubs(&self) -> Vec<StubExport> {
         vec![
             StubExport {
-                name: "NtWriteFile",
-                func: as_win_api!(file::NtWriteFile),
-            },
-            StubExport {
                 name: "NtClose",
                 func: as_win_api!(file::NtClose),
             },
@@ -56,6 +52,10 @@ impl DllPlugin for NtdllPlugin32 {
             PartialExport {
                 name: "NtReadFile",
                 func: as_win_api!(file::NtReadFile),
+            },
+            PartialExport {
+                name: "NtWriteFile",
+                func: as_win_api!(file::NtWriteFile),
             },
         ]
     }

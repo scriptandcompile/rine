@@ -73,13 +73,60 @@ pub unsafe fn nt_read_file(
     NtStatus::SUCCESS.0
 }
 
-pub fn nt_write_file() -> u32 {
-    tracing::warn!(
-        api = "NtWriteFile",
-        dll = "ntdll",
-        "NtWriteFile stub called. Returned 0 bytes written"
-    );
-    0
+/// Write data to a file/pipe/device identified by a HANDLE.
+///
+/// # Arguments
+/// * `file_handle`: the file handle to write to.
+/// * `_event`: optional event to signal when the write completes (ignored).
+/// * `_apc_routine`: optional APC routine to call when the write completes (ignored).
+/// * `_apc_context`: optional context for the APC routine (ignored).
+/// * `io_status_block`: pointer to an `IoStatusBlock` structure.
+/// * `buffer`: pointer to the buffer to write.
+/// * `length`: number of bytes to write.
+/// * `_byte_offset`: pointer to the byte offset to start writing from (ignored).
+/// * `_key`: optional key for the I/O operation (ignored).
+///
+/// # Safety
+/// All pointer parameters must be valid.
+/// `buffer` must point to at least `length` readable bytes.
+///
+/// # Returns
+/// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
+#[allow(clippy::too_many_arguments)]
+pub unsafe fn nt_write_file(
+    file_handle: Handle,
+    _event: isize,
+    _apc_routine: usize,
+    _apc_context: usize,
+    io_status_block: *mut IoStatusBlock,
+    buffer: *const u8,
+    length: u32,
+    _byte_offset: *const i64,
+    _key: *const u32,
+) -> u32 {
+    let Some(fd) = handle_to_fd(file_handle) else {
+        return NtStatus::INVALID_HANDLE.0;
+    };
+
+    let written = unsafe { libc::write(fd, buffer.cast(), length as usize) };
+
+    if written < 0 {
+        if !io_status_block.is_null() {
+            unsafe {
+                (*io_status_block).status = NtStatus::INVALID_PARAMETER.0;
+                (*io_status_block).information = 0;
+            }
+        }
+        return NtStatus::INVALID_PARAMETER.0;
+    }
+
+    if !io_status_block.is_null() {
+        unsafe {
+            (*io_status_block).status = NtStatus::SUCCESS.0;
+            (*io_status_block).information = written as usize;
+        }
+    }
+    NtStatus::SUCCESS.0
 }
 
 pub fn nt_close() -> u32 {
