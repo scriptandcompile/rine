@@ -1,28 +1,59 @@
 //! MSVCRT C string and memory functions: strlen, strcmp, memcpy, memset.
 
-/// strlen — get the length of a null-terminated string.
+use core::ffi::c_char;
+
+use rine_common_msvcrt as common;
+
+/// Get the length of a null-terminated string.
 ///
-/// Returns 0 if `s` is null (non-standard but safe variant).
-#[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn strlen(s: *const i8) -> usize {
-    if s.is_null() {
-        return 0;
-    }
-    unsafe { libc::strlen(s) }
+/// # Arguments
+/// - `s`: A pointer to a null-terminated string. May be null, in which case this function returns 0.
+///
+/// # Safety
+/// - The caller must ensure that `s` is either null or points to a valid null-terminated string.
+///   If `s` is non-null and not properly null-terminated, this function may read out of bounds, leading to undefined behavior.
+///
+/// # Returns
+/// - The length of the string pointed to by `s`, excluding the null terminator.
+pub unsafe extern "C" fn strlen(s: *const c_char) -> usize {
+    unsafe { common::strlen(s) }
 }
 
-/// strcmp — compare two strings lexically.
+/// Compare at most n characters of two strings.
 ///
-/// Returns: < 0 if lhs < rhs, 0 if equal, > 0 if lhs > rhs.
-#[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn strcmp(lhs: *const i8, rhs: *const i8) -> i32 {
-    unsafe { libc::strcmp(lhs, rhs) }
+/// # Arguments
+/// - `s1`: A pointer to the first null-terminated string. May be null, in which case it is treated as an empty string.
+/// - `s2`: A pointer to the second null-terminated string. May be null, in which case it is treated as an empty string.
+/// - `n`: The maximum number of characters to compare.
+///
+/// # Safety
+/// - The caller must ensure that `s1` and `s2` are either null or point to valid null-terminated strings.
+///   If either pointer is non-null and not properly null-terminated, this function may read out of bounds,
+///   leading to undefined behavior.
+/// - The caller must ensure that `n` does not exceed the length of either string if they are non-null,
+///   to avoid reading out of bounds.
+///
+/// # Returns
+/// - An integer less than, equal to, or greater than zero if `s1` is found, respectively, to be less than, to match,
+///   or be greater than `s2` when comparing at most `n` characters.
+pub unsafe extern "C" fn strncmp(s1: *const c_char, s2: *const c_char, n: usize) -> i32 {
+    unsafe { common::strncmp(s1, s2, n) }
 }
 
-/// strncmp — compare at most n bytes of two strings.
+/// Compare two null-terminated strings.
 ///
-/// Returns: < 0 if lhs < rhs, 0 if equal (within n), > 0 if lhs > rhs (within n).
-#[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn strncmp(lhs: *const i8, rhs: *const i8, n: usize) -> i32 {
-    unsafe { libc::strncmp(lhs, rhs, n) }
+/// # Arguments
+/// - `s1`: A pointer to the first null-terminated string. May be null, in which case it is treated as an empty string.
+/// - `s2`: A pointer to the second null-terminated string. May be null, in which case it is treated as an empty string.
+///
+/// # Safety
+/// - The caller must ensure that `s1` and `s2` are either null or point to valid null-terminated strings.
+///   If either pointer is non-null and not properly null-terminated, this function may read out of bounds,
+///   leading to undefined behavior.
+///
+/// # Returns
+/// - An integer less than, equal to, or greater than zero if `s1` is found, respectively, to be less than, to match,
+///   or be greater than `s2`.
+pub unsafe extern "C" fn strcmp(s1: *const c_char, s2: *const c_char) -> i32 {
+    unsafe { common::strcmp(s1, s2) }
 }

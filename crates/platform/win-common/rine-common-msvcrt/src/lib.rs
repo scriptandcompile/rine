@@ -6,6 +6,7 @@ mod init;
 mod memory;
 mod stdio;
 mod stdlib;
+mod string;
 
 pub use allocation::AllocationTracker;
 pub use args::{MainArgs, cached_main_args};
@@ -21,3 +22,4 @@ pub use stdio::{
     write_format_to_stream,
 };
 pub use stdlib::{_cexit, exit};
+pub use string::{strcmp, strlen, strncmp};

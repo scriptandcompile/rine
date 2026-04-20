@@ -1,10 +1,4 @@
-//! MSVCRT C string functions: strlen, strncmp, etc.
-//!
-//! Forwards to the host libc.
-
 use core::ffi::c_char;
-
-use rine_common_msvcrt as common;
 
 /// Get the length of a null-terminated string.
 ///
@@ -17,8 +11,8 @@ use rine_common_msvcrt as common;
 ///
 /// # Returns
 /// - The length of the string pointed to by `s`, excluding the null terminator.
-pub unsafe extern "win64" fn strlen(s: *const c_char) -> usize {
-    unsafe { common::strlen(s) }
+pub unsafe fn strlen(s: *const c_char) -> usize {
+    unsafe { libc::strlen(s) }
 }
 
 /// Compare at most n characters of two strings.
@@ -38,8 +32,8 @@ pub unsafe extern "win64" fn strlen(s: *const c_char) -> usize {
 /// # Returns
 /// - An integer less than, equal to, or greater than zero if `s1` is found, respectively, to be less than, to match,
 ///   or be greater than `s2` when comparing at most `n` characters.
-pub unsafe extern "win64" fn strncmp(s1: *const c_char, s2: *const c_char, n: usize) -> i32 {
-    unsafe { common::strncmp(s1, s2, n) }
+pub unsafe fn strncmp(s1: *const c_char, s2: *const c_char, n: usize) -> i32 {
+    unsafe { libc::strncmp(s1, s2, n) }
 }
 
 /// Compare two null-terminated strings.
@@ -56,6 +50,6 @@ pub unsafe extern "win64" fn strncmp(s1: *const c_char, s2: *const c_char, n: us
 /// # Returns
 /// - An integer less than, equal to, or greater than zero if `s1` is found, respectively, to be less than, to match,
 ///   or be greater than `s2`.
-pub unsafe extern "win64" fn strcmp(s1: *const c_char, s2: *const c_char) -> i32 {
-    unsafe { common::strcmp(s1, s2) }
+pub unsafe fn strcmp(s1: *const c_char, s2: *const c_char) -> i32 {
+    unsafe { libc::strcmp(s1, s2) }
 }
