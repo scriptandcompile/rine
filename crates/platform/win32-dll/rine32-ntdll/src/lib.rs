@@ -1,7 +1,7 @@
 pub mod file;
 pub mod process;
 
-use rine_dlls::{DllPlugin, Export, StubExport, as_win_api};
+use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
 
 use crate::file::NtCreateFile;
 
@@ -23,10 +23,6 @@ impl DllPlugin for NtdllPlugin32 {
 
     fn stubs(&self) -> Vec<StubExport> {
         vec![
-            StubExport {
-                name: "NtReadFile",
-                func: as_win_api!(file::NtReadFile),
-            },
             StubExport {
                 name: "NtWriteFile",
                 func: as_win_api!(file::NtWriteFile),
@@ -50,6 +46,16 @@ impl DllPlugin for NtdllPlugin32 {
             StubExport {
                 name: "RtlGetVersion",
                 func: as_win_api!(process::RtlGetVersion),
+            },
+        ]
+    }
+
+    fn partials(&self) -> Vec<PartialExport> {
+        vec![
+            // file.rs
+            PartialExport {
+                name: "NtReadFile",
+                func: as_win_api!(file::NtReadFile),
             },
         ]
     }

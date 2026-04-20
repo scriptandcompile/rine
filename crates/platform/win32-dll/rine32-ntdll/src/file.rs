@@ -2,12 +2,59 @@
 //! NtQueryInformationFile.
 
 use rine_common_ntdll as common;
+use rine_types::handles::Handle;
 use rine_types::os::IoStatusBlock;
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn NtReadFile() -> u32 {
-    tracing::warn!(api = "NtReadFile", dll = "ntdll", "win32 stub called");
-    0
+/// Read data from a file identified by a HANDLE.
+///
+/// # Arguments
+/// * `_file_handle`: the file handle to read from. (ignored)
+/// * `_event`: optional event to signal when the read completes (ignored).
+/// * `_apc_routine`: optional APC routine to call when the read completes (ignored).
+/// * `_apc_context`: optional context for the APC routine (ignored).
+/// * `_io_status_block`: pointer to an `IoStatusBlock` structure (ignored).
+/// * `_buffer`: pointer to the buffer to receive the data (ignored).
+/// * `_length`: number of bytes to read (ignored).
+/// * `_byte_offset`: pointer to the byte offset to start reading from (ignored).
+/// * `_key`: optional key for the I/O operation (ignored).
+///
+/// # Safety
+/// All pointer parameters must be valid.
+///
+/// # Returns
+/// The number of bytes read (always 0 in this stub implementation).
+///
+/// # Note
+/// This is a stub implementation that does not perform any actual I/O.
+/// It simply logs a warning and returns 0 bytes read.
+#[allow(non_snake_case, clippy::too_many_arguments)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn NtReadFile(
+    file_handle: isize,
+    _event: usize,
+    _apc_routine: usize,
+    _apc_context: usize,
+    io_status_block: *mut IoStatusBlock,
+    buffer: *mut u8,
+    length: u32,
+    _byte_offset: *const i64,
+    _key: *const u32,
+) -> u32 {
+    unsafe {
+        let handle = Handle::from_raw(file_handle);
+
+        common::file::nt_read_file(
+            handle,
+            _event,
+            _apc_routine,
+            _apc_context,
+            io_status_block,
+            buffer,
+            length,
+            _byte_offset,
+            _key,
+        )
+    }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]

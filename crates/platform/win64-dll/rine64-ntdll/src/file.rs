@@ -6,9 +6,57 @@ use rine_types::errors::NtStatus;
 use rine_types::handles::{Handle, HandleEntry, handle_table, handle_to_fd};
 use rine_types::os::IoStatusBlock;
 
-// ---------------------------------------------------------------------------
-// NtCreateFile
-// ---------------------------------------------------------------------------
+/// Read data from a file identified by a HANDLE.
+///
+/// # Arguments
+/// * `_file_handle`: the file handle to read from. (ignored)
+/// * `_event`: optional event to signal when the read completes (ignored).
+/// * `_apc_routine`: optional APC routine to call when the read completes (ignored).
+/// * `_apc_context`: optional context for the APC routine (ignored).
+/// * `_io_status_block`: pointer to an `IoStatusBlock` structure (ignored).
+/// * `_buffer`: pointer to the buffer to receive the data (ignored).
+/// * `_length`: number of bytes to read (ignored).
+/// * `_byte_offset`: pointer to the byte offset to start reading from (ignored).
+/// * `_key`: optional key for the I/O operation (ignored).
+///
+/// # Safety
+/// All pointer parameters must be valid.
+///
+/// # Returns
+/// The number of bytes read (always 0 in this stub implementation).
+///
+/// # Note
+/// This is a stub implementation that does not perform any actual I/O.
+/// It simply logs a warning and returns 0 bytes read.
+#[allow(non_snake_case, clippy::too_many_arguments)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn NtReadFile(
+    file_handle: isize,
+    _event: usize,
+    _apc_routine: usize,
+    _apc_context: usize,
+    io_status_block: *mut IoStatusBlock,
+    buffer: *mut u8,
+    length: u32,
+    _byte_offset: *const i64,
+    _key: *const u32,
+) -> u32 {
+    unsafe {
+        let handle = Handle::from_raw(file_handle);
+
+        common::file::nt_read_file(
+            handle,
+            _event,
+            _apc_routine,
+            _apc_context,
+            io_status_block,
+            buffer,
+            length,
+            _byte_offset,
+            _key,
+        )
+    }
+}
 
 /// NtCreateFile — open or create a file via the NT native API.
 ///
@@ -48,63 +96,6 @@ pub unsafe extern "win64" fn NtCreateFile(
             _ea_length,
         )
     }
-}
-
-// ---------------------------------------------------------------------------
-// NtReadFile
-// ---------------------------------------------------------------------------
-
-/// NtReadFile — read data from a file identified by a HANDLE.
-///
-/// # Safety
-/// `buffer` must be writable for at least `length` bytes.
-#[allow(non_snake_case)]
-#[unsafe(no_mangle)]
-pub unsafe extern "win64" fn NtReadFile(
-    file_handle: isize,
-    _event: isize,
-    _apc_routine: usize,
-    _apc_context: usize,
-    io_status_block: *mut IoStatusBlock,
-    buffer: *mut u8,
-    length: u32,
-    _byte_offset: *const i64,
-    _key: *const u32,
-) -> u32 {
-    let handle = Handle::from_raw(file_handle);
-    let Some(fd) = handle_to_fd(handle) else {
-        return NtStatus::INVALID_HANDLE.0;
-    };
-
-    let n = unsafe { libc::read(fd, buffer.cast(), length as usize) };
-
-    if n < 0 {
-        if !io_status_block.is_null() {
-            unsafe {
-                (*io_status_block).status = NtStatus::INVALID_PARAMETER.0;
-                (*io_status_block).information = 0;
-            }
-        }
-        return NtStatus::INVALID_PARAMETER.0;
-    }
-
-    if n == 0 {
-        if !io_status_block.is_null() {
-            unsafe {
-                (*io_status_block).status = NtStatus::END_OF_FILE.0;
-                (*io_status_block).information = 0;
-            }
-        }
-        return NtStatus::END_OF_FILE.0;
-    }
-
-    if !io_status_block.is_null() {
-        unsafe {
-            (*io_status_block).status = NtStatus::SUCCESS.0;
-            (*io_status_block).information = n as usize;
-        }
-    }
-    NtStatus::SUCCESS.0
 }
 
 // ---------------------------------------------------------------------------

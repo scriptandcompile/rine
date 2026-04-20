@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T06:21:42.364964+00:00",
+  "generatedAt": "2026-04-20T10:01:28.729417+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1930,12 +1930,12 @@
         {
           "name": "NtReadFile",
           "x64": {
-            "status": "implemented",
-            "symbol": "file::NtReadFile",
+            "status": "partial",
+            "symbol": "NtReadFile",
             "source": "ntdll - file.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "NtReadFile",
             "source": "ntdll - file.rs"
           }
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 109,
-      "partial": 51,
+      "implemented": 108,
+      "partial": 52,
       "stubbed": 21,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 103,
-      "partial": 51,
-      "stubbed": 27,
+      "partial": 52,
+      "stubbed": 26,
       "unimplemented": 0
     }
   }

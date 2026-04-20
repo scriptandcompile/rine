@@ -1,14 +1,76 @@
 use rine_types::errors::NtStatus;
-use rine_types::handles::{GENERIC_READ, GENERIC_WRITE, HandleEntry, handle_table};
+use rine_types::handles::{
+    GENERIC_READ, GENERIC_WRITE, Handle, HandleEntry, handle_table, handle_to_fd,
+};
 use rine_types::os::IoStatusBlock;
 
-pub fn nt_read_file() -> u32 {
-    tracing::warn!(
-        api = "NtReadFile",
-        dll = "ntdll",
-        "NtReadFile stub called. Returned 0 bytes read"
-    );
-    0
+/// Read data from a file identified by a HANDLE.
+///
+/// # Arguments
+/// * `handle`: the file handle to read from.
+/// * `_event`: optional event to signal when the read completes (ignored).
+/// * `_apc_routine`: optional APC routine to call when the read completes (ignored).
+/// * `_apc_context`: optional context for the APC routine (ignored).
+/// * `io_status_block`: pointer to an `IoStatusBlock` structure.
+/// * `buffer`: pointer to the buffer to receive the data.
+/// * `length`: number of bytes to read.
+/// * `_byte_offset`: pointer to the byte offset to start reading from (ignored).
+/// * `_key`: optional key for the I/O operation (ignored).
+///
+/// # Safety
+/// All pointer parameters must be valid.
+///
+/// # Returns
+/// The number of bytes read (always 0 in this stub implementation).
+///
+/// # Note
+/// This is a stub implementation that does not perform any actual I/O.
+/// It simply logs a warning and returns 0 bytes read.
+#[allow(clippy::too_many_arguments)]
+pub unsafe fn nt_read_file(
+    handle: Handle,
+    _event: usize,
+    _apc_routine: usize,
+    _apc_context: usize,
+    io_status_block: *mut IoStatusBlock,
+    buffer: *mut u8,
+    length: u32,
+    _byte_offset: *const i64,
+    _key: *const u32,
+) -> u32 {
+    let Some(fd) = handle_to_fd(handle) else {
+        return NtStatus::INVALID_HANDLE.0;
+    };
+
+    let n = unsafe { libc::read(fd, buffer.cast(), length as usize) };
+
+    if n < 0 {
+        if !io_status_block.is_null() {
+            unsafe {
+                (*io_status_block).status = NtStatus::INVALID_PARAMETER.0;
+                (*io_status_block).information = 0;
+            }
+        }
+        return NtStatus::INVALID_PARAMETER.0;
+    }
+
+    if n == 0 {
+        if !io_status_block.is_null() {
+            unsafe {
+                (*io_status_block).status = NtStatus::END_OF_FILE.0;
+                (*io_status_block).information = 0;
+            }
+        }
+        return NtStatus::END_OF_FILE.0;
+    }
+
+    if !io_status_block.is_null() {
+        unsafe {
+            (*io_status_block).status = NtStatus::SUCCESS.0;
+            (*io_status_block).information = n as usize;
+        }
+    }
+    NtStatus::SUCCESS.0
 }
 
 pub fn nt_write_file() -> u32 {
