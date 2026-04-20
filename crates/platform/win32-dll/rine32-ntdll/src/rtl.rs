@@ -1,4 +1,5 @@
 use rine_common_ntdll as common;
+use rine_types::os::OsVersionInfoW;
 use rine_types::strings::UnicodeString;
 
 /// Initialize a UNICODE_STRING structure with the given source string.
@@ -16,6 +17,7 @@ use rine_types::strings::UnicodeString;
 /// This is a stub implementation that does not perform any actual initialization.
 /// It simply logs a warning and does not modify the destination string.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RtlInitUnicodeString(
     destination_string: *mut UnicodeString, // PUNICODE_STRING
     source_string: *const u16,              // PCWSTR
@@ -23,8 +25,25 @@ pub unsafe extern "stdcall" fn RtlInitUnicodeString(
     unsafe { common::rtl::rtl_init_unicode_string(destination_string, source_string) };
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn RtlGetVersion() -> u32 {
-    tracing::warn!(api = "RtlGetVersion", dll = "ntdll", "win32 stub called");
-    0
+/// Fill an `OSVERSIONINFOEXW` with the current (spoofed) Windows version.
+/// Unlike `GetVersionEx` this function is not subject to application compatibility shims.
+///
+/// # Arguments
+/// * `info`: pointer to a writable `OSVERSIONINFOW` or `OSVERSIONINFOEXW` structure with
+///   `dwOSVersionInfoSize` set correctly.
+///
+/// # Safety
+/// `info` must point to a writable `OSVERSIONINFOW` or `OSVERSIONINFOEXW`
+/// with `dwOSVersionInfoSize` set correctly.
+///
+/// # Returns
+/// `STATUS_SUCCESS` (0) on success. `STATUS_INVALID_PARAMETER` (0xC000_000D) if `info` is null or has an unexpected size.
+///
+/// # Notes
+/// This function fills the provided structure with a spoofed Windows version, which can be configured
+/// via environment variables. The version information is logged for debugging purposes.
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn RtlGetVersion(info: *mut OsVersionInfoW) -> u32 {
+    unsafe { common::rtl::rtl_get_version(info) }
 }
