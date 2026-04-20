@@ -65,12 +65,12 @@ fn find_duplicate_metadata(file: &File) -> Result<Vec<String>, String> {
         record_entries(
             &mut by_name,
             parse_exports(find_method(item_impl, "exports"), &plugin_name)?,
-            "implemented",
+            "exports",
         );
         record_entries(
             &mut by_name,
             parse_named_structs(find_method(item_impl, "stubs"), "StubExport", &plugin_name)?,
-            "stub",
+            "stubs",
         );
         record_entries(
             &mut by_name,
@@ -79,7 +79,7 @@ fn find_duplicate_metadata(file: &File) -> Result<Vec<String>, String> {
                 "PartialExport",
                 &plugin_name,
             )?,
-            "partial",
+            "partials",
         );
 
         let duplicates: Vec<String> = by_name
@@ -88,13 +88,16 @@ fn find_duplicate_metadata(file: &File) -> Result<Vec<String>, String> {
                 if kinds.len() < 2 {
                     return None;
                 }
-                Some(format!("- {name}: {}", kinds.join(", ")))
+                Some(format!(
+                    "  Duplicate metadata for \"{name}\" found in {}",
+                    kinds.join(" and "),
+                ))
             })
             .collect();
 
         if !duplicates.is_empty() {
             failures.push(format!(
-                "{plugin_name} [{}]\n{}",
+                "{plugin_name} [{}]:\n{}",
                 dll_names.join(", "),
                 duplicates.join("\n")
             ));
@@ -304,3 +307,5 @@ fn parse_string_literal(expr: &Expr) -> Result<String, String> {
     };
     Ok(lit.value())
 }
+
+
