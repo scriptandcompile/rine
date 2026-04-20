@@ -39,26 +39,30 @@ pub unsafe extern "win64" fn calloc(count: usize, size: usize) -> *mut c_void {
     unsafe { common::calloc(count, size) }
 }
 
-/// realloc — resize a memory block.
-#[allow(clippy::missing_safety_doc)]
+/// Resize a memory block to a new size.
+///
+/// # Arguments
+/// * `ptr` - A pointer to the memory block to resize. This must be a pointer returned by a previous call to
+///   `malloc`, `calloc`, or `realloc`.
+/// * `size` - The new size for the memory block, in bytes.
+///
+/// # Safety
+/// This is unsafe because it returns a raw pointer to a memory block. The caller must ensure
+/// that the pointer is properly managed and eventually freed to avoid memory leaks or undefined behavior.
+/// Additionally, the caller must ensure that `ptr` is either null or a pointer returned by a previous call
+/// to `malloc`, `calloc`, or `realloc`.
+///
+/// # Returns
+/// A pointer to the resized memory block, which may be the same as `ptr` or a new location.
+/// If the allocation fails, returns null and the original block is left unchanged.
+///
+/// # Notes
+/// If `ptr` is null, this function behaves like `malloc(size)`.
+/// If `size` is zero and `ptr` is not null, the block pointed to by `ptr` is freed and a null pointer is returned.
+/// Otherwise, the function attempts to resize the block pointed to by `ptr` to `size` bytes, possibly moving it to a new location.
+/// The contents of the block are preserved up to the lesser of the old and new sizes.
 pub unsafe extern "win64" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
-    let old_size = common::CRT_ALLOCATIONS.forget(ptr);
-
-    let new_ptr = unsafe { libc::realloc(ptr, size) };
-    if new_ptr.is_null() {
-        if let Some(sz) = old_size {
-            common::CRT_ALLOCATIONS.restore(ptr, sz);
-        }
-        return new_ptr;
-    }
-
-    if let Some(sz) = old_size {
-        rine_types::dev_notify!(on_memory_freed(ptr as u64, sz as u64, "realloc"));
-    }
-
-    common::CRT_ALLOCATIONS.record(new_ptr, size);
-    rine_types::dev_notify!(on_memory_allocated(new_ptr as u64, size as u64, "realloc"));
-    new_ptr
+    unsafe { common::realloc(ptr, size) }
 }
 
 /// free — free a previously allocated memory block.
