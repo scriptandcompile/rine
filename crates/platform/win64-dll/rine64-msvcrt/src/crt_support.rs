@@ -296,12 +296,22 @@ pub unsafe extern "win64" fn _unlock(locknum: i32) {
     unlock(locknum);
 }
 
-/// _errno — return a pointer to the per-thread errno value.
+/// Get a pointer to the thread-local `errno` value.
 ///
-/// Returns a pointer to libc's errno, which is thread-local.
-#[allow(clippy::missing_safety_doc)]
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to a thread-local variable that holds
+/// the error code for the last failed system call.
+///
+/// # Returns
+/// A pointer to the thread-local `errno` variable.
+/// The CRT and C code will read and write to this variable to get and set the error code for the last failed system call.
+///
+/// # Notes
+/// Called by the `errno` macro or by C code that wants to read/write
+/// the error code from the last failed system call.
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _errno() -> *mut i32 {
+    tracing::trace!("msvcrt::_errno");
     errno_location()
 }
 
