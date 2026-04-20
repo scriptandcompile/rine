@@ -106,30 +106,31 @@ pub unsafe extern "stdcall" fn NtWriteFile(
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn NtClose() -> u32 {
-    tracing::warn!(api = "NtClose", dll = "ntdll", "win32 stub called");
-    0
-}
-
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn NtQueryInformationFile() -> u32 {
-    tracing::warn!(
-        api = "NtQueryInformationFile",
-        dll = "ntdll",
-        "win32 stub called"
-    );
-    0
-}
-
-/// NtCreateFile — open or create a file via the NT native API.
+/// Open or create a file via the NT native API.
 ///
-/// This is a simplified implementation: it extracts the path from
-/// `OBJECT_ATTRIBUTES`, translates it, and calls `open(2)`.
-/// Many NT-specific features (EaBuffer, AllocationSize, etc.) are ignored.
+/// # Arguments
+/// * `file_handle`: pointer to receive the file handle (out).
+/// * `desired_access`: the desired access rights (ACCESS_MASK).
+/// * `object_attributes`: pointer to an OBJECT_ATTRIBUTES structure (opaque for now).
+/// * `io_status_block`: pointer to an IoStatusBlock structure.
+/// * `_allocation_size`: optional pointer to the allocation size (ignored).
+/// * `_file_attributes`: file attributes (ignored).
+/// * `_share_access`: share access flags (ignored).
+/// * `create_disposition`: the action to take if the file exists or does not exist (NT disposition, not the same as Win32).
+/// * `_create_options`: creation options (ignored).
+/// * `_ea_buffer`: optional pointer to the extended attributes buffer (ignored).
+/// * `_ea_length`: length of the extended attributes buffer (ignored).
 ///
 /// # Safety
 /// All pointer parameters must be valid.
+///
+/// # Returns
+/// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
+///
+/// # Notes
+/// This is a simplified implementation: it extracts the path from
+/// `OBJECT_ATTRIBUTES`, translates it, and calls `open(2)`.
+/// Many NT-specific features (EaBuffer, AllocationSize, etc.) are ignored.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtCreateFile(
@@ -160,4 +161,20 @@ pub unsafe extern "stdcall" fn NtCreateFile(
             _ea_length,
         )
     }
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn NtClose() -> u32 {
+    tracing::warn!(api = "NtClose", dll = "ntdll", "win32 stub called");
+    0
+}
+
+#[allow(non_snake_case, clippy::missing_safety_doc)]
+pub unsafe extern "stdcall" fn NtQueryInformationFile() -> u32 {
+    tracing::warn!(
+        api = "NtQueryInformationFile",
+        dll = "ntdll",
+        "win32 stub called"
+    );
+    0
 }

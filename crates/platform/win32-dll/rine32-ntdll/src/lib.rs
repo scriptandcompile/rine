@@ -3,8 +3,6 @@ pub mod process;
 
 use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
 
-use crate::file::NtCreateFile;
-
 #[cfg(not(target_pointer_width = "32"))]
 compile_error!(
     "crate `rine32-ntdll` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
@@ -18,7 +16,7 @@ impl DllPlugin for NtdllPlugin32 {
     }
 
     fn exports(&self) -> Vec<Export> {
-        vec![Export::Func("NtCreateFile", as_win_api!(NtCreateFile))]
+        vec![]
     }
 
     fn stubs(&self) -> Vec<StubExport> {
@@ -56,6 +54,10 @@ impl DllPlugin for NtdllPlugin32 {
             PartialExport {
                 name: "NtWriteFile",
                 func: as_win_api!(file::NtWriteFile),
+            },
+            PartialExport {
+                name: "NtCreateFile",
+                func: as_win_api!(file::NtCreateFile),
             },
         ]
     }
