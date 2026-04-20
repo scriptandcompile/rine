@@ -175,6 +175,7 @@ pub unsafe extern "stdcall" fn NtCreateFile(
 /// # Returns
 /// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtClose(object_handle: isize) -> u32 {
     let handle = Handle::from_raw(object_handle);
     unsafe { common::nt_close(handle) }
@@ -200,6 +201,7 @@ pub unsafe extern "stdcall" fn NtClose(object_handle: isize) -> u32 {
 /// Currently supports `FileStandardInformation` (class 5): returns file size, link count, etc.
 /// While, other classes return NOT_IMPLEMENTED.
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtQueryInformationFile(
     file_handle: isize,
     io_status_block: *mut IoStatusBlock,
