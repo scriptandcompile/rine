@@ -365,6 +365,9 @@ pub mod window_message {
     pub const WM_APP: u32 = 0x8000;
 }
 
+/// Handle into the AtomTable for registered window classes.
+pub type ATOM = u16;
+
 // ---------------------------------------------------------------------------
 // MSG structure
 // ---------------------------------------------------------------------------

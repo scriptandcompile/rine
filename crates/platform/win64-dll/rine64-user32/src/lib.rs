@@ -1,6 +1,6 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use rine_dlls::{DllPlugin, Export, as_win_api};
+use rine_dlls::{DllPlugin, Export, PartialExport, as_win_api};
 
 mod class_registration;
 mod message_queue;
@@ -16,10 +16,6 @@ impl DllPlugin for User32Plugin {
 
     fn exports(&self) -> Vec<Export> {
         vec![
-            Export::Func(
-                "RegisterClassA",
-                as_win_api!(class_registration::register_class_a),
-            ),
             Export::Func(
                 "RegisterClassW",
                 as_win_api!(class_registration::register_class_w),
@@ -111,5 +107,12 @@ impl DllPlugin for User32Plugin {
                 as_win_api!(window_text::get_window_text_length_w),
             ),
         ]
+    }
+
+    fn partials(&self) -> Vec<PartialExport> {
+        vec![PartialExport {
+            name: "RegisterClassA",
+            func: as_win_api!(class_registration::RegisterClassA),
+        }]
     }
 }
