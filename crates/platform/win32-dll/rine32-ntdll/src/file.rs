@@ -163,10 +163,21 @@ pub unsafe extern "stdcall" fn NtCreateFile(
     }
 }
 
-#[allow(non_snake_case, clippy::missing_safety_doc)]
-pub unsafe extern "stdcall" fn NtClose() -> u32 {
-    tracing::warn!(api = "NtClose", dll = "ntdll", "win32 stub called");
-    0
+/// Close an NT handle.
+///
+/// # Arguments
+/// * `object_handle`: the handle to close.
+///
+/// # Safety
+/// `object_handle` must be a valid handle returned by a previous call to NtCreateFile or similar functions.
+/// Closing an invalid handle may lead to undefined behavior.
+///
+/// # Returns
+/// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
+#[allow(non_snake_case)]
+pub unsafe extern "stdcall" fn NtClose(object_handle: isize) -> u32 {
+    let handle = Handle::from_raw(object_handle);
+    unsafe { common::nt_close(handle) }
 }
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]

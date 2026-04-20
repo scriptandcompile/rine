@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T10:29:02.566269+00:00",
+  "generatedAt": "2026-04-20T16:55:13.737090+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1891,12 +1891,12 @@
         {
           "name": "NtClose",
           "x64": {
-            "status": "implemented",
-            "symbol": "file::NtClose",
+            "status": "partial",
+            "symbol": "NtClose",
             "source": "ntdll - file.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "NtClose",
             "source": "ntdll - file.rs"
           }
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 106,
-      "partial": 54,
+      "implemented": 105,
+      "partial": 55,
       "stubbed": 21,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 102,
-      "partial": 54,
-      "stubbed": 25,
+      "partial": 55,
+      "stubbed": 24,
       "unimplemented": 0
     }
   }

@@ -3,7 +3,7 @@
 
 use rine_common_ntdll::file as common;
 use rine_types::errors::NtStatus;
-use rine_types::handles::{Handle, HandleEntry, handle_table, handle_to_fd};
+use rine_types::handles::{Handle, handle_to_fd};
 use rine_types::os::IoStatusBlock;
 
 /// Read data from a file identified by a HANDLE.
@@ -163,38 +163,22 @@ pub unsafe extern "win64" fn NtCreateFile(
     }
 }
 
-// ---------------------------------------------------------------------------
-// NtClose
-// ---------------------------------------------------------------------------
-
-/// NtClose — close an NT handle.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// Close an NT handle.
+///
+/// # Arguments
+/// * `object_handle`: the handle to close.
+///
+/// # Safety
+/// `object_handle` must be a valid handle returned by a previous call to NtCreateFile or similar functions.
+/// Closing an invalid handle may lead to undefined behavior.
+///
+/// # Returns
+/// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn NtClose(object_handle: isize) -> u32 {
     let handle = Handle::from_raw(object_handle);
-
-    match handle_table().remove(handle) {
-        Some(HandleEntry::File(fd)) => {
-            unsafe { libc::close(fd) };
-            NtStatus::SUCCESS.0
-        }
-        Some(HandleEntry::FindData(_)) => NtStatus::SUCCESS.0,
-        Some(HandleEntry::Thread(_)) => NtStatus::SUCCESS.0,
-        Some(HandleEntry::Event(_)) => NtStatus::SUCCESS.0,
-        Some(HandleEntry::Process(_)) => NtStatus::SUCCESS.0,
-        Some(HandleEntry::Mutex(_)) => NtStatus::SUCCESS.0,
-        Some(HandleEntry::Semaphore(_)) => NtStatus::SUCCESS.0,
-        Some(HandleEntry::Heap(_)) => NtStatus::SUCCESS.0,
-        Some(HandleEntry::RegistryKey(_)) => NtStatus::SUCCESS.0,
-        Some(HandleEntry::Window(_)) => {
-            // Window handles should not be closed via NtClose.
-            NtStatus::INVALID_HANDLE.0
-        }
-        None => {
-            tracing::warn!(handle = object_handle, "NtClose: unknown handle");
-            NtStatus::INVALID_HANDLE.0
-        }
-    }
+    unsafe { common::nt_close(handle) }
 }
 
 // ---------------------------------------------------------------------------

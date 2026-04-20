@@ -235,13 +235,40 @@ pub unsafe fn nt_create_file(
     NtStatus::SUCCESS.0
 }
 
-pub fn nt_close() -> u32 {
-    tracing::warn!(
-        api = "NtClose",
-        dll = "ntdll",
-        "NtClose stub called. Returned success"
-    );
-    0
+/// Close an NT handle.
+///
+/// # Arguments
+/// * `object_handle`: the handle to close.
+///
+/// # Safety
+/// `object_handle` must be a valid handle returned by a previous call to NtCreateFile or similar functions.
+/// Closing an invalid handle may lead to undefined behavior.
+///
+/// # Returns
+/// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
+pub unsafe fn nt_close(handle: Handle) -> u32 {
+    match handle_table().remove(handle) {
+        Some(HandleEntry::File(fd)) => {
+            unsafe { libc::close(fd) };
+            NtStatus::SUCCESS.0
+        }
+        Some(HandleEntry::FindData(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::Thread(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::Event(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::Process(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::Mutex(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::Semaphore(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::Heap(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::RegistryKey(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::Window(_)) => {
+            // Window handles should not be closed via NtClose.
+            NtStatus::INVALID_HANDLE.0
+        }
+        None => {
+            tracing::warn!(handle = handle.as_raw(), "NtClose: unknown handle");
+            NtStatus::INVALID_HANDLE.0
+        }
+    }
 }
 
 pub fn nt_query_information_file() -> u32 {
