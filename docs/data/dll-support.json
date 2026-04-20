@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T17:04:39.209772+00:00",
+  "generatedAt": "2026-04-20T17:16:50.654519+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1943,12 +1943,12 @@
         {
           "name": "NtTerminateProcess",
           "x64": {
-            "status": "stubbed",
-            "symbol": "process::NtTerminateProcess",
+            "status": "partial",
+            "symbol": "NtTerminateProcess",
             "source": "ntdll - process.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "NtTerminateProcess",
             "source": "ntdll - process.rs"
           }
@@ -2408,14 +2408,14 @@
     "functions": 181,
     "x64": {
       "implemented": 104,
-      "partial": 56,
-      "stubbed": 21,
+      "partial": 57,
+      "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 102,
-      "partial": 56,
-      "stubbed": 23,
+      "partial": 57,
+      "stubbed": 22,
       "unimplemented": 0
     }
   }

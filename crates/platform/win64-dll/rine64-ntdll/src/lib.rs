@@ -15,10 +15,6 @@ impl DllPlugin for NtdllPlugin {
     fn exports(&self) -> Vec<Export> {
         vec![
             Export::Func(
-                "NtTerminateProcess",
-                as_win_api!(process::NtTerminateProcess),
-            ),
-            Export::Func(
                 "RtlInitUnicodeString",
                 as_win_api!(rtl::RtlInitUnicodeString),
             ),
@@ -48,6 +44,11 @@ impl DllPlugin for NtdllPlugin {
             PartialExport {
                 name: "NtQueryInformationFile",
                 func: as_win_api!(file::NtQueryInformationFile),
+            },
+            // process.rs
+            PartialExport {
+                name: "NtTerminateProcess",
+                func: as_win_api!(process::NtTerminateProcess),
             },
         ]
     }

@@ -22,10 +22,6 @@ impl DllPlugin for NtdllPlugin32 {
     fn stubs(&self) -> Vec<StubExport> {
         vec![
             StubExport {
-                name: "NtTerminateProcess",
-                func: as_win_api!(process::NtTerminateProcess),
-            },
-            StubExport {
                 name: "RtlInitUnicodeString",
                 func: as_win_api!(process::RtlInitUnicodeString),
             },
@@ -58,6 +54,11 @@ impl DllPlugin for NtdllPlugin32 {
             PartialExport {
                 name: "NtQueryInformationFile",
                 func: as_win_api!(file::NtQueryInformationFile),
+            },
+            // process.rs
+            PartialExport {
+                name: "NtTerminateProcess",
+                func: as_win_api!(process::NtTerminateProcess),
             },
         ]
     }
