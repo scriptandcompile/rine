@@ -1,153 +1,106 @@
-//! msvcrt stdio functions: printf, puts.
-//!
-//! `printf` requires special handling because it is variadic: Rust stable
-//! does not support `extern "win64"` variadic declarations. Instead we use
-//! a `#[naked]` assembly thunk that shuffles Windows x64 arguments into the
-//! SysV x86_64 registers and tail-calls the host C library's `printf`.
+//! msvcrt stdio exports backed by shared common helpers.
 
 use core::ffi::{c_char, c_int};
 
-// Link to the host C library's printf (SysV ABI).
-unsafe extern "C" {
-    #[link_name = "printf"]
-    fn host_printf(format: *const c_char, ...) -> c_int;
-}
+use rine_common_msvcrt as common;
 
-/// printf — Windows x64 ABI thunk forwarding to the host's SysV printf.
+/// Writes formatted output to stdout.
 ///
-/// PE code calls this with Windows x64 convention (format in rcx, variadic
-/// args in rdx/r8/r9/stack). The thunk translates to SysV x86_64 convention
-/// and tail-calls libc's printf. Supports up to ~10 total arguments.
-#[allow(clippy::missing_safety_doc)]
-#[unsafe(naked)]
-pub unsafe extern "C" fn printf() -> c_int {
-    // SAFETY: naked function — all arguments are forwarded without
-    // interpretation; the host libc printf handles format-string parsing.
-    core::arch::naked_asm!(
-        // Win64 → SysV register shuffle
-        "mov rdi, rcx",           // 1st arg (format string)
-        "mov rsi, rdx",           // 2nd arg
-        "mov rdx, r8",            // 3rd arg
-        "mov rcx, r9",            // 4th arg
-        "mov r8, [rsp + 0x28]",   // 5th arg (from win64 stack, past shadow space)
-        "mov r9, [rsp + 0x30]",   // 6th arg
-        "xor eax, eax",           // AL = 0: no float args in XMM (SysV variadic)
-        // Copy 7th-10th args from win64 stack to SysV stack positions.
-        // Win64: [rsp+0x38..] → SysV: [rsp+0x08..] (overwriting shadow space)
-        "mov r10, [rsp + 0x38]",
-        "mov [rsp + 0x08], r10",
-        "mov r10, [rsp + 0x40]",
-        "mov [rsp + 0x10], r10",
-        "mov r10, [rsp + 0x48]",
-        "mov [rsp + 0x18], r10",
-        "mov r10, [rsp + 0x50]",
-        "mov [rsp + 0x20], r10",
-        // Tail-call host printf (SysV ABI)
-        "jmp {printf}",
-        printf = sym host_printf,
-    );
-}
-
-/// puts — write a string followed by a newline to stdout.
+/// # Arguments
+/// * Technically, this function can take a variable number of arguments like the C `printf`,
+///   but this requires a custom calling convention depending on the ABI.
 ///
 /// # Safety
-/// `s` must be a valid, null-terminated C string.
-pub unsafe extern "win64" fn puts(s: *const c_char) -> c_int {
-    if s.is_null() {
-        return libc::EOF;
-    }
-    tracing::trace!("msvcrt::puts");
-    unsafe { libc::puts(s) }
+/// * The caller must ensure that the provided arguments match the format string, as with C's `printf`.
+///
+/// # Returns
+/// * The number of characters printed, or a negative value if an error occurs.
+///
+/// # Notes
+/// On x86_64 targets, this function is implemented as a thunk to the real `printf` to handle
+/// the cdecl variadic arguments correctly. This requires a simple naked function shim due
+/// to the differences between the Windows x64 and System V AMD64 ABIs.
+pub unsafe extern "C" fn printf() -> c_int {
+    unsafe { common::printf_win64_thunk() }
 }
 
-/// fwrite — write blocks of data to a stream.
+/// Writes an ANSI string followed by a newline to stdout.
 ///
-/// Translates the Windows CRT FILE* to a Linux fd by reading the marker
-/// stored by `__iob_func`, then calls `libc::write`.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `s`: A pointer to a null-terminated C string to be written to stdout.
+///
+/// # Safety
+/// * The caller must ensure that `s` is a valid null-terminated C string.
+///
+/// # Returns
+/// * A non-negative value on success, or EOF on error.
+pub unsafe extern "win64" fn puts(s: *const c_char) -> c_int {
+    unsafe { common::puts_to_stdout(s) }
+}
+
+/// Writes formatted output to the specified file stream.
+///
+/// # Arguments
+/// * `stream`: A pointer to a FILE stream where the output will be written.
+/// * `format`: A pointer to a null-terminated C string that contains the format string.
+///
+/// # Safety
+/// * The caller must ensure that `stream` is a valid pointer to a FILE stream and that `format`
+///   is a valid null-terminated C string.
+///   Additionally, any variadic arguments must match the format specifiers in `format`.
+///
+/// # Returns
+/// * The number of characters printed, or a negative value if an error occurs.
+///
+/// # Notes
+/// Currently, the format string is written to the stream as is without formatting the text in any way.
+pub unsafe extern "win64" fn fprintf(stream: *mut u8, format: *const c_char) -> c_int {
+    unsafe { common::write_format_to_stream(stream.cast(), format) }
+}
+
+/// Writes formatted output to the specified file stream using a va_list of arguments.
+///
+/// # Arguments
+/// * `stream`: A pointer to a FILE stream where the output will be written.
+/// * `format`: A pointer to a null-terminated C string that contains the format string.
+/// * `_args`: A pointer to a va_list of arguments to be formatted according to `format`.
+///
+/// # Safety
+/// * The caller must ensure that `stream` is a valid pointer to a FILE stream and that `format`
+///   is a valid null-terminated C string.
+///   Additionally, any variadic arguments must match the format specifiers in `format`.
+///
+/// # Returns
+/// * The number of characters printed, or a negative value if an error occurs.
+///
+/// # Notes
+/// Currently, the format string is written to the stream as is without formatting the text in any way.
+pub unsafe extern "win64" fn vfprintf(
+    stream: *mut u8,
+    format: *const c_char,
+    _args: *mut u8,
+) -> c_int {
+    unsafe { common::write_format_to_stream(stream.cast(), format) }
+}
+
+/// Writes data from a buffer to the specified file stream.
+///
+/// # Arguments
+/// * `ptr`: A pointer to the buffer containing the data to be written.
+/// * `size`: The size in bytes of each element to be written.
+/// * `count`: The number of elements to be written.
+/// * `stream`: A pointer to a FILE stream where the output will be written.
+///
+/// # Safety
+/// * The caller must ensure that `ptr` is a valid pointer to a buffer of at least `size * count` bytes, and that `stream` is a valid pointer to a FILE stream.
+///
+/// # Returns
+/// * The number of elements successfully written, which may be less than `count` if an error occurs.
 pub unsafe extern "win64" fn fwrite(
     ptr: *const u8,
     size: usize,
     count: usize,
-    stream: *mut u8, // FILE*
-) -> usize {
-    let total = size.saturating_mul(count);
-    if ptr.is_null() || stream.is_null() || total == 0 {
-        return 0;
-    }
-    // Read the fd marker from the first 4 bytes of the fake FILE struct.
-    let fd = unsafe { *(stream as *const i32) };
-    let written = unsafe { libc::write(fd, ptr.cast(), total) };
-    if written < 0 {
-        return 0;
-    }
-    (written as usize) / size.max(1)
-}
-
-// Link to host vfprintf for potential future use.
-#[allow(dead_code)]
-unsafe extern "C" {
-    #[link_name = "vfprintf"]
-    fn host_vfprintf(stream: *mut libc::FILE, format: *const c_char, args: *mut u8) -> c_int;
-}
-
-/// fprintf — formatted output to a stream.
-///
-/// Minimal stub: writes the format string to the fd without substitution.
-/// Full variadic win64 → SysV ABI translation for fprintf requires runtime
-/// format string parsing,
-#[allow(clippy::missing_safety_doc)]
-pub unsafe extern "win64" fn fprintf(
-    stream: *mut u8, // FILE*
-    format: *const c_char,
-    // Variadic args ignored in this stub.
-) -> c_int {
-    if format.is_null() || stream.is_null() {
-        return -1;
-    }
-    let fd = unsafe { *(stream as *const i32) };
-    let len = unsafe { libc::strlen(format) };
-    let written = unsafe { libc::write(fd, format.cast(), len) };
-    if written < 0 { -1 } else { written as c_int }
-}
-
-/// vfprintf — formatted output with va_list.
-///
-/// Stub: just writes the format string without substitution. Full va_list
-/// translation between win64 and SysV ABIs is not feasible without runtime
-/// format string parsing.
-#[allow(clippy::missing_safety_doc)]
-pub unsafe extern "win64" fn vfprintf(
     stream: *mut u8,
-    format: *const c_char,
-    _args: *mut u8, // va_list
-) -> c_int {
-    // Best-effort: write the format string directly (no substitution).
-    if format.is_null() || stream.is_null() {
-        return -1;
-    }
-    let fd = unsafe { *(stream as *const i32) };
-    let len = unsafe { libc::strlen(format) };
-    let written = unsafe { libc::write(fd, format.cast(), len) };
-    if written < 0 { -1 } else { written as c_int }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn puts_rejects_null() {
-        // Should return EOF, not crash.
-        let result = unsafe { puts(core::ptr::null()) };
-        assert_eq!(result, libc::EOF);
-    }
-
-    #[test]
-    fn puts_writes_string() {
-        let s = c"hello from puts";
-        let result = unsafe { puts(s.as_ptr()) };
-        // puts returns a non-negative value on success.
-        assert!(result >= 0);
-    }
+) -> usize {
+    unsafe { common::write_buffer_to_stream(ptr.cast(), size, count, stream.cast()) }
 }

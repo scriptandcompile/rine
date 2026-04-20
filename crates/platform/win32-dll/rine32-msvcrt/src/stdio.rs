@@ -1,81 +1,102 @@
-//! MSVCRT stdio functions: printf, puts, fprintf, etc.
-//!
-//! `printf` remains a conservative stub for now, but other core output paths
-//! (`puts`, `fwrite`, `fprintf`, `vfprintf`) are implemented to preserve
-//! fixture stdout behavior in 32-bit mode.
+//! msvcrt stdio exports backed by shared common helpers.
 
-use core::ffi::{c_char, c_int};
+use core::ffi::{c_char, c_int, c_void};
 
-/// printf — print formatted output to stdout.
+use rine_common_msvcrt as common;
+
+/// Writes formatted output to stdout.
 ///
-/// Stub implementation for now; a production implementation would parse the format string and
-/// format the arguments accordingly.
-#[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn printf(_format: *const c_char) -> c_int {
-    tracing::trace!("msvcrt::printf (stub)");
-    0
-}
-
-/// puts — print a string to stdout followed by a newline.
+/// # Arguments
+/// * Technically, this function can take a variable number of arguments like the C `printf`,
+///   but this requires a custom calling convention depending on the ABI.
 ///
 /// # Safety
-/// `s` must be a valid null-terminated C string.
-#[allow(clippy::missing_safety_doc)]
+/// * The caller must ensure that the provided arguments match the format string, as with C's `printf`.
+///
+/// # Returns
+/// * The number of characters printed, or a negative value if an error occurs.
+///
+/// # Notes
+/// On x86 targets, this function is implemented as a thunk to the real `printf` to handle
+/// the cdecl variadic arguments correctly. This requires a pretty complex naked function shim due
+/// to the differences between the Windows x86 and System V x86 ABIs.
+pub unsafe extern "C" fn printf() -> c_int {
+    unsafe { common::printf_x86_thunk() }
+}
+
+/// Writes an ANSI string followed by a newline to stdout.
+///
+/// # Arguments
+/// * `s`: A pointer to a null-terminated C string to be written to stdout.
+///
+/// # Safety
+/// * The caller must ensure that `s` is a valid null-terminated C string.
+///
+/// # Returns
+/// * A non-negative value on success, or EOF on error.
 pub unsafe extern "C" fn puts(s: *const c_char) -> c_int {
-    if s.is_null() {
-        return libc::EOF;
-    }
-    tracing::trace!("msvcrt::puts");
-    unsafe { libc::puts(s) }
+    unsafe { common::puts_to_stdout(s) }
 }
 
-/// fprintf — print formatted output to a file.
+/// Writes formatted output to the specified file stream.
 ///
-/// Minimal behavior: writes the format string bytes directly to the stream fd.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `stream`: A pointer to a FILE stream where the output will be written.
+/// * `format`: A pointer to a null-terminated C string that contains the format string.
+///
+/// # Safety
+/// * The caller must ensure that `stream` is a valid pointer to a FILE stream and that `format`
+///   is a valid null-terminated C string.
+///   Additionally, any variadic arguments must match the format specifiers in `format`.
+///
+/// # Returns
+/// * The number of characters printed, or a negative value if an error occurs.
+///
+/// # Notes
+/// Currently, the format string is written to the stream as is without formatting the text in any way.
 pub unsafe extern "C" fn fprintf(stream: *mut u8, format: *const c_char) -> c_int {
-    if format.is_null() || stream.is_null() {
-        return -1;
-    }
-    let fd = unsafe { *(stream as *const i32) };
-    let len = unsafe { libc::strlen(format) };
-    let written = unsafe { libc::write(fd, format.cast(), len) };
-    if written < 0 { -1 } else { written as c_int }
+    unsafe { common::write_format_to_stream(stream.cast(), format) }
 }
 
-/// vfprintf — print formatted output to a file using a va_list.
+/// Writes formatted output to the specified file stream using a va_list of arguments.
 ///
-/// Minimal behavior: writes the format string bytes directly to the stream fd.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `stream`: A pointer to a FILE stream where the output will be written.
+/// * `format`: A pointer to a null-terminated C string that contains the format string.
+/// * `_args`: A pointer to a va_list of arguments to be formatted according to `format`.
+///
+/// # Safety
+/// * The caller must ensure that `stream` is a valid pointer to a FILE stream and that `format`
+///   is a valid null-terminated C string.
+///   Additionally, any variadic arguments must match the format specifiers in `format`.
+///
+/// # Returns
+/// * The number of characters printed, or a negative value if an error occurs.
+///
+/// # Notes
+/// Currently, the format string is written to the stream as is without formatting the text in any way.
 pub unsafe extern "C" fn vfprintf(stream: *mut u8, format: *const c_char, _args: *mut u8) -> c_int {
-    if format.is_null() || stream.is_null() {
-        return -1;
-    }
-    let fd = unsafe { *(stream as *const i32) };
-    let len = unsafe { libc::strlen(format) };
-    let written = unsafe { libc::write(fd, format.cast(), len) };
-    if written < 0 { -1 } else { written as c_int }
+    unsafe { common::write_format_to_stream(stream.cast(), format) }
 }
 
-/// fwrite — write data to a file.
+/// Writes data from a buffer to the specified file stream.
 ///
-/// Writes raw bytes to the stream fd marker stored in fake FILE structs.
-#[allow(clippy::missing_safety_doc)]
+/// # Arguments
+/// * `ptr`: A pointer to the buffer containing the data to be written.
+/// * `size`: The size in bytes of each element to be written.
+/// * `count`: The number of elements to be written.
+/// * `stream`: A pointer to a FILE stream where the output will be written.
+///
+/// # Safety
+/// * The caller must ensure that `ptr` is a valid pointer to a buffer of at least `size * count` bytes, and that `stream` is a valid pointer to a FILE stream.
+///
+/// # Returns
+/// * The number of elements successfully written, which may be less than `count` if an error occurs.
 pub unsafe extern "C" fn fwrite(
-    ptr: *const core::ffi::c_void,
+    ptr: *const c_void,
     size: usize,
-    nmemb: usize,
-    stream: *const core::ffi::c_void,
+    count: usize,
+    stream: *const c_void,
 ) -> usize {
-    let total = size.saturating_mul(nmemb);
-    if ptr.is_null() || stream.is_null() || total == 0 {
-        return 0;
-    }
-
-    let fd = unsafe { *(stream as *const i32) };
-    let written = unsafe { libc::write(fd, ptr, total) };
-    if written < 0 {
-        return 0;
-    }
-    (written as usize) / size.max(1)
+    unsafe { common::write_buffer_to_stream(ptr, size, count, stream) }
 }

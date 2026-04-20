@@ -6,7 +6,7 @@ pub mod stdlib;
 pub mod string;
 
 use rine_common_msvcrt::{commode_ptr, fake_iob_64_ptr, fmode_ptr, initenv_ptr};
-use rine_dlls::{DllPlugin, Export, StubExport, as_win_api};
+use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
 
 /// Primary msvcrt.dll plugin.
 pub struct MsvcrtPlugin;
@@ -21,8 +21,6 @@ impl DllPlugin for MsvcrtPlugin {
             // stdio
             Export::Func("printf", as_win_api!(stdio::printf)),
             Export::Func("puts", as_win_api!(stdio::puts)),
-            Export::Func("fprintf", as_win_api!(stdio::fprintf)),
-            Export::Func("vfprintf", as_win_api!(stdio::vfprintf)),
             Export::Func("fwrite", as_win_api!(stdio::fwrite)),
             // stdlib
             Export::Func("exit", as_win_api!(stdlib::exit)),
@@ -85,6 +83,20 @@ impl DllPlugin for MsvcrtPlugin {
             StubExport {
                 name: "signal",
                 func: as_win_api!(crt_support::signal),
+            },
+        ]
+    }
+
+    fn partials(&self) -> Vec<PartialExport> {
+        vec![
+            // stdio
+            PartialExport {
+                name: "fprintf",
+                func: as_win_api!(stdio::fprintf),
+            },
+            PartialExport {
+                name: "vfprintf",
+                func: as_win_api!(stdio::vfprintf),
             },
         ]
     }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T04:37:20.929629+00:00",
+  "generatedAt": "2026-04-20T05:23:05.306307+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1703,12 +1703,12 @@
         {
           "name": "fprintf",
           "x64": {
-            "status": "implemented",
-            "symbol": "stdio::fprintf",
+            "status": "partial",
+            "symbol": "fprintf",
             "source": "msvcrt - stdio.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "fprintf",
             "source": "msvcrt - stdio.rs"
           }
@@ -1786,7 +1786,7 @@
             "source": "msvcrt - stdio.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "implemented",
             "symbol": "printf",
             "source": "msvcrt - stdio.rs"
           }
@@ -1872,12 +1872,12 @@
         {
           "name": "vfprintf",
           "x64": {
-            "status": "implemented",
-            "symbol": "stdio::vfprintf",
+            "status": "partial",
+            "symbol": "vfprintf",
             "source": "msvcrt - stdio.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "vfprintf",
             "source": "msvcrt - stdio.rs"
           }
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 112,
-      "partial": 48,
+      "implemented": 110,
+      "partial": 50,
       "stubbed": 21,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 105,
-      "partial": 48,
-      "stubbed": 28,
+      "implemented": 104,
+      "partial": 50,
+      "stubbed": 27,
       "unimplemented": 0
     }
   }

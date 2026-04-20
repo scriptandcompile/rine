@@ -10,7 +10,7 @@
 //! - `stdio`: formatted I/O
 
 use rine_common_msvcrt::{commode_ptr, fake_iob_32_ptr, fmode_ptr, initenv_ptr};
-use rine_dlls::{DllPlugin, Export, StubExport, as_win_api};
+use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
 
 #[cfg(not(target_pointer_width = "32"))]
 compile_error!(
@@ -47,8 +47,6 @@ impl DllPlugin for MsvcrtPlugin32 {
             // stdio
             Export::Func("printf", as_win_api!(printf)),
             Export::Func("puts", as_win_api!(puts)),
-            Export::Func("fprintf", as_win_api!(fprintf)),
-            Export::Func("vfprintf", as_win_api!(vfprintf)),
             Export::Func("fwrite", as_win_api!(fwrite)),
             // stdlib
             Export::Func("exit", as_win_api!(exit)),
@@ -111,6 +109,20 @@ impl DllPlugin for MsvcrtPlugin32 {
             StubExport {
                 name: "signal",
                 func: as_win_api!(crt_support::signal),
+            },
+        ]
+    }
+
+    fn partials(&self) -> Vec<PartialExport> {
+        vec![
+            // stdio
+            PartialExport {
+                name: "fprintf",
+                func: as_win_api!(stdio::fprintf),
+            },
+            PartialExport {
+                name: "vfprintf",
+                func: as_win_api!(stdio::vfprintf),
             },
         ]
     }
