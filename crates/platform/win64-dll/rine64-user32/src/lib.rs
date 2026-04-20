@@ -17,10 +17,6 @@ impl DllPlugin for User32Plugin {
     fn exports(&self) -> Vec<Export> {
         vec![
             Export::Func(
-                "RegisterClassW",
-                as_win_api!(class_registration::register_class_w),
-            ),
-            Export::Func(
                 "RegisterClassExA",
                 as_win_api!(class_registration::register_class_ex_a),
             ),
@@ -110,9 +106,15 @@ impl DllPlugin for User32Plugin {
     }
 
     fn partials(&self) -> Vec<PartialExport> {
-        vec![PartialExport {
-            name: "RegisterClassA",
-            func: as_win_api!(class_registration::RegisterClassA),
-        }]
+        vec![
+            PartialExport {
+                name: "RegisterClassA",
+                func: as_win_api!(class_registration::RegisterClassA),
+            },
+            PartialExport {
+                name: "RegisterClassW",
+                func: as_win_api!(class_registration::RegisterClassW),
+            },
+        ]
     }
 }

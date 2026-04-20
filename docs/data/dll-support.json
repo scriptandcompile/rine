@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T19:43:32.414592+00:00",
+  "generatedAt": "2026-04-20T20:03:37.716357+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2274,13 +2274,13 @@
         {
           "name": "RegisterClassW",
           "x64": {
-            "status": "implemented",
-            "symbol": "class_registration::register_class_w",
+            "status": "partial",
+            "symbol": "RegisterClassW",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "class_registration::register_class_w",
+            "status": "partial",
+            "symbol": "RegisterClassW",
             "source": "user32 - class_registration.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 101,
-      "partial": 60,
+      "implemented": 100,
+      "partial": 61,
       "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 101,
-      "partial": 60,
+      "implemented": 100,
+      "partial": 61,
       "stubbed": 20,
       "unimplemented": 0
     }
