@@ -230,12 +230,36 @@ pub fn unlock(locknum: i32) {
     }
 }
 
+/// Get a pointer to the thread-local `errno` value.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to a thread-local variable that holds
+/// the error code for the last failed system call.
+/// The CRT and C code will read and write to this variable to get and set the error code for the last failed system call.
+/// Incorrect handling could lead to undefined behavior when CRT functions access this variable.
+///
+/// # Returns
+/// A pointer to the thread-local `errno` variable.
+/// The CRT and C code will read and write to this variable to get and set the error code for the last failed system call.
 pub fn errno_location() -> *mut i32 {
     unsafe { libc::__errno_location() }
 }
 
 /// Creates fake stdio control structures expected by the CRT,
-/// since some CRT functions expect a pointer to an array of three FILE structures for stdin, stdout, and stderr.
+///
+/// # Safety
+/// This is unsafe because the CRT expects the returned pointer to point to a valid array of
+/// three FILE structures with specific layout and contents.
+/// Incorrect handling could lead to undefined behavior when CRT functions access this array.
+/// The returned pointer should be exported as `_iob` and used by CRT functions that perform standard I/O operations.
+///
+/// # Returns
+/// A pointer to an array of three FILE structures expected by the CRT for standard I/O operations.
+/// The CRT expects this to be exported as `_iob` and used by functions like `printf` and `fprintf`.
+///
+/// # Notes
+/// This function creates a fake `_iob` array with the expected layout and some dummy values for the
+/// file descriptors (0 for stdin, 1 for stdout, 2 for stderr).
 fn build_fake_iob<const SIZE: usize, const ENTRY_SIZE: usize>() -> Box<[u8; SIZE]> {
     let mut buf = Box::new([0u8; SIZE]);
     buf[0..4].copy_from_slice(&0i32.to_ne_bytes());

@@ -315,19 +315,37 @@ pub unsafe extern "win64" fn _errno() -> *mut i32 {
     errno_location()
 }
 
-/// __p__environ — return a pointer to the environment variable array.
+/// Get a pointer to the environment variable array.
 ///
-/// Returns a pointer to a NULL pointer (minimal stub).
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an array of
+/// C strings representing the environment variables.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access environment variables.
+///
+/// # Returns
+/// Returns a pointer to the environment variable array, which is an array of C strings (char*).
+///
+/// # Notes
+/// Called by the CRT to get the environment variables. We return a pointer to an empty environment
+/// since we provide the real environment via `__getmainargs`.
+/// This should return a pointer to the actual environment variables.
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
     initenv_ptr() as *const *const *const i8
 }
 
-/// __p__fmode — return a pointer to the global file mode variable.
+/// Get a pointer to the file translation mode flag.
 ///
-/// Returns the same pointer as `_fmode()`.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to a global variable with a specific layout.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
+///
+/// # Returns
+/// A pointer to the file mode variable, which controls how the CRT handles file buffering and flushing.
+///
+/// # Notes
+/// Returned pointer points to a mutable `int` that controls whether
+/// text files are opened in binary or text mode by default.
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
     fmode_ptr()
