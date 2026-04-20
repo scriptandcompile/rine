@@ -64,11 +64,21 @@ pub unsafe extern "C" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
     unsafe { common::realloc(ptr, size) }
 }
 
-/// free — deallocate and return a memory block.
-#[allow(clippy::missing_safety_doc)]
+/// Free a previously allocated memory block.
+///
+/// # Arguments
+/// * `ptr` - A pointer to the memory block to free.
+///   This must be a pointer returned by a previous call to `malloc`, `calloc`, or `realloc`.
+///
+/// # Safety
+/// This is unsafe because it operates on a raw pointer.
+/// The caller must ensure that `ptr` is either null or a pointer returned by a previous call to
+/// `malloc`, `calloc`, or `realloc`, and that it is not used after being freed to avoid undefined behavior.
+///
+/// # Notes
+/// If `ptr` is null, this function does nothing.
+/// Otherwise, it frees the memory block pointed to by `ptr` and removes it from the allocation tracker,
+/// notifying the dev tools about the deallocation.
 pub unsafe extern "C" fn free(ptr: *mut c_void) {
-    if let Some(sz) = common::CRT_ALLOCATIONS.forget(ptr) {
-        rine_types::dev_notify!(on_memory_freed(ptr as u64, sz as u64, "free"));
-    }
-    unsafe { libc::free(ptr) };
+    unsafe { common::free(ptr) }
 }

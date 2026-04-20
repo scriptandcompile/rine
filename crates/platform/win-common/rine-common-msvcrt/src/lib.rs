@@ -13,4 +13,4 @@ pub use crt_support::{
 };
 pub use data_cells::{commode_ptr, fmode_ptr, initenv_ptr};
 pub use init::{run_initterm, run_initterm_e};
-pub use memory::{CRT_ALLOCATIONS, calloc, malloc, realloc};
+pub use memory::{CRT_ALLOCATIONS, calloc, free, malloc, realloc};
