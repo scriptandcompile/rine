@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T20:03:37.716357+00:00",
+  "generatedAt": "2026-04-20T22:09:49.497636+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2248,26 +2248,26 @@
         {
           "name": "RegisterClassExA",
           "x64": {
-            "status": "implemented",
-            "symbol": "class_registration::register_class_ex_a",
+            "status": "partial",
+            "symbol": "RegisterClassExA",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "class_registration::register_class_ex_a",
+            "status": "partial",
+            "symbol": "RegisterClassExA",
             "source": "user32 - class_registration.rs"
           }
         },
         {
           "name": "RegisterClassExW",
           "x64": {
-            "status": "implemented",
-            "symbol": "class_registration::register_class_ex_w",
+            "status": "partial",
+            "symbol": "RegisterClassExW",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "class_registration::register_class_ex_w",
+            "status": "partial",
+            "symbol": "RegisterClassExW",
             "source": "user32 - class_registration.rs"
           }
         },
@@ -2365,26 +2365,26 @@
         {
           "name": "UnregisterClassA",
           "x64": {
-            "status": "implemented",
-            "symbol": "class_registration::unregister_class_a",
+            "status": "partial",
+            "symbol": "UnregisterClassA",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "class_registration::unregister_class_a",
+            "status": "partial",
+            "symbol": "UnregisterClassA",
             "source": "user32 - class_registration.rs"
           }
         },
         {
           "name": "UnregisterClassW",
           "x64": {
-            "status": "implemented",
-            "symbol": "class_registration::unregister_class_w",
+            "status": "partial",
+            "symbol": "UnregisterClassW",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "class_registration::unregister_class_w",
+            "status": "partial",
+            "symbol": "UnregisterClassW",
             "source": "user32 - class_registration.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 100,
-      "partial": 61,
+      "implemented": 96,
+      "partial": 65,
       "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 100,
-      "partial": 61,
+      "implemented": 96,
+      "partial": 65,
       "stubbed": 20,
       "unimplemented": 0
     }

@@ -1,4 +1,5 @@
 use rine_common_user32::class_registration as common;
+use rine_types::errors::WinBool;
 use rine_types::strings::{read_cstr, read_wstr};
 use rine_types::windows::*;
 
@@ -21,7 +22,7 @@ use rine_types::windows::*;
 /// as we do not manage actual atoms.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn RegisterClassA(wc: *const WndClassExA) -> ATOM {
+pub(crate) unsafe extern "stdcall" fn RegisterClassA(wc: *const WndClassA) -> ATOM {
     common::register_class_a(wc)
 }
 
@@ -36,7 +37,7 @@ pub(crate) unsafe extern "stdcall" fn RegisterClassA(wc: *const WndClassExA) -> 
 ///   or that it matches an existing class if intended to be reused.
 ///
 /// # Returns
-/// * `ATOM` - Atom of the registered class on success, 0 on failure.
+/// * Atom of the registered class on success, 0 on failure.
 ///  
 /// # Notes
 /// This function is a simplified implementation and does not perform all the checks and operations
@@ -44,34 +45,100 @@ pub(crate) unsafe extern "stdcall" fn RegisterClassA(wc: *const WndClassExA) -> 
 /// as we do not manage actual atoms.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn RegisterClassW(wc: *const WndClassExW) -> u16 {
+pub(crate) unsafe extern "stdcall" fn RegisterClassW(wc: *const WndClassW) -> ATOM {
     common::register_class_w(wc)
 }
 
+/// Window class registration (ex versions)
+///
+/// # Arguments
+/// * `wc` - Pointer to a `WndClassExA` structure containing the window class information.
+///
+/// # Safety
+/// * The caller must ensure that `wc` is a valid pointer to a properly initialized `WndClassExA` structure.
+/// * The caller must ensure that the window class name is unique and not already registered,
+///
+/// # Returns
+/// * Atom of the registered class on success, 0 on failure.
+///
+/// # Notes
+/// These are just aliases to the non-ex versions since we don't have any extra logic for the ex versions.
+/// This function is a simplified implementation and does not perform all the checks and operations
+/// that the real RegisterClassExA/W functions do. It also always returns 1 on success for simplicity,
+/// as we do not manage actual atoms.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn register_class_ex_a(wc: *const WndClassExA) -> u16 {
-    RegisterClassA(wc)
+pub(crate) unsafe extern "stdcall" fn RegisterClassExA(wc: *const WndClassExA) -> ATOM {
+    common::register_class_ex_a(wc)
 }
 
+/// Window class registration (ex versions)
+///
+/// # Arguments
+/// * `wc` - Pointer to a `WndClassExW` structure containing the window class information.
+///
+/// # Safety
+/// * The caller must ensure that `wc` is a valid pointer to a properly initialized `WndClassExW` structure.
+/// * The caller must ensure that the window class name is unique and not already registered,
+///
+/// # Returns
+/// * Atom of the registered class on success, 0 on failure.
+///
+/// # Notes
+/// These are just aliases to the non-ex versions since we don't have any extra logic for the ex versions.
+/// This function is a simplified implementation and does not perform all the checks and operations
+/// that the real RegisterClassExA/W functions do. It also always returns 1 on success for simplicity,
+/// as we do not manage actual atoms.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn register_class_ex_w(wc: *const WndClassExW) -> u16 {
-    RegisterClassW(wc)
+pub(crate) unsafe extern "stdcall" fn RegisterClassExW(wc: *const WndClassExW) -> ATOM {
+    common::register_class_ex_w(wc)
 }
 
+/// Unregister window class
+///
+/// # Arguments
+/// * `class_name` - Pointer to a null-terminated string containing the name of the class to unregister.
+/// * `_h_instance` - Handle to the instance of the module that registered the class.
+///   This parameter is ignored in this implementation since we don't manage instances.
+///
+/// # Safety
+/// * The caller must ensure that `class_name` is a valid pointer to a null-terminated string.
+/// * The caller must ensure that the class name corresponds to a registered class, or that it is
+///   safe to attempt to unregister a non-existent class (which will simply fail and return `WinBool::FALSE`).
+///
+/// # Returns
+/// `WinBool::TRUE` if the class was found and unregistered, `WinBool::FALSE` if the class was not found.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn unregister_class_a(
+pub(crate) unsafe extern "stdcall" fn UnregisterClassA(
     class_name: *const u8,
     _h_instance: usize,
-) -> i32 {
+) -> WinBool {
     let name = read_cstr(class_name).unwrap_or_default();
     common::unregister_class(&name)
 }
 
+/// Unregister window class
+///
+/// # Arguments
+/// * `class_name` - Pointer to a null-terminated string containing the name of the class to unregister.
+/// * `_h_instance` - Handle to the instance of the module that registered the class.
+///   This parameter is ignored in this implementation since we don't manage instances.
+///
+/// # Safety
+/// * The caller must ensure that `class_name` is a valid pointer to a null-terminated string.
+/// * The caller must ensure that the class name corresponds to a registered class, or that it is
+///   safe to attempt to unregister a non-existent class (which will simply fail and return `WinBool::FALSE`).
+///
+/// # Returns
+/// `WinBool::TRUE` if the class was found and unregistered, `WinBool::FALSE` if the class was not found.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn unregister_class_w(
+pub(crate) unsafe extern "stdcall" fn UnregisterClassW(
     class_name: *const u16,
     _h_instance: usize,
-) -> i32 {
+) -> WinBool {
     let name = read_wstr(class_name).unwrap_or_default();
     common::unregister_class(&name)
 }

@@ -396,6 +396,38 @@ pub struct Point {
 // WNDCLASSEX structure
 // ---------------------------------------------------------------------------
 
+/// The Windows WNDCLASSA structure (ANSI version).
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct WndClassA {
+    pub style: u32,
+    pub lpfn_wnd_proc: usize, // function pointer
+    pub cb_cls_extra: i32,
+    pub cb_wnd_extra: i32,
+    pub h_instance: usize,
+    pub h_icon: usize,
+    pub h_cursor: usize,
+    pub hbr_background: usize,
+    pub lpsz_menu_name: *const u8,
+    pub lpsz_class_name: *const u8,
+}
+
+/// The Windows WNDCLASSW structure (Unicode version).
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct WndClassW {
+    pub style: u32,
+    pub lpfn_wnd_proc: usize, // function pointer
+    pub cb_cls_extra: i32,
+    pub cb_wnd_extra: i32,
+    pub h_instance: usize,
+    pub h_icon: usize,
+    pub h_cursor: usize,
+    pub hbr_background: usize,
+    pub lpsz_menu_name: *const u16,
+    pub lpsz_class_name: *const u16,
+}
+
 /// The Windows WNDCLASSEXA structure (ANSI version).
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]

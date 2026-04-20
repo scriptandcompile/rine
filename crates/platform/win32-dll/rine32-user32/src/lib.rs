@@ -22,22 +22,6 @@ impl DllPlugin for User32Plugin32 {
     fn exports(&self) -> Vec<Export> {
         vec![
             Export::Func(
-                "RegisterClassExA",
-                as_win_api!(class_registration::register_class_ex_a),
-            ),
-            Export::Func(
-                "RegisterClassExW",
-                as_win_api!(class_registration::register_class_ex_w),
-            ),
-            Export::Func(
-                "UnregisterClassA",
-                as_win_api!(class_registration::unregister_class_a),
-            ),
-            Export::Func(
-                "UnregisterClassW",
-                as_win_api!(class_registration::unregister_class_w),
-            ),
-            Export::Func(
                 "CreateWindowExA",
                 as_win_api!(window_lifecycle::create_window_ex_a),
             ),
@@ -119,6 +103,22 @@ impl DllPlugin for User32Plugin32 {
             PartialExport {
                 name: "RegisterClassW",
                 func: as_win_api!(class_registration::RegisterClassW),
+            },
+            PartialExport {
+                name: "RegisterClassExA",
+                func: as_win_api!(class_registration::RegisterClassExA),
+            },
+            PartialExport {
+                name: "RegisterClassExW",
+                func: as_win_api!(class_registration::RegisterClassExW),
+            },
+            PartialExport {
+                name: "UnregisterClassA",
+                func: as_win_api!(class_registration::UnregisterClassA),
+            },
+            PartialExport {
+                name: "UnregisterClassW",
+                func: as_win_api!(class_registration::UnregisterClassW),
             },
         ]
     }
