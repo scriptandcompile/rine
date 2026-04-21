@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T06:11:36.276775+00:00",
+  "generatedAt": "2026-04-21T06:15:10.164460+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2300,13 +2300,13 @@
         {
           "name": "SendMessageW",
           "x64": {
-            "status": "implemented",
-            "symbol": "message_queue::send_message_w",
+            "status": "partial",
+            "symbol": "SendMessageW",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "message_queue::send_message_w",
+            "status": "partial",
+            "symbol": "SendMessageW",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2394,14 +2394,14 @@
   "totals": {
     "functions": 180,
     "x64": {
-      "implemented": 86,
-      "partial": 74,
+      "implemented": 85,
+      "partial": 75,
       "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 86,
-      "partial": 74,
+      "implemented": 85,
+      "partial": 75,
       "stubbed": 20,
       "unimplemented": 0
     }
