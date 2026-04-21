@@ -34,7 +34,7 @@ impl DllPlugin for User32Plugin {
     fn exports(&self) -> Vec<Export> {
         vec![
             // window_lifecycle.rs
-            Export::Func("UpdateWindow", as_win_api!(window_lifecycle::update_window)),
+            Export::Func("UpdateWindow", as_win_api!(window_lifecycle::UpdateWindow)),
             // message_queue.rs
             Export::Func(
                 "PostQuitMessage",

@@ -165,8 +165,19 @@ pub fn show_window(hwnd: usize, cmd_show: i32) -> WinBool {
 
 /// Request a WM_PAINT for the given window.
 ///
-/// Returns 1 always (UpdateWindow is a notification, not a query).
-pub fn update_window(hwnd: usize) -> i32 {
+/// # Arguments
+/// * `hwnd`: Handle of the window to update.
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime.
+/// The caller is responsible for ensuring that the window is not used after it has been destroyed,
+/// as this would lead to undefined behavior.
+/// The caller must also ensure that any necessary synchronization is performed if the window is
+/// accessed from multiple threads.
+///
+/// # Returns
+/// `WinBool::TRUE` always (UpdateWindow is a notification, not a query).
+pub fn update_window(hwnd: usize) -> WinBool {
     let hwnd = Hwnd::from_raw(hwnd);
 
     request_native_redraw(hwnd);
@@ -182,5 +193,5 @@ pub fn update_window(hwnd: usize) -> i32 {
         });
     });
 
-    1
+    WinBool::TRUE
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T20:35:05.128348+00:00",
+  "generatedAt": "2026-04-21T21:20:14.092505+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2392,12 +2392,12 @@
           "name": "UpdateWindow",
           "x64": {
             "status": "implemented",
-            "symbol": "window_lifecycle::update_window",
+            "symbol": "window_lifecycle::UpdateWindow",
             "source": "user32 - window_lifecycle.rs"
           },
           "x86": {
             "status": "implemented",
-            "symbol": "window_lifecycle::update_window",
+            "symbol": "window_lifecycle::UpdateWindow",
             "source": "user32 - window_lifecycle.rs"
           }
         }

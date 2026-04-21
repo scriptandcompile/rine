@@ -188,7 +188,22 @@ pub(crate) unsafe extern "win64" fn ShowWindow(hwnd: usize, cmd_show: i32) -> Wi
     common::show_window(hwnd, cmd_show)
 }
 
+/// Request a WM_PAINT for the given window.
+///
+/// # Arguments
+/// * `hwnd`: Handle of the window to update.
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime.
+/// The caller is responsible for ensuring that the window is not used after it has been destroyed,
+/// as this would lead to undefined behavior.
+/// The caller must also ensure that any necessary synchronization is performed if the window is
+/// accessed from multiple threads.
+///
+/// # Returns
+/// `WinBool::TRUE` always (UpdateWindow is a notification, not a query).
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn update_window(hwnd: usize) -> i32 {
+pub(crate) unsafe extern "win64" fn UpdateWindow(hwnd: usize) -> WinBool {
     common::update_window(hwnd)
 }
