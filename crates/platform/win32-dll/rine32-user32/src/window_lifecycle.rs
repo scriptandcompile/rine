@@ -64,8 +64,40 @@ pub(crate) unsafe extern "stdcall" fn CreateWindowExA(
     )
 }
 
+/// Create a new window.
+///
+/// # Arguments
+/// * `ex_style`: Extended window style.
+/// * `class_name`: Name of the window class to use.
+/// * `window_name`: Window title.
+/// * `style`: Window style.
+/// * `x`: X position of the window.
+/// * `y`: Y position of the window.
+/// * `width`: Width of the window.
+/// * `height`: Height of the window.
+/// * `parent`: Handle of the parent window, or 0 for no parent.
+/// * `_menu`: Handle of the menu, or 0 for no menu. Ignored.
+/// * `_instance`: Handle of the instance, or 0 for the current instance. Ignored.
+/// * `_param`: Pointer to window creation data. Ignored.
+///
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers and interacts with the window manager.
+/// The caller must ensure that the pointers are valid and that the window manager is in a consistent state.
+/// The caller must also ensure that the provided parent handle (if any) is valid and belongs to this runtime.
+/// The caller must also ensure that the window class specified by `class_name` has been registered before calling this function.
+/// The caller is responsible for eventually destroying the created window to avoid resource leaks.
+///
+/// # Returns
+/// The handle of the created window, or 0 on failure.
+///
+/// # Notes
+/// Currently, the `_menu`, `_instance`, and `_param` parameters are ignored, as they are not commonly used in typical
+/// window creation scenarios and would require additional infrastructure to support properly.
+/// On error the `GetLastError` code should be set to indicate the reason for failure, such as `ERROR_CLASS_NOT_FOUND`
+/// if the specified class name does not exist. Currently, we do not set `GetLastError`.
+#[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn create_window_ex_w(
+pub(crate) unsafe extern "stdcall" fn CreateWindowExW(
     ex_style: u32,
     class_name: *const u16,
     window_name: *const u16,
