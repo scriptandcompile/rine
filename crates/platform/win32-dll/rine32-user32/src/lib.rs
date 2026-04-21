@@ -35,7 +35,6 @@ impl DllPlugin for User32Plugin32 {
             ),
             Export::Func("ShowWindow", as_win_api!(window_lifecycle::show_window)),
             Export::Func("UpdateWindow", as_win_api!(window_lifecycle::update_window)),
-            Export::Func("PeekMessageW", as_win_api!(message_queue::peek_message_w)),
             Export::Func(
                 "TranslateMessage",
                 as_win_api!(message_queue::translate_message),
@@ -130,6 +129,10 @@ impl DllPlugin for User32Plugin32 {
             PartialExport {
                 name: "PeekMessageA",
                 func: as_win_api!(message_queue::PeekMessageA),
+            },
+            PartialExport {
+                name: "PeekMessageW",
+                func: as_win_api!(message_queue::PeekMessageW),
             },
         ]
     }
