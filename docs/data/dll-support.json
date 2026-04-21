@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T21:20:14.092505+00:00",
+  "generatedAt": "2026-04-21T23:33:25.141078+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2313,26 +2313,26 @@
         {
           "name": "SetWindowTextA",
           "x64": {
-            "status": "implemented",
-            "symbol": "window_text::set_window_text_a",
+            "status": "partial",
+            "symbol": "SetWindowTextA",
             "source": "user32 - window_text.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "window_text::set_window_text_a",
+            "status": "partial",
+            "symbol": "SetWindowTextA",
             "source": "user32 - window_text.rs"
           }
         },
         {
           "name": "SetWindowTextW",
           "x64": {
-            "status": "implemented",
-            "symbol": "window_text::set_window_text_w",
+            "status": "partial",
+            "symbol": "SetWindowTextW",
             "source": "user32 - window_text.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "window_text::set_window_text_w",
+            "status": "partial",
+            "symbol": "SetWindowTextW",
             "source": "user32 - window_text.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 79,
-      "partial": 79,
+      "implemented": 77,
+      "partial": 81,
       "stubbed": 23,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 79,
-      "partial": 79,
+      "implemented": 77,
+      "partial": 81,
       "stubbed": 23,
       "unimplemented": 0
     }

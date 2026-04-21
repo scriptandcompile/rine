@@ -46,14 +46,6 @@ impl DllPlugin for User32Plugin32 {
                 as_win_api!(message_queue::PostQuitMessage),
             ),
             Export::Func(
-                "SetWindowTextA",
-                as_win_api!(window_text::set_window_text_a),
-            ),
-            Export::Func(
-                "SetWindowTextW",
-                as_win_api!(window_text::set_window_text_w),
-            ),
-            Export::Func(
                 "GetWindowTextA",
                 as_win_api!(window_text::get_window_text_a),
             ),
@@ -156,6 +148,15 @@ impl DllPlugin for User32Plugin32 {
             PartialExport {
                 name: "ShowWindow",
                 func: as_win_api!(window_lifecycle::ShowWindow),
+            },
+            // window_text.rs
+            PartialExport {
+                name: "SetWindowTextA",
+                func: as_win_api!(window_text::SetWindowTextA),
+            },
+            PartialExport {
+                name: "SetWindowTextW",
+                func: as_win_api!(window_text::SetWindowTextW),
             },
         ]
     }

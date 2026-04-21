@@ -1,13 +1,14 @@
 //! Window text operations — shared logic for SetWindowText, GetWindowText(Length).
 
+use rine_types::errors::WinBool;
 use rine_types::windows::*;
 
 use crate::backend::set_native_title;
 
 /// SetWindowText — set the title bar text for a window.
 ///
-/// Returns 1 on success, 0 if the HWND is not found.
-pub fn set_window_text(hwnd: usize, text: String) -> i32 {
+/// Returns `WinBool::TRUE` on success, `WinBool::FALSE` if the HWND is not found.
+pub fn set_window_text(hwnd: usize, text: String) -> WinBool {
     let hwnd = Hwnd::from_raw(hwnd);
     let backend_title = text.clone();
 
@@ -17,7 +18,7 @@ pub fn set_window_text(hwnd: usize, text: String) -> i32 {
 
     set_native_title(hwnd, &backend_title);
 
-    1
+    WinBool::TRUE
 }
 
 /// GetWindowTextA — copy the window title into an ANSI buffer.
