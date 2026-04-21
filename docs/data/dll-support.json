@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T06:15:10.164460+00:00",
+  "generatedAt": "2026-04-21T06:21:38.465345+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1996,7 +1996,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 30,
+      "functionCount": 29,
       "functions": [
         {
           "name": "CreateWindowExA",
@@ -2022,19 +2022,6 @@
             "status": "implemented",
             "symbol": "window_lifecycle::create_window_ex_w",
             "source": "user32 - window_lifecycle.rs"
-          }
-        },
-        {
-          "name": "DefWindowProcA",
-          "x64": {
-            "status": "implemented",
-            "symbol": "message_queue::def_window_proc_a",
-            "source": "user32 - message_queue.rs"
-          },
-          "x86": {
-            "status": "implemented",
-            "symbol": "message_queue::def_window_proc_a",
-            "source": "user32 - message_queue.rs"
           }
         },
         {
@@ -2392,15 +2379,15 @@
     }
   ],
   "totals": {
-    "functions": 180,
+    "functions": 179,
     "x64": {
-      "implemented": 85,
+      "implemented": 84,
       "partial": 75,
       "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 85,
+      "implemented": 84,
       "partial": 75,
       "stubbed": 20,
       "unimplemented": 0

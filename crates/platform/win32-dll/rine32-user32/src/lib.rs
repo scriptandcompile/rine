@@ -20,10 +20,16 @@ impl DllPlugin for User32Plugin32 {
     }
 
     fn stubs(&self) -> Vec<rine_dlls::StubExport> {
-        vec![StubExport {
-            name: "TranslateMessage",
-            func: as_win_api!(message_queue::TranslateMessage),
-        }]
+        vec![
+            StubExport {
+                name: "TranslateMessage",
+                func: as_win_api!(message_queue::TranslateMessage),
+            },
+            StubExport {
+                name: "DefWindowProcA",
+                func: as_win_api!(message_queue::DefWindowProcA),
+            },
+        ]
     }
 
     fn exports(&self) -> Vec<Export> {
@@ -47,10 +53,6 @@ impl DllPlugin for User32Plugin32 {
             Export::Func(
                 "PostQuitMessage",
                 as_win_api!(message_queue::PostQuitMessage),
-            ),
-            Export::Func(
-                "DefWindowProcA",
-                as_win_api!(message_queue::def_window_proc_a),
             ),
             Export::Func(
                 "DefWindowProcW",
