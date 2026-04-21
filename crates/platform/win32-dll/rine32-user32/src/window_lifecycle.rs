@@ -126,8 +126,33 @@ pub(crate) unsafe extern "stdcall" fn CreateWindowExW(
     )
 }
 
+/// Destroy a window.
+///
+/// # Arguments
+/// * `hwnd`: Handle of the window to destroy.
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime and provide a callback
+/// that can safely invoke the target window procedure.
+/// The caller is responsible for ensuring that the window is not used after it has been destroyed,
+/// as this would lead to undefined behavior.
+/// The caller must also ensure that any necessary synchronization is performed if the window is
+/// accessed from multiple threads.
+/// The caller must also ensure that the window procedure callback provided to this function can
+/// safely call back into the caller's ABI, as this function will invoke the window procedure with
+/// WM_DESTROY to allow for proper cleanup.
+/// The caller is responsible for eventually destroying the created window to avoid resource leaks.
+///
+/// # Returns
+/// 1 on success, 0 if the HWND was not found.
+///
+/// # Notes
+/// On error the `GetLastError` code should be set to indicate the reason for failure, such as
+/// `ERROR_INVALID_WINDOW_HANDLE` if the specified handle does not correspond to a valid window.
+/// Currently, we do not set `GetLastError`.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn destroy_window(hwnd: usize) -> i32 {
+pub(crate) unsafe extern "stdcall" fn DestroyWindow(hwnd: usize) -> i32 {
     unsafe {
         common::destroy_window(hwnd, |proc_fn, h, msg, wp, lp| {
             let f: extern "stdcall" fn(usize, u32, usize, isize) -> isize =
