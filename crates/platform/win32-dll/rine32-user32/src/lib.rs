@@ -35,7 +35,6 @@ impl DllPlugin for User32Plugin32 {
             ),
             Export::Func("ShowWindow", as_win_api!(window_lifecycle::show_window)),
             Export::Func("UpdateWindow", as_win_api!(window_lifecycle::update_window)),
-            Export::Func("GetMessageA", as_win_api!(message_queue::get_message_a)),
             Export::Func("GetMessageW", as_win_api!(message_queue::get_message_w)),
             Export::Func("PeekMessageA", as_win_api!(message_queue::peek_message_a)),
             Export::Func("PeekMessageW", as_win_api!(message_queue::peek_message_w)),
@@ -96,6 +95,7 @@ impl DllPlugin for User32Plugin32 {
 
     fn partials(&self) -> Vec<PartialExport> {
         vec![
+            // class_registeration.rs
             PartialExport {
                 name: "RegisterClassA",
                 func: as_win_api!(class_registration::RegisterClassA),
@@ -119,6 +119,11 @@ impl DllPlugin for User32Plugin32 {
             PartialExport {
                 name: "UnregisterClassW",
                 func: as_win_api!(class_registration::UnregisterClassW),
+            },
+            // message_queue.rs
+            PartialExport {
+                name: "GetMessageA",
+                func: as_win_api!(message_queue::GetMessageA),
             },
         ]
     }

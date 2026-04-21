@@ -1,8 +1,34 @@
 use rine_common_user32 as common;
 use rine_types::windows::*;
 
+/// Block until a non-WM_QUIT message is available then get it from the calling thread's message queue.
+///
+/// # Arguments
+/// * `msg` - Pointer to a `Msg` structure that receives message information from the thread's message queue.
+/// * `hwnd` - Handle to the window whose messages are to be retrieved.
+///   If this parameter is `0`, `GetMessage` retrieves messages for any window that belongs to the calling thread,
+///   and any messages on the current thread's message queue whose hwnd value is `0`.
+///
+/// # Safety
+/// * The caller must ensure that `msg` is a valid pointer to a `Msg` structure.
+/// * The caller must ensure that the thread has a message queue (for example, by calling `GetMessage` or
+///   `PeekMessage` at least once before).
+/// * The caller must ensure that the message loop is properly implemented to handle messages and avoid
+///   deadlocks or unresponsive behavior.
+///
+/// # Returns
+/// * `1` if a message other than `WM_QUIT` is retrieved and placed in the `Msg` structure pointed to by `msg`.
+/// * `0` if the message is `WM_QUIT` and is placed in the `Msg` structure pointed to by `msg`.
+/// * `-1` if there is an error (for example, if `msg` is an invalid pointer).
+///
+/// # Notes
+/// * This function is a blocking call and will not return until a message is available in the thread's message queue.
+/// * The `hwnd`, `msg_filter_min`, and `msg_filter_max` parameters are currently ignored in this implementation,
+///   but they are included to match the signature of the Windows API function and may be used in future enhancements
+///   to filter messages based on the specified window handle and message range.
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn get_message_a(
+#[allow(non_snake_case)]
+pub(crate) unsafe extern "stdcall" fn GetMessageA(
     msg: *mut Msg,
     hwnd: usize,
     msg_filter_min: u32,
@@ -18,7 +44,7 @@ pub(crate) unsafe extern "stdcall" fn get_message_w(
     msg_filter_min: u32,
     msg_filter_max: u32,
 ) -> i32 {
-    get_message_a(msg, hwnd, msg_filter_min, msg_filter_max)
+    unsafe { common::get_message(msg, hwnd, msg_filter_min, msg_filter_max) }
 }
 
 #[unsafe(no_mangle)]
