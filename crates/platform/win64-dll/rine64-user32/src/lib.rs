@@ -43,7 +43,6 @@ impl DllPlugin for User32Plugin {
                 "PostQuitMessage",
                 as_win_api!(message_queue::PostQuitMessage),
             ),
-            Export::Func("PostMessageA", as_win_api!(message_queue::post_message_a)),
             Export::Func("PostMessageW", as_win_api!(message_queue::post_message_w)),
             Export::Func("SendMessageA", as_win_api!(message_queue::send_message_a)),
             Export::Func("SendMessageW", as_win_api!(message_queue::send_message_w)),
@@ -133,6 +132,10 @@ impl DllPlugin for User32Plugin {
             PartialExport {
                 name: "DispatchMessageW",
                 func: as_win_api!(message_queue::DispatchMessageW),
+            },
+            PartialExport {
+                name: "PostMessageA",
+                func: as_win_api!(message_queue::PostMessageA),
             },
         ]
     }

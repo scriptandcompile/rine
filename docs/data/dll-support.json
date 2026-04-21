@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T03:25:45.646472+00:00",
+  "generatedAt": "2026-04-21T05:55:27.909211+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2196,13 +2196,13 @@
         {
           "name": "PostMessageA",
           "x64": {
-            "status": "implemented",
-            "symbol": "message_queue::post_message_a",
+            "status": "partial",
+            "symbol": "PostMessageA",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "message_queue::post_message_a",
+            "status": "partial",
+            "symbol": "PostMessageA",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2394,14 +2394,14 @@
   "totals": {
     "functions": 180,
     "x64": {
-      "implemented": 89,
-      "partial": 71,
+      "implemented": 88,
+      "partial": 72,
       "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 89,
-      "partial": 71,
+      "implemented": 88,
+      "partial": 72,
       "stubbed": 20,
       "unimplemented": 0
     }
