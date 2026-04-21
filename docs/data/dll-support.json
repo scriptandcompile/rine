@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T06:21:38.465345+00:00",
+  "generatedAt": "2026-04-21T06:33:46.982130+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1996,7 +1996,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 29,
+      "functionCount": 31,
       "functions": [
         {
           "name": "CreateWindowExA",
@@ -2022,6 +2022,19 @@
             "status": "implemented",
             "symbol": "window_lifecycle::create_window_ex_w",
             "source": "user32 - window_lifecycle.rs"
+          }
+        },
+        {
+          "name": "DefWindowProcA",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "DefWindowProcA",
+            "source": "user32 - message_queue.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "DefWindowProcA",
+            "source": "user32 - message_queue.rs"
           }
         },
         {
@@ -2337,6 +2350,19 @@
           }
         },
         {
+          "name": "TranslateMessage",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "TranslateMessage",
+            "source": "user32 - message_queue.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "TranslateMessage",
+            "source": "user32 - message_queue.rs"
+          }
+        },
+        {
           "name": "UnregisterClassA",
           "x64": {
             "status": "partial",
@@ -2379,17 +2405,17 @@
     }
   ],
   "totals": {
-    "functions": 179,
+    "functions": 181,
     "x64": {
       "implemented": 84,
       "partial": 75,
-      "stubbed": 20,
+      "stubbed": 22,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 84,
       "partial": 75,
-      "stubbed": 20,
+      "stubbed": 22,
       "unimplemented": 0
     }
   }

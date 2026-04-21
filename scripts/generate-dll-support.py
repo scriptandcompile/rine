@@ -50,7 +50,10 @@ def parse_dll_name(lib_source: str) -> str:
 
 def parse_win32_stub_names(lib_source: str) -> set[str]:
     # Find fn stubs(&self) -> Vec<StubExport> { ... }
-    match = re.search(r"fn\s+stubs\s*\(\s*&self\s*\)\s*->\s*Vec<StubExport>\s*\{", lib_source)
+    match = re.search(
+        r"fn\s+stubs\s*\(\s*&self\s*\)\s*->\s*Vec<([\w:]+::)?StubExport>\s*\{",
+        lib_source,
+    )
     if not match:
         return set()
 

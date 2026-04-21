@@ -14,7 +14,7 @@ impl DllPlugin for User32Plugin {
         &["user32.dll"]
     }
 
-    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
+    fn stubs(&self) -> Vec<StubExport> {
         vec![
             StubExport {
                 name: "TranslateMessage",
