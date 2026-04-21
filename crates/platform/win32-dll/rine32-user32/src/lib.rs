@@ -43,10 +43,6 @@ impl DllPlugin for User32Plugin32 {
             Export::Func("ShowWindow", as_win_api!(window_lifecycle::show_window)),
             Export::Func("UpdateWindow", as_win_api!(window_lifecycle::update_window)),
             Export::Func(
-                "DispatchMessageW",
-                as_win_api!(message_queue::dispatch_message_w),
-            ),
-            Export::Func(
                 "PostQuitMessage",
                 as_win_api!(message_queue::post_quit_message),
             ),
@@ -136,6 +132,10 @@ impl DllPlugin for User32Plugin32 {
             PartialExport {
                 name: "DispatchMessageA",
                 func: as_win_api!(message_queue::DispatchMessageA),
+            },
+            PartialExport {
+                name: "DispatchMessageW",
+                func: as_win_api!(message_queue::DispatchMessageW),
             },
         ]
     }

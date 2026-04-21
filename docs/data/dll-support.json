@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T03:11:12.188315+00:00",
+  "generatedAt": "2026-04-21T03:20:16.052512+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2079,13 +2079,13 @@
         {
           "name": "DispatchMessageW",
           "x64": {
-            "status": "implemented",
-            "symbol": "message_queue::dispatch_message_w",
+            "status": "partial",
+            "symbol": "DispatchMessageW",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "message_queue::dispatch_message_w",
+            "status": "partial",
+            "symbol": "DispatchMessageW",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2394,14 +2394,14 @@
   "totals": {
     "functions": 180,
     "x64": {
-      "implemented": 90,
-      "partial": 70,
+      "implemented": 89,
+      "partial": 71,
       "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 90,
-      "partial": 70,
+      "implemented": 89,
+      "partial": 71,
       "stubbed": 20,
       "unimplemented": 0
     }
