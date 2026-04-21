@@ -102,12 +102,42 @@ pub(crate) unsafe extern "stdcall" fn GetWindowTextW(
     unsafe { common::get_window_text_w(hwnd, buffer, max_count) }
 }
 
+/// Get the length of the window title in characters, excluding the null terminator.
+///
+/// # Arguments
+/// * `hwnd` - Handle to the window.
+///
+/// # Safety
+/// The function assumes the caller has the right to read the window's title.
+///
+/// # Returns
+/// The length of the window title in characters, excluding the null terminator. Returns 0 if the HWND is not found.
+///
+/// # Notes
+/// Currently, this function does not perform any access checks on the window handle (HWND).
+/// This function should write an error to `GetLastError()` if the HWND is not found, but this is not yet implemented.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn get_window_text_length_a(hwnd: usize) -> i32 {
+pub(crate) unsafe extern "stdcall" fn GetWindowTextLengthA(hwnd: usize) -> i32 {
     common::get_window_text_length(hwnd)
 }
 
+/// Get the length of the window title in characters, excluding the null terminator.
+///
+/// # Arguments
+/// * `hwnd` - Handle to the window.
+///
+/// # Safety
+/// The function assumes the caller has the right to read the window's title.
+///
+/// # Returns
+/// The length of the window title in characters, excluding the null terminator. Returns 0 if the HWND is not found.
+///
+/// # Notes
+/// Currently, this function does not perform any access checks on the window handle (HWND).
+/// This function should write an error to `GetLastError()` if the HWND is not found, but this is not yet implemented.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn get_window_text_length_w(hwnd: usize) -> i32 {
+pub(crate) unsafe extern "stdcall" fn GetWindowTextLengthW(hwnd: usize) -> i32 {
     common::get_window_text_length(hwnd)
 }

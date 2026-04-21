@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T23:41:24.282717+00:00",
+  "generatedAt": "2026-04-21T23:58:06.183916+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2131,26 +2131,26 @@
         {
           "name": "GetWindowTextLengthA",
           "x64": {
-            "status": "implemented",
-            "symbol": "window_text::get_window_text_length_a",
+            "status": "partial",
+            "symbol": "GetWindowTextLengthA",
             "source": "user32 - window_text.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "window_text::get_window_text_length_a",
+            "status": "partial",
+            "symbol": "GetWindowTextLengthA",
             "source": "user32 - window_text.rs"
           }
         },
         {
           "name": "GetWindowTextLengthW",
           "x64": {
-            "status": "implemented",
-            "symbol": "window_text::get_window_text_length_w",
+            "status": "partial",
+            "symbol": "GetWindowTextLengthW",
             "source": "user32 - window_text.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "window_text::get_window_text_length_w",
+            "status": "partial",
+            "symbol": "GetWindowTextLengthW",
             "source": "user32 - window_text.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 75,
-      "partial": 83,
+      "implemented": 73,
+      "partial": 85,
       "stubbed": 23,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 75,
-      "partial": 83,
+      "implemented": 73,
+      "partial": 85,
       "stubbed": 23,
       "unimplemented": 0
     }
