@@ -290,8 +290,22 @@ pub(crate) unsafe extern "win64" fn DispatchMessageW(msg: *const Msg) -> isize {
     }
 }
 
+/// Dispatches a quit message to the thread's message loop.
+///
+/// # Arguments
+/// * `exit_code` - The exit code to be returned when the thread exits.
+///   This parameter is typically used to indicate the reason for the thread's exit and can be
+///   retrieved by the caller using the `GetExitCodeThread` function after the thread has exited.
+///
+/// # Safety
+/// The caller must ensure that the thread has a message loop that is designed to handle the quit
+/// message posted by this function to avoid unresponsive behavior or deadlocks.
+/// The caller should ensure that the message loop is designed to handle the quit message posted
+/// by this function (for example, by calling `GetMessage` or `PeekMessage` in a loop) to avoid
+/// unresponsive behavior or deadlocks.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn post_quit_message(exit_code: i32) {
+pub(crate) unsafe extern "win64" fn PostQuitMessage(exit_code: i32) {
     common::post_quit_message(exit_code);
 }
 

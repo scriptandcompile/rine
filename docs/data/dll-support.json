@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T03:20:16.052512+00:00",
+  "generatedAt": "2026-04-21T03:25:45.646472+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2223,12 +2223,12 @@
           "name": "PostQuitMessage",
           "x64": {
             "status": "implemented",
-            "symbol": "message_queue::post_quit_message",
+            "symbol": "message_queue::PostQuitMessage",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "implemented",
-            "symbol": "message_queue::post_quit_message",
+            "symbol": "message_queue::PostQuitMessage",
             "source": "user32 - message_queue.rs"
           }
         },
