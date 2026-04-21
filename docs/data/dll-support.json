@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T01:33:57.927763+00:00",
+  "generatedAt": "2026-04-21T01:40:22.427154+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2105,13 +2105,13 @@
         {
           "name": "GetMessageW",
           "x64": {
-            "status": "implemented",
-            "symbol": "message_queue::get_message_w",
+            "status": "partial",
+            "symbol": "GetMessageW",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "message_queue::get_message_w",
+            "status": "partial",
+            "symbol": "GetMessageW",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 95,
-      "partial": 66,
+      "implemented": 94,
+      "partial": 67,
       "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 95,
-      "partial": 66,
+      "implemented": 94,
+      "partial": 67,
       "stubbed": 20,
       "unimplemented": 0
     }
