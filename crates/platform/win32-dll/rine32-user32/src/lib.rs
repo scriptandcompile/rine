@@ -40,10 +40,6 @@ impl DllPlugin for User32Plugin32 {
         vec![
             // window_lifecycle.rs
             Export::Func(
-                "CreateWindowExA",
-                as_win_api!(window_lifecycle::create_window_ex_a),
-            ),
-            Export::Func(
                 "CreateWindowExW",
                 as_win_api!(window_lifecycle::create_window_ex_w),
             ),
@@ -152,6 +148,11 @@ impl DllPlugin for User32Plugin32 {
             PartialExport {
                 name: "SendMessageW",
                 func: as_win_api!(message_queue::SendMessageW),
+            },
+            // window_lifecycle.rs
+            PartialExport {
+                name: "CreateWindowExA",
+                func: as_win_api!(window_lifecycle::CreateWindowExA),
             },
         ]
     }

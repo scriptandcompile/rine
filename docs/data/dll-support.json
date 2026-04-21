@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T06:37:19.500774+00:00",
+  "generatedAt": "2026-04-21T17:50:54.108897+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2001,13 +2001,13 @@
         {
           "name": "CreateWindowExA",
           "x64": {
-            "status": "implemented",
-            "symbol": "window_lifecycle::create_window_ex_a",
+            "status": "partial",
+            "symbol": "CreateWindowExA",
             "source": "user32 - window_lifecycle.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "window_lifecycle::create_window_ex_a",
+            "status": "partial",
+            "symbol": "CreateWindowExA",
             "source": "user32 - window_lifecycle.rs"
           }
         },
@@ -2407,14 +2407,14 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 83,
-      "partial": 75,
+      "implemented": 82,
+      "partial": 76,
       "stubbed": 23,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 83,
-      "partial": 75,
+      "implemented": 82,
+      "partial": 76,
       "stubbed": 23,
       "unimplemented": 0
     }
