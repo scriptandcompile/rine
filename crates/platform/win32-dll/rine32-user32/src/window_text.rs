@@ -44,8 +44,28 @@ pub(crate) unsafe extern "stdcall" fn SetWindowTextW(hwnd: usize, text: *const u
     common::set_window_text(hwnd, read_wstr(text).unwrap_or_default())
 }
 
+/// Copy the window title into an ANSI buffer.
+///
+/// # Arguments
+/// * `hwnd` - Handle to the window.
+/// * `buffer` - Pointer to a buffer that receives the window title as an ANSI string (null-terminated).
+/// * `max_count` - Maximum number of characters to copy, including the null terminator.
+///
+/// # Safety
+/// * `buffer` must point to at least `max_count` bytes of writable memory.
+/// * The function assumes the caller has the right to read the window's title.
+///
+/// # Returns
+/// The number of characters copied, excluding the null terminator. If the text exceeds this limit,
+/// it should be truncated.
+/// Returns 0 if the HWND is not found or if `buffer` is null or `max_count` is non-positive.
+///
+/// # Notes
+/// Currently, this function does not perform any access checks on the window handle (HWND).
+/// This function should write an error to `GetLastError()` if the HWND is not found, but this is not yet implemented.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn get_window_text_a(
+pub(crate) unsafe extern "stdcall" fn GetWindowTextA(
     hwnd: usize,
     buffer: *mut u8,
     max_count: i32,
@@ -53,8 +73,28 @@ pub(crate) unsafe extern "stdcall" fn get_window_text_a(
     unsafe { common::get_window_text_a(hwnd, buffer, max_count) }
 }
 
+/// Copy the window title into a wide buffer.
+///
+/// # Arguments
+/// * `hwnd` - Handle to the window.
+/// * `buffer` - Pointer to a buffer that receives the window title as a wide string (null-terminated).
+/// * `max_count` - Maximum number of characters to copy, including the null terminator.
+///
+/// # Safety
+/// * `buffer` must point to at least `max_count` bytes of writable memory.
+/// * The function assumes the caller has the right to read the window's title.
+///
+/// # Returns
+/// The number of characters copied, excluding the null terminator. If the text exceeds this limit,
+/// it should be truncated.
+/// Returns 0 if the HWND is not found or if `buffer` is null or `max_count` is non-positive.
+///
+/// # Notes
+/// Currently, this function does not perform any access checks on the window handle (HWND).
+/// This function should write an error to `GetLastError()` if the HWND is not found, but this is not yet implemented.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn get_window_text_w(
+pub(crate) unsafe extern "stdcall" fn GetWindowTextW(
     hwnd: usize,
     buffer: *mut u16,
     max_count: i32,
