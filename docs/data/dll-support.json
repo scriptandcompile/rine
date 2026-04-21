@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T06:33:46.982130+00:00",
+  "generatedAt": "2026-04-21T06:37:19.500774+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2040,13 +2040,13 @@
         {
           "name": "DefWindowProcW",
           "x64": {
-            "status": "implemented",
-            "symbol": "message_queue::def_window_proc_w",
+            "status": "stubbed",
+            "symbol": "DefWindowProcW",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
-            "status": "implemented",
-            "symbol": "message_queue::def_window_proc_w",
+            "status": "stubbed",
+            "symbol": "DefWindowProcW",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2407,15 +2407,15 @@
   "totals": {
     "functions": 181,
     "x64": {
-      "implemented": 84,
+      "implemented": 83,
       "partial": 75,
-      "stubbed": 22,
+      "stubbed": 23,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 84,
+      "implemented": 83,
       "partial": 75,
-      "stubbed": 22,
+      "stubbed": 23,
       "unimplemented": 0
     }
   }

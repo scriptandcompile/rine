@@ -24,6 +24,10 @@ impl DllPlugin for User32Plugin {
                 name: "DefWindowProcA",
                 func: as_win_api!(message_queue::DefWindowProcA),
             },
+            StubExport {
+                name: "DefWindowProcW",
+                func: as_win_api!(message_queue::DefWindowProcW),
+            },
         ]
     }
 
@@ -48,10 +52,6 @@ impl DllPlugin for User32Plugin {
             Export::Func(
                 "PostQuitMessage",
                 as_win_api!(message_queue::PostQuitMessage),
-            ),
-            Export::Func(
-                "DefWindowProcW",
-                as_win_api!(message_queue::def_window_proc_w),
             ),
             Export::Func(
                 "SetWindowTextA",
