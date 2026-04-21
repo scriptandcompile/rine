@@ -1,7 +1,7 @@
 //! Window lifecycle — shared logic for CreateWindowEx, DestroyWindow, ShowWindow, UpdateWindow.
 
-use rine_types::strings::json_escape;
 use rine_types::windows::*;
+use rine_types::{errors::WinBool, strings::json_escape};
 
 use crate::backend::{
     create_native_window, destroy_native_window, request_native_redraw, set_native_visibility,
@@ -120,8 +120,8 @@ pub unsafe fn destroy_window(
 
 /// Show or hide a window according to `cmd_show` (SW_* constants).
 ///
-/// Returns 1 if the window was previously visible, 0 otherwise.
-pub fn show_window(hwnd: usize, cmd_show: i32) -> i32 {
+/// Returns `WinBool::TRUE` if the window was previously visible, `WinBool::FALSE` otherwise.
+pub fn show_window(hwnd: usize, cmd_show: i32) -> WinBool {
     let hwnd = Hwnd::from_raw(hwnd);
 
     let was_visible = WINDOW_MANAGER
@@ -156,7 +156,11 @@ pub fn show_window(hwnd: usize, cmd_show: i32) -> i32 {
         });
     });
 
-    if was_visible { 1 } else { 0 }
+    if was_visible {
+        WinBool::TRUE
+    } else {
+        WinBool::FALSE
+    }
 }
 
 /// Request a WM_PAINT for the given window.

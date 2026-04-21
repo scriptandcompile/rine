@@ -39,7 +39,6 @@ impl DllPlugin for User32Plugin32 {
     fn exports(&self) -> Vec<Export> {
         vec![
             // window_lifecycle.rs
-            Export::Func("ShowWindow", as_win_api!(window_lifecycle::show_window)),
             Export::Func("UpdateWindow", as_win_api!(window_lifecycle::update_window)),
             // message_queue.rs
             Export::Func(
@@ -153,6 +152,10 @@ impl DllPlugin for User32Plugin32 {
             PartialExport {
                 name: "DestroyWindow",
                 func: as_win_api!(window_lifecycle::DestroyWindow),
+            },
+            PartialExport {
+                name: "ShowWindow",
+                func: as_win_api!(window_lifecycle::ShowWindow),
             },
         ]
     }

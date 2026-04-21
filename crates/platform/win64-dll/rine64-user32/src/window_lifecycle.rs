@@ -1,4 +1,5 @@
 use rine_common_user32 as common;
+use rine_types::errors::WinBool;
 use rine_types::strings::{read_cstr, read_wstr};
 use rine_types::windows::*;
 
@@ -162,8 +163,28 @@ pub(crate) unsafe extern "win64" fn DestroyWindow(hwnd: usize) -> i32 {
     }
 }
 
+/// Show a window.
+///
+/// # Arguments
+/// * `hwnd`: Handle of the window to show.
+/// * `cmd_show`: Show command (e.g. SW_SHOW).
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime.
+/// The caller is responsible for ensuring that the window is not used after it has been destroyed,
+/// as this would lead to undefined behavior.
+///
+/// # Returns
+/// The return value is the result of the `ShowWindow` operation, which is nonzero if the window was
+/// previously visible and zero if it was hidden.
+/// On error (e.g. if the window handle is invalid), the function returns 0, which is the same as the
+/// return value for a window that was hidden.
+///
+/// # Notes
+/// Currently, we do not set `GetLastError`, so there is no way to distinguish between these cases.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn show_window(hwnd: usize, cmd_show: i32) -> i32 {
+pub(crate) unsafe extern "win64" fn ShowWindow(hwnd: usize, cmd_show: i32) -> WinBool {
     common::show_window(hwnd, cmd_show)
 }
 
