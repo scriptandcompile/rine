@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T02:45:46.868022+00:00",
+  "generatedAt": "2026-04-21T03:04:38.510453+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1996,7 +1996,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 31,
+      "functionCount": 30,
       "functions": [
         {
           "name": "CreateWindowExA",
@@ -2350,19 +2350,6 @@
           }
         },
         {
-          "name": "TranslateMessage",
-          "x64": {
-            "status": "implemented",
-            "symbol": "message_queue::translate_message",
-            "source": "user32 - message_queue.rs"
-          },
-          "x86": {
-            "status": "implemented",
-            "symbol": "message_queue::translate_message",
-            "source": "user32 - message_queue.rs"
-          }
-        },
-        {
           "name": "UnregisterClassA",
           "x64": {
             "status": "partial",
@@ -2405,15 +2392,15 @@
     }
   ],
   "totals": {
-    "functions": 181,
+    "functions": 180,
     "x64": {
-      "implemented": 92,
+      "implemented": 91,
       "partial": 69,
       "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 92,
+      "implemented": 91,
       "partial": 69,
       "stubbed": 20,
       "unimplemented": 0

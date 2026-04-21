@@ -10,22 +10,22 @@ use rine_types::windows::*;
 ///   and any messages on the current thread's message queue whose hwnd value is `0`.
 ///
 /// # Safety
-/// * The caller must ensure that `msg` is a valid pointer to a `Msg` structure.
-/// * The caller must ensure that the thread has a message queue (for example, by calling `GetMessage` or
-///   `PeekMessage` at least once before).
-/// * The caller must ensure that the message loop is properly implemented to handle messages and avoid
-///   deadlocks or unresponsive behavior.
+/// The caller must ensure that `msg` is a valid pointer to a `Msg` structure.
+/// The caller must ensure that the thread has a message queue (for example, by calling `GetMessage` or
+/// `PeekMessage` at least once before).
+/// The caller must ensure that the message loop is properly implemented to handle messages and avoid
+/// deadlocks or unresponsive behavior.
 ///
 /// # Returns
-/// * `1` if a message other than `WM_QUIT` is retrieved and placed in the `Msg` structure pointed to by `msg`.
-/// * `0` if the message is `WM_QUIT` and is placed in the `Msg` structure pointed to by `msg`.
-/// * `-1` if there is an error (for example, if `msg` is an invalid pointer).
+/// `1` if a message other than `WM_QUIT` is retrieved and placed in the `Msg` structure pointed to by `msg`.
+/// `0` if the message is `WM_QUIT` and is placed in the `Msg` structure pointed to by `msg`.
+/// `-1` if there is an error (for example, if `msg` is an invalid pointer).
 ///
 /// # Notes
-/// * This function is a blocking call and will not return until a message is available in the thread's message queue.
-/// * The `hwnd`, `msg_filter_min`, and `msg_filter_max` parameters are currently ignored in this implementation,
-///   but they are included to match the signature of the Windows API function and may be used in future enhancements
-///   to filter messages based on the specified window handle and message range.
+/// This function is a blocking call and will not return until a message is available in the thread's message queue.
+/// The `hwnd`, `msg_filter_min`, and `msg_filter_max` parameters are currently ignored in this implementation,
+/// but they are included to match the signature of the Windows API function and may be used in future enhancements
+/// to filter messages based on the specified window handle and message range.
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "stdcall" fn GetMessageA(
@@ -46,22 +46,22 @@ pub(crate) unsafe extern "stdcall" fn GetMessageA(
 ///   and any messages on the current thread's message queue whose hwnd value is `0`.
 ///
 /// # Safety
-/// * The caller must ensure that `msg` is a valid pointer to a `Msg` structure.
-/// * The caller must ensure that the thread has a message queue (for example, by calling `GetMessage` or
-///   `PeekMessage` at least once before).
-/// * The caller must ensure that the message loop is properly implemented to handle messages and avoid
-///   deadlocks or unresponsive behavior.
+/// The caller must ensure that `msg` is a valid pointer to a `Msg` structure.
+/// The caller must ensure that the thread has a message queue (for example, by calling `GetMessage` or
+/// `PeekMessage` at least once before).
+/// The caller must ensure that the message loop is properly implemented to handle messages and avoid
+/// deadlocks or unresponsive behavior.
 ///
 /// # Returns
-/// * `1` if a message other than `WM_QUIT` is retrieved and placed in the `Msg` structure pointed to by `msg`.
-/// * `0` if the message is `WM_QUIT` and is placed in the `Msg` structure pointed to by `msg`.
-/// * `-1` if there is an error (for example, if `msg` is an invalid pointer).
+/// `1` if a message other than `WM_QUIT` is retrieved and placed in the `Msg` structure pointed to by `msg`.
+/// `0` if the message is `WM_QUIT` and is placed in the `Msg` structure pointed to by `msg`.
+/// `-1` if there is an error (for example, if `msg` is an invalid pointer).
 ///
 /// # Notes
-/// * This function is a blocking call and will not return until a message is available in the thread's message queue.
-/// * The `hwnd`, `msg_filter_min`, and `msg_filter_max` parameters are currently ignored in this implementation,
-///   but they are included to match the signature of the Windows API function and may be used in future enhancements
-///   to filter messages based on the specified window handle and message range.
+/// This function is a blocking call and will not return until a message is available in the thread's message queue.
+/// The `hwnd`, `msg_filter_min`, and `msg_filter_max` parameters are currently ignored in this implementation,
+/// but they are included to match the signature of the Windows API function and may be used in future enhancements
+/// to filter messages based on the specified window handle and message range.
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "stdcall" fn GetMessageW(
@@ -91,23 +91,23 @@ pub(crate) unsafe extern "stdcall" fn GetMessageW(
 ///     to match the signature of the Windows API function.
 ///
 /// # Safety
-/// * The caller must ensure that `msg` is a valid pointer to a `Msg` structure.
-/// * The caller must ensure that the thread has a message queue (for example, by calling `GetMessage` or `PeekMessage`
-///   at least once before).
-/// * The caller must ensure that the message loop is properly implemented to handle messages and avoid deadlocks or
-///   unresponsive behavior.
+/// The caller must ensure that `msg` is a valid pointer to a `Msg` structure.
+/// The caller must ensure that the thread has a message queue (for example, by calling `GetMessage` or `PeekMessage`
+/// at least once before).
+/// The caller must ensure that the message loop is properly implemented to handle messages and avoid deadlocks or
+/// unresponsive behavior.
 ///
 /// # Returns
-/// * `1` if a message is available in the thread's message queue and is placed in the `Msg` structure pointed to by `msg`.
-/// * `0` if there is no message available in the thread's message queue.
-/// * `-1` if there is an error (for example, if `msg` is an invalid pointer).
+/// `1` if a message is available in the thread's message queue and is placed in the `Msg` structure pointed to by `msg`.
+/// `0` if there is no message available in the thread's message queue.
+/// `-1` if there is an error (for example, if `msg` is an invalid pointer).
 ///
 /// # Notes
-/// * This function is a non-blocking call and will return immediately whether or not a message is available in the
-///   thread's message queue.
-/// * The `hwnd`, `msg_filter_min`, and `msg_filter_max` parameters are currently ignored in this implementation,
-///   but they are included to match the signature of the Windows API function and may be used in future enhancements
-///   to filter messages based on the specified window handle and message range.
+/// This function is a non-blocking call and will return immediately whether or not a message is available in the
+/// thread's message queue.
+/// The `hwnd`, `msg_filter_min`, and `msg_filter_max` parameters are currently ignored in this implementation,
+/// but they are included to match the signature of the Windows API function and may be used in future enhancements
+/// to filter messages based on the specified window handle and message range.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "stdcall" fn PeekMessageA(
@@ -138,23 +138,23 @@ pub(crate) unsafe extern "stdcall" fn PeekMessageA(
 ///     to match the signature of the Windows API function.
 ///
 /// # Safety
-/// * The caller must ensure that `msg` is a valid pointer to a `Msg` structure.
-/// * The caller must ensure that the thread has a message queue (for example, by calling `GetMessage` or `PeekMessage`
-///   at least once before).
-/// * The caller must ensure that the message loop is properly implemented to handle messages and avoid deadlocks or
-///   unresponsive behavior.
+/// The caller must ensure that `msg` is a valid pointer to a `Msg` structure.
+/// The caller must ensure that the thread has a message queue (for example, by calling `GetMessage` or `PeekMessage`
+/// at least once before).
+/// The caller must ensure that the message loop is properly implemented to handle messages and avoid deadlocks or
+/// unresponsive behavior.
 ///
 /// # Returns
-/// * `1` if a message is available in the thread's message queue and is placed in the `Msg` structure pointed to by `msg`.
-/// * `0` if there is no message available in the thread's message queue.
-/// * `-1` if there is an error (for example, if `msg` is an invalid pointer).
+/// `1` if a message is available in the thread's message queue and is placed in the `Msg` structure pointed to by `msg`.
+/// `0` if there is no message available in the thread's message queue.
+/// `-1` if there is an error (for example, if `msg` is an invalid pointer).
 ///
 /// # Notes
-/// * This function is a non-blocking call and will return immediately whether or not a message is available in the
-///   thread's message queue.
-/// * The `hwnd`, `msg_filter_min`, and `msg_filter_max` parameters are currently ignored in this implementation,
-///   but they are included to match the signature of the Windows API function and may be used in future enhancements
-///   to filter messages based on the specified window handle and message range.
+/// This function is a non-blocking call and will return immediately whether or not a message is available in the
+/// thread's message queue.
+/// The `hwnd`, `msg_filter_min`, and `msg_filter_max` parameters are currently ignored in this implementation,
+/// but they are included to match the signature of the Windows API function and may be used in future enhancements
+/// to filter messages based on the specified window handle and message range.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "stdcall" fn PeekMessageW(
@@ -167,8 +167,34 @@ pub(crate) unsafe extern "stdcall" fn PeekMessageW(
     unsafe { common::peek_message(msg, hwnd, msg_filter_min, msg_filter_max, remove) }
 }
 
+/// Translates virtual-key messages into character messages.
+///
+/// # Arguments
+/// * `msg` - Pointer to a `Msg` structure that contains message information retrieved from the thread's
+///   message queue by `GetMessage` or `PeekMessage`.
+///
+/// # Safety
+/// The caller must ensure that `msg` is a valid pointer to a `Msg` structure that contains message
+/// information retrieved from the thread's message queue by `GetMessage` or `PeekMessage`.
+/// The caller must ensure that the message loop is properly implemented to handle messages and avoid
+/// deadlocks or unresponsive behavior.
+///
+/// # Returns
+/// `1` if the message is translated and placed in the thread's message queue.
+/// `0` if the message is not translated (for example, if it is not a virtual- key message or if the translation fails).
+///
+/// # Notes
+/// This function is typically called in the message loop after retrieving a message with `GetMessage` or
+/// `PeekMessage` and before dispatching the message with `DispatchMessage`.
+/// The `TranslateMessage` function does not modify the message pointed to by `msg`, but it may generate
+/// additional messages (for example, character messages) and place them in the thread's message queue based
+/// on the virtual-key messages it processes.
+/// The caller should ensure that the message loop is designed to handle any additional messages generated by
+/// `TranslateMessage` to avoid unresponsive behavior or deadlocks.
+/// Currently, this implementation of `TranslateMessage` does not perform any actual translation and simply stubs to  returns `1`.
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn translate_message(msg: *const Msg) -> i32 {
+pub(crate) unsafe extern "stdcall" fn TranslateMessage(msg: *const Msg) -> i32 {
     unsafe { common::translate_message(msg) }
 }
 

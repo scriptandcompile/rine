@@ -5,7 +5,7 @@ compile_error!(
     "crate `rine32-user32` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
 );
 
-use rine_dlls::{DllPlugin, Export, PartialExport, as_win_api};
+use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
 
 mod class_registration;
 mod message_queue;
@@ -17,6 +17,13 @@ pub struct User32Plugin32;
 impl DllPlugin for User32Plugin32 {
     fn dll_names(&self) -> &[&str] {
         &["user32.dll"]
+    }
+
+    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
+        vec![StubExport {
+            name: "TranslateMessage",
+            func: as_win_api!(message_queue::TranslateMessage),
+        }]
     }
 
     fn exports(&self) -> Vec<Export> {
@@ -35,10 +42,6 @@ impl DllPlugin for User32Plugin32 {
             ),
             Export::Func("ShowWindow", as_win_api!(window_lifecycle::show_window)),
             Export::Func("UpdateWindow", as_win_api!(window_lifecycle::update_window)),
-            Export::Func(
-                "TranslateMessage",
-                as_win_api!(message_queue::translate_message),
-            ),
             Export::Func(
                 "DispatchMessageA",
                 as_win_api!(message_queue::dispatch_message_a),
