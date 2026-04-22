@@ -21,6 +21,7 @@ use rine_common_comdlg32 as common;
 /// Returns a nonzero value if the user clicks the OK button and successfully selects a file,
 /// or zero if the user cancels the dialog or an error occurs. If the function fails, extended
 /// error information can be retrieved by calling `CommDlgExtendedError`.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetSaveFileNameA(ofn: *mut common::OpenFileNameA) -> i32 {
@@ -51,6 +52,7 @@ pub unsafe extern "win64" fn GetSaveFileNameA(ofn: *mut common::OpenFileNameA) -
 /// Returns a nonzero value if the user clicks the OK button and successfully selects a file,
 /// or zero if the user cancels the dialog or an error occurs. If the function fails, extended
 /// error information can be retrieved by calling `CommDlgExtendedError`.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetSaveFileNameW(ofn: *mut common::OpenFileNameW) -> i32 {
