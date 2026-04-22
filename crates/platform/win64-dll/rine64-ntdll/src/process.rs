@@ -19,6 +19,7 @@ use rine_types::handles::Handle;
 ///
 /// # Note
 /// This is a partial implementation that only supports terminating the current process.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn NtTerminateProcess(

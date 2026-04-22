@@ -15,6 +15,7 @@ use rine_types::strings::UnicodeString;
 /// The `destination_string` must point to a valid `UnicodeString` structure, and `source_string` must point
 /// to a valid null-terminated wide string.
 ///
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RtlInitUnicodeString(dest: *mut UnicodeString, source: *const u16) {
@@ -38,6 +39,7 @@ pub unsafe extern "win64" fn RtlInitUnicodeString(dest: *mut UnicodeString, sour
 /// # Notes
 /// This function fills the provided structure with a spoofed Windows version, which can be configured
 /// via environment variables. The version information is logged for debugging purposes.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RtlGetVersion(info: *mut OsVersionInfoW) -> u32 {
