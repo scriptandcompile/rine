@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/rine",
     "crates/rine32",
+    "crates/rine-dll-attrs",
     "crates/rine-dev-bridge",
     "crates/rine-runtime-core",
     "crates/rine-dlls",
@@ -61,6 +62,7 @@ edition = "2024"
 license = "MIT"
 
 [workspace.dependencies]
+rine-dll-attrs = { path = "crates/rine-dll-attrs" }
 rine-dll-build = { path = "crates/rine-dll-build" }
 rine-dlls = { path = "crates/rine-dlls" }
 rine-types = { path = "crates/rine-types" }

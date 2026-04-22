@@ -6,4 +6,5 @@ license.workspace = true
 description = "DLL plugin trait and registry for rine"
 
 [dependencies]
+rine-dll-attrs = { workspace = true }
 tracing = { workspace = true }
