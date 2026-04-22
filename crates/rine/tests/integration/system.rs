@@ -98,3 +98,13 @@ fn last_error() {
          last_error_thread_local: ok",
     );
 }
+
+#[test]
+fn get_exit_code_process_last_error() {
+    assert_run(
+        "get_exit_code_process_last_error",
+        0,
+        "get_exit_code_process_null_out_error: ok\n\
+         get_exit_code_process_invalid_handle_error: ok",
+    );
+}

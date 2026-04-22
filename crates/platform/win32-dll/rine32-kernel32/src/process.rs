@@ -1,5 +1,5 @@
 use rine_common_kernel32 as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::{ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER, WinBool};
 use rine_types::handles::Handle;
 use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
 use rine_types::strings::{read_cstr, read_wstr};
@@ -172,7 +172,15 @@ pub unsafe extern "stdcall" fn FreeLibrary(_module: u32) -> WinBool {
 ///
 /// # Returns
 /// If the function succeeds, the return value is nonzero (TRUE). If the function fails, the return value is zero (FALSE).
-/// To get extended error information, call `GetLastError`. Currently, out implementation does not set any error codes.
+/// To get extended error information, call `GetLastError`.
+///
+/// # Notes
+/// This implementation currently ignores several Windows-specific behaviors,
+/// including `_process_attrs`, `_thread_attrs`, `_inherit_handles`,
+/// `_creation_flags`, `_current_directory`, and `_startup_info` semantics.
+///
+/// It also does not yet provide complete Win32-accurate `GetLastError`
+/// mappings for every CreateProcess failure mode.
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateProcessA(
@@ -234,7 +242,15 @@ pub unsafe extern "stdcall" fn CreateProcessA(
 ///
 /// # Returns
 /// If the function succeeds, the return value is nonzero (TRUE). If the function fails, the return value is zero (FALSE).
-/// To get extended error information, call `GetLastError`. Currently, out implementation does not set any error codes.
+/// To get extended error information, call `GetLastError`.
+///
+/// # Notes
+/// This implementation currently ignores several Windows-specific behaviors,
+/// including `_process_attrs`, `_thread_attrs`, `_inherit_handles`,
+/// `_creation_flags`, `_current_directory`, and `_startup_info` semantics.
+///
+/// It also does not yet provide complete Win32-accurate `GetLastError`
+/// mappings for every CreateProcess failure mode.
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateProcessW(
@@ -500,10 +516,19 @@ pub unsafe extern "stdcall" fn SetLastError(error_code: u32) {
 /// # Returns
 /// If the function succeeds, the return value is `WinBool::TRUE`.
 /// If the function fails, the return value is `WinBool::FALSE`.
+///
+/// # Notes
+/// We do not currently handle the error case where the handle does not have the
+/// PROCESS_QUERY_INFORMATION or PROCESS_QUERY_LIMITED_INFORMATION access right, and instead just
+/// return `WinBool::FALSE` with ERROR_INVALID_HANDLE.
+///
+/// We also do not currently distinguish all invalid-handle sub-cases with
+/// finer-grained Win32 error codes.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetExitCodeProcess(process: isize, exit_code: *mut u32) -> WinBool {
     if exit_code.is_null() {
+        common::process::set_last_error(ERROR_INVALID_PARAMETER);
         return WinBool::FALSE;
     }
 
@@ -513,6 +538,7 @@ pub unsafe extern "stdcall" fn GetExitCodeProcess(process: isize, exit_code: *mu
         return WinBool::TRUE;
     };
 
+    common::process::set_last_error(ERROR_INVALID_HANDLE);
     warn!(handle = ?handle, "GetExitCodeProcess: invalid handle");
     WinBool::FALSE
 }

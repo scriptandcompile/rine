@@ -63,6 +63,15 @@ pub fn cached_cmd_line() -> &'static CmdLineCache {
 ///
 /// # Returns
 /// WinBool::TRUE on success, WinBool::FALSE on failure (e.g. if the executable is not found or fails to launch).
+///
+/// # Notes
+/// This implementation is intentionally incomplete in a few areas:
+/// - It does not model Windows `SECURITY_ATTRIBUTES`, handle inheritance,
+///   startup-info flags, or creation flags semantics.
+/// - It launches through the host `rine` runtime path rather than executing a
+///   native Windows image directly.
+/// - It does not currently map all failure modes to precise Win32
+///   `GetLastError` values.
 pub unsafe fn create_process(
     exe_path: &str,
     args: &[String],
@@ -320,6 +329,14 @@ pub fn get_current_process() -> isize {
 /// # Returns
 /// If the function succeeds, the return value is nonzero `WinBool::TRUE`.
 /// If the function fails, the return value is zero `WinBool::FALSE`.
+///
+/// # Notes
+/// We do not currently handle the error case where the handle does not have the
+/// PROCESS_QUERY_INFORMATION or PROCESS_QUERY_LIMITED_INFORMATION access right, and instead just
+/// return `WinBool::FALSE` with ERROR_INVALID_HANDLE.
+///
+/// We also do not currently distinguish all invalid-handle sub-cases with
+/// finer-grained Win32 error codes.
 pub fn get_exit_code_process(process_handle: Handle) -> Option<u32> {
     if let Some(rine_types::threading::Waitable::Process(p)) =
         handle_table().get_waitable(process_handle)
