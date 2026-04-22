@@ -307,5 +307,3 @@ fn parse_string_literal(expr: &Expr) -> Result<String, String> {
     };
     Ok(lit.value())
 }
-
-

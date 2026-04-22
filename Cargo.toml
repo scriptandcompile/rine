@@ -27,6 +27,7 @@ members = [
     "crates/platform/win-common/rine-common-ntdll",
     "crates/platform/win-common/rine-common-msvcrt",
     "crates/platform/win-common/rine-common-user32",
+    "crates/platform/win-common/rine-common-ws2_32",
     "crates/platform/win32-dll/rine32-advapi32",
     "crates/platform/win32-dll/rine32-kernel32",
     "crates/platform/win32-dll/rine32-comdlg32",
@@ -34,6 +35,7 @@ members = [
     "crates/platform/win32-dll/rine32-msvcrt",
     "crates/platform/win32-dll/rine32-ntdll",
     "crates/platform/win32-dll/rine32-user32",
+    "crates/platform/win32-dll/rine32-ws2_32",
 ]
 default-members = [
     "crates/rine",
@@ -81,6 +83,7 @@ rine-common-kernel32 = { path = "crates/platform/win-common/rine-common-kernel32
 rine-common-ntdll = { path = "crates/platform/win-common/rine-common-ntdll" }
 rine-common-msvcrt = { path = "crates/platform/win-common/rine-common-msvcrt" }
 rine-common-user32 = { path = "crates/platform/win-common/rine-common-user32" }
+rine-common-ws2_32 = { path = "crates/platform/win-common/rine-common-ws2_32" }
 rine32-advapi32 = { path = "crates/platform/win32-dll/rine32-advapi32" }
 rine32-kernel32 = { path = "crates/platform/win32-dll/rine32-kernel32" }
 rine32-comdlg32 = { path = "crates/platform/win32-dll/rine32-comdlg32" }
@@ -88,6 +91,7 @@ rine32-gdi32 = { path = "crates/platform/win32-dll/rine32-gdi32" }
 rine32-msvcrt = { path = "crates/platform/win32-dll/rine32-msvcrt" }
 rine32-ntdll = { path = "crates/platform/win32-dll/rine32-ntdll" }
 rine32-user32 = { path = "crates/platform/win32-dll/rine32-user32" }
+rine32-ws2_32 = { path = "crates/platform/win32-dll/rine32-ws2_32" }
 goblin = "0.10.5"
 nix = { version = "0.31.2", features = ["mman", "signal", "fs", "process"] }
 libc = "0.2.185"

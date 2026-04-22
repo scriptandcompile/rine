@@ -1,0 +1,10 @@
+[package]
+name = "rine-common-ws2_32"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared architecture-neutral ws2_32 logic for rine"
+
+[dependencies]
+rine-channel = { workspace = true }
+rine-types = { workspace = true }
