@@ -29,6 +29,11 @@ static ENV_BLOCK_W: OnceLock<SyncPtr> = OnceLock::new();
 /// Currently, this implementation returns a pointer to a static block of environment strings that is intended to live for
 /// the duration of the process, so it does not actually allocate or free any memory, and the FreeEnvironmentStringsA
 /// function is a no-op.
+///
+/// # Notes
+/// Missing implementation features:
+/// - The returned block is intentionally leaked for process lifetime instead of reference-counted/freeable per call.
+/// - Pointer ownership validation by `FreeEnvironmentStringsA/W` is not enforced at this layer.
 #[unsafe(no_mangle)]
 pub unsafe fn get_environment_strings() -> *mut u8 {
     ENV_BLOCK_W
@@ -53,6 +58,11 @@ pub unsafe fn get_environment_strings() -> *mut u8 {
 /// Currently, this implementation returns a pointer to a static block of environment strings that is intended to live for
 /// the duration of the process, so it does not actually allocate or free any memory, and the FreeEnvironmentStringsW
 /// function is a no-op.
+///
+/// # Notes
+/// Missing implementation features:
+/// - The returned block is intentionally leaked for process lifetime instead of reference-counted/freeable per call.
+/// - Pointer ownership validation by `FreeEnvironmentStringsA/W` is not enforced at this layer.
 #[unsafe(no_mangle)]
 pub unsafe fn get_environment_strings_w() -> *mut u16 {
     ENV_BLOCK_W

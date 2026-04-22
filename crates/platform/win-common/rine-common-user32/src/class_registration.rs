@@ -18,9 +18,11 @@ use rine_types::windows::*;
 /// * `ATOM` - Atom of the registered class on success, 0 on failure.
 ///  
 /// # Notes
-/// This function is a simplified implementation and does not perform all the checks and operations
-/// that the real RegisterClassExA/W functions do. It also always returns 1 on success for simplicity,
-/// as we do not manage actual atoms.
+/// Missing implementation features:
+/// - No Win32-style atom allocation table is maintained (success always returns 1).
+/// - No detailed validation of class fields/styles is performed.
+/// - No Win32-accurate `GetLastError` mapping is provided on failure.
+/// - Instance/namespace semantics are simplified compared with Windows.
 pub unsafe fn register_class_a(wc: *const WndClassA) -> ATOM {
     if wc.is_null() {
         return 0;
@@ -60,9 +62,11 @@ pub unsafe fn register_class_a(wc: *const WndClassA) -> ATOM {
 /// * `ATOM` - Atom of the registered class on success, 0 on failure.
 ///  
 /// # Notes
-/// This function is a simplified implementation and does not perform all the checks and operations
-/// that the real RegisterClassExA/W functions do. It also always returns 1 on success for simplicity,
-/// as we do not manage actual atoms.
+/// Missing implementation features:
+/// - No Win32-style atom allocation table is maintained (success always returns 1).
+/// - No detailed validation of class fields/styles is performed.
+/// - No Win32-accurate `GetLastError` mapping is provided on failure.
+/// - Instance/namespace semantics are simplified compared with Windows.
 pub unsafe fn register_class_w(wc: *const WndClassW) -> ATOM {
     if wc.is_null() {
         return 0;
@@ -102,9 +106,11 @@ pub unsafe fn register_class_w(wc: *const WndClassW) -> ATOM {
 /// * `ATOM` - Atom of the registered class on success, 0 on failure.
 ///  
 /// # Notes
-/// This function is a simplified implementation and does not perform all the checks and operations
-/// that the real RegisterClassExA/W functions do. It also always returns 1 on success for simplicity,
-/// as we do not manage actual atoms.
+/// Missing implementation features:
+/// - No Win32-style atom allocation table is maintained (success always returns 1).
+/// - No detailed validation of class fields/styles is performed.
+/// - No Win32-accurate `GetLastError` mapping is provided on failure.
+/// - Instance/namespace semantics are simplified compared with Windows.
 pub unsafe fn register_class_ex_a(wc: *const WndClassExA) -> ATOM {
     if wc.is_null() {
         return 0;
@@ -144,9 +150,11 @@ pub unsafe fn register_class_ex_a(wc: *const WndClassExA) -> ATOM {
 /// * `ATOM` - Atom of the registered class on success, 0 on failure.
 ///  
 /// # Notes
-/// This function is a simplified implementation and does not perform all the checks and operations
-/// that the real RegisterClassExA/W functions do. It also always returns 1 on success for simplicity,
-/// as we do not manage actual atoms.
+/// Missing implementation features:
+/// - No Win32-style atom allocation table is maintained (success always returns 1).
+/// - No detailed validation of class fields/styles is performed.
+/// - No Win32-accurate `GetLastError` mapping is provided on failure.
+/// - Instance/namespace semantics are simplified compared with Windows.
 pub unsafe fn register_class_ex_w(wc: *const WndClassExW) -> ATOM {
     if wc.is_null() {
         return 0;

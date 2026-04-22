@@ -109,7 +109,10 @@ pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
 /// If the `cs` pointer is null, the function returns `WinBool::FALSE` and does not perform any operation.
 ///
 /// # Notes
-/// If the critical section was not owned by the calling thread, the behavior is undefined and may result in an error or deadlock.
+/// Missing implementation features:
+/// - No Win32-accurate `GetLastError` mapping is provided for invalid-pointer
+///   and unlock-error cases.
+/// - Error handling does not map pthread failure codes to Win32 behavior.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn LeaveCriticalSection(cs: *mut u8) {

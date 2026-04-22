@@ -160,6 +160,11 @@ pub unsafe extern "win64" fn DeleteFileA(file_name: *const u8) -> WinBool {
 ///
 /// # Returns
 /// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+///
+/// # Notes
+/// Missing implementation features:
+/// - Overlapped/asynchronous I/O is not implemented (`_overlapped` is ignored).
+/// - This implementation does not set `GetLastError` on failure.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ReadFile(
@@ -192,6 +197,11 @@ pub unsafe extern "win64" fn ReadFile(
 ///
 /// # Returns
 /// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+///
+/// # Notes
+/// Missing implementation features:
+/// - Overlapped/asynchronous I/O is not implemented (`_overlapped` is ignored).
+/// - This implementation does not set `GetLastError` on failure.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn WriteFile(

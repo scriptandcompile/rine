@@ -20,6 +20,11 @@ use rine_types::{
 /// # Safety
 /// * `handle` must be a valid file handle returned by CreateFile.
 /// * `buffer` must point to at least `bytes_to_write` bytes of valid memory.
+///
+/// # Notes
+/// Missing implementation features:
+/// - Overlapped/asynchronous I/O is not implemented (`_overlapped` is ignored).
+/// - This implementation does not set `GetLastError` on failure.
 pub unsafe fn write_file(
     handle: Handle,
     buffer: *const u8,
@@ -298,6 +303,11 @@ pub fn get_file_size(handle: Handle) -> Option<u64> {
 /// * `handle` must be a valid file handle returned by `CreateFile`.
 /// * `buffer` must point to at least `bytes_to_read` bytes of valid memory
 /// * The caller must ensure that the handle refers to a file object and not some other type of handle.
+///
+/// # Notes
+/// Missing implementation features:
+/// - Overlapped/asynchronous I/O is not implemented (`_overlapped` is ignored).
+/// - This implementation does not set `GetLastError` on failure.
 pub unsafe fn read_file(
     handle: Handle,
     buffer: *mut u8,

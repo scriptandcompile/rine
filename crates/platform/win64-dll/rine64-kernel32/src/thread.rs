@@ -93,7 +93,11 @@ type ThreadStartRoutine = unsafe extern "win64" fn(usize) -> u32;
 /// The caller can use this handle with other synchronization functions and must close it with `CloseHandle` when done.
 ///
 /// # Notes
-/// Currently, we do not set `GetLastError` to provide more information.
+/// Missing implementation features:
+/// - `CREATE_SUSPENDED` is not supported; the thread starts immediately.
+/// - `_security_attrs` and `_stack_size` semantics are ignored.
+/// - Most creation flags beyond basic launch are not implemented.
+/// - No Win32-accurate `GetLastError` mapping is provided for failure paths.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateThread(
@@ -189,7 +193,8 @@ pub unsafe extern "win64" fn TlsGetValue(tls_index: u32) -> usize {
 /// `WinBool::TRUE` on success, `WinBool::FALSE` on failure (e.g., invalid index).
 ///
 /// # Notes
-/// Currently, we do not set `GetLastError` to provide more information on failure.
+/// Missing implementation features:
+/// - No Win32-accurate `GetLastError` mapping is provided for invalid TLS index failures.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn TlsSetValue(tls_index: u32, value: usize) -> WinBool {
@@ -228,8 +233,11 @@ pub unsafe extern "win64" fn Sleep(milliseconds: u32) {
 /// This value is not a real handle and should only be used with functions that explicitly support it.
 ///
 /// # Notes
-/// Currently, this function always returns the same pseudo-handle value, as we do not have a real handle table entry
-/// for the current thread.
+/// Missing implementation features:
+/// - The pseudo-handle is not currently mapped to a concrete thread entry in
+///   the internal handle table.
+/// - APIs expecting a queryable thread handle may still reject this pseudo-
+///   handle instead of treating it as `GetCurrentThread()`.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetCurrentThread() -> isize {
@@ -270,9 +278,12 @@ pub unsafe extern "win64" fn GetCurrentThreadId() -> u32 {
 /// `WinBool::FALSE` on failure (e.g., invalid handle).
 ///
 /// # Notes
-/// Currently, we do not set `GetLastError` to provide more information on failure.
-/// The caller should also be aware that the exit code may be `STILL_ACTIVE` if the thread is still running,
-/// and should use appropriate synchronization to ensure that the thread has exited if it needs to wait for the final exit code.
+/// Missing implementation features:
+/// - No Win32-accurate `GetLastError` mapping is provided for invalid-handle
+///   or null-output-pointer failures.
+/// - No explicit access-right checks are enforced against per-handle granted
+///   permissions.
+/// - Pseudo-handle semantics (`GetCurrentThread`) are not normalized here.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetExitCodeThread(

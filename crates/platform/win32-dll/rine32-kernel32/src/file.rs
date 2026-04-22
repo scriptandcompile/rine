@@ -191,6 +191,11 @@ pub unsafe extern "stdcall" fn GetFileSize(file: isize, file_size_high: *mut u32
 ///
 /// # Returns
 /// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+///
+/// # Notes
+/// Missing implementation features:
+/// - Overlapped/asynchronous I/O is not implemented (`_overlapped` is ignored).
+/// - This implementation does not set `GetLastError` on failure.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WriteFile(
@@ -222,6 +227,11 @@ pub unsafe extern "stdcall" fn WriteFile(
 ///
 /// # Returns
 /// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+///
+/// # Notes
+/// Missing implementation features:
+/// - Overlapped/asynchronous I/O is not implemented (`_overlapped` is ignored).
+/// - This implementation does not set `GetLastError` on failure.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ReadFile(

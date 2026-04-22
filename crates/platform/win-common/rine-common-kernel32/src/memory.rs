@@ -136,6 +136,9 @@ pub fn heap_alloc(heap_handle: Handle, flags: u32, size: usize) -> *mut u8 {
 /// * If `ptr` is `NULL`, the function does nothing and returns `TRUE`.
 /// * The default process heap cannot be destroyed, and attempting to do so will fail, but this function can still be used
 ///   to free allocations from the default heap.
+/// * Missing implementation features:
+///   * `_flags` semantics are ignored.
+///   * No Win32-accurate `GetLastError` mapping is provided on failure.
 pub unsafe fn heap_free(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> WinBool {
     if ptr.is_null() {
         return WinBool::TRUE;
@@ -294,6 +297,9 @@ pub fn heap_destroy(heap_handle: Handle) -> WinBool {
 ///   and that there are no outstanding allocations from the heap.
 /// * The default process heap cannot be destroyed, and attempting to do so will fail, but this function can
 ///   still be used to query the size of allocations from the default heap.
+/// * Missing implementation features:
+///   * Reserved `flags` validation/behavior is not implemented.
+///   * No Win32-accurate `GetLastError` mapping is provided for invalid handle or pointer cases.
 pub fn heap_size(heap_handle: Handle, _flags: u32, ptr: *const u8) -> usize {
     let result = handle_table().with_heap(heap_handle, |state| {
         let allocs = state.allocations.lock().unwrap();

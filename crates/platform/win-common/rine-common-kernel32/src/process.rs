@@ -66,8 +66,15 @@ pub fn cached_cmd_line() -> &'static CmdLineCache {
 ///
 /// # Notes
 /// This implementation is intentionally incomplete in a few areas:
-/// - It does not model Windows `SECURITY_ATTRIBUTES`, handle inheritance,
-///   startup-info flags, or creation flags semantics.
+/// - It does not model Windows `SECURITY_ATTRIBUTES` for process/thread objects.
+/// - Handle inheritance controls are not implemented (`_inherit_handles` is ignored).
+/// - `dwCreationFlags` behavior is not implemented (for example: suspended start,
+///   process group/new console behavior, priority/debug flags).
+/// - `STARTUPINFOA/W` semantics are not implemented (for example std handle
+///   routing, show-window flags, desktop/title fields).
+/// - `lpCurrentDirectory` is ignored.
+/// - The returned "thread handle" is a process waitable placeholder and not a
+///   distinct primary-thread object/ID.
 /// - It launches through the host `rine` runtime path rather than executing a
 ///   native Windows image directly.
 /// - It does not currently map all failure modes to precise Win32
@@ -234,8 +241,12 @@ pub fn reap_child(
 /// The returned handle can be used in subsequent calls to `GetProcAddress` and `FreeLibrary`.
 ///
 /// # Notes
-/// Currently, our implementation always returns NULL (0) as a placeholder since we do not actually load any
-/// modules in this stub implementation.
+/// Missing implementation features:
+/// - No DLL search-path resolution or module loading is performed.
+/// - No module handle/reference-count tracking is maintained.
+/// - No integration with loader notifications (`DllMain` process/thread attach)
+///   exists.
+/// - Failure paths do not set Win32-accurate `GetLastError` values.
 pub unsafe fn load_library(_file_name: &str) -> u32 {
     0
 }
@@ -261,8 +272,12 @@ pub unsafe fn load_library(_file_name: &str) -> u32 {
 /// If the function fails, the return value is NULL (0). To get extended error information, call `GetLastError`.
 ///
 /// # Notes
-/// Currently, our implementation always returns NULL (0) as a placeholder since we do not actually load any
-/// modules or export any functions in this stub implementation.
+/// Missing implementation features:
+/// - No module-handle validation is performed.
+/// - No export lookup by ANSI name is implemented.
+/// - No export lookup by ordinal is implemented.
+/// - Forwarded-export resolution is not implemented.
+/// - Failure paths do not set Win32-accurate `GetLastError` values.
 pub unsafe fn get_proc_address() -> u32 {
     0
 }
@@ -287,8 +302,11 @@ pub unsafe fn get_proc_address() -> u32 {
 /// To get extended error information, call `GetLastError`.
 ///
 /// # Notes
-/// Currently, our implementation always returns `WinBool::FALSE` as a placeholder,
-/// since we do not actually load any modules in this stub implementation.
+/// Missing implementation features:
+/// - No module-handle validation is performed.
+/// - No module reference-count decrement/unload is implemented.
+/// - No detach notifications (`DllMain` process/thread detach) are issued.
+/// - Failure paths do not set Win32-accurate `GetLastError` values.
 pub fn free_library(_module: u32) -> WinBool {
     tracing::warn!(
         api = "FreeLibrary",
@@ -307,6 +325,13 @@ pub fn free_library(_module: u32) -> WinBool {
 ///
 /// # Returns
 /// The pseudo-handle for the current process, which is currently always -1.
+///
+/// # Notes
+/// Missing implementation features:
+/// - The pseudo-handle is not currently mapped to a concrete process entry in
+///   the internal handle table.
+/// - APIs expecting a queryable process handle may still reject this pseudo-
+///   handle instead of treating it as `GetCurrentProcess()`.
 pub fn get_current_process() -> isize {
     -1
 }
@@ -337,6 +362,11 @@ pub fn get_current_process() -> isize {
 ///
 /// We also do not currently distinguish all invalid-handle sub-cases with
 /// finer-grained Win32 error codes.
+///
+/// Additional missing features:
+/// - No explicit access-right checks are enforced against per-handle granted
+///   permissions.
+/// - Pseudo-handle semantics (`GetCurrentProcess`) are not normalized here.
 pub fn get_exit_code_process(process_handle: Handle) -> Option<u32> {
     if let Some(rine_types::threading::Waitable::Process(p)) =
         handle_table().get_waitable(process_handle)
@@ -380,8 +410,10 @@ pub fn set_last_error(error_code: u32) {
 /// A NULL return value means that there is no current top-level exception handler.
 ///
 /// # Notes
-/// Stub: returns NULL (no previous handler). Exception handling is not
-/// yet implemented.
+/// Missing implementation features:
+/// - No process-wide top-level exception filter is stored.
+/// - The previous filter is not tracked/returned.
+/// - No integration with structured exception handling dispatch exists.
 pub fn set_unhandled_exception_filter(_filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
 ) -> usize {
     tracing::warn!(
@@ -409,6 +441,14 @@ pub fn set_unhandled_exception_filter(_filter: usize, // LPTOP_LEVEL_EXCEPTION_F
 /// # Returns
 /// If `module_name` is NULL, returns 0 as a placeholder for the main executable.
 /// For non-NULL `module_name`, also returns 0 as a placeholder since module lookup is not yet implemented.
+///
+/// # Notes
+/// Missing implementation features:
+/// - `NULL` input does not yet return the actual main image base.
+/// - Name-based module lookup is not implemented.
+/// - Case-insensitive Windows module-name matching is not implemented.
+/// - No module table integration/reference tracking is performed.
+/// - Failure paths do not set Win32-accurate `GetLastError` values.
 pub unsafe fn get_module_handle(_module_name: &str) -> usize {
     0
 }

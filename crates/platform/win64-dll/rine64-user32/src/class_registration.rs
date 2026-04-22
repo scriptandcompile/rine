@@ -17,9 +17,11 @@ use rine_types::windows::*;
 /// * `ATOM` - Atom of the registered class on success, 0 on failure.
 ///  
 /// # Notes
-/// This function is a simplified implementation and does not perform all the checks and operations
-/// that the real RegisterClassExA/W functions do. It also always returns 1 on success for simplicity,
-/// as we do not manage actual atoms.
+/// Missing implementation features:
+/// - No Win32-style atom allocation table is maintained (success always returns 1).
+/// - No detailed validation of class fields/styles is performed.
+/// - No Win32-accurate `GetLastError` mapping is provided on failure.
+/// - Instance/namespace semantics are simplified compared with Windows.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn RegisterClassA(wc: *const WndClassA) -> ATOM {
@@ -40,9 +42,11 @@ pub(crate) unsafe extern "win64" fn RegisterClassA(wc: *const WndClassA) -> ATOM
 /// * Atom of the registered class on success, 0 on failure.
 ///  
 /// # Notes
-/// This function is a simplified implementation and does not perform all the checks and operations
-/// that the real RegisterClassExA/W functions do. It also always returns 1 on success for simplicity,
-/// as we do not manage actual atoms.
+/// Missing implementation features:
+/// - No Win32-style atom allocation table is maintained (success always returns 1).
+/// - No detailed validation of class fields/styles is performed.
+/// - No Win32-accurate `GetLastError` mapping is provided on failure.
+/// - Instance/namespace semantics are simplified compared with Windows.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn RegisterClassW(wc: *const WndClassW) -> ATOM {
@@ -62,10 +66,11 @@ pub(crate) unsafe extern "win64" fn RegisterClassW(wc: *const WndClassW) -> ATOM
 /// * Atom of the registered class on success, 0 on failure.
 ///
 /// # Notes
-/// These are just aliases to the non-ex versions since we don't have any extra logic for the ex versions.
-/// This function is a simplified implementation and does not perform all the checks and operations
-/// that the real RegisterClassExA/W functions do. It also always returns 1 on success for simplicity,
-/// as we do not manage actual atoms.
+/// Missing implementation features:
+/// - No Win32-style atom allocation table is maintained (success always returns 1).
+/// - No detailed validation of class fields/styles is performed.
+/// - No Win32-accurate `GetLastError` mapping is provided on failure.
+/// - Instance/namespace semantics are simplified compared with Windows.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn RegisterClassExA(wc: *const WndClassExA) -> ATOM {

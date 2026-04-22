@@ -26,8 +26,12 @@ use tracing::warn;
 /// The returned handle can be used in subsequent calls to `GetProcAddress` and `FreeLibrary`.
 ///
 /// # Notes
-/// Currently, our implementation always returns NULL (0) as a placeholder since we do not actually load any
-/// modules in this stub implementation.
+/// Missing implementation features:
+/// - No DLL search-path resolution or module loading is performed.
+/// - No module handle/reference-count tracking is maintained.
+/// - No integration with loader notifications (`DllMain` process/thread attach)
+///   exists.
+/// - Failure paths do not set Win32-accurate `GetLastError` values.
 #[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn LoadLibraryA(_file_name: *const u8) -> u32 {
     tracing::warn!(
@@ -67,8 +71,12 @@ pub unsafe extern "stdcall" fn LoadLibraryA(_file_name: *const u8) -> u32 {
 /// The returned handle can be used in subsequent calls to `GetProcAddress` and `FreeLibrary`.
 ///
 /// # Notes
-/// Currently, our implementation always returns NULL (0) as a placeholder since we do not actually load any
-/// modules in this stub implementation.
+/// Missing implementation features:
+/// - No DLL search-path resolution or module loading is performed.
+/// - No module handle/reference-count tracking is maintained.
+/// - No integration with loader notifications (`DllMain` process/thread attach)
+///   exists.
+/// - Failure paths do not set Win32-accurate `GetLastError` values.
 #[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn LoadLibraryW(_file_name: *const u16) -> u32 {
     tracing::warn!(
@@ -109,8 +117,12 @@ pub unsafe extern "stdcall" fn LoadLibraryW(_file_name: *const u16) -> u32 {
 /// If the function fails, the return value is NULL (0). To get extended error information, call `GetLastError`.
 ///
 /// # Notes
-/// Currently, our implementation always returns NULL (0) as a placeholder since we do not actually load any
-/// modules or export any functions in this stub implementation.
+/// Missing implementation features:
+/// - No module-handle validation is performed.
+/// - No export lookup by ANSI name is implemented.
+/// - No export lookup by ordinal is implemented.
+/// - Forwarded-export resolution is not implemented.
+/// - Failure paths do not set Win32-accurate `GetLastError` values.
 #[allow(non_snake_case)]
 pub unsafe extern "stdcall" fn GetProcAddress() -> u32 {
     tracing::warn!(
@@ -141,8 +153,11 @@ pub unsafe extern "stdcall" fn GetProcAddress() -> u32 {
 /// To get extended error information, call `GetLastError`.
 ///
 /// # Notes
-/// Currently, our implementation always returns `WinBool::FALSE` as a placeholder,
-/// since we do not actually load any modules in this stub implementation.
+/// Missing implementation features:
+/// - No module-handle validation is performed.
+/// - No module reference-count decrement/unload is implemented.
+/// - No detach notifications (`DllMain` process/thread detach) are issued.
+/// - Failure paths do not set Win32-accurate `GetLastError` values.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 pub unsafe extern "stdcall" fn FreeLibrary(_module: u32) -> WinBool {
     common::process::free_library(_module)
@@ -175,12 +190,17 @@ pub unsafe extern "stdcall" fn FreeLibrary(_module: u32) -> WinBool {
 /// To get extended error information, call `GetLastError`.
 ///
 /// # Notes
-/// This implementation currently ignores several Windows-specific behaviors,
-/// including `_process_attrs`, `_thread_attrs`, `_inherit_handles`,
-/// `_creation_flags`, `_current_directory`, and `_startup_info` semantics.
-///
-/// It also does not yet provide complete Win32-accurate `GetLastError`
-/// mappings for every CreateProcess failure mode.
+/// Missing implementation features:
+/// - `_process_attrs` and `_thread_attrs` semantics are ignored.
+/// - `_inherit_handles` behavior is ignored.
+/// - `_creation_flags` behavior is not implemented (for example: suspended
+///   start, process group/new console behavior, priority/debug flags).
+/// - `_startup_info` semantics are not implemented (for example std handle
+///   routing, show-window flags, desktop/title fields).
+/// - `_current_directory` is ignored.
+/// - The returned thread handle/ID are placeholders and do not model a
+///   distinct primary-thread object.
+/// - No Win32-accurate `GetLastError` mapping is provided for all failure modes.
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateProcessA(
@@ -245,12 +265,17 @@ pub unsafe extern "stdcall" fn CreateProcessA(
 /// To get extended error information, call `GetLastError`.
 ///
 /// # Notes
-/// This implementation currently ignores several Windows-specific behaviors,
-/// including `_process_attrs`, `_thread_attrs`, `_inherit_handles`,
-/// `_creation_flags`, `_current_directory`, and `_startup_info` semantics.
-///
-/// It also does not yet provide complete Win32-accurate `GetLastError`
-/// mappings for every CreateProcess failure mode.
+/// Missing implementation features:
+/// - `_process_attrs` and `_thread_attrs` semantics are ignored.
+/// - `_inherit_handles` behavior is ignored.
+/// - `_creation_flags` behavior is not implemented (for example: suspended
+///   start, process group/new console behavior, priority/debug flags).
+/// - `_startup_info` semantics are not implemented (for example std handle
+///   routing, show-window flags, desktop/title fields).
+/// - `_current_directory` is ignored.
+/// - The returned thread handle/ID are placeholders and do not model a
+///   distinct primary-thread object.
+/// - No Win32-accurate `GetLastError` mapping is provided for all failure modes.
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateProcessW(
@@ -322,8 +347,10 @@ pub unsafe extern "stdcall" fn ExitProcess(exit_code: u32) -> ! {
 /// A NULL return value means that there is no current top-level exception handler.
 ///
 /// # Notes
-/// Stub: returns NULL (no previous handler). Exception handling is not
-/// yet implemented.
+/// Missing implementation features:
+/// - No process-wide top-level exception filter is stored.
+/// - The previous filter is not tracked/returned.
+/// - No integration with structured exception handling dispatch exists.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetUnhandledExceptionFilter(
@@ -401,6 +428,14 @@ pub unsafe extern "stdcall" fn GetCurrentProcessId() -> u32 {
 ///   When `module_name` is NULL, returns the base address of the main executable.
 ///   For now we return NULL (0) as a placeholder — the loader will need to provide the real image base
 ///   once entry-point execution is wired up.
+///
+/// # Notes
+/// Missing implementation features:
+/// - `NULL` input does not yet return the actual main image base.
+/// - Name-based module lookup is not implemented.
+/// - Case-insensitive Windows module-name matching is not implemented.
+/// - No module table integration/reference tracking is performed.
+/// - Failure paths do not set Win32-accurate `GetLastError` values.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetModuleHandleA(module_name: *const u8) -> usize {
@@ -435,6 +470,14 @@ pub unsafe extern "stdcall" fn GetModuleHandleA(module_name: *const u8) -> usize
 ///   When `module_name` is NULL, returns the base address of the main executable.
 ///   For now we return NULL (0) as a placeholder — the loader will need to provide the real image base
 ///   once entry-point execution is wired up.
+///
+/// # Notes
+/// Missing implementation features:
+/// - `NULL` input does not yet return the actual main image base.
+/// - Name-based module lookup is not implemented.
+/// - Case-insensitive Windows module-name matching is not implemented.
+/// - No module table integration/reference tracking is performed.
+/// - Failure paths do not set Win32-accurate `GetLastError` values.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetModuleHandleW(module_name: *const u16) -> usize {
@@ -461,6 +504,13 @@ pub unsafe extern "stdcall" fn GetModuleHandleW(module_name: *const u16) -> usiz
 ///
 /// # Returns
 /// The pseudo-handle for the current process, which is currently always -1.
+///
+/// # Notes
+/// Missing implementation features:
+/// - The pseudo-handle is not currently mapped to a concrete process entry in
+///   the internal handle table.
+/// - APIs expecting a queryable process handle may still reject this pseudo-
+///   handle instead of treating it as `GetCurrentProcess()`.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCurrentProcess() -> isize {
@@ -524,6 +574,11 @@ pub unsafe extern "stdcall" fn SetLastError(error_code: u32) {
 ///
 /// We also do not currently distinguish all invalid-handle sub-cases with
 /// finer-grained Win32 error codes.
+///
+/// Additional missing features:
+/// - No explicit access-right checks are enforced against per-handle granted
+///   permissions.
+/// - Pseudo-handle semantics (`GetCurrentProcess`) are not normalized here.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetExitCodeProcess(process: isize, exit_code: *mut u32) -> WinBool {

@@ -35,7 +35,11 @@ static NEXT_THREAD_ID: AtomicU32 = AtomicU32::new(1000);
 /// The caller can use this handle with other synchronization functions and must close it with `CloseHandle` when done.
 ///
 /// # Notes
-/// Currently, we do not set `GetLastError` to provide more information.
+/// Missing implementation features:
+/// - `CREATE_SUSPENDED` is not supported; the thread starts immediately.
+/// - `_security_attrs` and `_stack_size` semantics are ignored.
+/// - Most creation flags beyond basic launch are not implemented.
+/// - No Win32-accurate `GetLastError` mapping is provided for failure paths.
 pub fn create_thread<F>(
     start_address: usize,
     parameter: usize,
@@ -186,7 +190,8 @@ pub fn tls_get_value(tls_index: u32) -> usize {
 /// `WinBool::TRUE` on success, `WinBool::FALSE` on failure (e.g., invalid index).
 ///
 /// # Notes
-/// Currently, we do not set `GetLastError` to provide more information on failure.
+/// Missing implementation features:
+/// - No Win32-accurate `GetLastError` mapping is provided for invalid TLS index failures.
 pub fn tls_set_value(tls_index: u32, value: usize) -> WinBool {
     if threading::tls_set_value(tls_index, value) {
         WinBool::TRUE
@@ -220,8 +225,11 @@ pub fn sleep(duration: Duration) {
 /// This value is not a real handle and should only be used with functions that explicitly support it.
 ///
 /// # Notes
-/// Currently, this function always returns the same pseudo-handle value, as we do not have a real handle table entry
-/// for the current thread.
+/// Missing implementation features:
+/// - The pseudo-handle is not currently mapped to a concrete thread entry in
+///   the internal handle table.
+/// - APIs expecting a queryable thread handle may still reject this pseudo-
+///   handle instead of treating it as `GetCurrentThread()`.
 pub fn current_thread() -> isize {
     -2
 }
@@ -259,9 +267,12 @@ pub fn current_thread_id() -> u32 {
 /// `WinBool::FALSE` on failure (e.g., invalid handle).
 ///
 /// # Notes
-/// Currently, we do not set `GetLastError` to provide more information on failure.
-/// The caller should also be aware that the exit code may be `STILL_ACTIVE` if the thread is still running,
-/// and should use appropriate synchronization to ensure that the thread has exited if it needs to wait for the final exit code.
+/// Missing implementation features:
+/// - No Win32-accurate `GetLastError` mapping is provided for invalid-handle
+///   or null-output-pointer failures.
+/// - No explicit access-right checks are enforced against per-handle granted
+///   permissions.
+/// - Pseudo-handle semantics (`GetCurrentThread`) are not normalized here.
 pub fn get_exit_code_thread(handle: Handle, exit_code_out: Option<&mut u32>) -> WinBool {
     let Some(exit_code_out) = exit_code_out else {
         return WinBool::FALSE;

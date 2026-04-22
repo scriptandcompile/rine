@@ -145,6 +145,9 @@ pub unsafe extern "stdcall" fn HeapSize(heap_handle: isize, _flags: u32, ptr: *c
 /// * If `ptr` is `NULL`, the function does nothing and returns `TRUE`.
 /// * The default process heap cannot be destroyed, and attempting to do so will fail, but this function can still be used
 ///   to free allocations from the default heap.
+/// * Missing implementation features:
+///   * `_flags` semantics are ignored.
+///   * No Win32-accurate `GetLastError` mapping is provided on failure.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut u8) -> WinBool {

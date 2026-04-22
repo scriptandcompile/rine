@@ -231,6 +231,11 @@ pub unsafe extern "stdcall" fn GetEnvironmentStringsW() -> *mut u16 {
 ///
 /// # Returns
 /// If the function succeeds, the return value is TRUE.
+///
+/// # Notes
+/// Missing implementation features:
+/// - This function is a no-op and never validates that `_block` points to the cached environment block.
+/// - Failure paths (`NULL`/foreign pointer) are not implemented; it always returns `TRUE`.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FreeEnvironmentStringsA(_block: *mut u8) -> WinBool {
@@ -253,6 +258,11 @@ pub unsafe extern "stdcall" fn FreeEnvironmentStringsA(_block: *mut u8) -> WinBo
 ///
 /// # Returns
 /// If the function succeeds, the return value is TRUE.
+///
+/// # Notes
+/// Missing implementation features:
+/// - This function is a no-op and never validates that `_block` points to the cached environment block.
+/// - Failure paths (`NULL`/foreign pointer) are not implemented; it always returns `TRUE`.
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FreeEnvironmentStringsW(_block: *mut u16) -> WinBool {
