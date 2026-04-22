@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::ffi::{CString, OsStr};
 use std::process::Command;
@@ -18,6 +19,10 @@ pub struct CmdLineCache {
 }
 
 static CMD_LINE: OnceLock<CmdLineCache> = OnceLock::new();
+
+thread_local! {
+    static LAST_ERROR_CODE: Cell<u32> = const { Cell::new(ERROR_SUCCESS) };
+}
 
 pub fn cached_cmd_line() -> &'static CmdLineCache {
     CMD_LINE.get_or_init(|| {
@@ -329,12 +334,18 @@ pub fn get_exit_code_process(process_handle: Handle) -> Option<u32> {
 /// Get the last error code for the current thread.
 ///
 /// # Returns
-/// Currently always returns 0 (ERROR_SUCCESS).
-///
-/// # Note
-/// Stub implementation which always indicates success.
+/// The thread-local last-error value.
 pub fn get_last_error() -> u32 {
-    ERROR_SUCCESS
+    LAST_ERROR_CODE.with(Cell::get)
+}
+
+/// Set the last error code for the current thread.
+///
+/// # Arguments
+/// * `error_code` - The Win32 error code to store as the current thread's
+///   last-error value.
+pub fn set_last_error(error_code: u32) {
+    LAST_ERROR_CODE.with(|last_error_code| last_error_code.set(error_code));
 }
 
 /// Install a top-level exception filter.

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T23:58:06.183916+00:00",
+  "generatedAt": "2026-04-22T04:50:08.842415+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 85,
+      "functionCount": 86,
       "functions": [
         {
           "name": "CloseHandle",
@@ -878,13 +878,13 @@
         {
           "name": "GetLastError",
           "x64": {
-            "status": "stubbed",
-            "symbol": "GetLastError",
+            "status": "implemented",
+            "symbol": "process::GetLastError",
             "source": "kernel32 - process.rs"
           },
           "x86": {
-            "status": "stubbed",
-            "symbol": "GetLastError",
+            "status": "implemented",
+            "symbol": "process::GetLastError",
             "source": "kernel32 - process.rs"
           }
         },
@@ -1237,6 +1237,19 @@
             "status": "partial",
             "symbol": "SetFilePointer",
             "source": "kernel32 - file.rs"
+          }
+        },
+        {
+          "name": "SetLastError",
+          "x64": {
+            "status": "implemented",
+            "symbol": "process::SetLastError",
+            "source": "kernel32 - process.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "process::SetLastError",
+            "source": "kernel32 - process.rs"
           }
         },
         {
@@ -2405,17 +2418,17 @@
     }
   ],
   "totals": {
-    "functions": 181,
+    "functions": 182,
     "x64": {
-      "implemented": 73,
+      "implemented": 75,
       "partial": 85,
-      "stubbed": 23,
+      "stubbed": 22,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 73,
+      "implemented": 75,
       "partial": 85,
-      "stubbed": 23,
+      "stubbed": 22,
       "unimplemented": 0
     }
   }

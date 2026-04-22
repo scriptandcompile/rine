@@ -87,3 +87,14 @@ fn env_ops() {
          get_strings_w: ok",
     );
 }
+
+#[test]
+fn last_error() {
+    assert_run(
+        "last_error",
+        0,
+        "last_error_roundtrip: ok\n\
+         last_error_overwrite: ok\n\
+         last_error_thread_local: ok",
+    );
+}

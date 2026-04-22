@@ -34,6 +34,8 @@ impl DllPlugin for Kernel32Plugin32 {
                 "GetExitCodeProcess",
                 as_win_api!(process::GetExitCodeProcess),
             ),
+            Export::Func("GetLastError", as_win_api!(process::GetLastError)),
+            Export::Func("SetLastError", as_win_api!(process::SetLastError)),
             Export::Func("DeleteFileA", as_win_api!(file::DeleteFileA)),
             Export::Func("DeleteFileW", as_win_api!(file::DeleteFileW)),
             Export::Func("GetFileSize", as_win_api!(file::GetFileSize)),
@@ -127,10 +129,6 @@ impl DllPlugin for Kernel32Plugin32 {
             StubExport {
                 name: "FreeLibrary",
                 func: as_win_api!(process::FreeLibrary),
-            },
-            StubExport {
-                name: "GetLastError",
-                func: as_win_api!(process::GetLastError),
             },
             StubExport {
                 name: "SetUnhandledExceptionFilter",

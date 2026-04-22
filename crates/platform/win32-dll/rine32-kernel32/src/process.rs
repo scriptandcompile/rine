@@ -462,14 +462,24 @@ pub unsafe extern "stdcall" fn GetCurrentProcess() -> isize {
 /// often called after other API functions that may set the error code.
 ///
 /// # Returns
-/// Currently always returns 0 (ERROR_SUCCESS).
-///
-/// # Note
-/// Stub implementation which always indicates success.
+/// The current thread's last-error code.
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetLastError() -> u32 {
     common::process::get_last_error()
+}
+
+/// Set the last error code for the current thread.
+///
+/// # Arguments
+/// * `error_code` - The error code to store for this thread.
+///
+/// # Safety
+/// This function is unsafe because it is an FFI entry point.
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn SetLastError(error_code: u32) {
+    common::process::set_last_error(error_code)
 }
 
 /// Gets the exit code of a process handle.
