@@ -27,6 +27,7 @@ use rine_types::os::IoStatusBlock;
 /// # Note
 /// This is a stub implementation that does not perform any actual I/O.
 /// It simply logs a warning and returns 0 bytes read.
+#[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtReadFile(
@@ -76,6 +77,7 @@ pub unsafe extern "stdcall" fn NtReadFile(
 ///
 /// # Returns
 /// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtWriteFile(
@@ -131,6 +133,7 @@ pub unsafe extern "stdcall" fn NtWriteFile(
 /// This is a simplified implementation: it extracts the path from
 /// `OBJECT_ATTRIBUTES`, translates it, and calls `open(2)`.
 /// Many NT-specific features (EaBuffer, AllocationSize, etc.) are ignored.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtCreateFile(
@@ -174,6 +177,7 @@ pub unsafe extern "stdcall" fn NtCreateFile(
 ///
 /// # Returns
 /// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtClose(object_handle: isize) -> u32 {
@@ -200,6 +204,7 @@ pub unsafe extern "stdcall" fn NtClose(object_handle: isize) -> u32 {
 /// # Notes
 /// Currently supports `FileStandardInformation` (class 5): returns file size, link count, etc.
 /// While, other classes return NOT_IMPLEMENTED.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtQueryInformationFile(

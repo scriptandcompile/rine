@@ -16,6 +16,7 @@ use rine_types::strings::UnicodeString;
 /// # Notes
 /// This is a stub implementation that does not perform any actual initialization.
 /// It simply logs a warning and does not modify the destination string.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RtlInitUnicodeString(
@@ -42,6 +43,7 @@ pub unsafe extern "stdcall" fn RtlInitUnicodeString(
 /// # Notes
 /// This function fills the provided structure with a spoofed Windows version, which can be configured
 /// via environment variables. The version information is logged for debugging purposes.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn RtlGetVersion(info: *mut OsVersionInfoW) -> u32 {
