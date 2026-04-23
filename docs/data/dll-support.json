@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-23T05:06:00.706497+00:00",
+  "generatedAt": "2026-04-23T22:26:30.492237+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1482,7 +1482,7 @@
         {
           "name": "__getmainargs",
           "x64": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "crt_init::__getmainargs",
             "source": "msvcrt - crt_init.rs"
           },
@@ -2472,8 +2472,8 @@
   "totals": {
     "functions": 186,
     "x64": {
-      "implemented": 80,
-      "partial": 84,
+      "implemented": 79,
+      "partial": 85,
       "stubbed": 22,
       "unimplemented": 0
     },

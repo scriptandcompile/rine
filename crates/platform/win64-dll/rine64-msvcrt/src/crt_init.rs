@@ -10,7 +10,12 @@ use rine_common_msvcrt::{cached_main_args, run_initterm, run_initterm_e};
 ///
 /// # Safety
 /// All pointer arguments must be valid for writes or null.
-#[rine_dlls::implemented]
+///
+/// # Notes
+/// The `_do_wildcard` and `_start_info` parameters are currently ignored, as wildcard expansion
+/// is not implemented and no special startup information is needed.
+/// They are included in the signature for compatibility with the expected CRT function signature.
+#[rine_dlls::partial]
 pub unsafe extern "win64" fn __getmainargs(
     p_argc: *mut i32,
     p_argv: *mut *mut *mut i8,

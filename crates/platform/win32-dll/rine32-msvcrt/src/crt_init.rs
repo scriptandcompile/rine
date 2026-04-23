@@ -13,6 +13,11 @@ use rine_common_msvcrt::{cached_main_args, run_initterm, run_initterm_e};
 ///
 /// # Returns
 /// Returns 0 on success, or a non-zero error code on failure (currently always returns 0).
+///
+/// # Notes
+/// The `_do_wildcard` and `_start_info` parameters are currently ignored, as wildcard expansion
+/// is not implemented and no special startup information is needed.
+/// They are included in the signature for compatibility with the expected CRT function signature.
 #[rine_dlls::partial]
 pub unsafe extern "C" fn __getmainargs(
     p_argc: *mut i32,
