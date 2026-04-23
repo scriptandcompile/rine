@@ -16,6 +16,7 @@ use rine_types::windows::Rect;
 ///
 /// # Returns
 /// A handle to the compatible memory DC, or 0 if the function fails.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn CreateCompatibleDC(_hdc: usize) -> usize {
@@ -35,6 +36,7 @@ pub(crate) unsafe extern "win64" fn CreateCompatibleDC(_hdc: usize) -> usize {
 /// # Returns
 /// Returns `WinBool::TRUE` if the DC was successfully deleted,
 /// or `WinBool::FALSE` if the handle was invalid or if any selected objects are still in use.///
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn DeleteDC(hdc: usize) -> WinBool {
@@ -58,6 +60,7 @@ pub(crate) unsafe extern "win64" fn DeleteDC(hdc: usize) -> WinBool {
 /// # Returns
 /// A handle to the compatible bitmap, or 0 if the function fails
 /// (e.g., if the dimensions are invalid or if there are insufficient resources to create the bitmap).
+#[rine_dlls::partial]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "win64" fn CreateCompatibleBitmap(
@@ -80,6 +83,7 @@ pub(crate) unsafe extern "win64" fn CreateCompatibleBitmap(
 ///
 /// # Returns
 /// A handle to the solid brush, or 0 if the function fails.
+#[rine_dlls::partial]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "win64" fn CreateSolidBrush(color: u32) -> usize {
@@ -115,6 +119,7 @@ pub(crate) unsafe extern "win64" fn CreateSolidBrush(color: u32) -> usize {
 ///
 /// # Returns
 /// A handle to the logical pen, or 0 if the function fails.
+#[rine_dlls::partial]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "win64" fn CreatePen(_style: i32, _width: i32, color: u32) -> usize {
@@ -142,6 +147,7 @@ pub(crate) unsafe extern "win64" fn CreatePen(_style: i32, _width: i32, color: u
 /// # Returns
 /// The return value is a handle to the object being replaced, or 0 if there was no previous object of the same type selected in the DC.
 /// If the function fails (e.g., if the handles are invalid), the return value is also 0.
+#[rine_dlls::partial]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "win64" fn SelectObject(hdc: usize, object: usize) -> usize {
@@ -168,8 +174,10 @@ pub(crate) unsafe extern "win64" fn SelectObject(hdc: usize, object: usize) -> u
 /// # Returns
 /// The function will return `WinBool::FALSE` if the object is currently selected into any device context (DC), including the one it was
 /// created with, to prevent resource leaks and undefined behavior.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn DeleteObject(object: usize) -> WinBool {
+pub unsafe extern "win64" fn DeleteObject(object: usize) -> WinBool {
     unsafe { common::delete_object(object) }
 }
 
@@ -213,6 +221,7 @@ pub(crate) unsafe extern "win64" fn DeleteObject(object: usize) -> WinBool {
 ///
 /// # Returns
 /// The function returns `WinBool::TRUE` if the operation succeeded, or `WinBool::FALSE` if it failed.
+#[rine_dlls::partial]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "win64" fn BitBlt(
@@ -261,8 +270,10 @@ pub(crate) unsafe extern "win64" fn BitBlt(
 ///
 /// # Returns
 /// Returns `WinBool::TRUE` if the function succeeds, or `WinBool::FALSE` if it fails.
+#[rine_dlls::implemented]
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn TextOutA(
+pub unsafe extern "win64" fn TextOutA(
     hdc: usize,
     x: i32,
     y: i32,
@@ -297,8 +308,10 @@ pub(crate) unsafe extern "win64" fn TextOutA(
 ///
 /// # Returns
 /// Returns `WinBool::TRUE` if the function succeeds, or `WinBool::FALSE` if it fails.
+#[rine_dlls::implemented]
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn TextOutW(
+pub unsafe extern "win64" fn TextOutW(
     hdc: usize,
     x: i32,
     y: i32,
