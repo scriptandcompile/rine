@@ -22,6 +22,7 @@ use rine_types::windows::*;
 /// - No detailed validation of class fields/styles is performed.
 /// - No Win32-accurate `GetLastError` mapping is provided on failure.
 /// - Instance/namespace semantics are simplified compared with Windows.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn RegisterClassA(wc: *const WndClassA) -> ATOM {
@@ -47,6 +48,7 @@ pub(crate) unsafe extern "win64" fn RegisterClassA(wc: *const WndClassA) -> ATOM
 /// - No detailed validation of class fields/styles is performed.
 /// - No Win32-accurate `GetLastError` mapping is provided on failure.
 /// - Instance/namespace semantics are simplified compared with Windows.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn RegisterClassW(wc: *const WndClassW) -> ATOM {
@@ -71,6 +73,7 @@ pub(crate) unsafe extern "win64" fn RegisterClassW(wc: *const WndClassW) -> ATOM
 /// - No detailed validation of class fields/styles is performed.
 /// - No Win32-accurate `GetLastError` mapping is provided on failure.
 /// - Instance/namespace semantics are simplified compared with Windows.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn RegisterClassExA(wc: *const WndClassExA) -> ATOM {
@@ -91,6 +94,7 @@ pub(crate) unsafe extern "win64" fn RegisterClassExA(wc: *const WndClassExA) -> 
 ///
 /// # Returns
 /// `WinBool::TRUE` if the class was found and unregistered, `WinBool::FALSE` if the class was not found.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn RegisterClassExW(wc: *const WndClassExW) -> ATOM {
@@ -111,6 +115,7 @@ pub(crate) unsafe extern "win64" fn RegisterClassExW(wc: *const WndClassExW) -> 
 ///
 /// # Returns
 /// `WinBool::TRUE` if the class was found and unregistered, `WinBool::FALSE` if the class was not found.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn UnregisterClassA(
@@ -135,6 +140,7 @@ pub(crate) unsafe extern "win64" fn UnregisterClassA(
 ///
 /// # Returns
 /// `WinBool::TRUE` if the class was found and unregistered, `WinBool::FALSE` if the class was not found.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn UnregisterClassW(

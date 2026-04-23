@@ -17,6 +17,7 @@ use rine_types::strings::{read_cstr, read_wstr};
 ///
 /// # Notes
 /// Currently, this function does not perform any access checks on the window handle (HWND).
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn SetWindowTextA(hwnd: usize, text: *const u8) -> WinBool {
@@ -38,6 +39,7 @@ pub(crate) unsafe extern "win64" fn SetWindowTextA(hwnd: usize, text: *const u8)
 ///
 /// # Notes
 /// Currently, this function does not perform any access checks on the window handle (HWND).
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn SetWindowTextW(hwnd: usize, text: *const u16) -> WinBool {
@@ -63,6 +65,7 @@ pub(crate) unsafe extern "win64" fn SetWindowTextW(hwnd: usize, text: *const u16
 /// # Notes
 /// Currently, this function does not perform any access checks on the window handle (HWND).
 /// This function should write an error to `GetLastError()` if the HWND is not found, but this is not yet implemented.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn GetWindowTextA(
@@ -92,6 +95,7 @@ pub(crate) unsafe extern "win64" fn GetWindowTextA(
 /// # Notes
 /// Currently, this function does not perform any access checks on the window handle (HWND).
 /// This function should write an error to `GetLastError()` if the HWND is not found, but this is not yet implemented.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn GetWindowTextW(
@@ -116,6 +120,7 @@ pub(crate) unsafe extern "win64" fn GetWindowTextW(
 /// # Notes
 /// Currently, this function does not perform any access checks on the window handle (HWND).
 /// This function should write an error to `GetLastError()` if the HWND is not found, but this is not yet implemented.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn GetWindowTextLengthA(hwnd: usize) -> i32 {
@@ -136,6 +141,7 @@ pub(crate) unsafe extern "win64" fn GetWindowTextLengthA(hwnd: usize) -> i32 {
 /// # Notes
 /// Currently, this function does not perform any access checks on the window handle (HWND).
 /// This function should write an error to `GetLastError()` if the HWND is not found, but this is not yet implemented.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "win64" fn GetWindowTextLengthW(hwnd: usize) -> i32 {
