@@ -34,6 +34,7 @@ use rine_types::windows::*;
 /// window creation scenarios and would require additional infrastructure to support properly.
 /// On error the `GetLastError` code should be set to indicate the reason for failure, such as `ERROR_CLASS_NOT_FOUND`
 /// if the specified class name does not exist. Currently, we do not set `GetLastError`.
+#[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "stdcall" fn CreateWindowExA(
@@ -96,6 +97,7 @@ pub(crate) unsafe extern "stdcall" fn CreateWindowExA(
 /// window creation scenarios and would require additional infrastructure to support properly.
 /// On error the `GetLastError` code should be set to indicate the reason for failure, such as `ERROR_CLASS_NOT_FOUND`
 /// if the specified class name does not exist. Currently, we do not set `GetLastError`.
+#[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "stdcall" fn CreateWindowExW(
@@ -151,6 +153,7 @@ pub(crate) unsafe extern "stdcall" fn CreateWindowExW(
 /// On error the `GetLastError` code should be set to indicate the reason for failure, such as
 /// `ERROR_INVALID_WINDOW_HANDLE` if the specified handle does not correspond to a valid window.
 /// Currently, we do not set `GetLastError`.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "stdcall" fn DestroyWindow(hwnd: usize) -> i32 {
@@ -182,6 +185,7 @@ pub(crate) unsafe extern "stdcall" fn DestroyWindow(hwnd: usize) -> i32 {
 ///
 /// # Notes
 /// Currently, we do not set `GetLastError`, so there is no way to distinguish between these cases.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "stdcall" fn ShowWindow(hwnd: usize, cmd_show: i32) -> WinBool {
@@ -202,6 +206,7 @@ pub(crate) unsafe extern "stdcall" fn ShowWindow(hwnd: usize, cmd_show: i32) -> 
 ///
 /// # Returns
 /// `WinBool::TRUE` always (UpdateWindow is a notification, not a query).
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "stdcall" fn UpdateWindow(hwnd: usize) -> WinBool {
