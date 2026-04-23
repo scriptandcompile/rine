@@ -303,6 +303,7 @@ pub unsafe extern "win64" fn RegSetValueExW(
 /// # Returns
 /// Returns `ERROR_SUCCESS` if the function succeeds, or `ERROR_INVALID_HANDLE` if the handle is invalid or refers to a
 /// predefined root key.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCloseKey(hkey: isize) -> u32 {
