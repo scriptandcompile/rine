@@ -12,6 +12,7 @@ use rine_types::handles::Handle;
 ///
 /// # Returns
 /// A handle to the default process heap. This handle is valid for the lifetime of the process and should not be closed by the caller.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetProcessHeap() -> isize {
@@ -35,6 +36,7 @@ pub unsafe extern "win64" fn GetProcessHeap() -> isize {
 /// # Note
 /// The default process heap returned by GetProcessHeap cannot be created or destroyed using
 /// HeapCreate or HeapDestroy, and attempting to do so will fail.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn HeapCreate(
@@ -64,6 +66,7 @@ pub unsafe extern "win64" fn HeapCreate(
 /// # Note
 /// The default process heap cannot be destroyed, and attempting to do so will fail.
 /// This does not free any outstanding allocations from the heap; it is the caller's responsibility to free them first.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
@@ -91,6 +94,7 @@ pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
 ///
 /// # Note
 /// * `HEAP_NO_SERIALIZE` (0x00000001) and `HEAP_GENERATE_EXCEPTIONS` (0x00000004) are accepted but have no effect in this implementation.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn HeapAlloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
@@ -127,6 +131,7 @@ pub unsafe extern "win64" fn HeapAlloc(heap_handle: isize, flags: u32, size: usi
 /// * Missing implementation features:
 ///   * `_flags` semantics are ignored.
 ///   * No Win32-accurate `GetLastError` mapping is provided on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut u8) -> WinBool {
@@ -159,6 +164,7 @@ pub unsafe extern "win64" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut
 /// If the function succeeds, the return value is a pointer to the reallocated memory block, which may be the same
 /// as `ptr` or a different location. If the function fails, the return value is `NULL`, and extended error
 /// information should be (but currently cannot) be obtained by calling GetLastError.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn HeapReAlloc(
@@ -191,6 +197,7 @@ pub unsafe extern "win64" fn HeapReAlloc(
 ///
 /// # Returns
 /// The size of the allocated block in bytes, or `-1` (usize::MAX) if the handle or pointer is invalid.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn HeapSize(heap_handle: isize, _flags: u32, ptr: *const u8) -> usize {
@@ -228,6 +235,7 @@ pub unsafe extern "win64" fn HeapSize(heap_handle: isize, _flags: u32, ptr: *con
 /// # Returns
 /// If the function succeeds, the return value is a pointer to the allocated memory region. If the function fails, the return value is
 /// `NULL`, and extended error information should be (but currently cannot be) obtained by calling GetLastError.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn VirtualAlloc(
@@ -273,6 +281,7 @@ pub unsafe extern "win64" fn VirtualAlloc(
 /// If the function succeeds, the return value is `TRUE`.
 /// If the function fails, the return value is `FALSE`, and extended error information should
 /// be (but currently cannot be) obtained by calling GetLastError.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn VirtualFree(
@@ -322,6 +331,7 @@ pub unsafe extern "win64" fn VirtualFree(
 /// # Returns
 /// If the function succeeds, the return value is `TRUE`. If the function fails, the return value is `FALSE`, and extended
 /// error information should be (but currently cannot be) obtained by calling GetLastError.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn VirtualProtect(
@@ -358,6 +368,7 @@ pub unsafe extern "win64" fn VirtualProtect(
 /// The function returns the size of the information returned in bytes, or `-1` (usize::MAX) if the specified address is
 /// invalid or if the buffer is too small to receive the information.
 /// Extended error information should be (but currently cannot be) obtained by calling GetLastError.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn VirtualQuery(

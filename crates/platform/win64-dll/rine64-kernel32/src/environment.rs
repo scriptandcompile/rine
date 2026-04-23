@@ -27,6 +27,7 @@ use rine_types::errors::WinBool;
 /// If the function fails for any other reason, the return value is zero.
 /// To get extended error information, call GetLastError.
 /// Currently, this implementation does not set GetLastError on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentVariableA(
@@ -58,6 +59,7 @@ pub unsafe extern "win64" fn GetEnvironmentVariableA(
 /// If the function fails for any other reason, the return value is zero.
 /// To get extended error information, call GetLastError.
 /// Currently, this implementation does not set GetLastError on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentVariableW(
@@ -82,6 +84,7 @@ pub unsafe extern "win64" fn GetEnvironmentVariableW(
 /// # Returns
 /// If the function succeeds, the return value is TRUE.
 /// If the function fails, the return value is FALSE.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetEnvironmentVariableA(name: *const u8, value: *const u8) -> WinBool {
@@ -102,6 +105,7 @@ pub unsafe extern "win64" fn SetEnvironmentVariableA(name: *const u8, value: *co
 /// # Returns
 /// If the function succeeds, the return value is TRUE.
 /// If the function fails, the return value is FALSE.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetEnvironmentVariableW(
@@ -135,6 +139,7 @@ pub unsafe extern "win64" fn SetEnvironmentVariableW(
 /// If the function fails for any other reason, the return value is zero.
 /// To get extended error information, call GetLastError.
 /// Currently, this implementation does not set GetLastError on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ExpandEnvironmentStringsA(
@@ -169,6 +174,7 @@ pub unsafe extern "win64" fn ExpandEnvironmentStringsA(
 /// If the function fails for any other reason, the return value is zero.
 /// To get extended error information, call GetLastError.
 /// Currently, this implementation does not set GetLastError on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ExpandEnvironmentStringsW(
@@ -192,7 +198,8 @@ pub unsafe extern "win64" fn ExpandEnvironmentStringsW(
 /// Currently, this implementation returns a pointer to a static block of environment strings that is intended to live for
 /// the duration of the process, so it does not actually allocate or free any memory, and the FreeEnvironmentStringsA
 /// function is a no-op.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentStrings() -> *mut u8 {
     unsafe { common::environment::get_environment_strings() }
@@ -211,6 +218,7 @@ pub unsafe extern "win64" fn GetEnvironmentStrings() -> *mut u8 {
 /// Currently, this implementation returns a pointer to a static block of environment strings that is intended to live for
 /// the duration of the process, so it does not actually allocate or free any memory, and the FreeEnvironmentStringsW
 /// function is a no-op.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentStringsW() -> *mut u16 {
@@ -237,6 +245,7 @@ pub unsafe extern "win64" fn GetEnvironmentStringsW() -> *mut u16 {
 /// Missing implementation features:
 /// - This function is a no-op and never validates that `_block` points to the cached environment block.
 /// - Failure paths (`NULL`/foreign pointer) are not implemented; it always returns `TRUE`.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FreeEnvironmentStringsA(_block: *mut u8) -> WinBool {
@@ -264,6 +273,7 @@ pub unsafe extern "win64" fn FreeEnvironmentStringsA(_block: *mut u8) -> WinBool
 /// Missing implementation features:
 /// - This function is a no-op and never validates that `_block` points to the cached environment block.
 /// - Failure paths (`NULL`/foreign pointer) are not implemented; it always returns `TRUE`.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FreeEnvironmentStringsW(_block: *mut u16) -> WinBool {

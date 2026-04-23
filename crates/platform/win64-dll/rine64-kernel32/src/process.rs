@@ -36,7 +36,9 @@ use tracing::warn;
 /// - No integration with loader notifications (`DllMain` process/thread attach)
 ///   exists.
 /// - Failure paths do not set Win32-accurate `GetLastError` values.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn LoadLibraryA(_file_name: *const u8) -> u32 {
     tracing::warn!(
         api = "LoadLibraryA",
@@ -81,7 +83,9 @@ pub unsafe extern "win64" fn LoadLibraryA(_file_name: *const u8) -> u32 {
 /// - No integration with loader notifications (`DllMain` process/thread attach)
 ///   exists.
 /// - Failure paths do not set Win32-accurate `GetLastError` values.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn LoadLibraryW(_file_name: *const u16) -> u32 {
     tracing::warn!(
         api = "LoadLibraryW",
@@ -127,7 +131,9 @@ pub unsafe extern "win64" fn LoadLibraryW(_file_name: *const u16) -> u32 {
 /// - No export lookup by ordinal is implemented.
 /// - Forwarded-export resolution is not implemented.
 /// - Failure paths do not set Win32-accurate `GetLastError` values.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetProcAddress() -> u32 {
     tracing::warn!(
         api = "GetProcAddress",
@@ -148,6 +154,7 @@ pub unsafe extern "win64" fn GetProcAddress() -> u32 {
 ///
 /// # Safety
 /// Does not return.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ExitProcess(exit_code: u32) -> ! {
@@ -182,7 +189,9 @@ pub unsafe extern "win64" fn ExitProcess(exit_code: u32) -> ! {
 /// - No module reference-count decrement/unload is implemented.
 /// - No detach notifications (`DllMain` process/thread detach) are issued.
 /// - Failure paths do not set Win32-accurate `GetLastError` values.
-#[allow(non_snake_case, clippy::missing_safety_doc)]
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FreeLibrary(_module: u32) -> WinBool {
     common::process::free_library(_module)
 }
@@ -195,6 +204,7 @@ pub unsafe extern "win64" fn FreeLibrary(_module: u32) -> WinBool {
 /// # Returns
 /// A pointer to a null-terminated ANSI string containing the command line for the current process.
 /// The caller should not attempt to modify the contents of the string, as it may be shared and is not owned by the caller.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetCommandLineA() -> *const u8 {
@@ -209,6 +219,7 @@ pub unsafe extern "win64" fn GetCommandLineA() -> *const u8 {
 /// # Returns
 /// A pointer to a null-terminated UTF-16LE string containing the command line for the current process.
 /// The caller should not attempt to modify the contents of the string, as it may be shared and is not owned by the caller.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetCommandLineW() -> *const u16 {
@@ -240,6 +251,7 @@ pub unsafe extern "win64" fn GetCommandLineW() -> *const u16 {
 /// - Case-insensitive Windows module-name matching is not implemented.
 /// - No module table integration/reference tracking is performed.
 /// - Failure paths do not set Win32-accurate `GetLastError` values.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetModuleHandleA(module_name: *const u8) -> usize {
@@ -282,6 +294,7 @@ pub unsafe extern "win64" fn GetModuleHandleA(module_name: *const u8) -> usize {
 /// - Case-insensitive Windows module-name matching is not implemented.
 /// - No module table integration/reference tracking is performed.
 /// - Failure paths do not set Win32-accurate `GetLastError` values.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetModuleHandleW(module_name: *const u16) -> usize {
@@ -309,6 +322,7 @@ pub unsafe extern "win64" fn GetModuleHandleW(module_name: *const u16) -> usize 
 ///
 /// # Returns
 /// The current thread's last-error code.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetLastError() -> u32 {
@@ -322,6 +336,7 @@ pub unsafe extern "win64" fn GetLastError() -> u32 {
 ///
 /// # Safety
 /// This function is unsafe because it is an FFI entry point.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetLastError(error_code: u32) {
@@ -347,6 +362,7 @@ pub unsafe extern "win64" fn SetLastError(error_code: u32) {
 /// - No process-wide top-level exception filter is stored.
 /// - The previous filter is not tracked/returned.
 /// - No integration with structured exception handling dispatch exists.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetUnhandledExceptionFilter(
@@ -397,6 +413,7 @@ pub unsafe extern "win64" fn SetUnhandledExceptionFilter(
 /// - The returned thread handle/ID are placeholders and do not model a
 ///   distinct primary-thread object.
 /// - No Win32-accurate `GetLastError` mapping is provided for all failure modes.
+#[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateProcessA(
@@ -472,6 +489,7 @@ pub unsafe extern "win64" fn CreateProcessA(
 /// - The returned thread handle/ID are placeholders and do not model a
 ///   distinct primary-thread object.
 /// - No Win32-accurate `GetLastError` mapping is provided for all failure modes.
+#[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateProcessW(
@@ -531,6 +549,7 @@ pub unsafe extern "win64" fn CreateProcessW(
 /// # Note
 /// Process IDs can be reused by the system after a process terminates, so they should not
 /// be assumed to be unique over time.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetCurrentProcessId() -> u32 {
@@ -553,6 +572,7 @@ pub unsafe extern "win64" fn GetCurrentProcessId() -> u32 {
 ///   the internal handle table.
 /// - APIs expecting a queryable process handle may still reject this pseudo-
 ///   handle instead of treating it as `GetCurrentProcess()`.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetCurrentProcess() -> isize {
@@ -590,6 +610,7 @@ pub unsafe extern "win64" fn GetCurrentProcess() -> isize {
 /// - No explicit access-right checks are enforced against per-handle granted
 ///   permissions.
 /// - Pseudo-handle semantics (`GetCurrentProcess`) are not normalized here.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetExitCodeProcess(process: isize, exit_code: *mut u32) -> WinBool {
