@@ -23,7 +23,7 @@ pub unsafe extern "C" fn exit(code: i32) {
 /// # Notes
 /// A full implementation would also run atexit handlers and C++ destructors registered with the CRT.
 /// Currently, this function only flushes C stdio buffers.
-#[rine_dlls::partial]
+#[rine_dlls::implemented]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn _cexit() {
     unsafe { common::_cexit() };

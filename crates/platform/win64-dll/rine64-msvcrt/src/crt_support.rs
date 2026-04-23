@@ -106,6 +106,7 @@ pub unsafe extern "win64" fn __C_specific_handler(
 /// We return a pointer to a variable in our data cell module..
 /// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
 /// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
+#[rine_dlls::implemented]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _commode() -> *mut i32 {
     commode_ptr()
@@ -132,6 +133,7 @@ pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
 }
 
 /// _fmode — return a pointer to the default file translation mode.
+#[rine_dlls::implemented]
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _fmode() -> *mut i32 {
@@ -142,6 +144,7 @@ pub unsafe extern "win64" fn _fmode() -> *mut i32 {
 ///
 /// Returns a pointer to a NULL pointer (empty environment at CRT level;
 /// the real environment is provided via `__getmainargs`).
+#[rine_dlls::implemented]
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __initenv() -> *const *const i8 {

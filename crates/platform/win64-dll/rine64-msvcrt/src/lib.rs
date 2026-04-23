@@ -1,5 +1,6 @@
 pub mod crt_init;
 pub mod crt_support;
+pub mod data_cells;
 pub mod memory;
 pub mod stdio;
 pub mod stdlib;
@@ -40,10 +41,10 @@ impl DllPlugin for MsvcrtPlugin {
             Export::Func("__p__fmode", as_win_api!(crt_support::__p__fmode)),
             Export::Func("__p__commode", as_win_api!(crt_support::__p__commode)),
             // crt_support — data exports
-            Export::Data("_commode", commode_ptr() as *const ()),
-            Export::Data("_fmode", fmode_ptr() as *const ()),
-            Export::Data("_iob", fake_iob_64_ptr() as *const ()),
-            Export::Data("__initenv", initenv_ptr() as *const ()),
+            Export::Data("_commode", unsafe { data_cells::_commode() as *const () }),
+            Export::Data("_fmode", unsafe { data_cells::_fmode() as *const () }),
+            Export::Data("_iob", unsafe { data_cells::_iob() as *const () }),
+            Export::Data("__initenv", unsafe { data_cells::__initenv() as *const () }),
             // memory
             Export::Func("malloc", as_win_api!(memory::malloc)),
             Export::Func("calloc", as_win_api!(memory::calloc)),
@@ -133,6 +134,11 @@ impl DllPlugin for CrtForwarderPlugin {
             Export::Func("_cexit", as_win_api!(stdlib::_cexit)),
             Export::Func("_initterm", as_win_api!(crt_init::_initterm)),
             Export::Func("_initterm_e", as_win_api!(crt_init::_initterm_e)),
+            // crt_support — data exports
+            Export::Data("_commode", unsafe { data_cells::_commode() as *const () }),
+            Export::Data("_fmode", unsafe { data_cells::_fmode() as *const () }),
+            Export::Data("_iob", unsafe { data_cells::_iob() as *const () }),
+            Export::Data("__initenv", unsafe { data_cells::__initenv() as *const () }),
         ]
     }
 

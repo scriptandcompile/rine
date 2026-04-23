@@ -17,12 +17,13 @@ compile_error!(
     "crate `rine32-msvcrt` must be built for a 32-bit target (for example: --target i686-unknown-linux-gnu)"
 );
 
-mod crt_init;
-mod crt_support;
-mod memory;
-mod stdio;
-mod stdlib;
-mod string;
+pub mod crt_init;
+pub mod crt_support;
+pub mod data_cells;
+pub mod memory;
+pub mod stdio;
+pub mod stdlib;
+pub mod string;
 
 pub struct MsvcrtPlugin32;
 pub struct CrtForwarderPlugin32;
@@ -38,6 +39,7 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("printf", as_win_api!(stdio::printf)),
             Export::Func("puts", as_win_api!(stdio::puts)),
             Export::Func("fwrite", as_win_api!(stdio::fwrite)),
+            Export::Func("_cexit", as_win_api!(stdlib::_cexit)),
             // stdlib
             Export::Func("exit", as_win_api!(stdlib::exit)),
             // crt_init
@@ -53,10 +55,10 @@ impl DllPlugin for MsvcrtPlugin32 {
             Export::Func("__p__fmode", as_win_api!(crt_support::__p__fmode)),
             Export::Func("__p__commode", as_win_api!(crt_support::__p__commode)),
             // crt_support — data exports
-            Export::Data("_commode", commode_ptr() as *const ()),
-            Export::Data("_fmode", fmode_ptr() as *const ()),
-            Export::Data("_iob", fake_iob_32_ptr() as *const ()),
-            Export::Data("__initenv", initenv_ptr() as *const ()),
+            Export::Data("_commode", unsafe { data_cells::_commode() as *const () }),
+            Export::Data("_fmode", unsafe { data_cells::_fmode() as *const () }),
+            Export::Data("_iob", unsafe { data_cells::_iob() as *const () }),
+            Export::Data("__initenv", unsafe { data_cells::__initenv() as *const () }),
             // memory
             Export::Func("malloc", as_win_api!(memory::malloc)),
             Export::Func("calloc", as_win_api!(memory::calloc)),
@@ -104,7 +106,7 @@ impl DllPlugin for MsvcrtPlugin32 {
     fn partials(&self) -> Vec<PartialExport> {
         vec![
             // crt_init
-            PartialFunc {
+            PartialExport {
                 name: "__getmainargs",
                 func: as_win_api!(crt_init::__getmainargs),
             },
@@ -116,10 +118,6 @@ impl DllPlugin for MsvcrtPlugin32 {
             PartialExport {
                 name: "vfprintf",
                 func: as_win_api!(stdio::vfprintf),
-            },
-            PartialExport {
-                name: "_cexit",
-                func: as_win_api!(stdlib::_cexit),
             },
         ]
     }
@@ -145,12 +143,12 @@ impl DllPlugin for CrtForwarderPlugin32 {
 
     fn exports(&self) -> Vec<Export> {
         vec![
-            Export::Func("printf", as_win_api!(printf)),
-            Export::Func("puts", as_win_api!(puts)),
-            Export::Func("exit", as_win_api!(exit)),
-            Export::Func("_cexit", as_win_api!(_cexit)),
-            Export::Func("_initterm", as_win_api!(_initterm)),
-            Export::Func("_initterm_e", as_win_api!(_initterm_e)),
+            Export::Func("printf", as_win_api!(stdio::printf)),
+            Export::Func("puts", as_win_api!(stdio::puts)),
+            Export::Func("exit", as_win_api!(stdlib::exit)),
+            Export::Func("_cexit", as_win_api!(stdlib::_cexit)),
+            Export::Func("_initterm", as_win_api!(crt_init::_initterm)),
+            Export::Func("_initterm_e", as_win_api!(crt_init::_initterm_e)),
         ]
     }
 

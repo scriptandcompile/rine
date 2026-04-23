@@ -25,7 +25,7 @@ use rine_types::windows::*;
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn RegisterClassA(wc: *const WndClassA) -> ATOM {
+pub unsafe extern "stdcall" fn RegisterClassA(wc: *const WndClassA) -> ATOM {
     common::register_class_a(wc)
 }
 
@@ -51,7 +51,7 @@ pub(crate) unsafe extern "stdcall" fn RegisterClassA(wc: *const WndClassA) -> AT
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn RegisterClassW(wc: *const WndClassW) -> ATOM {
+pub unsafe extern "stdcall" fn RegisterClassW(wc: *const WndClassW) -> ATOM {
     common::register_class_w(wc)
 }
 
@@ -76,7 +76,7 @@ pub(crate) unsafe extern "stdcall" fn RegisterClassW(wc: *const WndClassW) -> AT
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn RegisterClassExA(wc: *const WndClassExA) -> ATOM {
+pub unsafe extern "stdcall" fn RegisterClassExA(wc: *const WndClassExA) -> ATOM {
     common::register_class_ex_a(wc)
 }
 
@@ -101,7 +101,7 @@ pub(crate) unsafe extern "stdcall" fn RegisterClassExA(wc: *const WndClassExA) -
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn RegisterClassExW(wc: *const WndClassExW) -> ATOM {
+pub unsafe extern "stdcall" fn RegisterClassExW(wc: *const WndClassExW) -> ATOM {
     common::register_class_ex_w(wc)
 }
 
@@ -122,7 +122,7 @@ pub(crate) unsafe extern "stdcall" fn RegisterClassExW(wc: *const WndClassExW) -
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn UnregisterClassA(
+pub unsafe extern "stdcall" fn UnregisterClassA(
     class_name: *const u8,
     _h_instance: usize,
 ) -> WinBool {
@@ -147,7 +147,7 @@ pub(crate) unsafe extern "stdcall" fn UnregisterClassA(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn UnregisterClassW(
+pub unsafe extern "stdcall" fn UnregisterClassW(
     class_name: *const u16,
     _h_instance: usize,
 ) -> WinBool {

@@ -37,7 +37,7 @@ use rine_types::windows::*;
 #[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn CreateWindowExA(
+pub unsafe extern "stdcall" fn CreateWindowExA(
     ex_style: u32,
     class_name: *const u8,
     window_name: *const u8,
@@ -100,7 +100,7 @@ pub(crate) unsafe extern "stdcall" fn CreateWindowExA(
 #[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn CreateWindowExW(
+pub unsafe extern "stdcall" fn CreateWindowExW(
     ex_style: u32,
     class_name: *const u16,
     window_name: *const u16,
@@ -156,7 +156,7 @@ pub(crate) unsafe extern "stdcall" fn CreateWindowExW(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn DestroyWindow(hwnd: usize) -> i32 {
+pub unsafe extern "stdcall" fn DestroyWindow(hwnd: usize) -> i32 {
     unsafe {
         common::destroy_window(hwnd, |proc_fn, h, msg, wp, lp| {
             let f: extern "stdcall" fn(usize, u32, usize, isize) -> isize =
@@ -188,7 +188,7 @@ pub(crate) unsafe extern "stdcall" fn DestroyWindow(hwnd: usize) -> i32 {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn ShowWindow(hwnd: usize, cmd_show: i32) -> WinBool {
+pub unsafe extern "stdcall" fn ShowWindow(hwnd: usize, cmd_show: i32) -> WinBool {
     common::show_window(hwnd, cmd_show)
 }
 
@@ -209,6 +209,6 @@ pub(crate) unsafe extern "stdcall" fn ShowWindow(hwnd: usize, cmd_show: i32) -> 
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "stdcall" fn UpdateWindow(hwnd: usize) -> WinBool {
+pub unsafe extern "stdcall" fn UpdateWindow(hwnd: usize) -> WinBool {
     common::update_window(hwnd)
 }
