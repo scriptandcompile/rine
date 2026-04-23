@@ -11,7 +11,6 @@ use rine_common_msvcrt::{cached_main_args, run_initterm, run_initterm_e};
 /// # Safety
 /// All pointer arguments must be valid for writes or null.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __getmainargs(
     p_argc: *mut i32,
     p_argv: *mut *mut *mut i8,
@@ -45,7 +44,6 @@ pub unsafe extern "win64" fn __getmainargs(
 /// `start` and `end` must delimit a valid array of function pointers
 /// (or null entries).
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _initterm(
     start: *const Option<unsafe extern "win64" fn()>,
     end: *const Option<unsafe extern "win64" fn()>,
@@ -66,7 +64,6 @@ pub unsafe extern "win64" fn _initterm(
 /// # Safety
 /// Same as `_initterm`.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _initterm_e(
     start: *const Option<unsafe extern "win64" fn() -> i32>,
     end: *const Option<unsafe extern "win64" fn() -> i32>,

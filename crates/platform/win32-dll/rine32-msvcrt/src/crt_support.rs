@@ -1,10 +1,6 @@
 //! MSVCRT CRT support functions: exception handling, signal, locks, file descriptors.
 
-use rine_common_msvcrt::{
-    abort_process, amsg_exit, c_specific_handler_result, commode_ptr, errno_location,
-    fake_iob_32_ptr, fmode_ptr, initenv_ptr, lock, onexit, set_app_type, set_user_math_err,
-    signal_default, unlock,
-};
+use rine_common_msvcrt as common;
 
 /// An internal function used at startup to tell the CRT what type of application we're running (console, GUI, etc).
 ///
@@ -25,10 +21,9 @@ use rine_common_msvcrt::{
 /// we always run as a console application, but a production implementation would use this to configure CRT behavior accordingly.
 /// Currently, this is just a no-op.
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn __set_app_type(app_type: i32) {
     tracing::trace!(app_type, "msvcrt::__set_app_type");
-    set_app_type(app_type);
+    common::set_app_type(app_type);
 }
 
 /// Set a custom math error handler.
@@ -44,10 +39,9 @@ pub unsafe extern "C" fn __set_app_type(app_type: i32) {
 /// # Notes
 /// This is a no-op currently; a production implementation would let the user install a handler for floating-point errors.
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn __setusermatherr(handler: usize) {
     tracing::trace!(handler, "msvcrt::__setusermatherr");
-    set_user_math_err(handler);
+    common::set_user_math_err(handler);
 }
 
 /// Called by the CRT when a SEH exception is thrown.
@@ -73,7 +67,7 @@ pub unsafe extern "C" fn __setusermatherr(handler: usize) {
 /// In a production implementation, this would analyze the exception record and return the appropriate handler code
 /// (1 = continue execution, 0 = call next handler).
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
 pub unsafe extern "C" fn __C_specific_handler(
     _exception_record: usize,
     _establisher_frame: usize,
@@ -81,7 +75,7 @@ pub unsafe extern "C" fn __C_specific_handler(
     _dispatcher_context: usize,
 ) -> i32 {
     tracing::trace!("msvcrt::__C_specific_handler");
-    c_specific_handler_result(
+    common::c_specific_handler_result(
         _exception_record,
         _establisher_frame,
         _context_record,
@@ -103,9 +97,61 @@ pub unsafe extern "C" fn __C_specific_handler(
 /// We return a pointer to a variable in our data cell module..
 /// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
 /// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
-#[unsafe(no_mangle)]
+#[rine_dlls::implemented]
 pub unsafe extern "C" fn _commode() -> *mut i32 {
-    commode_ptr()
+    common::commode_ptr()
+}
+
+/// Gets a pointer to the file mode variable.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an integer variable that controls CRT behavior.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
+///
+/// # Returns
+/// A pointer to the file mode variable, which controls how the CRT handles file buffering and flushing.
+///
+/// # Notes
+/// This is called by CRT implementations to get a pointer to the file mode variable.
+/// We return a pointer to a variable in our data cell module.
+/// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
+/// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
+#[rine_dlls::implemented]
+pub unsafe extern "C" fn _fmode() -> *mut i32 {
+    common::fmode_ptr()
+}
+
+/// Get a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an integer variable that controls CRT behavior.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
+///
+/// # Returns
+/// A pointer to an array of three FILE structures expected by the CRT for standard I/O operations.
+/// The CRT expects this to be exported as `_iob` and used by functions like `printf` and `fprintf`.
+#[rine_dlls::implemented]
+pub unsafe extern "C" fn _iob() -> *mut u8 {
+    common::fake_iob_32_ptr()
+}
+
+/// Get a pointer to the environment variable array.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an array of
+/// C strings representing the environment variables.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access environment variables.
+///
+/// # Returns
+/// Returns a pointer to the environment variable array, which is an array of C strings (char*).
+///
+/// # Notes
+/// Called by the CRT to get the environment variables. We return a pointer to an empty environment
+/// since we provide the real environment via `__getmainargs`.
+/// This should return a pointer to the actual environment variables.
+#[rine_dlls::implemented]
+pub unsafe extern "C" fn __initenv() -> *mut usize {
+    common::initenv_ptr()
 }
 
 /// Gets a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
@@ -120,10 +166,9 @@ pub unsafe extern "C" fn _commode() -> *mut i32 {
 /// The first 3 entries represent stdin (0), stdout (1), stderr (2).
 /// We store a marker fd in the first field of each entry so fwrite/fprintf can identify the stream.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn __iob_func() -> *mut u8 {
     tracing::trace!("msvcrt::__iob_func");
-    fake_iob_32_ptr()
+    common::fake_iob_32_ptr()
 }
 
 /// Register a function to be called at process exit.
@@ -142,10 +187,9 @@ pub unsafe extern "C" fn __iob_func() -> *mut u8 {
 /// Currently, this just returns the function pointer unchanged.
 /// A production implementation would add it to an atexit chain.
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _onexit(func: usize) -> usize {
     tracing::trace!(func, "msvcrt::_onexit");
-    onexit(func)
+    common::onexit(func)
 }
 
 /// Prints an error message and exit the process. Called internally by the CRT when fatal errors occur.
@@ -198,10 +242,9 @@ pub unsafe extern "C" fn _onexit(func: usize) -> usize {
 /// box with the error and possibly allow the user to choose whether to abort or debug.
 /// The `msg_num` argument can be used to determine the specific error that occurred and display an appropriate message.
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _amsg_exit(msg_num: i32) {
     tracing::trace!(msg_num, "msvcrt::_amsg_exit");
-    amsg_exit(msg_num)
+    common::amsg_exit(msg_num)
 }
 
 /// Abort the process immediately without unwinding or running exit handlers.
@@ -213,10 +256,9 @@ pub unsafe extern "C" fn _amsg_exit(msg_num: i32) {
 /// # Notes
 /// This is a stub implementation that just calls `std::process::abort()`
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn abort() {
     tracing::error!("msvcrt::abort");
-    abort_process()
+    common::abort_process()
 }
 
 /// Set a signal handler for the specified signal.
@@ -232,10 +274,9 @@ pub unsafe extern "C" fn abort() {
 /// # Notes
 /// This is a stub implementation that does nothing and returns 0.
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn signal(sig: i32, handler: usize) -> usize {
     tracing::trace!(sig, handler, "msvcrt::signal");
-    signal_default(sig, handler)
+    common::signal_default(sig, handler)
 }
 
 /// Acquire a CRT lock for the specified lock number.
@@ -247,10 +288,9 @@ pub unsafe extern "C" fn signal(sig: i32, handler: usize) -> usize {
 /// This is unsafe because the CRT expects locks to be properly acquired and released to avoid deadlocks and ensure thread safety.
 /// Incorrect usage could lead to undefined behavior when multiple threads access CRT resources.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _lock(locknum: i32) {
     tracing::trace!(locknum, "msvcrt::_lock");
-    lock(locknum);
+    common::lock(locknum);
 }
 
 /// Release a CRT lock for the specified lock number.
@@ -263,10 +303,9 @@ pub unsafe extern "C" fn _lock(locknum: i32) {
 /// Incorrect usage (like unlocking a lock that wasn't acquired) could lead to undefined behavior when multiple
 /// threads access CRT resources.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _unlock(locknum: i32) {
     tracing::trace!(locknum, "msvcrt::_unlock");
-    unlock(locknum);
+    common::unlock(locknum);
 }
 
 /// Get a pointer to the thread-local `errno` value.
@@ -283,10 +322,9 @@ pub unsafe extern "C" fn _unlock(locknum: i32) {
 /// Called by the `errno` macro or by C code that wants to read/write
 /// the error code from the last failed system call.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _errno() -> *mut i32 {
     tracing::trace!("msvcrt::_errno");
-    errno_location()
+    common::errno_location()
 }
 
 /// Get a pointer to the environment variable array.
@@ -304,10 +342,10 @@ pub unsafe extern "C" fn _errno() -> *mut i32 {
 /// since we provide the real environment via `__getmainargs`.
 /// This should return a pointer to the actual environment variables.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
 pub unsafe extern "C" fn __p__environ() -> *const *const *const i8 {
     tracing::trace!("msvcrt::__p__environ");
-    initenv_ptr() as *const *const *const i8
+    common::initenv_ptr() as *const *const *const i8
 }
 
 /// Get a pointer to the file translation mode flag.
@@ -323,10 +361,10 @@ pub unsafe extern "C" fn __p__environ() -> *const *const *const i8 {
 /// Returned pointer points to a mutable `int` that controls whether
 /// text files are opened in binary or text mode by default.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
 pub unsafe extern "C" fn __p__fmode() -> *mut i32 {
     tracing::trace!("msvcrt::__p__fmode");
-    fmode_ptr()
+    common::fmode_ptr()
 }
 
 /// Gets a pointer to the commit mode variable.
@@ -344,8 +382,8 @@ pub unsafe extern "C" fn __p__fmode() -> *mut i32 {
 /// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
 /// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
 pub unsafe extern "C" fn __p__commode() -> *mut i32 {
     tracing::trace!("msvcrt::__p__commode");
-    commode_ptr()
+    common::commode_ptr()
 }

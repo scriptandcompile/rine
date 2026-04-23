@@ -20,7 +20,6 @@ use rine_common_msvcrt as common;
 /// # Returns
 /// A pointer to the allocated memory block, or null if the allocation fails.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn malloc(size: usize) -> *mut c_void {
     unsafe { common::malloc(size) }
 }
@@ -38,7 +37,6 @@ pub unsafe extern "win64" fn malloc(size: usize) -> *mut c_void {
 /// # Returns
 /// A pointer to the allocated memory block, or null if the allocation fails.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn calloc(count: usize, size: usize) -> *mut c_void {
     unsafe { common::calloc(count, size) }
 }
@@ -66,7 +64,6 @@ pub unsafe extern "win64" fn calloc(count: usize, size: usize) -> *mut c_void {
 /// Otherwise, the function attempts to resize the block pointed to by `ptr` to `size` bytes, possibly moving it to a new location.
 /// The contents of the block are preserved up to the lesser of the old and new sizes.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
     unsafe { common::realloc(ptr, size) }
 }
@@ -87,7 +84,6 @@ pub unsafe extern "win64" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_vo
 /// Otherwise, it frees the memory block pointed to by `ptr` and removes it from the allocation tracker,
 /// notifying the dev tools about the deallocation.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn free(ptr: *mut c_void) {
     unsafe { common::free(ptr) }
 }
@@ -116,7 +112,6 @@ pub unsafe extern "win64" fn free(ptr: *mut c_void) {
 /// The caller is responsible for ensuring that the destination buffer has enough space to hold the copied
 /// data and that both pointers are valid for the specified number of bytes.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn memcpy(
     dest: *mut c_void,
     src: *const c_void,
@@ -145,7 +140,6 @@ pub unsafe extern "win64" fn memcpy(
 /// The caller is responsible for ensuring that the destination buffer has enough space to hold the filled data
 /// and that the pointer is valid for the specified number of bytes.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn memset(dest: *mut c_void, c: i32, n: usize) -> *mut c_void {
     unsafe { common::memset(dest, c, n) }
 }

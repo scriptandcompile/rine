@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T04:50:08.842415+00:00",
+  "generatedAt": "2026-04-23T04:47:50.622730+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -597,7 +597,7 @@
             "source": "kernel32 - file.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "FindClose",
             "source": "kernel32 - file.rs"
           }
@@ -1487,7 +1487,7 @@
             "source": "msvcrt - crt_init.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "__getmainargs",
             "source": "msvcrt - crt_init.rs"
           }
@@ -1501,7 +1501,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "__iob_func",
+            "symbol": "crt_support::__iob_func",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1527,7 +1527,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "__p__environ",
+            "symbol": "crt_support::__p__environ",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1540,7 +1540,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "__p__fmode",
+            "symbol": "crt_support::__p__fmode",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1586,13 +1586,13 @@
         {
           "name": "_cexit",
           "x64": {
-            "status": "partial",
+            "status": "implemented",
             "symbol": "stdlib::_cexit",
             "source": "msvcrt - stdlib.rs"
           },
           "x86": {
-            "status": "partial",
-            "symbol": "_cexit",
+            "status": "implemented",
+            "symbol": "stdlib::_cexit",
             "source": "msvcrt - stdlib.rs"
           }
         },
@@ -1605,7 +1605,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "_errno",
+            "symbol": "crt_support::_errno",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1618,7 +1618,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "_initterm",
+            "symbol": "crt_init::_initterm",
             "source": "msvcrt - crt_init.rs"
           }
         },
@@ -1631,7 +1631,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "_initterm_e",
+            "symbol": "crt_init::_initterm_e",
             "source": "msvcrt - crt_init.rs"
           }
         },
@@ -1644,7 +1644,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "_lock",
+            "symbol": "crt_support::_lock",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1670,7 +1670,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "_unlock",
+            "symbol": "crt_support::_unlock",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1683,7 +1683,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "abort",
+            "symbol": "crt_support::abort",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1696,7 +1696,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "calloc",
+            "symbol": "memory::calloc",
             "source": "msvcrt - memory.rs"
           }
         },
@@ -1709,7 +1709,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "exit",
+            "symbol": "stdlib::exit",
             "source": "msvcrt - stdlib.rs"
           }
         },
@@ -1735,7 +1735,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "free",
+            "symbol": "memory::free",
             "source": "msvcrt - memory.rs"
           }
         },
@@ -1748,7 +1748,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "fwrite",
+            "symbol": "stdio::fwrite",
             "source": "msvcrt - stdio.rs"
           }
         },
@@ -1761,7 +1761,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "malloc",
+            "symbol": "memory::malloc",
             "source": "msvcrt - memory.rs"
           }
         },
@@ -1774,7 +1774,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "memcpy",
+            "symbol": "memory::memcpy",
             "source": "msvcrt - memory.rs"
           }
         },
@@ -1787,7 +1787,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "memset",
+            "symbol": "memory::memset",
             "source": "msvcrt - memory.rs"
           }
         },
@@ -1800,7 +1800,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "printf",
+            "symbol": "stdio::printf",
             "source": "msvcrt - stdio.rs"
           }
         },
@@ -1813,7 +1813,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "puts",
+            "symbol": "stdio::puts",
             "source": "msvcrt - stdio.rs"
           }
         },
@@ -1826,7 +1826,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "realloc",
+            "symbol": "memory::realloc",
             "source": "msvcrt - memory.rs"
           }
         },
@@ -1852,7 +1852,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "strcmp",
+            "symbol": "string::strcmp",
             "source": "msvcrt - string.rs"
           }
         },
@@ -1865,7 +1865,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "strlen",
+            "symbol": "string::strlen",
             "source": "msvcrt - string.rs"
           }
         },
@@ -1878,7 +1878,7 @@
           },
           "x86": {
             "status": "implemented",
-            "symbol": "strncmp",
+            "symbol": "string::strncmp",
             "source": "msvcrt - string.rs"
           }
         },
@@ -2420,15 +2420,15 @@
   "totals": {
     "functions": 182,
     "x64": {
-      "implemented": 75,
-      "partial": 85,
+      "implemented": 76,
+      "partial": 84,
       "stubbed": 22,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 75,
-      "partial": 85,
-      "stubbed": 22,
+      "partial": 86,
+      "stubbed": 21,
       "unimplemented": 0
     }
   }

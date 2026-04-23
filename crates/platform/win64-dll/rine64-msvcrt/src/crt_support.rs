@@ -28,7 +28,6 @@ use rine_common_msvcrt::{
 /// we always run as a console application, but a production implementation would use this to configure CRT behavior accordingly.
 /// Currently, this is just a no-op.
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __set_app_type(app_type: i32) {
     tracing::trace!("msvcrt::__set_app_type({app_type})");
     set_app_type(app_type);
@@ -47,7 +46,6 @@ pub unsafe extern "win64" fn __set_app_type(app_type: i32) {
 /// # Notes
 /// This is a no-op currently; a production implementation would let the user install a handler for floating-point errors.
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __setusermatherr(handler: usize) {
     tracing::trace!("msvcrt::__setusermatherr");
     set_user_math_err(handler);
@@ -76,7 +74,7 @@ pub unsafe extern "win64" fn __setusermatherr(handler: usize) {
 /// In a production implementation, this would analyze the exception record and return the appropriate handler code
 /// (1 = continue execution, 0 = call next handler).
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn __C_specific_handler(
     _exception_record: usize,
     _establisher_frame: usize,
@@ -107,19 +105,19 @@ pub unsafe extern "win64" fn __C_specific_handler(
 /// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
 /// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
-pub unsafe extern "win64" fn _commode() -> *mut i32 {
+#[allow(non_snake_case)]
+pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
     commode_ptr()
 }
 
 /// Gets a pointer to the commit mode variable.
 ///
-/// # Safety
-/// This is unsafe because the CRT expects this to return a valid pointer to a global variable with a specific layout.
-/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
-///
 /// # Returns
 /// A pointer to the commit mode variable, which controls how the CRT handles file buffering and flushing.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an integer variable that controls CRT behavior.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
 ///
 /// # Notes
 /// This is called by CRT implementations to get a pointer to the commit mode variable.
@@ -127,17 +125,41 @@ pub unsafe extern "win64" fn _commode() -> *mut i32 {
 /// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
 /// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
-pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
+pub unsafe extern "win64" fn _commode() -> *mut i32 {
     commode_ptr()
 }
 
-/// _fmode — return a pointer to the default file translation mode.
+/// Gets a pointer to the file mode variable.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an integer variable that controls CRT behavior.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
+///
+/// # Returns
+/// A pointer to the file mode variable, which controls how the CRT handles file buffering and flushing.
+///
+/// # Notes
+/// This is called by CRT implementations to get a pointer to the file mode variable.
+/// We return a pointer to a variable in our data cell module.
+/// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
+/// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[rine_dlls::implemented]
-#[allow(clippy::missing_safety_doc)]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _fmode() -> *mut i32 {
     fmode_ptr()
+}
+
+/// Get a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an integer variable that controls CRT behavior.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
+///
+/// # Returns
+/// A pointer to an array of three FILE structures expected by the CRT for standard I/O operations.
+/// The CRT expects this to be exported as `_iob` and used by functions like `printf` and `fprintf`.
+#[rine_dlls::implemented]
+pub unsafe extern "win64" fn _iob() -> *mut u8 {
+    fake_iob_64_ptr()
 }
 
 /// __initenv — return a pointer to the initial environment pointer.
@@ -146,7 +168,6 @@ pub unsafe extern "win64" fn _fmode() -> *mut i32 {
 /// the real environment is provided via `__getmainargs`).
 #[rine_dlls::implemented]
 #[allow(clippy::missing_safety_doc)]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
     initenv_ptr() as *const *const i8
 }
@@ -163,7 +184,6 @@ pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
 /// The first 3 entries represent stdin (0), stdout (1), stderr (2).
 /// We store a marker fd in the first field of each entry so fwrite/fprintf can identify the stream.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
     fake_iob_64_ptr()
 }
@@ -184,7 +204,6 @@ pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
 /// Currently, this just returns the function pointer unchanged.
 /// A production implementation would add it to an atexit chain.
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
     tracing::trace!("msvcrt::_onexit");
     onexit(func)
@@ -240,7 +259,6 @@ pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
 /// box with the error and possibly allow the user to choose whether to abort or debug.
 /// The `msg_num` argument can be used to determine the specific error that occurred and display an appropriate message.
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _amsg_exit(msg_num: i32) {
     amsg_exit(msg_num)
 }
@@ -254,7 +272,6 @@ pub unsafe extern "win64" fn _amsg_exit(msg_num: i32) {
 /// # Notes
 /// This is a stub implementation that just calls `std::process::abort()`
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn abort() {
     tracing::debug!("msvcrt::abort");
     abort_process()
@@ -273,7 +290,6 @@ pub unsafe extern "win64" fn abort() {
 /// # Notes
 /// This is a stub implementation that does nothing and returns 0.
 #[rine_dlls::stubbed]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn signal(
     sig: i32,
     handler: usize, // void (*)(int)
@@ -290,7 +306,6 @@ pub unsafe extern "win64" fn signal(
 /// This is unsafe because the CRT expects locks to be properly acquired and released to avoid deadlocks and ensure thread safety.
 /// Incorrect usage could lead to undefined behavior when multiple threads access CRT resources.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _lock(locknum: i32) {
     lock(locknum);
 }
@@ -305,7 +320,6 @@ pub unsafe extern "win64" fn _lock(locknum: i32) {
 /// Incorrect usage (like unlocking a lock that wasn't acquired) could lead to undefined behavior when multiple
 /// threads access CRT resources.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _unlock(locknum: i32) {
     unlock(locknum);
 }
@@ -324,7 +338,6 @@ pub unsafe extern "win64" fn _unlock(locknum: i32) {
 /// Called by the `errno` macro or by C code that wants to read/write
 /// the error code from the last failed system call.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _errno() -> *mut i32 {
     tracing::trace!("msvcrt::_errno");
     errno_location()
@@ -345,7 +358,7 @@ pub unsafe extern "win64" fn _errno() -> *mut i32 {
 /// since we provide the real environment via `__getmainargs`.
 /// This should return a pointer to the actual environment variables.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
     initenv_ptr() as *const *const *const i8
 }
@@ -363,7 +376,7 @@ pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
 /// Returned pointer points to a mutable `int` that controls whether
 /// text files are opened in binary or text mode by default.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
+#[allow(non_snake_case)]
 pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
     fmode_ptr()
 }

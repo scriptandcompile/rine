@@ -21,7 +21,6 @@ use rine_common_msvcrt as common;
 /// the cdecl variadic arguments correctly. This requires a pretty complex naked function shim due
 /// to the differences between the Windows x86 and System V x86 ABIs.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn printf() -> c_int {
     unsafe { common::printf_x86_thunk() }
 }
@@ -37,7 +36,6 @@ pub unsafe extern "C" fn printf() -> c_int {
 /// # Returns
 /// * A non-negative value on success, or EOF on error.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn puts(s: *const c_char) -> c_int {
     unsafe { common::puts_to_stdout(s) }
 }
@@ -59,7 +57,6 @@ pub unsafe extern "C" fn puts(s: *const c_char) -> c_int {
 /// # Notes
 /// Currently, the format string is written to the stream as is without formatting the text in any way.
 #[rine_dlls::partial]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn fprintf(stream: *mut u8, format: *const c_char) -> c_int {
     unsafe { common::write_format_to_stream(stream.cast(), format) }
 }
@@ -82,7 +79,6 @@ pub unsafe extern "C" fn fprintf(stream: *mut u8, format: *const c_char) -> c_in
 /// # Notes
 /// Currently, the format string is written to the stream as is without formatting the text in any way.
 #[rine_dlls::partial]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn vfprintf(stream: *mut u8, format: *const c_char, _args: *mut u8) -> c_int {
     unsafe { common::write_format_to_stream(stream.cast(), format) }
 }
@@ -101,7 +97,6 @@ pub unsafe extern "C" fn vfprintf(stream: *mut u8, format: *const c_char, _args:
 /// # Returns
 /// * The number of elements successfully written, which may be less than `count` if an error occurs.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn fwrite(
     ptr: *const c_void,
     size: usize,

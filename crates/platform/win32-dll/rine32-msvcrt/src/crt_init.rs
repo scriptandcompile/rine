@@ -14,7 +14,6 @@ use rine_common_msvcrt::{cached_main_args, run_initterm, run_initterm_e};
 /// # Returns
 /// Returns 0 on success, or a non-zero error code on failure (currently always returns 0).
 #[rine_dlls::partial]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn __getmainargs(
     p_argc: *mut i32,
     p_argv: *mut *mut *mut i8,
@@ -48,7 +47,6 @@ pub unsafe extern "C" fn __getmainargs(
 /// `start` and `end` must delimit a valid array of function pointers
 /// (or null entries).
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _initterm(
     start: *const Option<unsafe extern "C" fn()>,
     end: *const Option<unsafe extern "C" fn()>,
@@ -72,7 +70,6 @@ pub unsafe extern "C" fn _initterm(
 /// # Returns
 /// Returns 0 on success, or the non-zero error code from the first initializer that fails.
 #[rine_dlls::implemented]
-#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _initterm_e(
     start: *const Option<unsafe extern "C" fn() -> i32>,
     end: *const Option<unsafe extern "C" fn() -> i32>,
