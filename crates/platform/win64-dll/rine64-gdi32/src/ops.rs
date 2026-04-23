@@ -79,7 +79,7 @@ pub unsafe extern "win64" fn CreateCompatibleBitmap(_hdc: usize, width: i32, hei
 ///
 /// # Returns
 /// A handle to the solid brush, or 0 if the function fails.
-#[rine_dlls::partial]
+#[rine_dlls::implemented]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
 pub unsafe extern "win64" fn CreateSolidBrush(color: u32) -> usize {
