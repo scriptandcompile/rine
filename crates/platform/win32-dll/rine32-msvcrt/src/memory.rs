@@ -18,6 +18,8 @@ use rine_common_msvcrt as common;
 ///
 /// # Returns
 /// A pointer to the allocated memory block, or null if the allocation fails.
+#[rine_dlls::implemented]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn malloc(size: usize) -> *mut c_void {
     unsafe { common::malloc(size) }
 }
@@ -34,6 +36,8 @@ pub unsafe extern "C" fn malloc(size: usize) -> *mut c_void {
 ///
 /// # Returns
 /// A pointer to the allocated memory block, or null if the allocation fails.
+#[rine_dlls::implemented]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn calloc(count: usize, size: usize) -> *mut c_void {
     unsafe { common::calloc(count, size) }
 }
@@ -60,6 +64,8 @@ pub unsafe extern "C" fn calloc(count: usize, size: usize) -> *mut c_void {
 /// If `size` is zero and `ptr` is not null, the block pointed to by `ptr` is freed and a null pointer is returned.
 /// Otherwise, the function attempts to resize the block pointed to by `ptr` to `size` bytes, possibly moving it to a new location.
 /// The contents of the block are preserved up to the lesser of the old and new sizes.
+#[rine_dlls::implemented]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
     unsafe { common::realloc(ptr, size) }
 }
@@ -79,6 +85,8 @@ pub unsafe extern "C" fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
 /// If `ptr` is null, this function does nothing.
 /// Otherwise, it frees the memory block pointed to by `ptr` and removes it from the allocation tracker,
 /// notifying the dev tools about the deallocation.
+#[rine_dlls::implemented]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn free(ptr: *mut c_void) {
     unsafe { common::free(ptr) }
 }
@@ -106,6 +114,8 @@ pub unsafe extern "C" fn free(ptr: *mut c_void) {
 /// The behavior is undefined if the memory areas overlap.
 /// The caller is responsible for ensuring that the destination buffer has enough space to hold the copied
 /// data and that both pointers are valid for the specified number of bytes.
+#[rine_dlls::implemented]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void {
     unsafe { common::memcpy(dest, src, n) }
 }
@@ -129,6 +139,8 @@ pub unsafe extern "C" fn memcpy(dest: *mut c_void, src: *const c_void, n: usize)
 /// This function fills the first `n` bytes of the memory area pointed to by `dest` with the byte value `c`.
 /// The caller is responsible for ensuring that the destination buffer has enough space to hold the filled data
 /// and that the pointer is valid for the specified number of bytes.
+#[rine_dlls::implemented]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn memset(dest: *mut c_void, c: i32, n: usize) -> *mut c_void {
     unsafe { common::memset(dest, c, n) }
 }

@@ -15,6 +15,8 @@ use rine_common_msvcrt as common;
 ///
 /// # Returns
 /// - The length of the string pointed to by `s`, excluding the null terminator.
+#[rine_dlls::implemented]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn strlen(s: *const c_char) -> usize {
     unsafe { common::strlen(s) }
 }
@@ -36,6 +38,8 @@ pub unsafe extern "C" fn strlen(s: *const c_char) -> usize {
 /// # Returns
 /// - An integer less than, equal to, or greater than zero if `s1` is found, respectively, to be less than, to match,
 ///   or be greater than `s2` when comparing at most `n` characters.
+#[rine_dlls::implemented]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn strncmp(s1: *const c_char, s2: *const c_char, n: usize) -> i32 {
     unsafe { common::strncmp(s1, s2, n) }
 }
@@ -54,6 +58,8 @@ pub unsafe extern "C" fn strncmp(s1: *const c_char, s2: *const c_char, n: usize)
 /// # Returns
 /// - An integer less than, equal to, or greater than zero if `s1` is found, respectively, to be less than, to match,
 ///   or be greater than `s2`.
+#[rine_dlls::implemented]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn strcmp(s1: *const c_char, s2: *const c_char) -> i32 {
     unsafe { common::strcmp(s1, s2) }
 }
