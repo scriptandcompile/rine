@@ -34,7 +34,7 @@ use rine_types::windows::*;
 /// window creation scenarios and would require additional infrastructure to support properly.
 /// On error the `GetLastError` code should be set to indicate the reason for failure, such as `ERROR_CLASS_NOT_FOUND`
 /// if the specified class name does not exist. Currently, we do not set `GetLastError`.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateWindowExA(
@@ -97,7 +97,7 @@ pub unsafe extern "win64" fn CreateWindowExA(
 /// window creation scenarios and would require additional infrastructure to support properly.
 /// On error the `GetLastError` code should be set to indicate the reason for failure, such as `ERROR_CLASS_NOT_FOUND`
 /// if the specified class name does not exist. Currently, we do not set `GetLastError`.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateWindowExW(
@@ -153,7 +153,7 @@ pub unsafe extern "win64" fn CreateWindowExW(
 /// On error the `GetLastError` code should be set to indicate the reason for failure, such as
 /// `ERROR_INVALID_WINDOW_HANDLE` if the specified handle does not correspond to a valid window.
 /// Currently, we do not set `GetLastError`.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn DestroyWindow(hwnd: usize) -> i32 {
@@ -185,7 +185,7 @@ pub unsafe extern "win64" fn DestroyWindow(hwnd: usize) -> i32 {
 ///
 /// # Notes
 /// Currently, we do not set `GetLastError`, so there is no way to distinguish between these cases.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ShowWindow(hwnd: usize, cmd_show: i32) -> WinBool {
