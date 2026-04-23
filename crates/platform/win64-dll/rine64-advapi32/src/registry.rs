@@ -15,6 +15,7 @@ use rine_types::strings::{read_cstr, read_wstr};
 /// Windows registry, which can lead to undefined behavior or system instability if used incorrectly.
 /// The caller must ensure that the pointers are valid and that the registry operations are
 /// performed with appropriate permissions and caution.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegOpenKeyExA(
@@ -44,6 +45,7 @@ pub unsafe extern "win64" fn RegOpenKeyExA(
 /// Windows registry, which can lead to undefined behavior or system instability if used incorrectly.
 /// The caller must ensure that the pointers are valid and that the registry operations are
 /// performed with appropriate permissions and caution.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegOpenKeyExW(
@@ -77,6 +79,7 @@ pub unsafe extern "win64" fn RegOpenKeyExW(
 /// Windows registry, which can lead to undefined behavior or system instability if used incorrectly.
 /// The caller must ensure that the pointers are valid and that the registry operations are
 /// performed with appropriate permissions and caution.
+#[rine_dlls::partial]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCreateKeyExA(
@@ -125,6 +128,7 @@ pub unsafe extern "win64" fn RegCreateKeyExA(
 /// Windows registry, which can lead to undefined behavior or system instability if used incorrectly.
 /// The caller must ensure that the pointers are valid and that the registry operations are
 /// performed with appropriate permissions and caution.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCreateKeyExW(
@@ -174,6 +178,7 @@ pub unsafe extern "win64" fn RegCreateKeyExW(
 ///
 /// # Returns
 /// Returns `ERROR_SUCCESS` if the function succeeds, or a nonzero error code if it fails.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegQueryValueExA(
@@ -209,6 +214,7 @@ pub unsafe extern "win64" fn RegQueryValueExA(
 ///
 /// # Returns
 /// Returns `ERROR_SUCCESS` if the function succeeds, or a nonzero error code if it fails.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegQueryValueExW(
@@ -240,6 +246,7 @@ pub unsafe extern "win64" fn RegQueryValueExW(
 /// which can lead to undefined behavior or system instability if used incorrectly.
 /// The caller must ensure that the pointers are valid and that the registry operations are performed
 /// with appropriate permissions and caution.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegSetValueExA(
@@ -271,6 +278,7 @@ pub unsafe extern "win64" fn RegSetValueExA(
 /// which can lead to undefined behavior or system instability if used incorrectly.
 /// The caller must ensure that the pointers are valid and that the registry operations are performed
 /// with appropriate permissions and caution.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegSetValueExW(
