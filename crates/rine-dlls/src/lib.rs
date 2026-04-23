@@ -6,8 +6,8 @@
 
 mod registry;
 
-pub use rine_dll_attrs::{data_export, dll, implemented, ordinal, partial, stubbed};
 pub use registry::{DllRegistry, LookupResult, WinApiFunc};
+pub use rine_dll_attrs::{data_export, dll, implemented, ordinal, partial, stubbed};
 
 /// A function pointer stored in the registry, castable to the appropriate
 /// signature. Uses `extern "win64"` because PE code calls through the IAT

@@ -477,7 +477,7 @@ pub unsafe extern "win64" fn FindNextFileW(
 ///
 /// # Note
 /// This implementation does not set the error code and will currently always return `WinBool::TRUE` at the moment.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindClose(find_file: isize) -> WinBool {
