@@ -14,6 +14,49 @@ pub fn validate_current_crate() {
     validate_crate(&manifest_dir);
 }
 
+/// Generate trait method implementations from attributes.
+/// Writes to OUT_DIR/dll_plugin_generated.rs
+pub fn generate_metadata_code() {
+    let manifest_dir =
+        PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR is not set"));
+    let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set"));
+
+    let lib_rs = manifest_dir.join("src/lib.rs");
+    println!("cargo:rerun-if-changed={}", lib_rs.display());
+
+    let source = fs::read_to_string(&lib_rs)
+        .unwrap_or_else(|error| panic!("failed to read {}: {error}", lib_rs.display()));
+    let file = syn::parse_file(&source)
+        .unwrap_or_else(|error| panic!("failed to parse {}: {error}", lib_rs.display()));
+
+    let default_dll_names = collect_plugin_dll_names(&file)
+        .unwrap_or_else(|error| panic!("failed to collect DLL names: {error}"));
+
+    let (attribute_exports, failures) = parse_attribute_exports(&manifest_dir, &default_dll_names)
+        .unwrap_or_else(|error| panic!("failed to parse attributes: {error}"));
+
+    if !failures.is_empty() {
+        let mut message = "attribute parsing failures:".to_string();
+        for failure in failures {
+            message.push('\n');
+            message.push_str(&failure);
+        }
+        panic!("{message}");
+    }
+
+    let (exports_expr, stubs_expr, partials_expr) = generate_trait_methods(&attribute_exports);
+    let exports_path = out_dir.join("dll_plugin_generated.rs");
+    let stubs_path = out_dir.join("dll_plugin_generated_stubs.rs");
+    let partials_path = out_dir.join("dll_plugin_generated_partials.rs");
+
+    fs::write(&exports_path, &exports_expr)
+        .unwrap_or_else(|error| panic!("failed to write {}: {error}", exports_path.display()));
+    fs::write(&stubs_path, &stubs_expr)
+        .unwrap_or_else(|error| panic!("failed to write {}: {error}", stubs_path.display()));
+    fs::write(&partials_path, &partials_expr)
+        .unwrap_or_else(|error| panic!("failed to write {}: {error}", partials_path.display()));
+}
+
 pub fn validate_crate(manifest_dir: &Path) {
     let lib_rs = manifest_dir.join("src/lib.rs");
     println!("cargo:rerun-if-changed={}", lib_rs.display());
@@ -71,6 +114,7 @@ impl ExportStatus {
 #[derive(Debug, Clone)]
 struct AttributeExport {
     export_name: String,
+    symbol_path: String,
     dll_names: Vec<String>,
     status: ExportStatus,
     source: String,
@@ -285,11 +329,13 @@ fn parse_attribute_exports(
             .map_err(|error| format!("failed to read {}: {error}", file_path.display()))?;
         let parsed = syn::parse_file(&source)
             .map_err(|error| format!("failed to parse {}: {error}", file_path.display()))?;
+        let module_prefix = module_prefix_for_file(&src_dir, &file_path)?;
 
         for item in parsed.items {
             match item {
                 Item::Fn(item_fn) => parse_attributed_fn(
                     &file_path,
+                    &module_prefix,
                     &item_fn,
                     default_dll_names,
                     &mut exports,
@@ -297,6 +343,7 @@ fn parse_attribute_exports(
                 ),
                 Item::Static(item_static) => parse_attributed_static(
                     &file_path,
+                    &module_prefix,
                     &item_static,
                     default_dll_names,
                     &mut exports,
@@ -310,8 +357,39 @@ fn parse_attribute_exports(
     Ok((exports, failures))
 }
 
+fn module_prefix_for_file(src_dir: &Path, file_path: &Path) -> Result<String, String> {
+    let rel_path = file_path.strip_prefix(src_dir).map_err(|error| {
+        format!(
+            "failed to derive module path for {}: {error}",
+            file_path.display()
+        )
+    })?;
+
+    let mut parts: Vec<String> = rel_path
+        .iter()
+        .map(|part| part.to_string_lossy().to_string())
+        .collect();
+
+    if let Some(last) = parts.last_mut()
+        && last.ends_with(".rs")
+    {
+        *last = last.trim_end_matches(".rs").to_string();
+    }
+
+    if parts == ["lib".to_string()] {
+        return Ok(String::new());
+    }
+
+    if parts.last().is_some_and(|p| p == "mod") {
+        parts.pop();
+    }
+
+    Ok(parts.join("::"))
+}
+
 fn parse_attributed_fn(
     file_path: &Path,
+    module_prefix: &str,
     item_fn: &syn::ItemFn,
     default_dll_names: &[String],
     exports: &mut Vec<AttributeExport>,
@@ -360,9 +438,15 @@ fn parse_attributed_fn(
     let export_name = attrs
         .export_name
         .unwrap_or_else(|| item_fn.sig.ident.to_string());
+    let symbol_path = if module_prefix.is_empty() {
+        item_fn.sig.ident.to_string()
+    } else {
+        format!("{module_prefix}::{}", item_fn.sig.ident)
+    };
 
     exports.push(AttributeExport {
         export_name,
+        symbol_path,
         dll_names,
         status: attrs.status.expect("checked above"),
         source,
@@ -371,6 +455,7 @@ fn parse_attributed_fn(
 
 fn parse_attributed_static(
     file_path: &Path,
+    module_prefix: &str,
     item_static: &syn::ItemStatic,
     default_dll_names: &[String],
     exports: &mut Vec<AttributeExport>,
@@ -425,9 +510,15 @@ fn parse_attributed_static(
     let export_name = attrs
         .export_name
         .unwrap_or_else(|| item_static.ident.to_string());
+    let symbol_path = if module_prefix.is_empty() {
+        item_static.ident.to_string()
+    } else {
+        format!("{module_prefix}::{}", item_static.ident)
+    };
 
     exports.push(AttributeExport {
         export_name,
+        symbol_path,
         dll_names,
         status: attrs.status.expect("checked above"),
         source,
@@ -724,6 +815,58 @@ fn parse_string_literal(expr: &Expr) -> Result<String, String> {
         return Err("expected a string literal".to_string());
     };
     Ok(lit.value())
+}
+
+/// Generate Rust expression snippets for trait method bodies from collected attributes.
+fn generate_trait_methods(exports: &[AttributeExport]) -> (String, String, String) {
+    let mut exports_expr = String::from("vec![\n");
+    let mut stubs_expr = String::from("vec![\n");
+    let mut partials_expr = String::from("vec![\n");
+
+    // Collect by status
+    let mut implemented: Vec<_> = exports
+        .iter()
+        .filter(|e| e.status == ExportStatus::Implemented)
+        .collect();
+    let mut partials: Vec<_> = exports
+        .iter()
+        .filter(|e| e.status == ExportStatus::Partial)
+        .collect();
+    let mut stubs: Vec<_> = exports
+        .iter()
+        .filter(|e| e.status == ExportStatus::Stubbed)
+        .collect();
+
+    // Sort by name for consistency
+    implemented.sort_by(|a, b| a.export_name.cmp(&b.export_name));
+    partials.sort_by(|a, b| a.export_name.cmp(&b.export_name));
+    stubs.sort_by(|a, b| a.export_name.cmp(&b.export_name));
+
+    for export in &implemented {
+        exports_expr.push_str(&format!(
+            "    rine_dlls::Export::Func(\"{}\", as_win_api!({})),\n",
+            export.export_name, export.symbol_path
+        ));
+    }
+    exports_expr.push(']');
+
+    for export in &stubs {
+        stubs_expr.push_str(&format!(
+            "    rine_dlls::StubExport {{ name: \"{}\", func: as_win_api!({}) }},\n",
+            export.export_name, export.symbol_path
+        ));
+    }
+    stubs_expr.push(']');
+
+    for export in &partials {
+        partials_expr.push_str(&format!(
+            "    rine_dlls::PartialExport {{ name: \"{}\", func: as_win_api!({}) }},\n",
+            export.export_name, export.symbol_path
+        ));
+    }
+    partials_expr.push(']');
+
+    (exports_expr, stubs_expr, partials_expr)
 }
 
 #[cfg(test)]

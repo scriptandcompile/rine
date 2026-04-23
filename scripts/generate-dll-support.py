@@ -112,6 +112,61 @@ def parse_exports(lib_source: str) -> list[tuple[str, str]]:
     return [(m.group(1).strip(), m.group(2).strip()) for m in pattern.finditer(lib_source)]
 
 
+def module_prefix_for_file(crate_src_dir: Path, file_path: Path) -> str:
+    rel_path = file_path.relative_to(crate_src_dir)
+    parts = list(rel_path.parts)
+    if not parts:
+        return ""
+
+    parts[-1] = parts[-1].removesuffix(".rs")
+    if parts == ["lib"]:
+        return ""
+    if parts[-1] == "mod":
+        parts = parts[:-1]
+    return "::".join(parts)
+
+
+def parse_attribute_exports(crate_src_dir: Path) -> tuple[list[tuple[str, str]], set[str], set[str]]:
+    exports: list[tuple[str, str]] = []
+    stub_names: set[str] = set()
+    partial_names: set[str] = set()
+
+    item_pattern = re.compile(
+        r'((?:\s*#\[[^\]]+\]\s*)+)\s*pub\s+(?:unsafe\s+)?(?:extern\s+"[^"]+"\s+)?fn\s+([A-Za-z_]\w*)\b'
+        r'|((?:\s*#\[[^\]]+\]\s*)+)\s*pub\s+static(?:\s+mut)?\s+([A-Za-z_]\w*)\b',
+        re.MULTILINE,
+    )
+    status_pattern = re.compile(r'\b(?:[\w]+::)*(implemented|partial|stubbed)\b')
+    export_name_pattern = re.compile(r'\bexport_name\s*=\s*"([^"]+)"')
+
+    for file_path in crate_src_dir.rglob("*.rs"):
+        source = read_text(file_path)
+        module_prefix = module_prefix_for_file(crate_src_dir, file_path)
+
+        for match in item_pattern.finditer(source):
+            attrs = match.group(1) or match.group(3)
+            ident = match.group(2) or match.group(4)
+            if not attrs or not ident:
+                continue
+
+            status_match = status_pattern.search(attrs)
+            if not status_match:
+                continue
+
+            status = status_match.group(1)
+            export_name_match = export_name_pattern.search(attrs)
+            export_name = export_name_match.group(1) if export_name_match else ident
+            symbol_path = f"{module_prefix}::{ident}" if module_prefix else ident
+
+            exports.append((export_name, symbol_path))
+            if status == "stubbed":
+                stub_names.add(export_name)
+            elif status == "partial":
+                partial_names.add(export_name)
+
+    return exports, stub_names, partial_names
+
+
 def find_symbol_source_file(crate_src_dir: Path, symbol_path: str) -> Path | None:
     if "::" in symbol_path:
         parts = symbol_path.split("::")
@@ -215,6 +270,11 @@ def collect_arch_data(arch: str, arch_root: Path) -> list[ExportRow]:
         exports = parse_exports(lib_source)
         stub_names = parse_win32_stub_names(lib_source)
         partial_names = parse_win32_partial_names(lib_source)
+
+        attr_exports, attr_stub_names, attr_partial_names = parse_attribute_exports(src_dir)
+        exports.extend(attr_exports)
+        stub_names |= attr_stub_names
+        partial_names |= attr_partial_names
 
         # print(f"[DEBUG] arch={arch} crate={crate_dir.name} dll={dll_name}")
         # print(f"[DEBUG]   partials: {sorted(partial_names)}")

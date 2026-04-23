@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-23T04:47:50.622730+00:00",
+  "generatedAt": "2026-04-23T05:06:00.706497+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -29,12 +29,12 @@
           "name": "RegCreateKeyExA",
           "x64": {
             "status": "partial",
-            "symbol": "RegCreateKeyExA",
+            "symbol": "registry::RegCreateKeyExA",
             "source": "advapi32 - registry.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "RegCreateKeyExA",
+            "symbol": "registry::RegCreateKeyExA",
             "source": "advapi32 - registry.rs"
           }
         },
@@ -42,12 +42,12 @@
           "name": "RegCreateKeyExW",
           "x64": {
             "status": "partial",
-            "symbol": "RegCreateKeyExW",
+            "symbol": "registry::RegCreateKeyExW",
             "source": "advapi32 - registry.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "RegCreateKeyExW",
+            "symbol": "registry::RegCreateKeyExW",
             "source": "advapi32 - registry.rs"
           }
         },
@@ -55,12 +55,12 @@
           "name": "RegOpenKeyExA",
           "x64": {
             "status": "partial",
-            "symbol": "RegOpenKeyExA",
+            "symbol": "registry::RegOpenKeyExA",
             "source": "advapi32 - registry.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "RegOpenKeyExA",
+            "symbol": "registry::RegOpenKeyExA",
             "source": "advapi32 - registry.rs"
           }
         },
@@ -68,12 +68,12 @@
           "name": "RegOpenKeyExW",
           "x64": {
             "status": "partial",
-            "symbol": "RegOpenKeyExW",
+            "symbol": "registry::RegOpenKeyExW",
             "source": "advapi32 - registry.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "RegOpenKeyExW",
+            "symbol": "registry::RegOpenKeyExW",
             "source": "advapi32 - registry.rs"
           }
         },
@@ -139,12 +139,12 @@
           "name": "CommDlgExtendedError",
           "x64": {
             "status": "partial",
-            "symbol": "CommDlgExtendedError",
+            "symbol": "error::CommDlgExtendedError",
             "source": "comdlg32 - error.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CommDlgExtendedError",
+            "symbol": "error::CommDlgExtendedError",
             "source": "comdlg32 - error.rs"
           }
         },
@@ -152,12 +152,12 @@
           "name": "GetOpenFileNameA",
           "x64": {
             "status": "partial",
-            "symbol": "GetOpenFileNameA",
+            "symbol": "open::GetOpenFileNameA",
             "source": "comdlg32 - open.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetOpenFileNameA",
+            "symbol": "open::GetOpenFileNameA",
             "source": "comdlg32 - open.rs"
           }
         },
@@ -165,12 +165,12 @@
           "name": "GetOpenFileNameW",
           "x64": {
             "status": "partial",
-            "symbol": "GetOpenFileNameW",
+            "symbol": "open::GetOpenFileNameW",
             "source": "comdlg32 - open.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetOpenFileNameW",
+            "symbol": "open::GetOpenFileNameW",
             "source": "comdlg32 - open.rs"
           }
         },
@@ -178,12 +178,12 @@
           "name": "GetSaveFileNameA",
           "x64": {
             "status": "partial",
-            "symbol": "GetSaveFileNameA",
+            "symbol": "save::GetSaveFileNameA",
             "source": "comdlg32 - save.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetSaveFileNameA",
+            "symbol": "save::GetSaveFileNameA",
             "source": "comdlg32 - save.rs"
           }
         },
@@ -191,12 +191,12 @@
           "name": "GetSaveFileNameW",
           "x64": {
             "status": "partial",
-            "symbol": "GetSaveFileNameW",
+            "symbol": "save::GetSaveFileNameW",
             "source": "comdlg32 - save.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetSaveFileNameW",
+            "symbol": "save::GetSaveFileNameW",
             "source": "comdlg32 - save.rs"
           }
         }
@@ -210,12 +210,12 @@
           "name": "BitBlt",
           "x64": {
             "status": "partial",
-            "symbol": "BitBlt",
+            "symbol": "ops::BitBlt",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "BitBlt",
+            "symbol": "ops::BitBlt",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -223,12 +223,12 @@
           "name": "CreateCompatibleBitmap",
           "x64": {
             "status": "partial",
-            "symbol": "CreateCompatibleBitmap",
+            "symbol": "ops::CreateCompatibleBitmap",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateCompatibleBitmap",
+            "symbol": "ops::CreateCompatibleBitmap",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -236,12 +236,12 @@
           "name": "CreateCompatibleDC",
           "x64": {
             "status": "partial",
-            "symbol": "CreateCompatibleDC",
+            "symbol": "ops::CreateCompatibleDC",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateCompatibleDC",
+            "symbol": "ops::CreateCompatibleDC",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -249,12 +249,12 @@
           "name": "CreatePen",
           "x64": {
             "status": "partial",
-            "symbol": "CreatePen",
+            "symbol": "ops::CreatePen",
             "source": "gdi32 - ops.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreatePen",
+            "symbol": "ops::CreatePen",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -346,12 +346,12 @@
           "name": "CloseHandle",
           "x64": {
             "status": "partial",
-            "symbol": "CloseHandle",
+            "symbol": "file::CloseHandle",
             "source": "kernel32 - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CloseHandle",
+            "symbol": "file::CloseHandle",
             "source": "kernel32 - file.rs"
           }
         },
@@ -359,12 +359,12 @@
           "name": "CreateEventA",
           "x64": {
             "status": "partial",
-            "symbol": "CreateEventA",
+            "symbol": "sync::CreateEventA",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateEventA",
+            "symbol": "sync::CreateEventA",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -372,12 +372,12 @@
           "name": "CreateEventW",
           "x64": {
             "status": "partial",
-            "symbol": "CreateEventW",
+            "symbol": "sync::CreateEventW",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateEventW",
+            "symbol": "sync::CreateEventW",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -385,12 +385,12 @@
           "name": "CreateFileA",
           "x64": {
             "status": "partial",
-            "symbol": "CreateFileA",
+            "symbol": "file::CreateFileA",
             "source": "kernel32 - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateFileA",
+            "symbol": "file::CreateFileA",
             "source": "kernel32 - file.rs"
           }
         },
@@ -398,12 +398,12 @@
           "name": "CreateFileW",
           "x64": {
             "status": "partial",
-            "symbol": "CreateFileW",
+            "symbol": "file::CreateFileW",
             "source": "kernel32 - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateFileW",
+            "symbol": "file::CreateFileW",
             "source": "kernel32 - file.rs"
           }
         },
@@ -411,12 +411,12 @@
           "name": "CreateMutexA",
           "x64": {
             "status": "partial",
-            "symbol": "CreateMutexA",
+            "symbol": "sync::CreateMutexA",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateMutexA",
+            "symbol": "sync::CreateMutexA",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -424,12 +424,12 @@
           "name": "CreateMutexW",
           "x64": {
             "status": "partial",
-            "symbol": "CreateMutexW",
+            "symbol": "sync::CreateMutexW",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateMutexW",
+            "symbol": "sync::CreateMutexW",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -437,12 +437,12 @@
           "name": "CreateProcessA",
           "x64": {
             "status": "partial",
-            "symbol": "CreateProcessA",
+            "symbol": "process::CreateProcessA",
             "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateProcessA",
+            "symbol": "process::CreateProcessA",
             "source": "kernel32 - process.rs"
           }
         },
@@ -450,12 +450,12 @@
           "name": "CreateProcessW",
           "x64": {
             "status": "partial",
-            "symbol": "CreateProcessW",
+            "symbol": "process::CreateProcessW",
             "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateProcessW",
+            "symbol": "process::CreateProcessW",
             "source": "kernel32 - process.rs"
           }
         },
@@ -463,12 +463,12 @@
           "name": "CreateSemaphoreA",
           "x64": {
             "status": "partial",
-            "symbol": "CreateSemaphoreA",
+            "symbol": "sync::CreateSemaphoreA",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateSemaphoreA",
+            "symbol": "sync::CreateSemaphoreA",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -476,12 +476,12 @@
           "name": "CreateSemaphoreW",
           "x64": {
             "status": "partial",
-            "symbol": "CreateSemaphoreW",
+            "symbol": "sync::CreateSemaphoreW",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateSemaphoreW",
+            "symbol": "sync::CreateSemaphoreW",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -489,12 +489,12 @@
           "name": "CreateThread",
           "x64": {
             "status": "partial",
-            "symbol": "CreateThread",
+            "symbol": "thread::CreateThread",
             "source": "kernel32 - thread.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateThread",
+            "symbol": "thread::CreateThread",
             "source": "kernel32 - thread.rs"
           }
         },
@@ -567,12 +567,12 @@
           "name": "ExpandEnvironmentStringsA",
           "x64": {
             "status": "partial",
-            "symbol": "ExpandEnvironmentStringsA",
+            "symbol": "environment::ExpandEnvironmentStringsA",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "ExpandEnvironmentStringsA",
+            "symbol": "environment::ExpandEnvironmentStringsA",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -580,12 +580,12 @@
           "name": "ExpandEnvironmentStringsW",
           "x64": {
             "status": "partial",
-            "symbol": "ExpandEnvironmentStringsW",
+            "symbol": "environment::ExpandEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "ExpandEnvironmentStringsW",
+            "symbol": "environment::ExpandEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -593,12 +593,12 @@
           "name": "FindClose",
           "x64": {
             "status": "stubbed",
-            "symbol": "FindClose",
+            "symbol": "file::FindClose",
             "source": "kernel32 - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "FindClose",
+            "symbol": "file::FindClose",
             "source": "kernel32 - file.rs"
           }
         },
@@ -658,12 +658,12 @@
           "name": "FlushFileBuffers",
           "x64": {
             "status": "partial",
-            "symbol": "FlushFileBuffers",
+            "symbol": "file::FlushFileBuffers",
             "source": "kernel32 - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "FlushFileBuffers",
+            "symbol": "file::FlushFileBuffers",
             "source": "kernel32 - file.rs"
           }
         },
@@ -671,12 +671,12 @@
           "name": "FreeEnvironmentStringsA",
           "x64": {
             "status": "stubbed",
-            "symbol": "FreeEnvironmentStringsA",
+            "symbol": "environment::FreeEnvironmentStringsA",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "FreeEnvironmentStringsA",
+            "symbol": "environment::FreeEnvironmentStringsA",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -684,12 +684,12 @@
           "name": "FreeEnvironmentStringsW",
           "x64": {
             "status": "stubbed",
-            "symbol": "FreeEnvironmentStringsW",
+            "symbol": "environment::FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "FreeEnvironmentStringsW",
+            "symbol": "environment::FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -697,12 +697,12 @@
           "name": "FreeLibrary",
           "x64": {
             "status": "stubbed",
-            "symbol": "FreeLibrary",
+            "symbol": "process::FreeLibrary",
             "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "FreeLibrary",
+            "symbol": "process::FreeLibrary",
             "source": "kernel32 - process.rs"
           }
         },
@@ -736,12 +736,12 @@
           "name": "GetCurrentProcess",
           "x64": {
             "status": "stubbed",
-            "symbol": "GetCurrentProcess",
+            "symbol": "process::GetCurrentProcess",
             "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "GetCurrentProcess",
+            "symbol": "process::GetCurrentProcess",
             "source": "kernel32 - process.rs"
           }
         },
@@ -762,12 +762,12 @@
           "name": "GetCurrentThread",
           "x64": {
             "status": "stubbed",
-            "symbol": "GetCurrentThread",
+            "symbol": "thread::GetCurrentThread",
             "source": "kernel32 - thread.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "GetCurrentThread",
+            "symbol": "thread::GetCurrentThread",
             "source": "kernel32 - thread.rs"
           }
         },
@@ -788,12 +788,12 @@
           "name": "GetEnvironmentStrings",
           "x64": {
             "status": "partial",
-            "symbol": "GetEnvironmentStrings",
+            "symbol": "environment::GetEnvironmentStrings",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetEnvironmentStrings",
+            "symbol": "environment::GetEnvironmentStrings",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -801,12 +801,12 @@
           "name": "GetEnvironmentStringsW",
           "x64": {
             "status": "partial",
-            "symbol": "GetEnvironmentStringsW",
+            "symbol": "environment::GetEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetEnvironmentStringsW",
+            "symbol": "environment::GetEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -814,12 +814,12 @@
           "name": "GetEnvironmentVariableA",
           "x64": {
             "status": "partial",
-            "symbol": "GetEnvironmentVariableA",
+            "symbol": "environment::GetEnvironmentVariableA",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetEnvironmentVariableA",
+            "symbol": "environment::GetEnvironmentVariableA",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -827,12 +827,12 @@
           "name": "GetEnvironmentVariableW",
           "x64": {
             "status": "partial",
-            "symbol": "GetEnvironmentVariableW",
+            "symbol": "environment::GetEnvironmentVariableW",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetEnvironmentVariableW",
+            "symbol": "environment::GetEnvironmentVariableW",
             "source": "kernel32 - environment.rs"
           }
         },
@@ -853,12 +853,12 @@
           "name": "GetExitCodeThread",
           "x64": {
             "status": "partial",
-            "symbol": "GetExitCodeThread",
+            "symbol": "thread::GetExitCodeThread",
             "source": "kernel32 - thread.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetExitCodeThread",
+            "symbol": "thread::GetExitCodeThread",
             "source": "kernel32 - thread.rs"
           }
         },
@@ -892,12 +892,12 @@
           "name": "GetModuleHandleA",
           "x64": {
             "status": "stubbed",
-            "symbol": "GetModuleHandleA",
+            "symbol": "process::GetModuleHandleA",
             "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "GetModuleHandleA",
+            "symbol": "process::GetModuleHandleA",
             "source": "kernel32 - process.rs"
           }
         },
@@ -905,12 +905,12 @@
           "name": "GetModuleHandleW",
           "x64": {
             "status": "stubbed",
-            "symbol": "GetModuleHandleW",
+            "symbol": "process::GetModuleHandleW",
             "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "GetModuleHandleW",
+            "symbol": "process::GetModuleHandleW",
             "source": "kernel32 - process.rs"
           }
         },
@@ -918,12 +918,12 @@
           "name": "GetProcAddress",
           "x64": {
             "status": "stubbed",
-            "symbol": "GetProcAddress",
+            "symbol": "process::GetProcAddress",
             "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "GetProcAddress",
+            "symbol": "process::GetProcAddress",
             "source": "kernel32 - process.rs"
           }
         },
@@ -996,12 +996,12 @@
           "name": "HeapAlloc",
           "x64": {
             "status": "partial",
-            "symbol": "HeapAlloc",
+            "symbol": "memory::HeapAlloc",
             "source": "kernel32 - memory.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "HeapAlloc",
+            "symbol": "memory::HeapAlloc",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -1009,12 +1009,12 @@
           "name": "HeapCreate",
           "x64": {
             "status": "partial",
-            "symbol": "HeapCreate",
+            "symbol": "memory::HeapCreate",
             "source": "kernel32 - memory.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "HeapCreate",
+            "symbol": "memory::HeapCreate",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -1035,12 +1035,12 @@
           "name": "HeapFree",
           "x64": {
             "status": "partial",
-            "symbol": "HeapFree",
+            "symbol": "memory::HeapFree",
             "source": "kernel32 - memory.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "HeapFree",
+            "symbol": "memory::HeapFree",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -1048,12 +1048,12 @@
           "name": "HeapReAlloc",
           "x64": {
             "status": "partial",
-            "symbol": "HeapReAlloc",
+            "symbol": "memory::HeapReAlloc",
             "source": "kernel32 - memory.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "HeapReAlloc",
+            "symbol": "memory::HeapReAlloc",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -1061,12 +1061,12 @@
           "name": "HeapSize",
           "x64": {
             "status": "partial",
-            "symbol": "HeapSize",
+            "symbol": "memory::HeapSize",
             "source": "kernel32 - memory.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "HeapSize",
+            "symbol": "memory::HeapSize",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -1087,12 +1087,12 @@
           "name": "InitializeCriticalSectionAndSpinCount",
           "x64": {
             "status": "partial",
-            "symbol": "InitializeCriticalSectionAndSpinCount",
+            "symbol": "sync::InitializeCriticalSectionAndSpinCount",
             "source": "kernel32 - sync.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "InitializeCriticalSectionAndSpinCount",
+            "symbol": "sync::InitializeCriticalSectionAndSpinCount",
             "source": "kernel32 - sync.rs"
           }
         },
@@ -1113,12 +1113,12 @@
           "name": "LoadLibraryA",
           "x64": {
             "status": "stubbed",
-            "symbol": "LoadLibraryA",
+            "symbol": "process::LoadLibraryA",
             "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "LoadLibraryA",
+            "symbol": "process::LoadLibraryA",
             "source": "kernel32 - process.rs"
           }
         },
@@ -1126,12 +1126,12 @@
           "name": "LoadLibraryW",
           "x64": {
             "status": "stubbed",
-            "symbol": "LoadLibraryW",
+            "symbol": "process::LoadLibraryW",
             "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "LoadLibraryW",
+            "symbol": "process::LoadLibraryW",
             "source": "kernel32 - process.rs"
           }
         },
@@ -1139,12 +1139,12 @@
           "name": "ReadFile",
           "x64": {
             "status": "partial",
-            "symbol": "ReadFile",
+            "symbol": "file::ReadFile",
             "source": "kernel32 - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "ReadFile",
+            "symbol": "file::ReadFile",
             "source": "kernel32 - file.rs"
           }
         },
@@ -1230,12 +1230,12 @@
           "name": "SetFilePointer",
           "x64": {
             "status": "partial",
-            "symbol": "SetFilePointer",
+            "symbol": "file::SetFilePointer",
             "source": "kernel32 - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "SetFilePointer",
+            "symbol": "file::SetFilePointer",
             "source": "kernel32 - file.rs"
           }
         },
@@ -1256,12 +1256,12 @@
           "name": "SetUnhandledExceptionFilter",
           "x64": {
             "status": "stubbed",
-            "symbol": "SetUnhandledExceptionFilter",
+            "symbol": "process::SetUnhandledExceptionFilter",
             "source": "kernel32 - process.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "SetUnhandledExceptionFilter",
+            "symbol": "process::SetUnhandledExceptionFilter",
             "source": "kernel32 - process.rs"
           }
         },
@@ -1308,12 +1308,12 @@
           "name": "TlsGetValue",
           "x64": {
             "status": "partial",
-            "symbol": "TlsGetValue",
+            "symbol": "thread::TlsGetValue",
             "source": "kernel32 - thread.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "TlsGetValue",
+            "symbol": "thread::TlsGetValue",
             "source": "kernel32 - thread.rs"
           }
         },
@@ -1347,12 +1347,12 @@
           "name": "VirtualAlloc",
           "x64": {
             "status": "partial",
-            "symbol": "VirtualAlloc",
+            "symbol": "memory::VirtualAlloc",
             "source": "kernel32 - memory.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "VirtualAlloc",
+            "symbol": "memory::VirtualAlloc",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -1360,12 +1360,12 @@
           "name": "VirtualFree",
           "x64": {
             "status": "partial",
-            "symbol": "VirtualFree",
+            "symbol": "memory::VirtualFree",
             "source": "kernel32 - memory.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "VirtualFree",
+            "symbol": "memory::VirtualFree",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -1373,12 +1373,12 @@
           "name": "VirtualProtect",
           "x64": {
             "status": "partial",
-            "symbol": "VirtualProtect",
+            "symbol": "memory::VirtualProtect",
             "source": "kernel32 - memory.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "VirtualProtect",
+            "symbol": "memory::VirtualProtect",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -1386,12 +1386,12 @@
           "name": "VirtualQuery",
           "x64": {
             "status": "stubbed",
-            "symbol": "VirtualQuery",
+            "symbol": "memory::VirtualQuery",
             "source": "kernel32 - memory.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "VirtualQuery",
+            "symbol": "memory::VirtualQuery",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -1425,12 +1425,12 @@
           "name": "WriteConsoleA",
           "x64": {
             "status": "partial",
-            "symbol": "WriteConsoleA",
+            "symbol": "console::WriteConsoleA",
             "source": "kernel32 - console.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "WriteConsoleA",
+            "symbol": "console::WriteConsoleA",
             "source": "kernel32 - console.rs"
           }
         },
@@ -1438,12 +1438,12 @@
           "name": "WriteConsoleW",
           "x64": {
             "status": "partial",
-            "symbol": "WriteConsoleW",
+            "symbol": "console::WriteConsoleW",
             "source": "kernel32 - console.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "WriteConsoleW",
+            "symbol": "console::WriteConsoleW",
             "source": "kernel32 - console.rs"
           }
         },
@@ -1451,12 +1451,12 @@
           "name": "WriteFile",
           "x64": {
             "status": "partial",
-            "symbol": "WriteFile",
+            "symbol": "file::WriteFile",
             "source": "kernel32 - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "WriteFile",
+            "symbol": "file::WriteFile",
             "source": "kernel32 - file.rs"
           }
         }
@@ -1464,18 +1464,18 @@
     },
     {
       "name": "msvcrt.dll",
-      "functionCount": 33,
+      "functionCount": 37,
       "functions": [
         {
           "name": "__C_specific_handler",
           "x64": {
             "status": "stubbed",
-            "symbol": "__C_specific_handler",
+            "symbol": "crt_support::__C_specific_handler",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "__C_specific_handler",
+            "symbol": "crt_support::__C_specific_handler",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1488,8 +1488,21 @@
           },
           "x86": {
             "status": "partial",
-            "symbol": "__getmainargs",
+            "symbol": "crt_init::__getmainargs",
             "source": "msvcrt - crt_init.rs"
+          }
+        },
+        {
+          "name": "__initenv",
+          "x64": {
+            "status": "implemented",
+            "symbol": "crt_support::__initenv",
+            "source": "msvcrt - crt_support.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "crt_support::__initenv",
+            "source": "msvcrt - crt_support.rs"
           }
         },
         {
@@ -1548,12 +1561,12 @@
           "name": "__set_app_type",
           "x64": {
             "status": "stubbed",
-            "symbol": "__set_app_type",
+            "symbol": "crt_support::__set_app_type",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "__set_app_type",
+            "symbol": "crt_support::__set_app_type",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1561,12 +1574,12 @@
           "name": "__setusermatherr",
           "x64": {
             "status": "stubbed",
-            "symbol": "__setusermatherr",
+            "symbol": "crt_support::__setusermatherr",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "__setusermatherr",
+            "symbol": "crt_support::__setusermatherr",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1574,12 +1587,12 @@
           "name": "_amsg_exit",
           "x64": {
             "status": "stubbed",
-            "symbol": "_amsg_exit",
+            "symbol": "crt_support::_amsg_exit",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "_amsg_exit",
+            "symbol": "crt_support::_amsg_exit",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1597,6 +1610,19 @@
           }
         },
         {
+          "name": "_commode",
+          "x64": {
+            "status": "implemented",
+            "symbol": "crt_support::_commode",
+            "source": "msvcrt - crt_support.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "crt_support::_commode",
+            "source": "msvcrt - crt_support.rs"
+          }
+        },
+        {
           "name": "_errno",
           "x64": {
             "status": "implemented",
@@ -1606,6 +1632,19 @@
           "x86": {
             "status": "implemented",
             "symbol": "crt_support::_errno",
+            "source": "msvcrt - crt_support.rs"
+          }
+        },
+        {
+          "name": "_fmode",
+          "x64": {
+            "status": "implemented",
+            "symbol": "crt_support::_fmode",
+            "source": "msvcrt - crt_support.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "crt_support::_fmode",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1636,6 +1675,19 @@
           }
         },
         {
+          "name": "_iob",
+          "x64": {
+            "status": "implemented",
+            "symbol": "crt_support::_iob",
+            "source": "msvcrt - crt_support.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "crt_support::_iob",
+            "source": "msvcrt - crt_support.rs"
+          }
+        },
+        {
           "name": "_lock",
           "x64": {
             "status": "implemented",
@@ -1652,12 +1704,12 @@
           "name": "_onexit",
           "x64": {
             "status": "stubbed",
-            "symbol": "_onexit",
+            "symbol": "crt_support::_onexit",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "_onexit",
+            "symbol": "crt_support::_onexit",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1717,12 +1769,12 @@
           "name": "fprintf",
           "x64": {
             "status": "partial",
-            "symbol": "fprintf",
+            "symbol": "stdio::fprintf",
             "source": "msvcrt - stdio.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "fprintf",
+            "symbol": "stdio::fprintf",
             "source": "msvcrt - stdio.rs"
           }
         },
@@ -1834,12 +1886,12 @@
           "name": "signal",
           "x64": {
             "status": "stubbed",
-            "symbol": "signal",
+            "symbol": "crt_support::signal",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "signal",
+            "symbol": "crt_support::signal",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -1886,12 +1938,12 @@
           "name": "vfprintf",
           "x64": {
             "status": "partial",
-            "symbol": "vfprintf",
+            "symbol": "stdio::vfprintf",
             "source": "msvcrt - stdio.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "vfprintf",
+            "symbol": "stdio::vfprintf",
             "source": "msvcrt - stdio.rs"
           }
         }
@@ -1905,12 +1957,12 @@
           "name": "NtClose",
           "x64": {
             "status": "partial",
-            "symbol": "NtClose",
+            "symbol": "file::NtClose",
             "source": "ntdll - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "NtClose",
+            "symbol": "file::NtClose",
             "source": "ntdll - file.rs"
           }
         },
@@ -1918,12 +1970,12 @@
           "name": "NtCreateFile",
           "x64": {
             "status": "partial",
-            "symbol": "NtCreateFile",
+            "symbol": "file::NtCreateFile",
             "source": "ntdll - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "NtCreateFile",
+            "symbol": "file::NtCreateFile",
             "source": "ntdll - file.rs"
           }
         },
@@ -1931,12 +1983,12 @@
           "name": "NtQueryInformationFile",
           "x64": {
             "status": "partial",
-            "symbol": "NtQueryInformationFile",
+            "symbol": "file::NtQueryInformationFile",
             "source": "ntdll - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "NtQueryInformationFile",
+            "symbol": "file::NtQueryInformationFile",
             "source": "ntdll - file.rs"
           }
         },
@@ -1944,12 +1996,12 @@
           "name": "NtReadFile",
           "x64": {
             "status": "partial",
-            "symbol": "NtReadFile",
+            "symbol": "file::NtReadFile",
             "source": "ntdll - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "NtReadFile",
+            "symbol": "file::NtReadFile",
             "source": "ntdll - file.rs"
           }
         },
@@ -1957,12 +2009,12 @@
           "name": "NtTerminateProcess",
           "x64": {
             "status": "partial",
-            "symbol": "NtTerminateProcess",
+            "symbol": "process::NtTerminateProcess",
             "source": "ntdll - process.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "NtTerminateProcess",
+            "symbol": "process::NtTerminateProcess",
             "source": "ntdll - process.rs"
           }
         },
@@ -1970,12 +2022,12 @@
           "name": "NtWriteFile",
           "x64": {
             "status": "partial",
-            "symbol": "NtWriteFile",
+            "symbol": "file::NtWriteFile",
             "source": "ntdll - file.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "NtWriteFile",
+            "symbol": "file::NtWriteFile",
             "source": "ntdll - file.rs"
           }
         },
@@ -1983,12 +2035,12 @@
           "name": "RtlGetVersion",
           "x64": {
             "status": "partial",
-            "symbol": "RtlGetVersion",
+            "symbol": "rtl::RtlGetVersion",
             "source": "ntdll - rtl.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "RtlGetVersion",
+            "symbol": "rtl::RtlGetVersion",
             "source": "ntdll - rtl.rs"
           }
         },
@@ -1996,12 +2048,12 @@
           "name": "RtlInitUnicodeString",
           "x64": {
             "status": "partial",
-            "symbol": "RtlInitUnicodeString",
+            "symbol": "rtl::RtlInitUnicodeString",
             "source": "ntdll - rtl.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "RtlInitUnicodeString",
+            "symbol": "rtl::RtlInitUnicodeString",
             "source": "ntdll - rtl.rs"
           }
         }
@@ -2015,12 +2067,12 @@
           "name": "CreateWindowExA",
           "x64": {
             "status": "partial",
-            "symbol": "CreateWindowExA",
+            "symbol": "window_lifecycle::CreateWindowExA",
             "source": "user32 - window_lifecycle.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateWindowExA",
+            "symbol": "window_lifecycle::CreateWindowExA",
             "source": "user32 - window_lifecycle.rs"
           }
         },
@@ -2028,12 +2080,12 @@
           "name": "CreateWindowExW",
           "x64": {
             "status": "partial",
-            "symbol": "CreateWindowExW",
+            "symbol": "window_lifecycle::CreateWindowExW",
             "source": "user32 - window_lifecycle.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "CreateWindowExW",
+            "symbol": "window_lifecycle::CreateWindowExW",
             "source": "user32 - window_lifecycle.rs"
           }
         },
@@ -2041,12 +2093,12 @@
           "name": "DefWindowProcA",
           "x64": {
             "status": "stubbed",
-            "symbol": "DefWindowProcA",
+            "symbol": "message_queue::DefWindowProcA",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "DefWindowProcA",
+            "symbol": "message_queue::DefWindowProcA",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2054,12 +2106,12 @@
           "name": "DefWindowProcW",
           "x64": {
             "status": "stubbed",
-            "symbol": "DefWindowProcW",
+            "symbol": "message_queue::DefWindowProcW",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "DefWindowProcW",
+            "symbol": "message_queue::DefWindowProcW",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2067,12 +2119,12 @@
           "name": "DestroyWindow",
           "x64": {
             "status": "partial",
-            "symbol": "DestroyWindow",
+            "symbol": "window_lifecycle::DestroyWindow",
             "source": "user32 - window_lifecycle.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "DestroyWindow",
+            "symbol": "window_lifecycle::DestroyWindow",
             "source": "user32 - window_lifecycle.rs"
           }
         },
@@ -2080,12 +2132,12 @@
           "name": "DispatchMessageA",
           "x64": {
             "status": "partial",
-            "symbol": "DispatchMessageA",
+            "symbol": "message_queue::DispatchMessageA",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "DispatchMessageA",
+            "symbol": "message_queue::DispatchMessageA",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2093,12 +2145,12 @@
           "name": "DispatchMessageW",
           "x64": {
             "status": "partial",
-            "symbol": "DispatchMessageW",
+            "symbol": "message_queue::DispatchMessageW",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "DispatchMessageW",
+            "symbol": "message_queue::DispatchMessageW",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2106,12 +2158,12 @@
           "name": "GetMessageA",
           "x64": {
             "status": "partial",
-            "symbol": "GetMessageA",
+            "symbol": "message_queue::GetMessageA",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetMessageA",
+            "symbol": "message_queue::GetMessageA",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2119,12 +2171,12 @@
           "name": "GetMessageW",
           "x64": {
             "status": "partial",
-            "symbol": "GetMessageW",
+            "symbol": "message_queue::GetMessageW",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetMessageW",
+            "symbol": "message_queue::GetMessageW",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2132,12 +2184,12 @@
           "name": "GetWindowTextA",
           "x64": {
             "status": "partial",
-            "symbol": "GetWindowTextA",
+            "symbol": "window_text::GetWindowTextA",
             "source": "user32 - window_text.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetWindowTextA",
+            "symbol": "window_text::GetWindowTextA",
             "source": "user32 - window_text.rs"
           }
         },
@@ -2145,12 +2197,12 @@
           "name": "GetWindowTextLengthA",
           "x64": {
             "status": "partial",
-            "symbol": "GetWindowTextLengthA",
+            "symbol": "window_text::GetWindowTextLengthA",
             "source": "user32 - window_text.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetWindowTextLengthA",
+            "symbol": "window_text::GetWindowTextLengthA",
             "source": "user32 - window_text.rs"
           }
         },
@@ -2158,12 +2210,12 @@
           "name": "GetWindowTextLengthW",
           "x64": {
             "status": "partial",
-            "symbol": "GetWindowTextLengthW",
+            "symbol": "window_text::GetWindowTextLengthW",
             "source": "user32 - window_text.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetWindowTextLengthW",
+            "symbol": "window_text::GetWindowTextLengthW",
             "source": "user32 - window_text.rs"
           }
         },
@@ -2171,12 +2223,12 @@
           "name": "GetWindowTextW",
           "x64": {
             "status": "partial",
-            "symbol": "GetWindowTextW",
+            "symbol": "window_text::GetWindowTextW",
             "source": "user32 - window_text.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "GetWindowTextW",
+            "symbol": "window_text::GetWindowTextW",
             "source": "user32 - window_text.rs"
           }
         },
@@ -2184,12 +2236,12 @@
           "name": "PeekMessageA",
           "x64": {
             "status": "partial",
-            "symbol": "PeekMessageA",
+            "symbol": "message_queue::PeekMessageA",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "PeekMessageA",
+            "symbol": "message_queue::PeekMessageA",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2197,12 +2249,12 @@
           "name": "PeekMessageW",
           "x64": {
             "status": "partial",
-            "symbol": "PeekMessageW",
+            "symbol": "message_queue::PeekMessageW",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "PeekMessageW",
+            "symbol": "message_queue::PeekMessageW",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2210,12 +2262,12 @@
           "name": "PostMessageA",
           "x64": {
             "status": "partial",
-            "symbol": "PostMessageA",
+            "symbol": "message_queue::PostMessageA",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "PostMessageA",
+            "symbol": "message_queue::PostMessageA",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2223,12 +2275,12 @@
           "name": "PostMessageW",
           "x64": {
             "status": "partial",
-            "symbol": "PostMessageW",
+            "symbol": "message_queue::PostMessageW",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "PostMessageW",
+            "symbol": "message_queue::PostMessageW",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2249,12 +2301,12 @@
           "name": "RegisterClassA",
           "x64": {
             "status": "partial",
-            "symbol": "RegisterClassA",
+            "symbol": "class_registration::RegisterClassA",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "RegisterClassA",
+            "symbol": "class_registration::RegisterClassA",
             "source": "user32 - class_registration.rs"
           }
         },
@@ -2262,12 +2314,12 @@
           "name": "RegisterClassExA",
           "x64": {
             "status": "partial",
-            "symbol": "RegisterClassExA",
+            "symbol": "class_registration::RegisterClassExA",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "RegisterClassExA",
+            "symbol": "class_registration::RegisterClassExA",
             "source": "user32 - class_registration.rs"
           }
         },
@@ -2275,12 +2327,12 @@
           "name": "RegisterClassExW",
           "x64": {
             "status": "partial",
-            "symbol": "RegisterClassExW",
+            "symbol": "class_registration::RegisterClassExW",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "RegisterClassExW",
+            "symbol": "class_registration::RegisterClassExW",
             "source": "user32 - class_registration.rs"
           }
         },
@@ -2288,12 +2340,12 @@
           "name": "RegisterClassW",
           "x64": {
             "status": "partial",
-            "symbol": "RegisterClassW",
+            "symbol": "class_registration::RegisterClassW",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "RegisterClassW",
+            "symbol": "class_registration::RegisterClassW",
             "source": "user32 - class_registration.rs"
           }
         },
@@ -2301,12 +2353,12 @@
           "name": "SendMessageA",
           "x64": {
             "status": "partial",
-            "symbol": "SendMessageA",
+            "symbol": "message_queue::SendMessageA",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "SendMessageA",
+            "symbol": "message_queue::SendMessageA",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2314,12 +2366,12 @@
           "name": "SendMessageW",
           "x64": {
             "status": "partial",
-            "symbol": "SendMessageW",
+            "symbol": "message_queue::SendMessageW",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "SendMessageW",
+            "symbol": "message_queue::SendMessageW",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2327,12 +2379,12 @@
           "name": "SetWindowTextA",
           "x64": {
             "status": "partial",
-            "symbol": "SetWindowTextA",
+            "symbol": "window_text::SetWindowTextA",
             "source": "user32 - window_text.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "SetWindowTextA",
+            "symbol": "window_text::SetWindowTextA",
             "source": "user32 - window_text.rs"
           }
         },
@@ -2340,12 +2392,12 @@
           "name": "SetWindowTextW",
           "x64": {
             "status": "partial",
-            "symbol": "SetWindowTextW",
+            "symbol": "window_text::SetWindowTextW",
             "source": "user32 - window_text.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "SetWindowTextW",
+            "symbol": "window_text::SetWindowTextW",
             "source": "user32 - window_text.rs"
           }
         },
@@ -2353,12 +2405,12 @@
           "name": "ShowWindow",
           "x64": {
             "status": "partial",
-            "symbol": "ShowWindow",
+            "symbol": "window_lifecycle::ShowWindow",
             "source": "user32 - window_lifecycle.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "ShowWindow",
+            "symbol": "window_lifecycle::ShowWindow",
             "source": "user32 - window_lifecycle.rs"
           }
         },
@@ -2366,12 +2418,12 @@
           "name": "TranslateMessage",
           "x64": {
             "status": "stubbed",
-            "symbol": "TranslateMessage",
+            "symbol": "message_queue::TranslateMessage",
             "source": "user32 - message_queue.rs"
           },
           "x86": {
             "status": "stubbed",
-            "symbol": "TranslateMessage",
+            "symbol": "message_queue::TranslateMessage",
             "source": "user32 - message_queue.rs"
           }
         },
@@ -2379,12 +2431,12 @@
           "name": "UnregisterClassA",
           "x64": {
             "status": "partial",
-            "symbol": "UnregisterClassA",
+            "symbol": "class_registration::UnregisterClassA",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "UnregisterClassA",
+            "symbol": "class_registration::UnregisterClassA",
             "source": "user32 - class_registration.rs"
           }
         },
@@ -2392,12 +2444,12 @@
           "name": "UnregisterClassW",
           "x64": {
             "status": "partial",
-            "symbol": "UnregisterClassW",
+            "symbol": "class_registration::UnregisterClassW",
             "source": "user32 - class_registration.rs"
           },
           "x86": {
             "status": "partial",
-            "symbol": "UnregisterClassW",
+            "symbol": "class_registration::UnregisterClassW",
             "source": "user32 - class_registration.rs"
           }
         },
@@ -2418,15 +2470,15 @@
     }
   ],
   "totals": {
-    "functions": 182,
+    "functions": 186,
     "x64": {
-      "implemented": 76,
+      "implemented": 80,
       "partial": 84,
       "stubbed": 22,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 75,
+      "implemented": 79,
       "partial": 86,
       "stubbed": 21,
       "unimplemented": 0
