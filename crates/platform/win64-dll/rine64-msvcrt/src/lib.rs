@@ -5,7 +5,7 @@ pub mod stdio;
 pub mod stdlib;
 pub mod string;
 
-use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
+use rine_dlls::{DllPlugin, as_win_api};
 
 /// Primary msvcrt.dll plugin.
 pub struct MsvcrtPlugin;
@@ -15,92 +15,19 @@ impl DllPlugin for MsvcrtPlugin {
         &["msvcrt.dll"]
     }
 
-    fn exports(&self) -> Vec<Export> {
-        vec![
-            // stdio
-            Export::Func("printf", as_win_api!(stdio::printf)),
-            Export::Func("puts", as_win_api!(stdio::puts)),
-            Export::Func("fwrite", as_win_api!(stdio::fwrite)),
-            // stdlib
-            Export::Func("exit", as_win_api!(stdlib::exit)),
-            // stdlib
-            Export::Func("_cexit", as_win_api!(stdlib::_cexit)),
-            // crt_init
-            Export::Func("__getmainargs", as_win_api!(crt_init::__getmainargs)),
-            Export::Func("_initterm", as_win_api!(crt_init::_initterm)),
-            Export::Func("_initterm_e", as_win_api!(crt_init::_initterm_e)),
-            // crt_support — functions
-            Export::Func("__iob_func", as_win_api!(crt_support::__iob_func)),
-            Export::Func("abort", as_win_api!(crt_support::abort)),
-            Export::Func("_lock", as_win_api!(crt_support::_lock)),
-            Export::Func("_unlock", as_win_api!(crt_support::_unlock)),
-            Export::Func("_errno", as_win_api!(crt_support::_errno)),
-            Export::Func("__p__environ", as_win_api!(crt_support::__p__environ)),
-            Export::Func("__p__fmode", as_win_api!(crt_support::__p__fmode)),
-            Export::Func("__p__commode", as_win_api!(crt_support::__p__commode)),
-            // crt_support — data exports
-            Export::Data("__initenv", unsafe {
-                crt_support::__initenv() as *const ()
-            }),
-            Export::Data("_commode", unsafe { crt_support::_commode() as *const () }),
-            Export::Data("_fmode", unsafe { crt_support::_fmode() as *const () }),
-            Export::Data("_iob", unsafe { crt_support::_iob() as *const () }),
-            // memory
-            Export::Func("malloc", as_win_api!(memory::malloc)),
-            Export::Func("calloc", as_win_api!(memory::calloc)),
-            Export::Func("realloc", as_win_api!(memory::realloc)),
-            Export::Func("free", as_win_api!(memory::free)),
-            Export::Func("memcpy", as_win_api!(memory::memcpy)),
-            Export::Func("memset", as_win_api!(memory::memset)),
-            // string
-            Export::Func("strlen", as_win_api!(string::strlen)),
-            Export::Func("strcmp", as_win_api!(string::strcmp)),
-            Export::Func("strncmp", as_win_api!(string::strncmp)),
-        ]
+    fn exports(&self) -> Vec<rine_dlls::Export> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated.rs"))
     }
 
-    fn stubs(&self) -> Vec<StubExport> {
-        vec![
-            // crt_support — functions
-            StubExport {
-                name: "__set_app_type",
-                func: as_win_api!(crt_support::__set_app_type),
-            },
-            StubExport {
-                name: "__setusermatherr",
-                func: as_win_api!(crt_support::__setusermatherr),
-            },
-            StubExport {
-                name: "__C_specific_handler",
-                func: as_win_api!(crt_support::__C_specific_handler),
-            },
-            StubExport {
-                name: "_onexit",
-                func: as_win_api!(crt_support::_onexit),
-            },
-            StubExport {
-                name: "_amsg_exit",
-                func: as_win_api!(crt_support::_amsg_exit),
-            },
-            StubExport {
-                name: "signal",
-                func: as_win_api!(crt_support::signal),
-            },
-        ]
+    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
     }
 
-    fn partials(&self) -> Vec<PartialExport> {
-        vec![
-            // stdio
-            PartialExport {
-                name: "fprintf",
-                func: as_win_api!(stdio::fprintf),
-            },
-            PartialExport {
-                name: "vfprintf",
-                func: as_win_api!(stdio::vfprintf),
-            },
-        ]
+    fn partials(&self) -> Vec<rine_dlls::PartialExport> {
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/dll_plugin_generated_partials.rs"
+        ))
     }
 }
 
@@ -126,35 +53,18 @@ impl DllPlugin for CrtForwarderPlugin {
         ]
     }
 
-    fn exports(&self) -> Vec<Export> {
-        vec![
-            Export::Func("printf", as_win_api!(stdio::printf)),
-            Export::Func("puts", as_win_api!(stdio::puts)),
-            Export::Func("exit", as_win_api!(stdlib::exit)),
-            Export::Func("_cexit", as_win_api!(stdlib::_cexit)),
-            Export::Func("_initterm", as_win_api!(crt_init::_initterm)),
-            Export::Func("_initterm_e", as_win_api!(crt_init::_initterm_e)),
-            // crt_support — data exports
-            Export::Data("__initenv", unsafe {
-                crt_support::__initenv() as *const ()
-            }),
-            Export::Data("_commode", unsafe { crt_support::_commode() as *const () }),
-            Export::Data("_fmode", unsafe { crt_support::_fmode() as *const () }),
-            Export::Data("_iob", unsafe { crt_support::_iob() as *const () }),
-        ]
+    fn exports(&self) -> Vec<rine_dlls::Export> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated.rs"))
     }
 
-    fn stubs(&self) -> Vec<StubExport> {
-        vec![
-            // crt_support — functions
-            StubExport {
-                name: "__set_app_type",
-                func: as_win_api!(crt_support::__set_app_type),
-            },
-            StubExport {
-                name: "__setusermatherr",
-                func: as_win_api!(crt_support::__setusermatherr),
-            },
-        ]
+    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
+    }
+
+    fn partials(&self) -> Vec<rine_dlls::PartialExport> {
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/dll_plugin_generated_partials.rs"
+        ))
     }
 }

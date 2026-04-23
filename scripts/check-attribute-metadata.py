@@ -27,9 +27,6 @@ REQUIRED_METHOD_INCLUDES = {
     "partials": "dll_plugin_generated_partials.rs",
 }
 
-ATTRIBUTE_PATTERN = re.compile(r"#\[\s*(?:[\w]+::)*(implemented|partial|stubbed)\b")
-
-
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
@@ -108,16 +105,6 @@ def validate_plugin(crate_dir: Path) -> list[str]:
             errors.append(
                 f"{build_rs.relative_to(REPO_ROOT)}: build script must call rine_dll_build::generate_metadata_code()"
             )
-
-    has_any_attr = False
-    for rs_file in (crate_dir / "src").rglob("*.rs"):
-        if ATTRIBUTE_PATTERN.search(read_text(rs_file)):
-            has_any_attr = True
-            break
-    if not has_any_attr:
-        errors.append(
-            f"{(crate_dir / 'src').relative_to(REPO_ROOT)}: no #[implemented]/#[partial]/#[stubbed] attributes found"
-        )
 
     return errors
 

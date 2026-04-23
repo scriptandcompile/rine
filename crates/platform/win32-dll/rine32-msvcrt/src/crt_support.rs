@@ -98,6 +98,7 @@ pub unsafe extern "C" fn __C_specific_handler(
 /// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
 /// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[rine_dlls::implemented]
+#[rine_dlls::data_export]
 pub unsafe extern "C" fn _commode() -> *mut i32 {
     common::commode_ptr()
 }
@@ -117,6 +118,7 @@ pub unsafe extern "C" fn _commode() -> *mut i32 {
 /// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
 /// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[rine_dlls::implemented]
+#[rine_dlls::data_export]
 pub unsafe extern "C" fn _fmode() -> *mut i32 {
     common::fmode_ptr()
 }
@@ -131,6 +133,7 @@ pub unsafe extern "C" fn _fmode() -> *mut i32 {
 /// A pointer to an array of three FILE structures expected by the CRT for standard I/O operations.
 /// The CRT expects this to be exported as `_iob` and used by functions like `printf` and `fprintf`.
 #[rine_dlls::implemented]
+#[rine_dlls::data_export]
 pub unsafe extern "C" fn _iob() -> *mut u8 {
     common::fake_iob_32_ptr()
 }
@@ -150,6 +153,7 @@ pub unsafe extern "C" fn _iob() -> *mut u8 {
 /// since we provide the real environment via `__getmainargs`.
 /// This should return a pointer to the actual environment variables.
 #[rine_dlls::implemented]
+#[rine_dlls::data_export]
 pub unsafe extern "C" fn __initenv() -> *mut usize {
     common::initenv_ptr()
 }

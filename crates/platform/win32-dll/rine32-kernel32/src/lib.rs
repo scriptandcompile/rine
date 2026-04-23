@@ -7,7 +7,7 @@ pub mod sync;
 pub mod thread;
 pub mod version;
 
-use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
+use rine_dlls::{DllPlugin, as_win_api};
 
 #[cfg(not(target_pointer_width = "32"))]
 compile_error!(
@@ -21,15 +21,15 @@ impl DllPlugin for Kernel32Plugin32 {
         &["kernel32.dll"]
     }
 
-    fn exports(&self) -> Vec<Export> {
+    fn exports(&self) -> Vec<rine_dlls::Export> {
         include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated.rs"))
     }
 
-    fn stubs(&self) -> Vec<StubExport> {
+    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
         include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
     }
 
-    fn partials(&self) -> Vec<PartialExport> {
+    fn partials(&self) -> Vec<rine_dlls::PartialExport> {
         include!(concat!(
             env!("OUT_DIR"),
             "/dll_plugin_generated_partials.rs"

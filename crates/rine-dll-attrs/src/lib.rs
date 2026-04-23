@@ -24,3 +24,8 @@ pub fn dll(_attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn ordinal(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
+
+#[proc_macro_attribute]
+pub fn data_export(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}

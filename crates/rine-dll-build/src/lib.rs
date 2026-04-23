@@ -115,9 +115,17 @@ impl ExportStatus {
 struct AttributeExport {
     export_name: String,
     symbol_path: String,
+    kind: AttributeExportKind,
     dll_names: Vec<String>,
     status: ExportStatus,
     source: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AttributeExportKind {
+    Func,
+    Data,
+    DataFromFn,
 }
 
 #[derive(Debug, Default)]
@@ -126,6 +134,7 @@ struct ParsedExportAttributes {
     export_name: Option<String>,
     dll_names: Vec<String>,
     ordinal: Option<u16>,
+    data_export: bool,
     has_any_export_metadata: bool,
 }
 
@@ -447,6 +456,11 @@ fn parse_attributed_fn(
     exports.push(AttributeExport {
         export_name,
         symbol_path,
+        kind: if attrs.data_export {
+            AttributeExportKind::DataFromFn
+        } else {
+            AttributeExportKind::Func
+        },
         dll_names,
         status: attrs.status.expect("checked above"),
         source,
@@ -519,6 +533,7 @@ fn parse_attributed_static(
     exports.push(AttributeExport {
         export_name,
         symbol_path,
+        kind: AttributeExportKind::Data,
         dll_names,
         status: attrs.status.expect("checked above"),
         source,
@@ -589,6 +604,14 @@ fn parse_export_attributes(attrs: &[Attribute]) -> Result<ParsedExportAttributes
             if parsed.ordinal.replace(ordinal).is_some() {
                 return Err("duplicate #[ordinal(...)] attribute".to_string());
             }
+            continue;
+        }
+        if attr_name.as_deref() == Some("data_export") {
+            parsed.has_any_export_metadata = true;
+            if parsed.data_export {
+                return Err("duplicate #[data_export] attribute".to_string());
+            }
+            parsed.data_export = true;
             continue;
         }
         if attr_name.as_deref() == Some("export_name") {
@@ -843,10 +866,26 @@ fn generate_trait_methods(exports: &[AttributeExport]) -> (String, String, Strin
     stubs.sort_by(|a, b| a.export_name.cmp(&b.export_name));
 
     for export in &implemented {
-        exports_expr.push_str(&format!(
-            "    rine_dlls::Export::Func(\"{}\", as_win_api!({})),\n",
-            export.export_name, export.symbol_path
-        ));
+        match export.kind {
+            AttributeExportKind::Func => {
+                exports_expr.push_str(&format!(
+                    "    rine_dlls::Export::Func(\"{}\", as_win_api!({})),\n",
+                    export.export_name, export.symbol_path
+                ));
+            }
+            AttributeExportKind::Data => {
+                exports_expr.push_str(&format!(
+                    "    rine_dlls::Export::Data(\"{}\", core::ptr::addr_of!({}) as *const ()),\n",
+                    export.export_name, export.symbol_path
+                ));
+            }
+            AttributeExportKind::DataFromFn => {
+                exports_expr.push_str(&format!(
+                    "    rine_dlls::Export::Data(\"{}\", unsafe {{ {}() as *const () }}),\n",
+                    export.export_name, export.symbol_path
+                ));
+            }
+        }
     }
     exports_expr.push(']');
 

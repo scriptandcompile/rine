@@ -1,6 +1,6 @@
 pub mod registry;
 
-use rine_dlls::{DllPlugin, Export, PartialExport, as_win_api};
+use rine_dlls::{DllPlugin, as_win_api};
 
 pub struct Advapi32Plugin;
 
@@ -9,35 +9,18 @@ impl DllPlugin for Advapi32Plugin {
         &["advapi32.dll"]
     }
 
-    fn exports(&self) -> Vec<Export> {
-        vec![
-            // Registry
-            Export::Func("RegQueryValueExA", as_win_api!(registry::RegQueryValueExA)),
-            Export::Func("RegQueryValueExW", as_win_api!(registry::RegQueryValueExW)),
-            Export::Func("RegSetValueExA", as_win_api!(registry::RegSetValueExA)),
-            Export::Func("RegSetValueExW", as_win_api!(registry::RegSetValueExW)),
-            Export::Func("RegCloseKey", as_win_api!(registry::RegCloseKey)),
-        ]
+    fn exports(&self) -> Vec<rine_dlls::Export> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated.rs"))
     }
 
     fn partials(&self) -> Vec<rine_dlls::PartialExport> {
-        vec![
-            PartialExport {
-                name: "RegOpenKeyExA",
-                func: as_win_api!(registry::RegOpenKeyExA),
-            },
-            PartialExport {
-                name: "RegOpenKeyExW",
-                func: as_win_api!(registry::RegOpenKeyExW),
-            },
-            PartialExport {
-                name: "RegCreateKeyExA",
-                func: as_win_api!(registry::RegCreateKeyExA),
-            },
-            PartialExport {
-                name: "RegCreateKeyExW",
-                func: as_win_api!(registry::RegCreateKeyExW),
-            },
-        ]
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/dll_plugin_generated_partials.rs"
+        ))
+    }
+
+    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
     }
 }

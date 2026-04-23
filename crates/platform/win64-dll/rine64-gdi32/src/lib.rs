@@ -1,6 +1,6 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use rine_dlls::{DllPlugin, Export, PartialExport, as_win_api};
+use rine_dlls::{DllPlugin, as_win_api};
 mod ops;
 
 pub struct Gdi32Plugin;
@@ -10,35 +10,18 @@ impl DllPlugin for Gdi32Plugin {
         &["gdi32.dll"]
     }
 
-    fn exports(&self) -> Vec<Export> {
-        vec![
-            Export::Func("DeleteDC", as_win_api!(ops::DeleteDC)),
-            Export::Func("CreateSolidBrush", as_win_api!(ops::CreateSolidBrush)),
-            Export::Func("SelectObject", as_win_api!(ops::SelectObject)),
-            Export::Func("DeleteObject", as_win_api!(ops::DeleteObject)),
-            Export::Func("TextOutA", as_win_api!(ops::TextOutA)),
-            Export::Func("TextOutW", as_win_api!(ops::TextOutW)),
-        ]
+    fn exports(&self) -> Vec<rine_dlls::Export> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated.rs"))
     }
 
     fn partials(&self) -> Vec<rine_dlls::PartialExport> {
-        vec![
-            PartialExport {
-                name: "CreateCompatibleDC",
-                func: as_win_api!(ops::CreateCompatibleDC),
-            },
-            PartialExport {
-                name: "CreateCompatibleBitmap",
-                func: as_win_api!(ops::CreateCompatibleBitmap),
-            },
-            PartialExport {
-                name: "CreatePen",
-                func: as_win_api!(ops::CreatePen),
-            },
-            PartialExport {
-                name: "BitBlt",
-                func: as_win_api!(ops::BitBlt),
-            },
-        ]
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/dll_plugin_generated_partials.rs"
+        ))
+    }
+
+    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
     }
 }

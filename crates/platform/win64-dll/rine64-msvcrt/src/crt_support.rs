@@ -125,6 +125,7 @@ pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
 /// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
 /// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[rine_dlls::implemented]
+#[rine_dlls::data_export]
 pub unsafe extern "win64" fn _commode() -> *mut i32 {
     commode_ptr()
 }
@@ -144,6 +145,7 @@ pub unsafe extern "win64" fn _commode() -> *mut i32 {
 /// In a production implementation, this would be a properly implemented variable that controls CRT behavior.
 /// Currently, this is just a stub that returns a pointer to a variable that is not actually used.
 #[rine_dlls::implemented]
+#[rine_dlls::data_export]
 pub unsafe extern "win64" fn _fmode() -> *mut i32 {
     fmode_ptr()
 }
@@ -158,6 +160,7 @@ pub unsafe extern "win64" fn _fmode() -> *mut i32 {
 /// A pointer to an array of three FILE structures expected by the CRT for standard I/O operations.
 /// The CRT expects this to be exported as `_iob` and used by functions like `printf` and `fprintf`.
 #[rine_dlls::implemented]
+#[rine_dlls::data_export]
 pub unsafe extern "win64" fn _iob() -> *mut u8 {
     fake_iob_64_ptr()
 }
@@ -168,6 +171,7 @@ pub unsafe extern "win64" fn _iob() -> *mut u8 {
 /// the real environment is provided via `__getmainargs`).
 #[rine_dlls::implemented]
 #[allow(clippy::missing_safety_doc)]
+#[rine_dlls::data_export]
 pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
     initenv_ptr() as *const *const i8
 }

@@ -1,4 +1,4 @@
-use rine_dlls::{DllPlugin, Export};
+use rine_dlls::DllPlugin;
 
 pub struct Ws2_32Plugin;
 
@@ -7,7 +7,18 @@ impl DllPlugin for Ws2_32Plugin {
         &["ws2_32.dll"]
     }
 
-    fn exports(&self) -> Vec<Export> {
-        vec![]
+    fn exports(&self) -> Vec<rine_dlls::Export> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated.rs"))
+    }
+
+    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
+    }
+
+    fn partials(&self) -> Vec<rine_dlls::PartialExport> {
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/dll_plugin_generated_partials.rs"
+        ))
     }
 }

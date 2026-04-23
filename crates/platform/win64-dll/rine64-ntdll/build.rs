@@ -1,3 +1,3 @@
 fn main() {
-    rine_dll_build::validate_current_crate();
+    rine_dll_build::generate_metadata_code();
 }

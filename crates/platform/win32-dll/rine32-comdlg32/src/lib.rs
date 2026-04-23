@@ -4,7 +4,7 @@ pub mod error;
 pub mod open;
 pub mod save;
 
-use rine_dlls::{DllPlugin, Export, PartialExport, as_win_api};
+use rine_dlls::{DllPlugin, as_win_api};
 
 #[cfg(not(target_pointer_width = "32"))]
 compile_error!(
@@ -18,32 +18,18 @@ impl DllPlugin for Comdlg32Plugin32 {
         &["comdlg32.dll"]
     }
 
-    fn exports(&self) -> Vec<Export> {
-        vec![]
+    fn exports(&self) -> Vec<rine_dlls::Export> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated.rs"))
     }
 
-    fn partials(&self) -> Vec<PartialExport> {
-        vec![
-            PartialExport {
-                name: "GetOpenFileNameA",
-                func: as_win_api!(open::GetOpenFileNameA),
-            },
-            PartialExport {
-                name: "GetOpenFileNameW",
-                func: as_win_api!(open::GetOpenFileNameW),
-            },
-            PartialExport {
-                name: "GetSaveFileNameA",
-                func: as_win_api!(save::GetSaveFileNameA),
-            },
-            PartialExport {
-                name: "GetSaveFileNameW",
-                func: as_win_api!(save::GetSaveFileNameW),
-            },
-            PartialExport {
-                name: "CommDlgExtendedError",
-                func: as_win_api!(error::CommDlgExtendedError),
-            },
-        ]
+    fn partials(&self) -> Vec<rine_dlls::PartialExport> {
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/dll_plugin_generated_partials.rs"
+        ))
+    }
+
+    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
     }
 }

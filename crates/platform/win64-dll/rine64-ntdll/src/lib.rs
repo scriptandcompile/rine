@@ -3,7 +3,7 @@ pub mod memory;
 pub mod process;
 pub mod rtl;
 
-use rine_dlls::{DllPlugin, Export, PartialExport, StubExport, as_win_api};
+use rine_dlls::{DllPlugin, as_win_api};
 
 pub struct NtdllPlugin;
 
@@ -12,51 +12,18 @@ impl DllPlugin for NtdllPlugin {
         &["ntdll.dll"]
     }
 
-    fn exports(&self) -> Vec<Export> {
-        vec![]
+    fn exports(&self) -> Vec<rine_dlls::Export> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated.rs"))
     }
 
-    fn stubs(&self) -> Vec<StubExport> {
-        vec![]
+    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
     }
 
-    fn partials(&self) -> Vec<PartialExport> {
-        vec![
-            // file.rs
-            PartialExport {
-                name: "NtReadFile",
-                func: as_win_api!(file::NtReadFile),
-            },
-            PartialExport {
-                name: "NtWriteFile",
-                func: as_win_api!(file::NtWriteFile),
-            },
-            PartialExport {
-                name: "NtCreateFile",
-                func: as_win_api!(file::NtCreateFile),
-            },
-            PartialExport {
-                name: "NtClose",
-                func: as_win_api!(file::NtClose),
-            },
-            PartialExport {
-                name: "NtQueryInformationFile",
-                func: as_win_api!(file::NtQueryInformationFile),
-            },
-            // process.rs
-            PartialExport {
-                name: "NtTerminateProcess",
-                func: as_win_api!(process::NtTerminateProcess),
-            },
-            // rtl.rs
-            PartialExport {
-                name: "RtlInitUnicodeString",
-                func: as_win_api!(rtl::RtlInitUnicodeString),
-            },
-            PartialExport {
-                name: "RtlGetVersion",
-                func: as_win_api!(rtl::RtlGetVersion),
-            },
-        ]
+    fn partials(&self) -> Vec<rine_dlls::PartialExport> {
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/dll_plugin_generated_partials.rs"
+        ))
     }
 }
