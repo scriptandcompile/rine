@@ -5,6 +5,7 @@ use rine_common_comdlg32 as common;
 /// # Safety
 /// `ofn` must be null or a valid pointer to an `OPENFILENAMEA` whose string
 /// fields are null or point to valid NUL-terminated ANSI strings.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetSaveFileNameA(ofn: *mut common::OpenFileNameA) -> i32 {
@@ -19,6 +20,7 @@ pub unsafe extern "stdcall" fn GetSaveFileNameA(ofn: *mut common::OpenFileNameA)
 /// # Safety
 /// `ofn` must be null or a valid pointer to an `OPENFILENAMEW` whose string
 /// fields are null or point to valid NUL-terminated UTF-16 strings.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetSaveFileNameW(ofn: *mut common::OpenFileNameW) -> i32 {

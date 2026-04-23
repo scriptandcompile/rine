@@ -11,6 +11,7 @@ use rine_common_comdlg32 as common;
 /// Additionally, the caller should be aware that the returned error code may not
 /// be meaningful if the common dialog operations were not used correctly, and
 /// should handle the returned value accordingly to avoid potential issues.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CommDlgExtendedError() -> u32 {
