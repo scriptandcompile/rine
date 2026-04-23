@@ -15,6 +15,7 @@ use rine_types::strings::{read_cstr_counted, read_wstr_counted};
 /// # Returns
 /// On success, returns a raw handle value corresponding to the requested standard handle.
 /// If the specified standard handle is not available, the function returns INVALID_HANDLE_VALUE.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetStdHandle(nstd_handle: u32) -> isize {
@@ -36,6 +37,7 @@ pub unsafe extern "stdcall" fn GetStdHandle(nstd_handle: u32) -> isize {
 ///
 /// # Safety
 /// `console_output` must be a valid console handle in this runtime, `buffer` must
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WriteConsoleA(
@@ -71,6 +73,7 @@ pub unsafe extern "stdcall" fn WriteConsoleA(
 ///
 /// # Safety
 /// `console_output` must be a valid console handle in this runtime, `buffer` must
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WriteConsoleW(

@@ -106,6 +106,7 @@ type ThreadStartRoutine = unsafe extern "stdcall" fn(usize) -> u32;
 /// - `_security_attrs` and `_stack_size` semantics are ignored.
 /// - Most creation flags beyond basic launch are not implemented.
 /// - No Win32-accurate `GetLastError` mapping is provided for failure paths.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateThread(
@@ -140,6 +141,7 @@ pub unsafe extern "stdcall" fn CreateThread(
 ///
 /// # Returns
 /// A TLS index, or `TLS_OUT_OF_INDEXES` (0xFFFFFFFF) on failure.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn TlsAlloc() -> u32 {
@@ -157,6 +159,7 @@ pub unsafe extern "stdcall" fn TlsAlloc() -> u32 {
 ///
 /// # Returns
 /// `WinBool::TRUE` on success, `WinBool::FALSE` on failure (e.g., invalid index).
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn TlsFree(tls_index: u32) -> WinBool {
@@ -179,6 +182,7 @@ pub unsafe extern "stdcall" fn TlsFree(tls_index: u32) -> WinBool {
 /// A 0 can also be a valid value set by `TlsSetValue`, so the caller should use `GetLastError` to distinguish between an
 /// error and a valid 0 value if needed.
 /// Currently, we do not set `GetLastError` to provide more information.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn TlsGetValue(tls_index: u32) -> usize {
@@ -204,6 +208,7 @@ pub unsafe extern "stdcall" fn TlsGetValue(tls_index: u32) -> usize {
 /// # Notes
 /// Missing implementation features:
 /// - No Win32-accurate `GetLastError` mapping is provided for invalid TLS index failures.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn TlsSetValue(tls_index: u32, value: usize) -> WinBool {
@@ -219,6 +224,7 @@ pub unsafe extern "stdcall" fn TlsSetValue(tls_index: u32, value: usize) -> WinB
 /// The caller is responsible for ensuring that sleeping is appropriate in the current context
 /// (e.g., not holding locks that would cause deadlocks).
 /// The caller should also be aware that sleeping does not guarantee precise timing and may be affected by system scheduling and load.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn Sleep(milliseconds: u32) {
@@ -243,6 +249,7 @@ pub unsafe extern "stdcall" fn Sleep(milliseconds: u32) {
 ///   the internal handle table.
 /// - APIs expecting a queryable thread handle may still reject this pseudo-
 ///   handle instead of treating it as `GetCurrentThread()`.
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCurrentThread() -> isize {
@@ -259,6 +266,7 @@ pub unsafe extern "stdcall" fn GetCurrentThread() -> isize {
 ///
 /// # Returns
 /// The current thread's ID as a `u32`.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCurrentThreadId() -> u32 {
@@ -289,6 +297,7 @@ pub unsafe extern "stdcall" fn GetCurrentThreadId() -> u32 {
 /// - No explicit access-right checks are enforced against per-handle granted
 ///   permissions.
 /// - Pseudo-handle semantics (`GetCurrentThread`) are not normalized here.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetExitCodeThread(
@@ -312,6 +321,7 @@ pub unsafe extern "stdcall" fn GetExitCodeThread(
 ///
 /// # Returns
 /// `WAIT_OBJECT_0` if the handle was signalled, `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WaitForSingleObject(handle: isize, timeout_ms: u32) -> u32 {
@@ -341,6 +351,7 @@ pub unsafe extern "stdcall" fn WaitForSingleObject(handle: isize, timeout_ms: u3
 /// `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
 /// If `wait_all` is `WinBool::TRUE`, returns `WAIT_OBJECT_0` if all handles are signalled,
 /// `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WaitForMultipleObjects(

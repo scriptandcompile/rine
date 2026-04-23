@@ -30,6 +30,7 @@ use rine_types::{
 /// This implementation does not support all features of the Windows API, such as
 /// sharing modes, security attributes, or file attributes. It focuses on basic
 /// file creation and opening functionality.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateFileA(
@@ -74,6 +75,7 @@ pub unsafe extern "stdcall" fn CreateFileA(
 /// This implementation does not support all features of the Windows API, such as
 /// sharing modes, security attributes, or file attributes. It focuses on basic
 /// file creation and opening functionality.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateFileW(
@@ -106,6 +108,7 @@ pub unsafe extern "stdcall" fn CreateFileW(
 ///
 /// # Returns
 /// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn DeleteFileW(file_name: *const u16) -> WinBool {
@@ -129,6 +132,7 @@ pub unsafe extern "stdcall" fn DeleteFileW(file_name: *const u16) -> WinBool {
 ///
 /// # Returns
 /// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn DeleteFileA(file_name: *const u8) -> WinBool {
@@ -158,6 +162,7 @@ pub unsafe extern "stdcall" fn DeleteFileA(file_name: *const u8) -> WinBool {
 ///
 /// # Returns
 /// The low 32 bits of the file size on success, or INVALID_FILE_SIZE (0xFFFFFFFF) on failure.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetFileSize(file: isize, file_size_high: *mut u32) -> u32 {
@@ -196,6 +201,7 @@ pub unsafe extern "stdcall" fn GetFileSize(file: isize, file_size_high: *mut u32
 /// Missing implementation features:
 /// - Overlapped/asynchronous I/O is not implemented (`_overlapped` is ignored).
 /// - This implementation does not set `GetLastError` on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WriteFile(
@@ -232,6 +238,7 @@ pub unsafe extern "stdcall" fn WriteFile(
 /// Missing implementation features:
 /// - Overlapped/asynchronous I/O is not implemented (`_overlapped` is ignored).
 /// - This implementation does not set `GetLastError` on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ReadFile(
@@ -259,6 +266,7 @@ pub unsafe extern "stdcall" fn ReadFile(
 ///
 /// # Note
 /// This implementation does not support flushing of non-file handles (e.g. pipes, consoles).
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FlushFileBuffers(file: isize) -> WinBool {
@@ -277,6 +285,7 @@ pub unsafe extern "stdcall" fn FlushFileBuffers(file: isize) -> WinBool {
 ///
 /// # Returns
 /// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CloseHandle(object: isize) -> WinBool {
@@ -308,6 +317,7 @@ pub unsafe extern "stdcall" fn CloseHandle(object: isize) -> WinBool {
 /// if an error occurred or if the new file pointer is actually at 0xFFFFFFFF.
 /// Currently, this implementation does not set the error code, so it will return INVALID_SET_FILE_POINTER on
 /// failure and 0xFFFFFFFF on success if the new file pointer is exactly 0xFFFFFFFF.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetFilePointer(
@@ -335,6 +345,7 @@ pub unsafe extern "stdcall" fn SetFilePointer(
 /// # Returns
 /// A search handle that can be used with `FindNextFile` and `FindClose`, or `INVALID_HANDLE_VALUE` if no
 /// matching files were found or an error occurred.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindFirstFileA(
@@ -367,6 +378,7 @@ pub unsafe extern "stdcall" fn FindFirstFileA(
 /// # Returns
 /// A search handle that can be used with `FindNextFile` and `FindClose`, or `INVALID_HANDLE_VALUE` if no
 /// matching files were found or an error occurred.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindFirstFileW(
@@ -398,6 +410,7 @@ pub unsafe extern "stdcall" fn FindFirstFileW(
 /// # Returns
 /// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
 /// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindNextFileA(
@@ -425,6 +438,7 @@ pub unsafe extern "stdcall" fn FindNextFileA(
 /// # Returns
 /// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
 /// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindNextFileW(
@@ -453,6 +467,7 @@ pub unsafe extern "stdcall" fn FindNextFileW(
 ///
 /// # Note
 /// This implementation does not set the error code and will currently always return `WinBool::TRUE` at the moment.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindClose(find_file: isize) -> WinBool {

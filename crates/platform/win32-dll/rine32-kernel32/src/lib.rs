@@ -103,10 +103,6 @@ impl DllPlugin for Kernel32Plugin32 {
     fn stubs(&self) -> Vec<StubExport> {
         vec![
             StubExport {
-                name: "FindClose",
-                func: as_win_api!(file::FindClose),
-            },
-            StubExport {
                 name: "GetModuleHandleA",
                 func: as_win_api!(process::GetModuleHandleA),
             },
@@ -174,6 +170,10 @@ impl DllPlugin for Kernel32Plugin32 {
             PartialExport {
                 name: "CreateFileW",
                 func: as_win_api!(file::CreateFileW),
+            },
+            PartialExport {
+                name: "FindClose",
+                func: as_win_api!(file::FindClose),
             },
             PartialExport {
                 name: "ReadFile",

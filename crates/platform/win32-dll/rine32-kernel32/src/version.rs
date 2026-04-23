@@ -13,6 +13,7 @@ use rine_types::os::{OsVersionInfoA, OsVersionInfoW};
 ///
 /// # Returns
 /// Returns the version as a packed `u32` on success, or `WinBool::FALSE` (0) on failure.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetVersion() -> u32 {
@@ -30,6 +31,7 @@ pub unsafe extern "stdcall" fn GetVersion() -> u32 {
 ///
 /// # Returns
 /// `WinBool::TRUE` on success, `WinBool::FALSE` (0) on failure.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetVersionExW(info: *mut OsVersionInfoW) -> WinBool {
@@ -47,6 +49,7 @@ pub unsafe extern "stdcall" fn GetVersionExW(info: *mut OsVersionInfoW) -> WinBo
 ///
 /// # Returns
 /// `WinBool::TRUE` on success, `WinBool::FALSE` (0) on failure.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetVersionExA(info: *mut OsVersionInfoA) -> WinBool {

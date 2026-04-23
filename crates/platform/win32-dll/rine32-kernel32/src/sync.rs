@@ -18,6 +18,7 @@ use tracing::{debug, warn};
 /// Initializing a critical section on an invalid pointer may lead to undefined behavior.
 /// The caller is responsible for ensuring that the CRITICAL_SECTION is properly deleted with
 /// `DeleteCriticalSection` when no longer needed.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn InitializeCriticalSection(cs: *mut u8) {
@@ -42,6 +43,7 @@ pub unsafe extern "stdcall" fn InitializeCriticalSection(cs: *mut u8) {
 /// # Returns
 /// If the critical section was successfully initialized, the function returns `WinBool::TRUE`.
 /// If the `cs` pointer is null, the function returns `WinBool::FALSE` and does not perform any initialization.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn InitializeCriticalSectionAndSpinCount(
@@ -67,6 +69,7 @@ pub unsafe extern "stdcall" fn InitializeCriticalSectionAndSpinCount(
 /// The caller must also ensure that the critical section is not used after being deleted.
 /// If `cs` is null, this function does nothing and returns immediately.
 /// Otherwise, it will block until the mutex can be locked.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn EnterCriticalSection(cs: *mut u8) {
@@ -88,6 +91,7 @@ pub unsafe extern "stdcall" fn EnterCriticalSection(cs: *mut u8) {
 /// # Returns
 /// Returns `WinBool::TRUE` if the lock was successfully acquired, or `WinBool::FALSE`
 /// if the critical section is already owned by another thread or if an error occurred (e.g. invalid pointer).
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
@@ -113,6 +117,7 @@ pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
 /// - No Win32-accurate `GetLastError` mapping is provided for invalid-pointer
 ///   and unlock-error cases.
 /// - Error handling does not map pthread failure codes to Win32 behavior.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn LeaveCriticalSection(cs: *mut u8) {
@@ -127,6 +132,7 @@ pub unsafe extern "stdcall" fn LeaveCriticalSection(cs: *mut u8) {
 /// # Safety
 /// The caller must ensure that `cs` points to a valid CRITICAL_SECTION structure that has been
 /// properly initialized and is not currently in use.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn DeleteCriticalSection(cs: *mut u8) {
@@ -151,6 +157,7 @@ pub unsafe extern "stdcall" fn DeleteCriticalSection(cs: *mut u8) {
 ///
 /// # Returns
 /// Returns a handle to the created event, or 0 on failure (e.g. invalid parameters).
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateEventA(
@@ -191,6 +198,7 @@ pub unsafe extern "stdcall" fn CreateEventA(
 ///
 /// # Returns
 /// Returns a handle to the created event, or 0 on failure (e.g. invalid parameters).
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateEventW(
@@ -228,6 +236,7 @@ pub unsafe extern "stdcall" fn CreateEventW(
 /// Setting an event with an invalid handle will result in failure and return `WinBool::FALSE`.
 /// If the event is successfully set to the signaled state, the function returns `WinBool::TRUE`
 /// and any waiting threads are released according to the event's reset mode (manual or auto).
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetEvent(event_handle: isize) -> WinBool {
@@ -249,6 +258,7 @@ pub unsafe extern "stdcall" fn SetEvent(event_handle: isize) -> WinBool {
 /// Resetting an event with an invalid handle will result in failure and return `WinBool::FALSE`.
 /// If the event is successfully reset to the non-signaled state, the function returns `WinBool::TRUE`
 /// and any threads that wait on it will block until it is set again.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ResetEvent(event_handle: isize) -> WinBool {
@@ -273,6 +283,7 @@ pub unsafe extern "stdcall" fn ResetEvent(event_handle: isize) -> WinBool {
 ///
 /// The caller must ensure that `name` points to a valid null-terminated ANSI string if it is not null.
 /// The caller is responsible for managing the returned mutex handle, including closing it when no longer needed.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateMutexA(
@@ -305,6 +316,7 @@ pub unsafe extern "stdcall" fn CreateMutexA(
 ///
 /// The caller must ensure that `name` points to a valid null-terminated UTF-16 string if it is not null.
 /// The caller is responsible for managing the returned mutex handle, including closing it when no longer needed.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateMutexW(
@@ -336,6 +348,7 @@ pub unsafe extern "stdcall" fn CreateMutexW(
 /// are unblocked according to the mutex's behavior.
 /// If the mutex handle is invalid or the caller does not have ownership of the mutex,
 /// the function returns `WinBool::FALSE` and no action is taken.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
@@ -361,6 +374,7 @@ pub unsafe extern "stdcall" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
 /// If the parameters are valid and the semaphore is successfully created, the function returns a handle to the semaphore.
 /// If `initial_count` is negative, greater than `maximum_count`, or if `maximum_count` is not greater than 0,
 /// the function returns 0 (NULL) to indicate failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateSemaphoreA(
@@ -403,6 +417,7 @@ pub unsafe extern "stdcall" fn CreateSemaphoreA(
 /// If the parameters are valid and the semaphore is successfully created, the function returns a handle to the semaphore.
 /// If `initial_count` is negative, greater than `maximum_count`, or if `maximum_count` is not greater than 0,
 /// the function returns 0 (NULL) to indicate failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateSemaphoreW(
@@ -451,6 +466,7 @@ pub unsafe extern "stdcall" fn CreateSemaphoreW(
 /// are unblocked according to the semaphore's behavior.
 /// If the semaphore handle is invalid, the caller does not have appropriate access, or if releasing the
 /// semaphore would exceed its maximum count, the function returns `WinBool::FALSE` and no action is taken.
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ReleaseSemaphore(
