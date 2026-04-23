@@ -143,7 +143,7 @@ pub unsafe extern "win64" fn CreatePen(_style: i32, _width: i32, color: u32) -> 
 /// # Returns
 /// The return value is a handle to the object being replaced, or 0 if there was no previous object of the same type selected in the DC.
 /// If the function fails (e.g., if the handles are invalid), the return value is also 0.
-#[rine_dlls::partial]
+#[rine_dlls::implemented]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
 pub unsafe extern "win64" fn SelectObject(hdc: usize, object: usize) -> usize {
@@ -170,7 +170,7 @@ pub unsafe extern "win64" fn SelectObject(hdc: usize, object: usize) -> usize {
 /// # Returns
 /// The function will return `WinBool::FALSE` if the object is currently selected into any device context (DC), including the one it was
 /// created with, to prevent resource leaks and undefined behavior.
-#[rine_dlls::partial]
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn DeleteObject(object: usize) -> WinBool {
