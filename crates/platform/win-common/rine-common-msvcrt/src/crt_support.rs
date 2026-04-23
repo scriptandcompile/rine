@@ -211,17 +211,17 @@ pub fn abort_process() -> ! {
 /// Set a signal handler for the specified signal.
 ///
 /// # Arguments
-/// * `_sig`: The signal number to set the handler for.
-/// * `_handler`: A pointer to the signal handler function to be called when the signal is raised.
+/// * `sig`: The signal number to set the handler for.
+/// * `handler`: A pointer to the signal handler function to be called when the signal is raised.
 ///
 /// # Safety
 /// This is unsafe because the CRT expects the handler pointer to be valid and follow the correct calling convention.
 /// Registering an invalid handler could cause undefined behavior when the signal is raised.
 ///
 /// # Notes
-/// This is a stub implementation that does nothing and returns 0.
-pub fn signal_default(_sig: i32, _handler: usize) -> usize {
-    0
+/// For now we forward directly to libc and return the previous handler as an address.
+pub fn signal(sig: i32, handler: usize) -> usize {
+    unsafe { libc::signal(sig, handler as libc::sighandler_t) as usize }
 }
 
 /// Acquire a CRT lock for the specified lock number.
@@ -304,10 +304,13 @@ fn build_fake_iob<const SIZE: usize, const ENTRY_SIZE: usize>() -> Box<[u8; SIZE
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Mutex;
     use std::sync::mpsc;
     use std::time::Duration;
 
-    use super::{fake_iob_32_ptr, fake_iob_64_ptr, lock, unlock};
+    use super::{errno_location, fake_iob_32_ptr, fake_iob_64_ptr, lock, signal, unlock};
+
+    static SIGNAL_TEST_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn fake_iob_32_has_expected_markers() {
@@ -357,5 +360,32 @@ mod tests {
 
         done_rx.recv_timeout(Duration::from_secs(1)).unwrap();
         worker.join().unwrap();
+    }
+
+    #[test]
+    fn signal_returns_previous_handler() {
+        let _guard = SIGNAL_TEST_LOCK.lock().unwrap();
+        let sig = libc::SIGUSR1;
+
+        let previous = signal(sig, libc::SIG_IGN as usize);
+        let returned_previous = signal(sig, libc::SIG_DFL as usize);
+
+        assert_eq!(returned_previous, libc::SIG_IGN as usize);
+
+        signal(sig, previous);
+    }
+
+    #[test]
+    fn signal_invalid_signal_sets_errno_and_returns_error_handler() {
+        let _guard = SIGNAL_TEST_LOCK.lock().unwrap();
+
+        unsafe {
+            *errno_location() = 0;
+        }
+
+        let result = signal(-1, libc::SIG_DFL as usize);
+
+        assert_eq!(result, libc::SIG_ERR as usize);
+        assert_eq!(unsafe { *errno_location() }, libc::EINVAL);
     }
 }

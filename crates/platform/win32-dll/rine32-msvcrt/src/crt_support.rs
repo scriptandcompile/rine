@@ -276,11 +276,11 @@ pub unsafe extern "C" fn abort() {
 /// Registering an invalid handler could cause undefined behavior when the signal is raised.
 ///
 /// # Notes
-/// This is a stub implementation that does nothing and returns 0.
-#[rine_dlls::stubbed]
+/// Delegates to the common platform signal implementation.
+#[rine_dlls::implemented]
 pub unsafe extern "C" fn signal(sig: i32, handler: usize) -> usize {
     tracing::trace!(sig, handler, "msvcrt::signal");
-    common::signal_default(sig, handler)
+    common::signal(sig, handler)
 }
 
 /// Acquire a CRT lock for the specified lock number.
