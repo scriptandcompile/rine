@@ -9,6 +9,7 @@
 /// Does not return.
 pub unsafe fn exit(code: i32) {
     tracing::trace!(code, "msvcrt::exit");
+    unsafe { crate::crt_support::run_onexit_handlers() };
     let tid = unsafe { libc::syscall(libc::SYS_gettid) as u32 };
     rine_types::dev_notify!(on_thread_exited(tid, code as u32));
     rine_types::dev_notify!(on_process_exiting(code));
@@ -25,6 +26,7 @@ pub unsafe fn exit(code: i32) {
 /// Currently, this function only flushes C stdio buffers.
 pub unsafe fn _cexit() {
     tracing::trace!("msvcrt::_cexit");
+    unsafe { crate::crt_support::run_onexit_handlers() };
     // Flush all open C stdio streams.
     unsafe { libc::fflush(core::ptr::null_mut()) };
 }

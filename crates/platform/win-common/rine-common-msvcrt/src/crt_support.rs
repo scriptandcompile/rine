@@ -3,12 +3,15 @@
 //! as well as shared data exports like `_commode` and `_fmode`.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 
 static FAKE_IOB_32: LazyLock<Box<[u8; 96]>> = LazyLock::new(build_fake_iob::<96, 32>);
 static FAKE_IOB_64: LazyLock<Box<[u8; 144]>> = LazyLock::new(build_fake_iob::<144, 48>);
 static CRT_LOCKS: LazyLock<Mutex<HashMap<i32, Arc<RecursiveMutex>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
+static ONEXIT_HANDLERS: LazyLock<Mutex<Vec<usize>>> = LazyLock::new(|| Mutex::new(Vec::new()));
+static ONEXIT_DRAINED: AtomicBool = AtomicBool::new(false);
 
 struct RecursiveMutex {
     raw: *mut libc::pthread_mutex_t,
@@ -145,9 +148,40 @@ pub fn fake_iob_64_ptr() -> *mut u8 {
 /// Registering an invalid function could cause undefined behavior when the process exits.
 ///
 /// # Notes
-/// This is currently a no-op that just returns the function pointer unchanged.
+/// Handlers are executed in reverse registration order (LIFO) when `_cexit`/`exit`
+/// performs CRT teardown.
 pub fn onexit(func: usize) -> usize {
+    if func == 0 {
+        return 0;
+    }
+
+    let mut handlers = ONEXIT_HANDLERS.lock().unwrap();
+    handlers.push(func);
     func
+}
+
+/// Run registered `_onexit` handlers once in LIFO order.
+///
+/// # Safety
+/// Each stored address must point to a valid C ABI function with signature `fn() -> i32`.
+pub unsafe fn run_onexit_handlers() {
+    if ONEXIT_DRAINED.swap(true, Ordering::AcqRel) {
+        return;
+    }
+
+    let handlers = {
+        let mut guard = ONEXIT_HANDLERS.lock().unwrap();
+        std::mem::take(&mut *guard)
+    };
+
+    for func in handlers.into_iter().rev() {
+        if func == 0 {
+            continue;
+        }
+
+        let callback: unsafe extern "C" fn() -> i32 = unsafe { std::mem::transmute(func) };
+        let _ = unsafe { callback() };
+    }
 }
 
 /// Display a CRT error message and abort the process.

@@ -207,7 +207,7 @@ pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
 /// A production implementation would add it to an atexit chain and call it when the process exits.
 /// Currently, this just returns the function pointer unchanged.
 /// A production implementation would add it to an atexit chain.
-#[rine_dlls::stubbed]
+#[rine_dlls::implemented]
 pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
     tracing::trace!("msvcrt::_onexit");
     onexit(func)
@@ -365,6 +365,30 @@ pub unsafe extern "win64" fn _errno() -> *mut i32 {
 #[allow(non_snake_case)]
 pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
     initenv_ptr() as *const *const *const i8
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static ONEXIT_CALLS: AtomicUsize = AtomicUsize::new(0);
+
+    unsafe extern "C" fn test_onexit_callback() -> i32 {
+        ONEXIT_CALLS.fetch_add(1, Ordering::SeqCst);
+        0
+    }
+
+    #[test]
+    fn onexit_registers_and_runs_callback_via_cexit() {
+        ONEXIT_CALLS.store(0, Ordering::SeqCst);
+
+        let callback_ptr = test_onexit_callback as *const () as usize;
+        let registered = unsafe { super::_onexit(callback_ptr) };
+        assert_eq!(registered, callback_ptr);
+
+        unsafe { crate::stdlib::_cexit() };
+        assert_eq!(ONEXIT_CALLS.load(Ordering::SeqCst), 1);
+    }
 }
 
 /// Get a pointer to the file translation mode flag.
