@@ -37,7 +37,7 @@ use rine_types::windows::*;
 #[rine_dlls::stubbed]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn CreateWindowExA(
+pub unsafe extern "win64" fn CreateWindowExA(
     ex_style: u32,
     class_name: *const u8,
     window_name: *const u8,
@@ -100,7 +100,7 @@ pub(crate) unsafe extern "win64" fn CreateWindowExA(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn CreateWindowExW(
+pub unsafe extern "win64" fn CreateWindowExW(
     ex_style: u32,
     class_name: *const u16,
     window_name: *const u16,
@@ -156,9 +156,9 @@ pub(crate) unsafe extern "win64" fn CreateWindowExW(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn DestroyWindow(hwnd: usize) -> i32 {
+pub unsafe extern "win64" fn DestroyWindow(hwnd: usize) -> i32 {
     unsafe {
-        common::destroy_window(hwnd, |proc_fn, h, msg, wp, lp| {
+        common::destroy_window(hwnd, |proc_fn: usize, h, msg, wp, lp| {
             let f: extern "win64" fn(usize, u32, usize, isize) -> isize =
                 std::mem::transmute(proc_fn);
             f(h, msg, wp, lp)
@@ -188,7 +188,7 @@ pub(crate) unsafe extern "win64" fn DestroyWindow(hwnd: usize) -> i32 {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn ShowWindow(hwnd: usize, cmd_show: i32) -> WinBool {
+pub unsafe extern "win64" fn ShowWindow(hwnd: usize, cmd_show: i32) -> WinBool {
     common::show_window(hwnd, cmd_show)
 }
 
@@ -209,6 +209,6 @@ pub(crate) unsafe extern "win64" fn ShowWindow(hwnd: usize, cmd_show: i32) -> Wi
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn UpdateWindow(hwnd: usize) -> WinBool {
+pub unsafe extern "win64" fn UpdateWindow(hwnd: usize) -> WinBool {
     common::update_window(hwnd)
 }

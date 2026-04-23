@@ -19,7 +19,7 @@ use rine_types::windows::Rect;
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn CreateCompatibleDC(_hdc: usize) -> usize {
+pub unsafe extern "win64" fn CreateCompatibleDC(_hdc: usize) -> usize {
     unsafe { common::create_compatible_dc(_hdc) }
 }
 
@@ -39,7 +39,7 @@ pub(crate) unsafe extern "win64" fn CreateCompatibleDC(_hdc: usize) -> usize {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn DeleteDC(hdc: usize) -> WinBool {
+pub unsafe extern "win64" fn DeleteDC(hdc: usize) -> WinBool {
     unsafe { common::delete_dc(hdc) }
 }
 
@@ -63,11 +63,7 @@ pub(crate) unsafe extern "win64" fn DeleteDC(hdc: usize) -> WinBool {
 #[rine_dlls::partial]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "win64" fn CreateCompatibleBitmap(
-    _hdc: usize,
-    width: i32,
-    height: i32,
-) -> usize {
+pub unsafe extern "win64" fn CreateCompatibleBitmap(_hdc: usize, width: i32, height: i32) -> usize {
     unsafe { common::ops::create_compatible_bitmap(_hdc, width, height) }
 }
 
@@ -86,7 +82,7 @@ pub(crate) unsafe extern "win64" fn CreateCompatibleBitmap(
 #[rine_dlls::partial]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "win64" fn CreateSolidBrush(color: u32) -> usize {
+pub unsafe extern "win64" fn CreateSolidBrush(color: u32) -> usize {
     unsafe { common::create_solid_brush(color) }
 }
 
@@ -122,7 +118,7 @@ pub(crate) unsafe extern "win64" fn CreateSolidBrush(color: u32) -> usize {
 #[rine_dlls::partial]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "win64" fn CreatePen(_style: i32, _width: i32, color: u32) -> usize {
+pub unsafe extern "win64" fn CreatePen(_style: i32, _width: i32, color: u32) -> usize {
     unsafe { common::create_pen(_style, _width, color) }
 }
 
@@ -150,7 +146,7 @@ pub(crate) unsafe extern "win64" fn CreatePen(_style: i32, _width: i32, color: u
 #[rine_dlls::partial]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "win64" fn SelectObject(hdc: usize, object: usize) -> usize {
+pub unsafe extern "win64" fn SelectObject(hdc: usize, object: usize) -> usize {
     unsafe { common::select_object(hdc, object) }
 }
 
@@ -224,7 +220,7 @@ pub unsafe extern "win64" fn DeleteObject(object: usize) -> WinBool {
 #[rine_dlls::partial]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "win64" fn BitBlt(
+pub unsafe extern "win64" fn BitBlt(
     hdc_dest: usize,
     x_dest: i32,
     y_dest: i32,

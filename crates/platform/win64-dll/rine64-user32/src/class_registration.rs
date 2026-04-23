@@ -25,7 +25,7 @@ use rine_types::windows::*;
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn RegisterClassA(wc: *const WndClassA) -> ATOM {
+pub unsafe extern "win64" fn RegisterClassA(wc: *const WndClassA) -> ATOM {
     common::register_class_a(wc)
 }
 
@@ -51,7 +51,7 @@ pub(crate) unsafe extern "win64" fn RegisterClassA(wc: *const WndClassA) -> ATOM
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn RegisterClassW(wc: *const WndClassW) -> ATOM {
+pub unsafe extern "win64" fn RegisterClassW(wc: *const WndClassW) -> ATOM {
     common::register_class_w(wc)
 }
 
@@ -76,7 +76,7 @@ pub(crate) unsafe extern "win64" fn RegisterClassW(wc: *const WndClassW) -> ATOM
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn RegisterClassExA(wc: *const WndClassExA) -> ATOM {
+pub unsafe extern "win64" fn RegisterClassExA(wc: *const WndClassExA) -> ATOM {
     common::register_class_ex_a(wc)
 }
 
@@ -97,7 +97,7 @@ pub(crate) unsafe extern "win64" fn RegisterClassExA(wc: *const WndClassExA) -> 
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn RegisterClassExW(wc: *const WndClassExW) -> ATOM {
+pub unsafe extern "win64" fn RegisterClassExW(wc: *const WndClassExW) -> ATOM {
     common::register_class_ex_w(wc)
 }
 
@@ -118,7 +118,7 @@ pub(crate) unsafe extern "win64" fn RegisterClassExW(wc: *const WndClassExW) -> 
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn UnregisterClassA(
+pub unsafe extern "win64" fn UnregisterClassA(
     class_name: *const u8,
     _h_instance: usize,
 ) -> WinBool {
@@ -143,7 +143,7 @@ pub(crate) unsafe extern "win64" fn UnregisterClassA(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn UnregisterClassW(
+pub unsafe extern "win64" fn UnregisterClassW(
     class_name: *const u16,
     _h_instance: usize,
 ) -> WinBool {

@@ -30,7 +30,7 @@ use rine_types::windows::*;
 #[rine_dlls::stubbed]
 #[unsafe(no_mangle)]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "win64" fn GetMessageA(
+pub unsafe extern "win64" fn GetMessageA(
     msg: *mut Msg,
     hwnd: usize,
     msg_filter_min: u32,
@@ -68,7 +68,7 @@ pub(crate) unsafe extern "win64" fn GetMessageA(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn GetMessageW(
+pub unsafe extern "win64" fn GetMessageW(
     msg: *mut Msg,
     hwnd: usize,
     msg_filter_min: u32,
@@ -115,7 +115,7 @@ pub(crate) unsafe extern "win64" fn GetMessageW(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn PeekMessageA(
+pub unsafe extern "win64" fn PeekMessageA(
     msg: *mut Msg,
     hwnd: usize,
     msg_filter_min: u32,
@@ -163,7 +163,7 @@ pub(crate) unsafe extern "win64" fn PeekMessageA(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn PeekMessageW(
+pub unsafe extern "win64" fn PeekMessageW(
     msg: *mut Msg,
     hwnd: usize,
     msg_filter_min: u32,
@@ -199,7 +199,7 @@ pub(crate) unsafe extern "win64" fn PeekMessageW(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn TranslateMessage(msg: *const Msg) -> i32 {
+pub unsafe extern "win64" fn TranslateMessage(msg: *const Msg) -> i32 {
     unsafe { common::translate_message(msg) }
 }
 
@@ -240,7 +240,7 @@ pub(crate) unsafe extern "win64" fn TranslateMessage(msg: *const Msg) -> i32 {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn DispatchMessageA(msg: *const Msg) -> isize {
+pub unsafe extern "win64" fn DispatchMessageA(msg: *const Msg) -> isize {
     unsafe {
         common::dispatch_message(msg, |proc_fn, hwnd, m, wp, lp| {
             let f: extern "win64" fn(usize, u32, usize, isize) -> isize =
@@ -287,7 +287,7 @@ pub(crate) unsafe extern "win64" fn DispatchMessageA(msg: *const Msg) -> isize {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn DispatchMessageW(msg: *const Msg) -> isize {
+pub unsafe extern "win64" fn DispatchMessageW(msg: *const Msg) -> isize {
     unsafe {
         common::dispatch_message(msg, |proc_fn, hwnd, m, wp, lp| {
             let f: extern "win64" fn(usize, u32, usize, isize) -> isize =
@@ -313,7 +313,7 @@ pub(crate) unsafe extern "win64" fn DispatchMessageW(msg: *const Msg) -> isize {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn PostQuitMessage(exit_code: i32) {
+pub unsafe extern "win64" fn PostQuitMessage(exit_code: i32) {
     common::post_quit_message(exit_code);
 }
 
@@ -345,7 +345,7 @@ pub(crate) unsafe extern "win64" fn PostQuitMessage(exit_code: i32) {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn PostMessageA(
+pub unsafe extern "win64" fn PostMessageA(
     hwnd: usize,
     msg: u32,
     w_param: usize,
@@ -382,7 +382,7 @@ pub(crate) unsafe extern "win64" fn PostMessageA(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn PostMessageW(
+pub unsafe extern "win64" fn PostMessageW(
     hwnd: usize,
     msg: u32,
     w_param: usize,
@@ -419,7 +419,7 @@ pub(crate) unsafe extern "win64" fn PostMessageW(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn SendMessageA(
+pub unsafe extern "win64" fn SendMessageA(
     hwnd: usize,
     msg: u32,
     w_param: usize,
@@ -462,7 +462,7 @@ pub(crate) unsafe extern "win64" fn SendMessageA(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn SendMessageW(
+pub unsafe extern "win64" fn SendMessageW(
     hwnd: usize,
     msg: u32,
     w_param: usize,
@@ -508,7 +508,7 @@ pub(crate) unsafe extern "win64" fn SendMessageW(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn DefWindowProcA(
+pub unsafe extern "win64" fn DefWindowProcA(
     hwnd: usize,
     msg: u32,
     w_param: usize,
@@ -548,7 +548,7 @@ pub(crate) unsafe extern "win64" fn DefWindowProcA(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "win64" fn DefWindowProcW(
+pub unsafe extern "win64" fn DefWindowProcW(
     hwnd: usize,
     msg: u32,
     w_param: usize,
