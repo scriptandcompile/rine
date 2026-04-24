@@ -245,10 +245,10 @@ pub unsafe extern "C" fn _onexit(func: usize) -> usize {
 /// We currently just print a message and abort the process, but a production implementation would display a message
 /// box with the error and possibly allow the user to choose whether to abort or debug.
 /// The `msg_num` argument can be used to determine the specific error that occurred and display an appropriate message.
-#[rine_dlls::stubbed]
+#[rine_dlls::implemented]
 pub unsafe extern "C" fn _amsg_exit(msg_num: i32) {
     tracing::trace!(msg_num, "msvcrt::_amsg_exit");
-    common::amsg_exit(msg_num)
+    common::_amsg_exit(msg_num)
 }
 
 /// Abort the process immediately without unwinding or running exit handlers.

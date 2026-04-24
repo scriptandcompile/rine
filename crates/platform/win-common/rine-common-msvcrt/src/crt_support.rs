@@ -13,6 +13,8 @@ static CRT_LOCKS: LazyLock<Mutex<HashMap<i32, Arc<RecursiveMutex>>>> =
 static ONEXIT_HANDLERS: LazyLock<Mutex<Vec<usize>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 static ONEXIT_DRAINED: AtomicBool = AtomicBool::new(false);
 
+const AMSG_EXIT_PREFIX: &[u8] = b"\nruntime error R6";
+
 struct RecursiveMutex {
     raw: *mut libc::pthread_mutex_t,
 }
@@ -190,10 +192,82 @@ pub unsafe fn run_onexit_handlers() {
 /// * `msg_num`: An integer representing the error message number. The CRT uses this to determine which error message to display.
 ///
 /// # Notes
-/// This is a stub implementation that just prints the message number and aborts the process.
-pub fn amsg_exit(msg_num: i32) -> ! {
-    eprintln!("rine: msvcrt runtime error (msg_num={msg_num})");
-    std::process::abort();
+/// This follows the console-path CRT behavior: it writes the `R60xx` runtime
+/// error code to stderr and terminates the process with exit code 255 without
+/// running CRT exit handlers.
+pub fn _amsg_exit(msg_num: i32) -> ! {
+    let mut message = [0u8; 32];
+    let len = encode_amsg_exit_message(msg_num, &mut message);
+    write_stderr_best_effort(&message[..len]);
+
+    unsafe { libc::_exit(255) }
+}
+
+fn encode_amsg_exit_message(msg_num: i32, out: &mut [u8; 32]) -> usize {
+    out[..AMSG_EXIT_PREFIX.len()].copy_from_slice(AMSG_EXIT_PREFIX);
+    let mut len = AMSG_EXIT_PREFIX.len();
+    len += encode_runtime_error_digits(msg_num, &mut out[len..]);
+    out[len] = b'\n';
+    len + 1
+}
+
+fn encode_runtime_error_digits(msg_num: i32, out: &mut [u8]) -> usize {
+    if (0..1000).contains(&msg_num) {
+        let value = msg_num as u32;
+        out[0] = b'0' + ((value / 100) % 10) as u8;
+        out[1] = b'0' + ((value / 10) % 10) as u8;
+        out[2] = b'0' + (value % 10) as u8;
+        return 3;
+    }
+
+    let value = msg_num as i64;
+    if value < 0 {
+        out[0] = b'-';
+        return 1 + encode_positive_decimal((-value) as u64, &mut out[1..]);
+    }
+
+    encode_positive_decimal(value as u64, out)
+}
+
+fn encode_positive_decimal(mut value: u64, out: &mut [u8]) -> usize {
+    if value == 0 {
+        out[0] = b'0';
+        return 1;
+    }
+
+    let mut reversed = [0u8; 20];
+    let mut reversed_len = 0;
+    while value != 0 {
+        reversed[reversed_len] = b'0' + (value % 10) as u8;
+        reversed_len += 1;
+        value /= 10;
+    }
+
+    for idx in 0..reversed_len {
+        out[idx] = reversed[reversed_len - 1 - idx];
+    }
+
+    reversed_len
+}
+
+fn write_stderr_best_effort(bytes: &[u8]) {
+    let mut written = 0;
+    while written < bytes.len() {
+        let remaining = &bytes[written..];
+        let result = unsafe {
+            libc::write(
+                libc::STDERR_FILENO,
+                remaining.as_ptr().cast::<libc::c_void>(),
+                remaining.len(),
+            )
+        };
+
+        if result <= 0 {
+            break;
+        }
+
+        written += result as usize;
+    }
 }
 
 /// Abort the process immediately without unwinding or running exit handlers.
@@ -304,11 +378,16 @@ fn build_fake_iob<const SIZE: usize, const ENTRY_SIZE: usize>() -> Box<[u8; SIZE
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+    use std::process::Command;
     use std::sync::Mutex;
     use std::sync::mpsc;
     use std::time::Duration;
 
-    use super::{errno_location, fake_iob_32_ptr, fake_iob_64_ptr, lock, signal, unlock};
+    use super::{
+        encode_amsg_exit_message, errno_location, fake_iob_32_ptr, fake_iob_64_ptr, lock, signal,
+        unlock,
+    };
 
     static SIGNAL_TEST_LOCK: Mutex<()> = Mutex::new(());
 
@@ -387,5 +466,39 @@ mod tests {
 
         assert_eq!(result, libc::SIG_ERR as usize);
         assert_eq!(unsafe { *errno_location() }, libc::EINVAL);
+    }
+
+    #[test]
+    fn amsg_exit_formats_msvcrt_runtime_error_code() {
+        let mut message = [0u8; 32];
+
+        let len = encode_amsg_exit_message(31, &mut message);
+
+        assert_eq!(&message[..len], b"\nruntime error R6031\n");
+    }
+
+    #[test]
+    fn amsg_exit_reports_runtime_error_and_exits_255() {
+        const CHILD_ENV: &str = "RINE_COMMON_MSVCRT_AMSG_EXIT_CHILD";
+
+        if let Ok(msg_num) = env::var(CHILD_ENV) {
+            super::_amsg_exit(msg_num.parse().unwrap());
+        }
+
+        let output = Command::new(env::current_exe().unwrap())
+            .arg("--exact")
+            .arg("crt_support::tests::amsg_exit_reports_runtime_error_and_exits_255")
+            .arg("--nocapture")
+            .env(CHILD_ENV, "31")
+            .output()
+            .unwrap();
+
+        assert_eq!(output.status.code(), Some(255));
+
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            stderr.contains("runtime error R6031"),
+            "stderr was: {stderr}"
+        );
     }
 }

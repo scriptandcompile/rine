@@ -4,9 +4,9 @@
 //! Most are no-ops or minimal stubs.
 
 use rine_common_msvcrt::{
-    abort_process, amsg_exit, c_specific_handler_result, commode_ptr, errno_location,
-    fake_iob_64_ptr, fmode_ptr, initenv_ptr, lock, onexit, set_app_type, set_user_math_err,
-    signal as common_signal, unlock,
+    _amsg_exit as common_amsg_exit, abort_process, c_specific_handler_result, commode_ptr,
+    errno_location, fake_iob_64_ptr, fmode_ptr, initenv_ptr, lock, onexit, set_app_type,
+    set_user_math_err, signal as common_signal, unlock,
 };
 
 /// An internal function used at startup to tell the CRT what type of application we're running (console, GUI, etc).
@@ -262,9 +262,9 @@ pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
 /// We currently just print a message and abort the process, but a production implementation would display a message
 /// box with the error and possibly allow the user to choose whether to abort or debug.
 /// The `msg_num` argument can be used to determine the specific error that occurred and display an appropriate message.
-#[rine_dlls::stubbed]
+#[rine_dlls::implemented]
 pub unsafe extern "win64" fn _amsg_exit(msg_num: i32) {
-    amsg_exit(msg_num)
+    common_amsg_exit(msg_num)
 }
 
 /// Abort the process immediately without unwinding or running exit handlers.
@@ -368,6 +368,24 @@ pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
     initenv_ptr() as *const *const *const i8
 }
 
+/// Get a pointer to the file translation mode flag.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to a global variable with a specific layout.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
+///
+/// # Returns
+/// A pointer to the file mode variable, which controls how the CRT handles file buffering and flushing.
+///
+/// # Notes
+/// Returned pointer points to a mutable `int` that controls whether
+/// text files are opened in binary or text mode by default.
+#[rine_dlls::implemented]
+#[allow(non_snake_case)]
+pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
+    fmode_ptr()
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -390,22 +408,4 @@ mod tests {
         unsafe { crate::stdlib::_cexit() };
         assert_eq!(ONEXIT_CALLS.load(Ordering::SeqCst), 1);
     }
-}
-
-/// Get a pointer to the file translation mode flag.
-///
-/// # Safety
-/// This is unsafe because the CRT expects this to return a valid pointer to a global variable with a specific layout.
-/// Incorrect handling could lead to undefined behavior in CRT functions that access this variable.
-///
-/// # Returns
-/// A pointer to the file mode variable, which controls how the CRT handles file buffering and flushing.
-///
-/// # Notes
-/// Returned pointer points to a mutable `int` that controls whether
-/// text files are opened in binary or text mode by default.
-#[rine_dlls::implemented]
-#[allow(non_snake_case)]
-pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
-    fmode_ptr()
 }
