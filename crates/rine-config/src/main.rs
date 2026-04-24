@@ -112,13 +112,7 @@ fn pick_folder(start_dir: Option<String>) -> Option<String> {
 
 fn main() {
     // First non-flag argument is the exe path (e.g. `rine-config /path/to/app.exe`)
-    let exe_path = std::env::args().nth(1).and_then(|arg| {
-        if arg.starts_with('-') {
-            None
-        } else {
-            Some(arg)
-        }
-    });
+    let exe_path = std::env::args().nth(1).filter(|arg| !arg.starts_with('-'));
 
     tauri::Builder::default()
         .manage(ExePath(Mutex::new(exe_path)))
