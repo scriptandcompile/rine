@@ -3,11 +3,7 @@
 //! These are called by the MinGW CRT startup code before `main()` runs.
 //! Most are no-ops or minimal stubs.
 
-use rine_common_msvcrt::{
-    _amsg_exit as common_amsg_exit, abort_process, c_specific_handler_result, commode_ptr,
-    errno_location, fake_iob_64_ptr, fmode_ptr, initenv_ptr, lock, onexit, set_app_type,
-    set_user_math_err, signal as common_signal, unlock,
-};
+use rine_common_msvcrt as common;
 
 /// An internal function used at startup to tell the CRT what type of application we're running (console, GUI, etc).
 ///
@@ -30,7 +26,7 @@ use rine_common_msvcrt::{
 #[rine_dlls::stubbed]
 pub unsafe extern "win64" fn __set_app_type(app_type: i32) {
     tracing::trace!("msvcrt::__set_app_type({app_type})");
-    set_app_type(app_type);
+    common::set_app_type(app_type);
 }
 
 /// Set a custom math error handler.
@@ -48,7 +44,7 @@ pub unsafe extern "win64" fn __set_app_type(app_type: i32) {
 #[rine_dlls::stubbed]
 pub unsafe extern "win64" fn __setusermatherr(handler: usize) {
     tracing::trace!("msvcrt::__setusermatherr");
-    set_user_math_err(handler);
+    common::set_user_math_err(handler);
 }
 
 /// Called by the CRT when a SEH exception is thrown.
@@ -82,7 +78,7 @@ pub unsafe extern "win64" fn __C_specific_handler(
     _dispatcher_context: usize,
 ) -> i32 {
     tracing::warn!("msvcrt::__C_specific_handler called — exceptions not supported");
-    c_specific_handler_result(
+    common::c_specific_handler_result(
         _exception_record,
         _establisher_frame,
         _context_record,
@@ -107,7 +103,7 @@ pub unsafe extern "win64" fn __C_specific_handler(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
-    commode_ptr()
+    common::commode_ptr()
 }
 
 /// Gets a pointer to the commit mode variable.
@@ -127,7 +123,7 @@ pub unsafe extern "win64" fn __p__commode() -> *mut i32 {
 #[rine_dlls::implemented]
 #[rine_dlls::data_export]
 pub unsafe extern "win64" fn _commode() -> *mut i32 {
-    commode_ptr()
+    common::commode_ptr()
 }
 
 /// Gets a pointer to the file mode variable.
@@ -147,7 +143,7 @@ pub unsafe extern "win64" fn _commode() -> *mut i32 {
 #[rine_dlls::implemented]
 #[rine_dlls::data_export]
 pub unsafe extern "win64" fn _fmode() -> *mut i32 {
-    fmode_ptr()
+    common::fmode_ptr()
 }
 
 /// Get a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
@@ -162,18 +158,27 @@ pub unsafe extern "win64" fn _fmode() -> *mut i32 {
 #[rine_dlls::implemented]
 #[rine_dlls::data_export]
 pub unsafe extern "win64" fn _iob() -> *mut u8 {
-    fake_iob_64_ptr()
+    common::fake_iob_64_ptr()
 }
 
-/// __initenv — return a pointer to the initial environment pointer.
+/// Get a pointer to the initial environment pointer.
 ///
-/// Returns a pointer to a NULL pointer (empty environment at CRT level;
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an array of C strings representing the environment variables.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access environment variables.
+///
+/// # Returns
+/// A pointer to a NULL pointer (empty environment at CRT level;
 /// the real environment is provided via `__getmainargs`).
+///
+/// # Notes
+/// Called by the CRT to get the environment variables. We return a pointer to an empty environment
+/// since we provide the real environment via `__getmainargs`.
+/// This should return a pointer to the actual environment variables.
 #[rine_dlls::implemented]
-#[allow(clippy::missing_safety_doc)]
 #[rine_dlls::data_export]
 pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
-    initenv_ptr() as *const *const i8
+    common::initenv_ptr() as *const *const i8
 }
 
 /// Gets a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
@@ -189,7 +194,7 @@ pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
 /// We store a marker fd in the first field of each entry so fwrite/fprintf can identify the stream.
 #[rine_dlls::implemented]
 pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
-    fake_iob_64_ptr()
+    common::fake_iob_64_ptr()
 }
 
 /// Register a function to be called at process exit.
@@ -210,7 +215,7 @@ pub unsafe extern "win64" fn __iob_func() -> *mut u8 {
 #[rine_dlls::implemented]
 pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
     tracing::trace!("msvcrt::_onexit");
-    onexit(func)
+    common::onexit(func)
 }
 
 /// Prints an error message and exit the process. Called internally by the CRT when fatal errors occur.
@@ -264,7 +269,7 @@ pub unsafe extern "win64" fn _onexit(func: usize) -> usize {
 /// The `msg_num` argument can be used to determine the specific error that occurred and display an appropriate message.
 #[rine_dlls::implemented]
 pub unsafe extern "win64" fn _amsg_exit(msg_num: i32) {
-    common_amsg_exit(msg_num)
+    common::_amsg_exit(msg_num)
 }
 
 /// Abort the process immediately without unwinding or running exit handlers.
@@ -278,7 +283,7 @@ pub unsafe extern "win64" fn _amsg_exit(msg_num: i32) {
 #[rine_dlls::implemented]
 pub unsafe extern "win64" fn abort() {
     tracing::debug!("msvcrt::abort");
-    abort_process()
+    common::abort_process()
 }
 
 /// Set a signal handler for the specified signal.
@@ -299,7 +304,7 @@ pub unsafe extern "win64" fn signal(
     handler: usize, // void (*)(int)
 ) -> usize {
     tracing::trace!(sig, handler, "msvcrt::signal");
-    common_signal(sig, handler)
+    common::signal(sig, handler)
 }
 
 /// Acquire a CRT lock for the specified lock number.
@@ -312,7 +317,7 @@ pub unsafe extern "win64" fn signal(
 /// Incorrect usage could lead to undefined behavior when multiple threads access CRT resources.
 #[rine_dlls::implemented]
 pub unsafe extern "win64" fn _lock(locknum: i32) {
-    lock(locknum);
+    common::lock(locknum);
 }
 
 /// Release a CRT lock for the specified lock number.
@@ -326,7 +331,7 @@ pub unsafe extern "win64" fn _lock(locknum: i32) {
 /// threads access CRT resources.
 #[rine_dlls::implemented]
 pub unsafe extern "win64" fn _unlock(locknum: i32) {
-    unlock(locknum);
+    common::unlock(locknum);
 }
 
 /// Get a pointer to the thread-local `errno` value.
@@ -345,7 +350,7 @@ pub unsafe extern "win64" fn _unlock(locknum: i32) {
 #[rine_dlls::implemented]
 pub unsafe extern "win64" fn _errno() -> *mut i32 {
     tracing::trace!("msvcrt::_errno");
-    errno_location()
+    common::errno_location()
 }
 
 /// Get a pointer to the environment variable array.
@@ -365,7 +370,7 @@ pub unsafe extern "win64" fn _errno() -> *mut i32 {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
-    initenv_ptr() as *const *const *const i8
+    common::initenv_ptr() as *const *const *const i8
 }
 
 /// Get a pointer to the file translation mode flag.
@@ -383,7 +388,7 @@ pub unsafe extern "win64" fn __p__environ() -> *const *const *const i8 {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
-    fmode_ptr()
+    common::fmode_ptr()
 }
 
 #[cfg(test)]

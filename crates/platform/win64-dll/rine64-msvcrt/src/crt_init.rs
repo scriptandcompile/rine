@@ -1,6 +1,6 @@
 //! MSVCRT C runtime initialization: __getmainargs, _initterm, _initterm_e.
 
-use rine_common_msvcrt::{cached_main_args, run_initterm, run_initterm_e};
+use rine_common_msvcrt as common;
 
 /// __getmainargs — MSVCRT CRT argument initialization.
 ///
@@ -24,7 +24,7 @@ pub unsafe extern "win64" fn __getmainargs(
     _start_info: *mut core::ffi::c_void,
 ) -> i32 {
     tracing::trace!("msvcrt::__getmainargs");
-    let args = cached_main_args();
+    let args = common::cached_main_args();
 
     if !p_argc.is_null() {
         unsafe { *p_argc = args.argc() };
@@ -55,7 +55,7 @@ pub unsafe extern "win64" fn _initterm(
 ) {
     tracing::trace!("msvcrt::_initterm");
     unsafe {
-        run_initterm(start, end, |func| {
+        common::run_initterm(start, end, |func| {
             func();
         });
     }
@@ -74,7 +74,7 @@ pub unsafe extern "win64" fn _initterm_e(
     end: *const Option<unsafe extern "win64" fn() -> i32>,
 ) -> i32 {
     tracing::trace!("msvcrt::_initterm_e");
-    let result = unsafe { run_initterm_e(start, end, |func| func()) };
+    let result = unsafe { common::run_initterm_e(start, end, |func| func()) };
     if result != 0 {
         tracing::warn!(result, "msvcrt::_initterm_e: initializer failed");
     }
