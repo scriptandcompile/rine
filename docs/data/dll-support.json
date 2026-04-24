@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-24T01:01:40.007006+00:00",
+  "generatedAt": "2026-04-24T18:40:14.597746+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1560,12 +1560,12 @@
         {
           "name": "__set_app_type",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "crt_support::__set_app_type",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "crt_support::__set_app_type",
             "source": "msvcrt - crt_support.rs"
           }
@@ -2473,14 +2473,14 @@
     "functions": 186,
     "x64": {
       "implemented": 82,
-      "partial": 86,
-      "stubbed": 18,
+      "partial": 87,
+      "stubbed": 17,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 82,
-      "partial": 86,
-      "stubbed": 18,
+      "partial": 87,
+      "stubbed": 17,
       "unimplemented": 0
     }
   }

@@ -7,23 +7,24 @@ use rine_common_msvcrt as common;
 /// # Arguments
 /// * `app_type`: An integer representing the application type. The CRT uses this to configure its behavior accordingly.
 ///   The specific values and their meanings are defined by the CRT, but common values include:
-///   0 = _crt_unknown_app
-///   1 = _crt_console_app
-///   2 = _crt_gui_app
-///   3 = _crt_cui_app
-///   4 = _crt_app_type_max
+///   0 = _crt_unknown_app - the CRT couldn't determine the app type, so it defaults to console behavior.
+///   1 = _crt_console_app - a standard console application with stdin/stdout/stderr and a console window.
+///   2 = _crt_gui_app - a GUI application without a console window; stdin/stdout/stderr may be redirected to files or pipes.
+///   3 = _crt_cui_app - a character-mode application that may or may not have a console window; used for things like Windows Services.
+///   4 = _crt_app_type_max - a sentinel value indicating the maximum valid app type.
 ///
 /// # Safety
 /// Called by the CRT intitialization code and unknown values may cause undefined behavior.
 ///
 /// # Note
 /// This is called by the CRT initialization code before `main()` runs. We currently ignore the app type since
-/// we always run as a console application, but a production implementation would use this to configure CRT behavior accordingly.
-/// Currently, this is just a no-op.
-#[rine_dlls::stubbed]
+/// we always run as a console application. This now at least stores the app type in a variable, but we don't
+/// actually use it for anything yet.
+#[rine_dlls::partial]
 pub unsafe extern "C" fn __set_app_type(app_type: i32) {
     tracing::trace!(app_type, "msvcrt::__set_app_type");
-    common::set_app_type(app_type);
+    let app = app_type.into();
+    common::set_app_type(app);
 }
 
 /// Set a custom math error handler.

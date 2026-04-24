@@ -12,10 +12,42 @@ static CRT_LOCKS: LazyLock<Mutex<HashMap<i32, Arc<RecursiveMutex>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 static ONEXIT_HANDLERS: LazyLock<Mutex<Vec<usize>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 static ONEXIT_DRAINED: AtomicBool = AtomicBool::new(false);
-
+static mut APP_TYPE: LazyLock<AppType> = LazyLock::new(|| AppType::ConsoleApp);
 const AMSG_EXIT_PREFIX: &[u8] = b"\nruntime error R6";
 
-struct RecursiveMutex {
+#[repr(i32)]
+pub enum AppType {
+    /// CRT equivalent of "crt_unknown_app".
+    /// The CRT doesn't know what type of application this is, so it should use default behavior.
+    UnknownApp = 0,
+    /// CRT equivalent of "crt_console_app".
+    /// The CRT treats this as a console application.
+    ConsoleApp = 1,
+    /// CRT equivalent of "crt_gui_app".
+    /// The CRT treats this as a GUI application.
+    GuiApp = 2,
+    /// CRT equivalent of "crt_cui_app".
+    /// The CRT treats this as a character-based user interface application.
+    CuiApp = 3,
+    /// CRT equivalent of "crt_app_type_max".
+    /// The CRT treats this as the maximum application type value.
+    Max = 4,
+}
+
+impl From<i32> for AppType {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => AppType::UnknownApp,
+            1 => AppType::ConsoleApp,
+            2 => AppType::GuiApp,
+            3 => AppType::CuiApp,
+            4 => AppType::Max,
+            _ => AppType::UnknownApp,
+        }
+    }
+}
+
+pub struct RecursiveMutex {
     raw: *mut libc::pthread_mutex_t,
 }
 
@@ -63,18 +95,16 @@ impl Drop for RecursiveMutex {
 ///
 /// # Arguments
 /// * `app_type`: An integer representing the application type. The CRT uses this to configure its behavior accordingly.
-///   The specific values and their meanings are defined by the CRT, but common values include:
-///   0 = _crt_unknown_app
-///   1 = _crt_console_app
-///   2 = _crt_gui_app
-///   3 = _crt_cui_app
-///   4 = _crt_app_type_max
 ///
 /// # Note
 /// This is called by the CRT initialization code before `main()` runs. We currently ignore the app type since
-/// we always run as a console application, but a production implementation would use this to configure CRT behavior accordingly.
-/// Currently, this is just a no-op.
-pub fn set_app_type(_app_type: i32) {}
+/// we always run as a console application. This now at least stores the app type in a variable, but we don't
+/// actually use it for anything yet.
+pub fn set_app_type(app_type: AppType) {
+    unsafe {
+        *APP_TYPE = app_type;
+    }
+}
 
 /// Set a custom math error handler.
 ///
