@@ -11,6 +11,7 @@
 pub mod backend;
 pub mod class_registration;
 pub mod message_queue;
+pub mod message_registration;
 pub mod window_lifecycle;
 pub mod window_text;
 
@@ -19,6 +20,7 @@ pub use message_queue::{
     def_window_proc, dispatch_message, get_message, is_dialog_message, peek_message, post_message,
     post_quit_message, send_message, translate_message,
 };
+pub use message_registration::register_window_message;
 pub use window_lifecycle::{create_window, destroy_window, show_window, update_window};
 pub use window_text::{
     get_window_text_a, get_window_text_length, get_window_text_w, set_window_text,

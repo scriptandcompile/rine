@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-26T23:15:18.119621+00:00",
+  "generatedAt": "2026-04-26T23:42:44.486840+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2061,7 +2061,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 32,
+      "functionCount": 34,
       "functions": [
         {
           "name": "CreateWindowExA",
@@ -2363,6 +2363,32 @@
           }
         },
         {
+          "name": "RegisterWindowMessageA",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "message_registration::RegisterWindowMessageA",
+            "source": "user32 - message_registration.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "message_registration::RegisterWindowMessageA",
+            "source": "user32 - message_registration.rs"
+          }
+        },
+        {
+          "name": "RegisterWindowMessageW",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "message_registration::RegisterWindowMessageW",
+            "source": "user32 - message_registration.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "message_registration::RegisterWindowMessageW",
+            "source": "user32 - message_registration.rs"
+          }
+        },
+        {
           "name": "SendMessageA",
           "x64": {
             "status": "partial",
@@ -2483,17 +2509,17 @@
     }
   ],
   "totals": {
-    "functions": 187,
+    "functions": 189,
     "x64": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 18,
+      "stubbed": 20,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 18,
+      "stubbed": 20,
       "unimplemented": 0
     }
   }

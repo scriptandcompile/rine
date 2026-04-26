@@ -9,3 +9,4 @@ description = "Shared architecture-neutral user32 logic for rine"
 rine-channel = { workspace = true }
 rine-types = { workspace = true }
 winit = { workspace = true }
+tracing = { workspace = true }
