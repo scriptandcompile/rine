@@ -1,4 +1,5 @@
 use rine_common_user32 as common;
+use rine_types::errors::WinBool;
 use rine_types::windows::*;
 
 /// Block until a non-WM_QUIT message is available then get it from the calling thread's message queue.
@@ -555,4 +556,28 @@ pub unsafe extern "stdcall" fn DefWindowProcW(
     l_param: isize,
 ) -> isize {
     common::def_window_proc(hwnd, msg, w_param, l_param)
+}
+
+/// Determines whether the specified message is intended for the dialog box and, if it is, processes the message.
+///
+/// # Arguments
+/// * `hDlg` - Handle to the dialog box that is the target of the message.
+/// * `msg` - Pointer to a `Msg` structure that contains message information retrieved from the thread's message
+///   queue by `GetMessage` or `PeekMessage`.
+///
+/// # Safety
+/// The caller must ensure that `hDlg` is a valid handle to a dialog box and that `msg` is a valid pointer to a
+/// `Msg` structure that contains message information retrieved from the thread's message queue by `GetMessage` or `PeekMessage`.
+///
+/// # Returns
+/// `WinBool::TRUE` if the message is intended for the dialog box and has been processed by this function.
+/// `WinBool::FALSE` if the message is not intended for the dialog box and has not been processed by this function.
+///
+/// # Notes
+/// Currently this function does not perform any actual dialog message processing and simply returns `WinBool::FALSE` for all messages.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn IsDialogMessageA(hDlg: usize, msg: *const Msg) -> WinBool {
+    unsafe { common::is_dialog_message(hDlg, msg) }
 }

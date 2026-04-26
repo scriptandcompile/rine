@@ -2,6 +2,7 @@
 
 use std::sync::OnceLock;
 
+use rine_types::errors::WinBool;
 use rine_types::windows::*;
 
 use crate::backend::pump_backend_messages;
@@ -242,4 +243,30 @@ pub unsafe fn send_message(
 /// - No message-specific return semantics are implemented; this stub always returns 0.
 pub fn def_window_proc(_hwnd: usize, _msg: u32, _w_param: usize, _l_param: isize) -> isize {
     0
+}
+
+/// Determines whether the specified message is intended for the dialog box and, if it is, processes the message.
+///
+/// # Arguments
+/// * `hdlg` - Handle to the dialog box that is the target of the message.
+/// * `msg` - Pointer to a `Msg` structure that contains message information retrieved from the thread's message
+///   queue by `GetMessage` or `PeekMessage`.
+///
+/// # Safety
+/// The caller must ensure that `hdlg` is a valid handle to a dialog box and that `msg` is a valid pointer to a
+/// `Msg` structure that contains message information retrieved from the thread's message queue by `GetMessage` or `PeekMessage`.
+///
+/// # Returns
+/// `WinBool::TRUE` if the message is intended for the dialog box and has been processed by this function.
+/// `WinBool::FALSE` if the message is not intended for the dialog box and has not been processed by this function.
+///
+/// # Notes
+/// Currently this function does not perform any actual dialog message processing and simply returns `WinBool::FALSE` for all messages.
+pub unsafe fn is_dialog_message(hdlg: usize, msg: *const Msg) -> WinBool {
+    debug_log(format!(
+        "IsDialogMessage hdlg={:#x} msg={:#06x}",
+        hdlg,
+        if msg.is_null() { 0 } else { (*msg).message }
+    ));
+    WinBool::FALSE
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-24T18:40:14.597746+00:00",
+  "generatedAt": "2026-04-26T23:15:18.119621+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2061,7 +2061,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 31,
+      "functionCount": 32,
       "functions": [
         {
           "name": "CreateWindowExA",
@@ -2230,6 +2230,19 @@
             "status": "partial",
             "symbol": "window_text::GetWindowTextW",
             "source": "user32 - window_text.rs"
+          }
+        },
+        {
+          "name": "IsDialogMessageA",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "message_queue::IsDialogMessageA",
+            "source": "user32 - message_queue.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "message_queue::IsDialogMessageA",
+            "source": "user32 - message_queue.rs"
           }
         },
         {
@@ -2470,17 +2483,17 @@
     }
   ],
   "totals": {
-    "functions": 186,
+    "functions": 187,
     "x64": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 17,
+      "stubbed": 18,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 17,
+      "stubbed": 18,
       "unimplemented": 0
     }
   }

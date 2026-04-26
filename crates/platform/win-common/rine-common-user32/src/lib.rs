@@ -16,8 +16,8 @@ pub mod window_text;
 
 pub use class_registration::unregister_class;
 pub use message_queue::{
-    def_window_proc, dispatch_message, get_message, peek_message, post_message, post_quit_message,
-    send_message, translate_message,
+    def_window_proc, dispatch_message, get_message, is_dialog_message, peek_message, post_message,
+    post_quit_message, send_message, translate_message,
 };
 pub use window_lifecycle::{create_window, destroy_window, show_window, update_window};
 pub use window_text::{
