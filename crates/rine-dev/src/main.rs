@@ -7,7 +7,7 @@ use std::sync::Mutex;
 
 use rine_channel::{DevEvent, DevReceiver, OutputStream};
 use rine_dev_lib::*;
-use tauri::{Emitter, Manager, State};
+use tauri::{DragDropEvent, Emitter, Manager, State, WindowEvent};
 
 struct AppState(Mutex<StateSnapshot>);
 
@@ -100,6 +100,37 @@ fn main() {
             let socket = PathBuf::from(&socket_path);
             let handle = app.handle().clone();
 
+            if let Some(window) = app.get_webview_window("main") {
+                let drop_handle = handle.clone();
+                window.on_window_event(move |event| {
+                    if let WindowEvent::DragDrop(DragDropEvent::Drop { paths, .. }) = event
+                        && let Some(exe_path) = paths.iter().find(|p| is_exe_path(p))
+                    {
+                        let should_relaunch = matches!(
+                            rfd::MessageDialog::new()
+                                .set_title("Relaunch rine-dev?")
+                                .set_description(format!(
+                                    "Relaunch rine-dev with this executable?\n\n{}",
+                                    exe_path.display()
+                                ))
+                                .set_buttons(rfd::MessageButtons::YesNo)
+                                .set_level(rfd::MessageLevel::Info)
+                                .show(),
+                            rfd::MessageDialogResult::Yes
+                        );
+                        if !should_relaunch {
+                            return;
+                        }
+
+                        if let Err(e) = relaunch_rine_dev_with_exe(exe_path) {
+                            eprintln!("rine-dev: failed to relaunch from dropped file: {e}");
+                            return;
+                        }
+                        drop_handle.exit(0);
+                    }
+                });
+            }
+
             // If --exe was provided, spawn rine as a child process with piped output.
             if let Some(ref exe_path) = exe_arg {
                 let exe_path = exe_path.clone();
@@ -165,6 +196,23 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running rine-dev");
+}
+
+fn is_exe_path(path: &std::path::Path) -> bool {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.eq_ignore_ascii_case("exe"))
+        .unwrap_or(false)
+}
+
+fn relaunch_rine_dev_with_exe(exe_path: &std::path::Path) -> Result<(), String> {
+    let dev_bin = std::env::current_exe().map_err(|e| format!("failed to resolve current executable: {e}"))?;
+    Command::new(&dev_bin)
+        .arg("--exe")
+        .arg(exe_path)
+        .spawn()
+        .map_err(|e| format!("failed to spawn {}: {e}", dev_bin.display()))?;
+    Ok(())
 }
 
 /// Spawn a runtime child process, piping stdout/stderr.

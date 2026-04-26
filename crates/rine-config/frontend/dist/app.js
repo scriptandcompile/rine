@@ -181,6 +181,14 @@ function setupButtons() {
   // Listen for File > Save from native menu
   listen("menu-save", () => saveConfig());
 
+  // Listen for exe dropped onto window (from drag-and-drop or CLI startup via backend emit)
+  listen("exe-path-dropped", async (event) => {
+    const droppedPath = event && typeof event.payload === "string" ? event.payload : null;
+    if (!droppedPath) return;
+    await loadConfig(droppedPath);
+    showStatus("Loaded dropped executable", false);
+  });
+
   // Listen for File > Reset to Defaults from native menu
   listen("menu-reset", () => {
     config = {

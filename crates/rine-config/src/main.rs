@@ -5,7 +5,7 @@ use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, DragDropEvent, Emitter, Manager, State, WindowEvent};
 
 /// Holds the exe path passed as a CLI argument.
 struct ExePath(Mutex<Option<String>>);
@@ -151,6 +151,37 @@ fn main() {
                 _ => {}
             });
 
+            if let Some(window) = app.get_webview_window("main") {
+                let drop_handle = app.handle().clone();
+                window.on_window_event(move |event| {
+                    if let WindowEvent::DragDrop(DragDropEvent::Drop { paths, .. }) = event
+                        && let Some(exe_path) = paths.iter().find(|p| is_exe_path(p))
+                    {
+                        let should_relaunch = matches!(
+                            rfd::MessageDialog::new()
+                                .set_title("Relaunch rine-config?")
+                                .set_description(format!(
+                                    "Relaunch rine-config with this executable?\n\n{}",
+                                    exe_path.display()
+                                ))
+                                .set_buttons(rfd::MessageButtons::YesNo)
+                                .set_level(rfd::MessageLevel::Info)
+                                .show(),
+                            rfd::MessageDialogResult::Yes
+                        );
+                        if !should_relaunch {
+                            return;
+                        }
+
+                        if let Err(err) = relaunch_rine_config_with_exe(exe_path) {
+                            eprintln!("rine-config: failed to relaunch from dropped file: {err}");
+                            return;
+                        }
+                        drop_handle.exit(0);
+                    }
+                });
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -165,4 +196,20 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running rine-config");
+}
+
+    fn is_exe_path(path: &Path) -> bool {
+        path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.eq_ignore_ascii_case("exe"))
+        .unwrap_or(false)
+    }
+fn relaunch_rine_config_with_exe(exe_path: &Path) -> Result<(), String> {
+    let config_bin = std::env::current_exe()
+        .map_err(|e| format!("failed to resolve current executable: {e}"))?;
+    std::process::Command::new(&config_bin)
+        .arg(exe_path)
+        .spawn()
+        .map_err(|e| format!("failed to spawn {}: {e}", config_bin.display()))?;
+    Ok(())
 }
