@@ -463,7 +463,6 @@ pub enum RunError {
 
     #[error("{0}")]
     Entry(#[from] EntryError),
-
 }
 
 #[derive(Debug, thiserror::Error)]

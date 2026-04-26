@@ -206,7 +206,8 @@ fn is_exe_path(path: &std::path::Path) -> bool {
 }
 
 fn relaunch_rine_dev_with_exe(exe_path: &std::path::Path) -> Result<(), String> {
-    let dev_bin = std::env::current_exe().map_err(|e| format!("failed to resolve current executable: {e}"))?;
+    let dev_bin = std::env::current_exe()
+        .map_err(|e| format!("failed to resolve current executable: {e}"))?;
     Command::new(&dev_bin)
         .arg("--exe")
         .arg(exe_path)

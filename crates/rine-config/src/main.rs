@@ -198,12 +198,12 @@ fn main() {
         .expect("error while running rine-config");
 }
 
-    fn is_exe_path(path: &Path) -> bool {
-        path.extension()
+fn is_exe_path(path: &Path) -> bool {
+    path.extension()
         .and_then(|ext| ext.to_str())
         .map(|ext| ext.eq_ignore_ascii_case("exe"))
         .unwrap_or(false)
-    }
+}
 fn relaunch_rine_config_with_exe(exe_path: &Path) -> Result<(), String> {
     let config_bin = std::env::current_exe()
         .map_err(|e| format!("failed to resolve current executable: {e}"))?;
