@@ -1,0 +1,105 @@
+{
+    // Curated debug targets for day-to-day work.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug executable 'rine'",
+            "type": "lldb",
+            "request": "launch",
+            "preLaunchTask": "stage rine32 helper (debug)",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=rine",
+                    "--package=rine"
+                ]
+            },
+            "args": [
+                "--dev",
+            ]
+        },
+        {
+            "name": "Debug executable 'rine32'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=rine32",
+                    "--package=rine32"
+                ]
+            },
+            "args": []
+        },
+        {
+            "name": "Debug executable 'rine-dev'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=rine-dev",
+                    "--package=rine-dev"
+                ]
+            },
+            "args": []
+        },
+        {
+            "name": "Debug unit tests in executable 'rine'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--bin=rine",
+                    "--package=rine"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'import_policy'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=import_policy",
+                    "--package=rine-runtime-core"
+                ]
+            }
+        },
+        {
+            "name": "Debug unit tests in library 'rine_runtime_core'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=rine-runtime-core"
+                ]
+            }
+        },
+        {
+            "name": "Debug unit tests in library 'rine_dlls'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=rine-dlls"
+                ]
+            }
+        },
+        {
+            "name": "Debug unit tests in library 'rine_channel'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=rine-channel"
+                ]
+            }
+        }
+    ]
+}

@@ -5,10 +5,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TARGET_32="i686-unknown-linux-gnu"
-HOST_DIR="$REPO_ROOT/target/debug"
-HOST_RINE="$HOST_DIR/rine"
-TARGET_RINE32="$REPO_ROOT/target/$TARGET_32/debug/rine32"
-HOST_RINE32="$HOST_DIR/rine32"
+HOST_DEBUG_DIR="$REPO_ROOT/target/debug"
+HOST_RELEASE_DIR="$REPO_ROOT/target/release"
 
 cd "$REPO_ROOT"
 
@@ -23,26 +21,29 @@ if ! rustup target list --installed | grep -qx "$TARGET_32"; then
     rustup target add "$TARGET_32"
 fi
 
-echo "==> Building default host workspace members"
+echo "==> Building default host workspace members (debug)"
 cargo build
 
-echo "==> Building 32-bit runtime (rine32 + win32 DLL crates)"
+echo "==> Building default host workspace members (release)"
+cargo build --release
+
+echo "==> Building 32-bit runtime (debug)"
 cargo build -p rine32 --target "$TARGET_32"
 
-if [[ ! -x "$TARGET_RINE32" ]]; then
-    echo "error: expected 32-bit runtime not found: $TARGET_RINE32" >&2
-    exit 1
-fi
+echo "==> Building 32-bit runtime (release)"
+cargo build --release -p rine32 --target "$TARGET_32"
 
-if [[ ! -x "$HOST_RINE" ]]; then
-    echo "error: expected host runtime not found: $HOST_RINE" >&2
-    exit 1
-fi
-
-echo "==> Staging 32-bit runtime next to host rine"
-install -m 0755 "$TARGET_RINE32" "$HOST_RINE32"
+for profile in debug release; do
+    src="$REPO_ROOT/target/$TARGET_32/$profile/rine32"
+    dst="$REPO_ROOT/target/$profile/rine32"
+    if [[ ! -x "$src" ]]; then
+        echo "error: expected 32-bit runtime not found: $src" >&2
+        exit 1
+    fi
+    echo "==> Staging $profile rine32 next to $profile rine"
+    install -m 0755 "$src" "$dst"
+done
 
 echo "Build complete."
-echo "  host: target/debug/"
-echo "  32-bit: target/$TARGET_32/debug/rine32"
-echo "  staged helper: target/debug/rine32"
+echo "  debug:   target/debug/rine  +  target/debug/rine32"
+echo "  release: target/release/rine  +  target/release/rine32"
