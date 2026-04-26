@@ -30,7 +30,7 @@ python3 "$SCRIPT_DIR/check-attribute-metadata.py"
 echo "==> [8/10] Updating DLL support data"
 python3 "$SCRIPT_DIR/generate-dll-support.py"
 
-echo "==> [9/9] Staging debug and release binaries"
+echo "==> [9/10] Staging debug and release binaries"
 "$SCRIPT_DIR/build-rine.sh"
 
 echo "==> [10/10] Building Debian package"
