@@ -463,18 +463,25 @@ pub enum RunError {
 
     #[error("{0}")]
     Entry(#[from] EntryError),
+
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum DispatchError {
     #[error(
-        "detected a 32-bit executable, but failed to launch the 32-bit runtime `{helper}`: {source}\n\
-         hint: build/install the helper binary (for example: cargo build --bin rine32)"
+        "this executable is 32-bit, but the 32-bit support component (rine32) could not be started: {source}\n\
+         The rine installation may be incomplete or damaged. Try reinstalling rine."
     )]
     Spawn {
         helper: String,
         source: std::io::Error,
     },
+
+    #[error(
+        "this executable is 32-bit, but the 32-bit support component (rine32) was not found.\n\
+         The rine installation may be incomplete or damaged. Try reinstalling rine."
+    )]
+    HelperNotFound,
 }
 
 fn dispatch_to_rine32(
@@ -492,7 +499,10 @@ fn dispatch_to_rine32(
         }
     };
 
-    let helper_path = resolve_rine32_helper_path();
+    let helper_path = match resolve_rine32_helper_path() {
+        Some(path) => path,
+        None => return Err(DispatchError::HelperNotFound),
+    };
     let helper = helper_path.display().to_string();
 
     let mut child = match spawn_rine32(
@@ -541,44 +551,19 @@ fn dispatch_to_rine32(
     std::process::exit(status.code().unwrap_or(1))
 }
 
-fn resolve_rine32_helper_path() -> std::path::PathBuf {
+fn resolve_rine32_helper_path() -> Option<std::path::PathBuf> {
     if let Some(explicit) = std::env::var_os("RINE_RINE32_HELPER") {
-        return explicit.into();
+        return Some(explicit.into());
     }
 
-    std::env::current_exe()
-        .ok()
-        .and_then(|p| {
-            if let Some(target_dir) = p.parent().and_then(|dir| dir.parent()) {
-                let profile = p
-                    .parent()
-                    .and_then(|dir| dir.file_name())
-                    .and_then(|name| name.to_str())
-                    .unwrap_or("debug");
+    if let Ok(exe) = std::env::current_exe() {
+        let sibling = exe.with_file_name("rine32");
+        if sibling.is_file() {
+            return Some(sibling);
+        }
+    }
 
-                // Prefer the helper built for the same profile as the launcher
-                // to avoid running a stale debug helper from release `rine`.
-                let profile_matched = target_dir
-                    .join("i686-unknown-linux-gnu")
-                    .join(profile)
-                    .join("rine32");
-                if profile_matched.is_file() {
-                    return Some(profile_matched);
-                }
-
-                let cross_debug = target_dir
-                    .join("i686-unknown-linux-gnu")
-                    .join("debug")
-                    .join("rine32");
-                if cross_debug.is_file() {
-                    return Some(cross_debug);
-                }
-            }
-
-            let sibling = p.with_file_name("rine32");
-            sibling.is_file().then_some(sibling)
-        })
-        .unwrap_or_else(|| std::path::PathBuf::from("rine32"))
+    None
 }
 
 fn spawn_rine32(
