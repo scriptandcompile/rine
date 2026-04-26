@@ -3,7 +3,6 @@ use super::common::{
     write_minimal_pe32,
 };
 
-#[cfg(unix)]
 #[test]
 fn x86_binary_dispatches_to_rine32_helper() {
     let dir = unique_temp_dir("rine-dispatch-success");
@@ -48,7 +47,6 @@ fn x86_binary_dispatches_to_rine32_helper() {
     let _ = std::fs::remove_dir_all(dir);
 }
 
-#[cfg(unix)]
 #[test]
 fn x86_binary_without_helper_fails_with_hint() {
     let dir = unique_temp_dir("rine-dispatch-missing");
@@ -70,15 +68,16 @@ fn x86_binary_without_helper_fails_with_hint() {
     );
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stderr.contains("detected a 32-bit executable")
-            && stderr.contains("cargo build --bin rine32"),
+        stderr.contains("this executable is 32-bit")
+            && stderr.contains(
+                "The rine installation may be incomplete or damaged. Try reinstalling rine."
+            ),
         "stderr should include actionable helper hint\nstderr:\n{stderr}"
     );
 
     let _ = std::fs::remove_dir_all(dir);
 }
 
-#[cfg(unix)]
 #[test]
 fn x86_fixture_dispatches_to_rine32_helper() {
     if fixture_arch() != "x86" {
@@ -127,7 +126,6 @@ fn x86_fixture_dispatches_to_rine32_helper() {
     let _ = std::fs::remove_dir_all(dir);
 }
 
-#[cfg(unix)]
 #[test]
 fn x86_dispatch_exports_window_host_socket() {
     let dir = unique_temp_dir("rine-dispatch-window-host");
