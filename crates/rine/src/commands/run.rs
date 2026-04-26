@@ -337,7 +337,16 @@ pub fn run(
         &User32Plugin,
         &Ws2_32Plugin,
     ]);
-    let report = resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry)?;
+    let report = match resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry) {
+        Ok(report) => report,
+        Err(resolver::ResolverError::UnimplementedImports { imports, report }) => {
+            dev_emit!(_dev_channel, imports_resolved_event(&report));
+            return Err(RunError::Resolver(
+                resolver::ResolverError::UnimplementedImports { imports, report },
+            ));
+        }
+        Err(e) => return Err(RunError::Resolver(e)),
+    };
     info!(
         resolved = report.total_resolved,
         stubbed = report.total_stubbed,
@@ -541,12 +550,28 @@ fn resolve_rine32_helper_path() -> std::path::PathBuf {
         .ok()
         .and_then(|p| {
             if let Some(target_dir) = p.parent().and_then(|dir| dir.parent()) {
-                let cross_target = target_dir
+                let profile = p
+                    .parent()
+                    .and_then(|dir| dir.file_name())
+                    .and_then(|name| name.to_str())
+                    .unwrap_or("debug");
+
+                // Prefer the helper built for the same profile as the launcher
+                // to avoid running a stale debug helper from release `rine`.
+                let profile_matched = target_dir
+                    .join("i686-unknown-linux-gnu")
+                    .join(profile)
+                    .join("rine32");
+                if profile_matched.is_file() {
+                    return Some(profile_matched);
+                }
+
+                let cross_debug = target_dir
                     .join("i686-unknown-linux-gnu")
                     .join("debug")
                     .join("rine32");
-                if cross_target.is_file() {
-                    return Some(cross_target);
+                if cross_debug.is_file() {
+                    return Some(cross_debug);
                 }
             }
 
@@ -564,6 +589,9 @@ fn spawn_rine32(
 ) -> Result<std::process::Child, std::io::Error> {
     let mut command = Command::new(helper_path);
     command.arg(exe_path).args(exe_args);
+    if let Some(socket_path) = std::env::var_os("RINE_DEV_SOCKET") {
+        command.env("RINE_DEV_SOCKET", socket_path);
+    }
     if let Some((key, value)) = window_host_socket {
         command.env(key, value);
     }

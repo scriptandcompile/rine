@@ -16,7 +16,10 @@ use crate::pe::parser::PeFormat;
 #[derive(Debug, Error)]
 pub enum ResolverError {
     #[error("unimplemented imports detected: {imports:?}")]
-    UnimplementedImports { imports: Vec<String> },
+    UnimplementedImports {
+        imports: Vec<String>,
+        report: ResolutionReport,
+    },
 
     #[error("IAT write at {va} is outside the loaded image bounds")]
     IatOutOfBounds { va: VirtualAddress },
@@ -29,7 +32,7 @@ pub enum ResolverError {
 }
 
 /// Summary of import resolution for one DLL.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DllResolutionSummary {
     pub dll_name: String,
     pub resolved: usize,
@@ -39,7 +42,7 @@ pub struct DllResolutionSummary {
 }
 
 /// Summary of the entire import resolution pass.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ResolutionReport {
     pub dll_summaries: Vec<DllResolutionSummary>,
     pub total_resolved: usize,
@@ -188,6 +191,7 @@ pub fn resolve_imports(
     if !unimplemented_imports.is_empty() {
         return Err(ResolverError::UnimplementedImports {
             imports: unimplemented_imports,
+            report,
         });
     }
 

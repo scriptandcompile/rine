@@ -23,7 +23,7 @@ fn resolve_imports_fails_when_unimplemented_imports_exist() {
     let result = resolver::resolve_imports(&image, &parsed.pe, parsed.format, &empty_registry);
 
     match result {
-        Err(ResolverError::UnimplementedImports { imports }) => {
+        Err(ResolverError::UnimplementedImports { imports, report }) => {
             assert!(
                 !imports.is_empty(),
                 "expected at least one unimplemented import"
@@ -32,6 +32,14 @@ fn resolve_imports_fails_when_unimplemented_imports_exist() {
                 imports.iter().all(|name| name.contains('!')),
                 "expected DLL!Function formatting, got: {:?}",
                 imports
+            );
+            assert!(
+                !report.dll_summaries.is_empty(),
+                "expected import summary report for dev dashboard"
+            );
+            assert!(
+                report.total_stubbed > 0,
+                "expected stubbed imports in report when unimplemented imports exist"
             );
         }
         other => panic!("expected UnimplementedImports error, got {other:?}"),

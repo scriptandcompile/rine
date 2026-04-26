@@ -213,7 +213,17 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     let image = memory::LoadedImage::load(&parsed)?;
     dev_emit!(dev_bridge, pe_loaded_event(&resolved, &parsed, &image));
 
-    let report = resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry)?;
+    let report = match resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry) {
+        Ok(report) => report,
+        Err(ResolverError::UnimplementedImports { imports, report }) => {
+            dev_emit!(dev_bridge, imports_resolved_event(&report));
+            return Err(Run32Error::Resolver(ResolverError::UnimplementedImports {
+                imports,
+                report,
+            }));
+        }
+        Err(e) => return Err(Run32Error::Resolver(e)),
+    };
     info!(
         resolved = report.total_resolved,
         stubbed = report.total_stubbed,
