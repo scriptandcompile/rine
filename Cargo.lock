@@ -4221,7 +4221,6 @@ dependencies = [
  "rine-dlls",
  "rine-types",
  "tracing",
- "winit 0.28.7",
 ]
 
 [[package]]
