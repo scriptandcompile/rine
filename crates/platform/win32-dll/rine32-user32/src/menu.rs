@@ -33,3 +33,26 @@ pub unsafe extern "stdcall" fn CheckMenuItem(
 ) -> i32 {
     common::check_menu_item(handle_menu, id_check_item, check) as i32
 }
+
+/// Retrieves a handle to the submenu activated by the specified menu item.
+///
+/// # Arguments
+/// * `_handle_menu` - A handle to the menu that contains the submenu.
+/// * `_position` - The zero-based index position of the menu item that activates the submenu.
+///
+/// # Safety
+/// _handle_menu must be a valid handle to a menu, and _position must correspond to a valid menu item that has an associated submenu.
+/// The caller must ensure that the menu structure is properly initialized and that the specified position is within bounds.
+///
+/// # Returns
+/// An `u32` containing the handle to the submenu if the specified menu item has an associated submenu,
+/// or `0` if the menu item does not have a submenu or if the specified position is invalid.
+///
+/// # Notes
+/// This function is currently a stub and returns `None` as a placeholder.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GetSubMenu(_handle_menu: u32, _position: u32) -> u32 {
+    common::get_sub_menu(_handle_menu, _position).unwrap_or_default()
+}
