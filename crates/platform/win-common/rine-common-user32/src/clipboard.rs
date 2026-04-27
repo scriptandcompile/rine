@@ -92,3 +92,24 @@ pub fn is_clipboard_format_available(_format: ClipboardFormat) -> WinBool {
 
     WinBool::FALSE
 }
+
+/// Opens the clipboard for examination and prevents other applications from modifying the clipboard content.
+///
+/// # Arguments
+/// * `_hwnd` - A handle to the window to be associated with the open clipboard.
+///   This parameter can be `0` if the clipboard is not associated with a window.
+///
+/// # Safety
+/// The caller must ensure that the clipboard is properly closed after use by calling `CloseClipboard`.
+/// Currently, this function is not implemented and will return `WinBool::FALSE` for all calls.
+///
+/// # Returns
+/// * `WinBool::TRUE` if the clipboard was opened successfully, `WinBool::FALSE` otherwise.
+///
+/// # Notes
+/// This function is currently not implemented and will return `WinBool::FALSE` for all calls.
+pub fn open_clipboard(_hwnd: usize) -> WinBool {
+    warn!("OpenClipboard is not implemented yet, returning false");
+
+    WinBool::FALSE
+}

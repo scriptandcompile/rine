@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T01:22:02.382738+00:00",
+  "generatedAt": "2026-04-27T04:38:43.214031+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2061,7 +2061,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 35,
+      "functionCount": 36,
       "functions": [
         {
           "name": "CreateWindowExA",
@@ -2256,6 +2256,19 @@
             "status": "stubbed",
             "symbol": "message_queue::IsDialogMessageA",
             "source": "user32 - message_queue.rs"
+          }
+        },
+        {
+          "name": "OpenClipboard",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "clipboard::OpenClipboard",
+            "source": "user32 - clipboard.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "clipboard::OpenClipboard",
+            "source": "user32 - clipboard.rs"
           }
         },
         {
@@ -2522,17 +2535,17 @@
     }
   ],
   "totals": {
-    "functions": 190,
+    "functions": 191,
     "x64": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 21,
+      "stubbed": 22,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 21,
+      "stubbed": 22,
       "unimplemented": 0
     }
   }
