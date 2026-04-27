@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T21:45:55.646796+00:00",
+  "generatedAt": "2026-04-27T21:58:25.355282+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2061,7 +2061,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 39,
+      "functionCount": 40,
       "functions": [
         {
           "name": "CheckMenuItem",
@@ -2178,6 +2178,19 @@
             "status": "partial",
             "symbol": "message_queue::DispatchMessageW",
             "source": "user32 - message_queue.rs"
+          }
+        },
+        {
+          "name": "GetMenu",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "menu::GetMenu",
+            "source": "user32 - menu.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "menu::GetMenu",
+            "source": "user32 - menu.rs"
           }
         },
         {
@@ -2574,17 +2587,17 @@
     }
   ],
   "totals": {
-    "functions": 194,
+    "functions": 195,
     "x64": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 25,
+      "stubbed": 26,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 25,
+      "stubbed": 26,
       "unimplemented": 0
     }
   }

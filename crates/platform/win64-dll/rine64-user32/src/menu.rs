@@ -49,10 +49,33 @@ pub unsafe extern "win64" fn CheckMenuItem(
 /// or `0` if the menu item does not have a submenu or if the specified position is invalid.
 ///
 /// # Notes
-/// This function is currently a stub and returns `None` as a placeholder.
+/// This function is currently a stub and returns `0` as a placeholder.
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetSubMenu(_handle_menu: u32, _position: u32) -> u32 {
     common::get_sub_menu(_handle_menu, _position).unwrap_or_default()
+}
+
+/// Retrieves a handle to the menu assigned to the specified window.
+///
+/// # Arguments
+/// * `_handle_window` - A handle to the window whose menu handle is to be retrieved.
+///
+/// # Safety
+/// _handle_window must be a valid handle to a window.
+/// The caller must ensure that the window structure is properly initialized.
+///
+/// # Returns
+/// An `u32` containing the handle to the menu assigned to the specified window,
+/// or `0` if the window does not have a menu or if the specified window handle is invalid.
+/// if the window is a child window, the return value is undefined.
+///
+/// # Notes
+/// This function is currently a stub and returns `0` as a placeholder.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn GetMenu(_handle_window: u32) -> u32 {
+    common::get_menu(_handle_window).unwrap_or_default()
 }
