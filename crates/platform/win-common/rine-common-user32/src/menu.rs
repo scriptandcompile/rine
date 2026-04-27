@@ -81,3 +81,27 @@ pub fn get_menu(_handle_window: u32) -> Option<u32> {
     warn!("get_menu is not implemented yet. Returning None as a placeholder.");
     None
 }
+
+/// Enables the application to access the window menu (also known as the system menu or control menu) for copying and modifying.
+///
+/// # Arguments
+/// * `_handle_window` - A handle to the window whose system menu is to be accessed.
+/// * `_revert` - A boolean value that specifies whether to reset the system menu to its default state.
+///   If this parameter is `true`, the system menu will be reset to its default state.
+///   If this parameter is `false`, the system menu will be returned in its current state.
+///
+/// # Safety
+/// _handle_window must be a valid handle to a window.
+/// The caller must ensure that the window structure is properly initialized.
+///
+/// # Returns
+/// An `Option<u32>` containing the handle to the system menu if the specified window has a system menu and the handle is
+/// valid, or `None` if the window does not have a system menu or if the specified window handle is invalid.
+/// If the window is a child window, the return value is undefined.
+///
+/// # Notes
+/// This function is currently a stub and returns `None` as a placeholder.
+pub fn get_system_menu(_handle_window: u32, _revert: bool) -> Option<u32> {
+    warn!("get_system_menu is not implemented yet. Returning None as a placeholder.");
+    None
+}
