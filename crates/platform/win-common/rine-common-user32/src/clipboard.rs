@@ -113,3 +113,21 @@ pub fn open_clipboard(_hwnd: usize) -> WinBool {
 
     WinBool::FALSE
 }
+
+/// Closes the clipboard.
+///
+/// # Safety
+/// The caller must ensure that the clipboard is currently open before calling this function.
+/// Currently, this function is not implemented and will return `WinBool::FALSE` for all calls.
+///
+/// # Returns
+/// * `WinBool::TRUE` if the clipboard was closed successfully, `WinBool::FALSE` otherwise.
+///
+/// # Notes
+/// This function is currently not implemented and will return `WinBool::FALSE` for all calls
+/// This function should write an error to `GetLastError()` if the clipboard is not open, but this is not yet implemented.
+pub fn close_clipboard() -> WinBool {
+    warn!("CloseClipboard is not implemented yet, returning false");
+
+    WinBool::FALSE
+}

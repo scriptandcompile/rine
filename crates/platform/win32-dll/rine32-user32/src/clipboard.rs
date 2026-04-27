@@ -49,3 +49,22 @@ pub extern "stdcall" fn IsClipboardFormatAvailable(_format: u32) -> WinBool {
 pub extern "stdcall" fn OpenClipboard(_hwnd: usize) -> WinBool {
     common::open_clipboard(_hwnd)
 }
+
+/// Closes the clipboard.
+///
+/// # Safety
+/// The caller must ensure that the clipboard is currently open before calling this function.
+/// Currently, this function is not implemented and will return `WinBool::FALSE` for all calls.
+///
+/// # Returns
+/// * `WinBool::TRUE` if the clipboard was closed successfully, `WinBool::FALSE` otherwise.
+///
+/// # Notes
+/// This function is currently not implemented and will return `WinBool::FALSE` for all calls
+/// This function should write an error to `GetLastError()` if the clipboard is not open, but this is not yet implemented.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub extern "stdcall" fn CloseClipboard() -> WinBool {
+    common::close_clipboard()
+}
