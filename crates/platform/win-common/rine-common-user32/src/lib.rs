@@ -11,6 +11,7 @@
 pub mod backend;
 pub mod class_registration;
 pub mod clipboard;
+pub mod menu;
 pub mod message_queue;
 pub mod message_registration;
 pub mod window_lifecycle;
