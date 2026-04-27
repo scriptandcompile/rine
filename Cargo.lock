@@ -4130,6 +4130,7 @@ dependencies = [
  "rine-dll-build",
  "rine-dlls",
  "rine-types",
+ "tracing",
 ]
 
 [[package]]
@@ -4219,6 +4220,7 @@ dependencies = [
  "rine-dll-build",
  "rine-dlls",
  "rine-types",
+ "tracing",
  "winit 0.28.7",
 ]
 

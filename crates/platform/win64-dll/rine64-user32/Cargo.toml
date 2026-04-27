@@ -11,6 +11,7 @@ rine-dlls = { workspace = true }
 rine-types = { workspace = true }
 rine-common-user32 = { workspace = true }
 winit = "0.28.7"
+tracing = {workspace = true }
 
 [build-dependencies]
 rine-dll-build = { workspace = true }
