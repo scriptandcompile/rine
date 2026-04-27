@@ -1,3 +1,5 @@
+use rine_types::errors::WinBool;
+
 use tracing::warn;
 
 #[repr(i32)]
@@ -104,4 +106,34 @@ pub fn get_menu(_handle_window: u32) -> Option<u32> {
 pub fn get_system_menu(_handle_window: u32, _revert: bool) -> Option<u32> {
     warn!("get_system_menu is not implemented yet. Returning None as a placeholder.");
     None
+}
+
+/// Enables, disables, or grays out a menu item.
+///
+/// # Arguments
+/// * `_handle_menu` - A handle to the menu that contains the item to be enabled, disabled, or grayed out.
+/// * `_id_enable_item` - The identifier or position of the menu item to be enabled, disabled, or grayed out.
+/// * `_enable` - The action to be performed on the menu item. This parameter can be a bitwise combination of the following values:
+///     - MF_BYCOMMAND (0x00000000): Indicates that `_id_enable_item` specifies the identifier of the menu item.
+///     - MF_BYPOSITION (0x00000400): Indicates that `_id_enable_item` specifies the position of the menu item.
+///     - MF_ENABLED (0x00000000): Enables the menu item.
+///     - MF_DISABLED (0x00000002): Disables the menu item, but it is still visible.
+///     - MF_GRAYED (0x00000001): Grays out the menu item, making it appear disabled and unselectable.
+///
+/// # Safety
+/// The caller must ensure that the `_handle_menu` is a valid handle to a menu and that the `_id_enable_item` corresponds
+/// to a valid menu item within that menu.
+/// Additionally, the caller must ensure that the `_enable` parameter is a valid combination of the MF_* flags.
+/// The caller must also ensure that the menu structure is properly initialized and that the specified item is within bounds.
+///
+/// # Returns
+/// A `WinBool` indicating whether the operation was successful.
+/// Returns `WinBool::TRUE` if the menu item was successfully enabled, disabled, or grayed out, and `WinBool::FALSE` if the operation
+/// failed (for example, if the specified menu item was invalid).
+///
+/// # Notes
+/// This function is currently a stub and returns `WinBool::FALSE` as a placeholder.
+pub fn enable_menu_item(_handle_menu: u32, _id_enable_item: u32, _enable: u32) -> WinBool {
+    warn!("enable_menu_item is not implemented yet. Returning WinBool::FALSE as a placeholder.");
+    WinBool::FALSE
 }

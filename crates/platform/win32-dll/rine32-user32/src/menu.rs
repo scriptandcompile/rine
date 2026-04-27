@@ -1,4 +1,5 @@
 use rine_common_user32::menu as common;
+use rine_types::errors::WinBool;
 
 /// Checks or unchecks a menu item, returning the previous state of the item.
 ///
@@ -104,4 +105,40 @@ pub unsafe extern "stdcall" fn GetMenu(_handle_window: u32) -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetSystemMenu(_handle_window: u32) -> u32 {
     common::get_system_menu(_handle_window, false).unwrap_or_default()
+}
+
+/// Enables, disables, or grays out a menu item.
+///
+/// # Arguments
+/// * `_handle_menu` - A handle to the menu that contains the item to be enabled, disabled, or grayed out.
+/// * `_id_enable_item` - The identifier or position of the menu item to be enabled, disabled, or grayed out.
+/// * `_enable` - The action to be performed on the menu item. This parameter can be a bitwise combination of the following values:
+///     - MF_BYCOMMAND (0x00000000): Indicates that `id_enable_item` specifies the identifier of the menu item.
+///     - MF_BYPOSITION (0x00000400): Indicates that `id_enable_item` specifies the position of the menu item.
+///     - MF_ENABLED (0x00000000): Enables the menu item.
+///     - MF_GRAYED (0x00000001): Grays out the menu item and disables it.
+///     - MF_DISABLED (0x00000002): Disables the menu item without graying it out.
+///
+/// # Safety
+/// This function is unsafe because it interacts with raw pointers.
+/// The caller must ensure that the `handle_menu` is a valid handle to a menu and that the `id_enable_item` corresponds to a valid menu item within that menu.
+/// Additionally, the caller must ensure that the `enable` parameter is a valid combination of the MF_* flags.
+/// The caller must also ensure that the menu structure is properly initialized and that the specified item is within bounds.
+///
+/// # Returns
+/// A `WinBool` indicating whether the operation was successful.
+/// Returns `WinBool::TRUE` if the menu item was successfully enabled, disabled, or grayed out, and `WinBool::FALSE` if the operation
+/// failed (for example, if the specified menu item was invalid).
+///
+/// # Notes
+/// This function is currently a stub and returns `WinBool::FALSE` as a placeholder.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn EnableMenuItem(
+    _handle_menu: u32,
+    _id_enable_item: u32,
+    _enable: u32,
+) -> WinBool {
+    common::enable_menu_item(_handle_menu, _id_enable_item, _enable)
 }
