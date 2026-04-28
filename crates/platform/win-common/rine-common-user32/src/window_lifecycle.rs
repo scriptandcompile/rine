@@ -16,14 +16,14 @@ pub fn create_window(
     title: String,
     style: u32,
     rect: Rect,
-    parent: usize,
-) -> usize {
+    parent: Hwnd,
+) -> Hwnd {
     let escaped_class_name = json_escape(&class_name);
     let escaped_title = json_escape(&title);
 
     let class = match WINDOW_CLASS_REGISTRY.get(&class_name) {
         Some(c) => c,
-        None => return 0,
+        None => return Hwnd::NULL,
     };
 
     let state = WindowState {
@@ -39,7 +39,7 @@ pub fn create_window(
             right: rect.right - rect.left,
             bottom: rect.bottom - rect.top,
         },
-        parent: Hwnd::from_raw(parent),
+        parent,
         visible: (style & window_style::WS_VISIBLE) != 0,
         enabled: (style & window_style::WS_DISABLED) == 0,
         wnd_proc: class.wnd_proc,
@@ -57,7 +57,7 @@ pub fn create_window(
         hwnd.as_raw(),
         escaped_title,
         escaped_class_name,
-        parent,
+        parent.as_raw(),
     );
     rine_types::dev_notify!(on_handle_created(hwnd.as_raw() as i64, "Window", &detail));
 
@@ -72,7 +72,7 @@ pub fn create_window(
         });
     });
 
-    hwnd.as_raw()
+    hwnd
 }
 
 /// Destroy a window.
@@ -89,11 +89,9 @@ pub fn create_window(
 ///
 /// Returns 1 on success, 0 if the HWND was not found.
 pub unsafe fn destroy_window(
-    hwnd: usize,
+    hwnd: Hwnd,
     call_wnd_proc: impl Fn(usize, usize, u32, usize, isize) -> isize,
 ) -> i32 {
-    let hwnd = Hwnd::from_raw(hwnd);
-
     let Some(state) = WINDOW_MANAGER.get_window(hwnd) else {
         return 0;
     };
@@ -121,9 +119,7 @@ pub unsafe fn destroy_window(
 /// Show or hide a window according to `cmd_show` (SW_* constants).
 ///
 /// Returns `WinBool::TRUE` if the window was previously visible, `WinBool::FALSE` otherwise.
-pub fn show_window(hwnd: usize, cmd_show: i32) -> WinBool {
-    let hwnd = Hwnd::from_raw(hwnd);
-
+pub fn show_window(hwnd: Hwnd, cmd_show: i32) -> WinBool {
     let was_visible = WINDOW_MANAGER
         .get_window(hwnd)
         .map(|state| state.visible)
@@ -177,9 +173,7 @@ pub fn show_window(hwnd: usize, cmd_show: i32) -> WinBool {
 ///
 /// # Returns
 /// `WinBool::TRUE` always (UpdateWindow is a notification, not a query).
-pub fn update_window(hwnd: usize) -> WinBool {
-    let hwnd = Hwnd::from_raw(hwnd);
-
+pub fn update_window(hwnd: Hwnd) -> WinBool {
     request_native_redraw(hwnd);
 
     THREAD_MESSAGE_QUEUE.with(|queue| {

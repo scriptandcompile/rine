@@ -1,5 +1,6 @@
 use rine_common_user32::clipboard as common;
 use rine_types::errors::WinBool;
+use rine_types::windows::Hwnd;
 
 use tracing::warn;
 
@@ -46,7 +47,7 @@ pub extern "stdcall" fn IsClipboardFormatAvailable(_format: u32) -> WinBool {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub extern "stdcall" fn OpenClipboard(_hwnd: usize) -> WinBool {
+pub extern "stdcall" fn OpenClipboard(_hwnd: Hwnd) -> WinBool {
     common::open_clipboard(_hwnd)
 }
 

@@ -8,8 +8,7 @@ use crate::backend::set_native_title;
 /// SetWindowText — set the title bar text for a window.
 ///
 /// Returns `WinBool::TRUE` on success, `WinBool::FALSE` if the HWND is not found.
-pub fn set_window_text(hwnd: usize, text: String) -> WinBool {
-    let hwnd = Hwnd::from_raw(hwnd);
+pub fn set_window_text(hwnd: Hwnd, text: String) -> WinBool {
     let backend_title = text.clone();
 
     WINDOW_MANAGER.update_window(hwnd, |state| {
@@ -27,12 +26,10 @@ pub fn set_window_text(hwnd: usize, text: String) -> WinBool {
 ///
 /// # Safety
 /// `buffer` must point to at least `max_count` bytes of writable memory.
-pub unsafe fn get_window_text_a(hwnd: usize, buffer: *mut u8, max_count: i32) -> i32 {
+pub unsafe fn get_window_text_a(hwnd: Hwnd, buffer: *mut u8, max_count: i32) -> i32 {
     if buffer.is_null() || max_count <= 0 {
         return 0;
     }
-
-    let hwnd = Hwnd::from_raw(hwnd);
 
     let title = match WINDOW_MANAGER.get_window(hwnd) {
         Some(state) => state.title,
@@ -56,12 +53,10 @@ pub unsafe fn get_window_text_a(hwnd: usize, buffer: *mut u8, max_count: i32) ->
 ///
 /// # Safety
 /// `buffer` must point to at least `max_count` u16s of writable memory.
-pub unsafe fn get_window_text_w(hwnd: usize, buffer: *mut u16, max_count: i32) -> i32 {
+pub unsafe fn get_window_text_w(hwnd: Hwnd, buffer: *mut u16, max_count: i32) -> i32 {
     if buffer.is_null() || max_count <= 0 {
         return 0;
     }
-
-    let hwnd = Hwnd::from_raw(hwnd);
 
     let title = match WINDOW_MANAGER.get_window(hwnd) {
         Some(state) => state.title,
@@ -82,9 +77,7 @@ pub unsafe fn get_window_text_w(hwnd: usize, buffer: *mut u16, max_count: i32) -
 /// GetWindowTextLength(A/W) — return the number of characters in the window title.
 ///
 /// Returns the character count, not counting the null terminator.
-pub fn get_window_text_length(hwnd: usize) -> i32 {
-    let hwnd = Hwnd::from_raw(hwnd);
-
+pub fn get_window_text_length(hwnd: Hwnd) -> i32 {
     match WINDOW_MANAGER.get_window(hwnd) {
         Some(state) => state.title.len() as i32,
         None => 0,

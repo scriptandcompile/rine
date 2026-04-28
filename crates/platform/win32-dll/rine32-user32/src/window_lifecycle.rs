@@ -46,11 +46,11 @@ pub unsafe extern "stdcall" fn CreateWindowExA(
     y: i32,
     width: i32,
     height: i32,
-    parent: usize,
+    parent: Hwnd,
     _menu: usize,
     _instance: usize,
     _param: *mut u8,
-) -> usize {
+) -> Hwnd {
     common::create_window(
         ex_style,
         read_cstr(class_name).unwrap_or_default(),
@@ -109,11 +109,11 @@ pub unsafe extern "stdcall" fn CreateWindowExW(
     y: i32,
     width: i32,
     height: i32,
-    parent: usize,
+    parent: Hwnd,
     _menu: usize,
     _instance: usize,
     _param: *mut u8,
-) -> usize {
+) -> Hwnd {
     common::create_window(
         ex_style,
         read_wstr(class_name).unwrap_or_default(),
@@ -156,7 +156,7 @@ pub unsafe extern "stdcall" fn CreateWindowExW(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn DestroyWindow(hwnd: usize) -> i32 {
+pub unsafe extern "stdcall" fn DestroyWindow(hwnd: Hwnd) -> i32 {
     unsafe {
         common::destroy_window(hwnd, |proc_fn, h, msg, wp, lp| {
             let f: extern "stdcall" fn(usize, u32, usize, isize) -> isize =
@@ -188,7 +188,7 @@ pub unsafe extern "stdcall" fn DestroyWindow(hwnd: usize) -> i32 {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn ShowWindow(hwnd: usize, cmd_show: i32) -> WinBool {
+pub unsafe extern "stdcall" fn ShowWindow(hwnd: Hwnd, cmd_show: i32) -> WinBool {
     common::show_window(hwnd, cmd_show)
 }
 
@@ -209,6 +209,6 @@ pub unsafe extern "stdcall" fn ShowWindow(hwnd: usize, cmd_show: i32) -> WinBool
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn UpdateWindow(hwnd: usize) -> WinBool {
+pub unsafe extern "stdcall" fn UpdateWindow(hwnd: Hwnd) -> WinBool {
     common::update_window(hwnd)
 }
