@@ -9,6 +9,7 @@ use rine_dlls::{DllPlugin, as_win_api};
 
 mod class_registration;
 mod clipboard;
+mod cursor;
 mod menu;
 mod message_queue;
 mod message_registration;

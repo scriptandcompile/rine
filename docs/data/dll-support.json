@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T22:36:03.821471+00:00",
+  "generatedAt": "2026-04-28T01:51:46.509963+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2061,7 +2061,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 42,
+      "functionCount": 44,
       "functions": [
         {
           "name": "CheckMenuItem",
@@ -2334,6 +2334,32 @@
             "status": "stubbed",
             "symbol": "message_queue::IsDialogMessageA",
             "source": "user32 - message_queue.rs"
+          }
+        },
+        {
+          "name": "LoadCursorA",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "cursor::LoadCursorA",
+            "source": "user32 - cursor.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "cursor::LoadCursorA",
+            "source": "user32 - cursor.rs"
+          }
+        },
+        {
+          "name": "LoadCursorW",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "cursor::LoadCursorW",
+            "source": "user32 - cursor.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "cursor::LoadCursorW",
+            "source": "user32 - cursor.rs"
           }
         },
         {
@@ -2613,17 +2639,17 @@
     }
   ],
   "totals": {
-    "functions": 197,
+    "functions": 199,
     "x64": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 28,
+      "stubbed": 30,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 28,
+      "stubbed": 30,
       "unimplemented": 0
     }
   }
