@@ -1,5 +1,7 @@
 use rine_common_user32::cursor as common;
+use rine_types::errors::WinBool;
 use rine_types::strings::read_cstr;
+use rine_types::windows::Point;
 
 use tracing::warn;
 
@@ -96,4 +98,43 @@ pub unsafe extern "stdcall" fn LoadCursorW(_hinstance: u32, _name: *const u8) ->
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetCursor(_cursor: u32) -> u32 {
     common::set_cursor(_cursor).unwrap_or_default()
+}
+
+/// Retrieves the position of the mouse cursor in screen coordinates.
+///
+/// # Arguments
+/// * `_lppt` - A pointer to a `Point` structure that receives the screen coordinates of the cursor.
+///   The `x` member receives the x-coordinate of the cursor, and the `y` member receives the y-coordinate of the cursor.
+///
+/// # Safety
+/// The `_lppt` parameter must be a valid pointer to a `Point` structure that can receive the cursor coordinates.
+/// The cursor position is always specified in screen coordinates and is not affected by the mapping mode of the window that contains the cursor.
+/// The calling process must have `WINSTA_READATTRIBUTES` access to the window station.
+/// The input desktop must be the current desktop when you call this function.
+/// If the input desktop is not the current desktop, the function fails and returns `None`.
+///
+/// # Returns
+/// An `Option<(i32, i32)>` containing the x and y coordinates of the cursor in screen coordinates if the operation was successful,
+/// or `None` if the function fails to retrieve the cursor position (for example, if the calling process does not have the required
+/// access to the window station or if the input desktop is not the current desktop).
+///
+/// # Notes
+/// This function is currently a stub and returns `None` as a placeholder.
+/// This implementation does not set the `GetLastError` value on failure.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GetCursorPos(_lppt: *mut Point) -> WinBool {
+    warn!("GetCursorPos is not implemented yet. Returning None as a placeholder.");
+
+    let result = common::get_cursor_pos();
+
+    if result.is_none() {
+        return WinBool::FALSE;
+    }
+
+    (*_lppt).x = result.unwrap().0;
+    (*_lppt).y = result.unwrap().1;
+
+    WinBool::TRUE
 }
