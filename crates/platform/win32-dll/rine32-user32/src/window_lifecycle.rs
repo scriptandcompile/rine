@@ -1,5 +1,6 @@
 use rine_common_user32 as common;
 use rine_types::errors::WinBool;
+use rine_types::handles::HMenu;
 use rine_types::strings::{read_cstr, read_wstr};
 use rine_types::windows::*;
 
@@ -14,8 +15,8 @@ use rine_types::windows::*;
 /// * `y`: Y position of the window.
 /// * `width`: Width of the window.
 /// * `height`: Height of the window.
-/// * `parent`: Handle of the parent window, or 0 for no parent.
-/// * `_menu`: Handle of the menu, or 0 for no menu. Ignored.
+/// * `parent`: Handle of the parent window, or `Hwnd::NULL` for no parent.
+/// * `_menu`: Handle of the menu, or `HMenu::NULL` for no menu. Ignored.
 /// * `_instance`: Handle of the instance, or 0 for the current instance. Ignored.
 /// * `_param`: Pointer to window creation data. Ignored.
 ///
@@ -47,7 +48,7 @@ pub unsafe extern "stdcall" fn CreateWindowExA(
     width: i32,
     height: i32,
     parent: Hwnd,
-    _menu: usize,
+    _menu: HMenu,
     _instance: usize,
     _param: *mut u8,
 ) -> Hwnd {
@@ -77,8 +78,8 @@ pub unsafe extern "stdcall" fn CreateWindowExA(
 /// * `y`: Y position of the window.
 /// * `width`: Width of the window.
 /// * `height`: Height of the window.
-/// * `parent`: Handle of the parent window, or 0 for no parent.
-/// * `_menu`: Handle of the menu, or 0 for no menu. Ignored.
+/// * `parent`: Handle of the parent window, or `Hwnd::NULL` for no parent.
+/// * `_menu`: Handle of the menu, or `HMenu::NULL` for no menu. Ignored.
 /// * `_instance`: Handle of the instance, or 0 for the current instance. Ignored.
 /// * `_param`: Pointer to window creation data. Ignored.
 ///
@@ -90,7 +91,7 @@ pub unsafe extern "stdcall" fn CreateWindowExA(
 /// The caller is responsible for eventually destroying the created window to avoid resource leaks.
 ///
 /// # Returns
-/// The handle of the created window, or 0 on failure.
+/// The handle of the created window, or `Hwnd::NULL` on failure.
 ///
 /// # Notes
 /// Currently, the `_menu`, `_instance`, and `_param` parameters are ignored, as they are not commonly used in typical
@@ -110,7 +111,7 @@ pub unsafe extern "stdcall" fn CreateWindowExW(
     width: i32,
     height: i32,
     parent: Hwnd,
-    _menu: usize,
+    _menu: HMenu,
     _instance: usize,
     _param: *mut u8,
 ) -> Hwnd {
@@ -156,10 +157,10 @@ pub unsafe extern "stdcall" fn CreateWindowExW(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn DestroyWindow(hwnd: Hwnd) -> i32 {
+pub unsafe extern "stdcall" fn DestroyWindow(hwnd: Hwnd) -> WinBool {
     unsafe {
         common::destroy_window(hwnd, |proc_fn, h, msg, wp, lp| {
-            let f: extern "stdcall" fn(usize, u32, usize, isize) -> isize =
+            let f: extern "stdcall" fn(Hwnd, u32, usize, isize) -> isize =
                 std::mem::transmute(proc_fn);
             f(h, msg, wp, lp)
         })

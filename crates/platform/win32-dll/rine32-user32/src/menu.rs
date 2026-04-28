@@ -1,5 +1,5 @@
 use rine_common_user32::menu as common;
-use rine_types::errors::WinBool;
+use rine_types::{errors::WinBool, handles::HMenu, windows::Hwnd};
 
 /// Checks or unchecks a menu item, returning the previous state of the item.
 ///
@@ -28,7 +28,7 @@ use rine_types::errors::WinBool;
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CheckMenuItem(
-    handle_menu: u32,
+    handle_menu: HMenu,
     id_check_item: u32,
     check: u32,
 ) -> i32 {
@@ -54,8 +54,8 @@ pub unsafe extern "stdcall" fn CheckMenuItem(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetSubMenu(_handle_menu: u32, _position: u32) -> u32 {
-    common::get_sub_menu(_handle_menu, _position).unwrap_or_default()
+pub unsafe extern "stdcall" fn GetSubMenu(_handle_menu: HMenu, _position: u32) -> HMenu {
+    common::get_sub_menu(_handle_menu, _position).unwrap_or(HMenu::NULL)
 }
 
 /// Retrieves a handle to the menu assigned to the specified window.
@@ -77,8 +77,8 @@ pub unsafe extern "stdcall" fn GetSubMenu(_handle_menu: u32, _position: u32) -> 
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetMenu(_handle_window: u32) -> u32 {
-    common::get_menu(_handle_window).unwrap_or_default()
+pub unsafe extern "stdcall" fn GetMenu(_handle_window: Hwnd) -> HMenu {
+    common::get_menu(_handle_window).unwrap_or(HMenu::NULL)
 }
 
 /// Enables the application to access the window menu (also known as the system menu or control menu) for copying and modifying.
@@ -103,8 +103,8 @@ pub unsafe extern "stdcall" fn GetMenu(_handle_window: u32) -> u32 {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetSystemMenu(_handle_window: u32) -> u32 {
-    common::get_system_menu(_handle_window, false).unwrap_or_default()
+pub unsafe extern "stdcall" fn GetSystemMenu(_handle_window: Hwnd) -> HMenu {
+    common::get_system_menu(_handle_window, false).unwrap_or(HMenu::NULL)
 }
 
 /// Enables, disables, or grays out a menu item.
@@ -136,7 +136,7 @@ pub unsafe extern "stdcall" fn GetSystemMenu(_handle_window: u32) -> u32 {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn EnableMenuItem(
-    _handle_menu: u32,
+    _handle_menu: HMenu,
     _id_enable_item: u32,
     _enable: u32,
 ) -> WinBool {

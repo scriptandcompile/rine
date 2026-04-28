@@ -90,29 +90,23 @@ pub fn create_window(
 /// Returns 1 on success, 0 if the HWND was not found.
 pub unsafe fn destroy_window(
     hwnd: Hwnd,
-    call_wnd_proc: impl Fn(usize, usize, u32, usize, isize) -> isize,
-) -> i32 {
+    call_wnd_proc: impl Fn(usize, Hwnd, u32, usize, isize) -> isize,
+) -> WinBool {
     let Some(state) = WINDOW_MANAGER.get_window(hwnd) else {
-        return 0;
+        return WinBool::FALSE;
     };
 
     // Deliver WM_DESTROY synchronously while the window state is still valid.
     // Apps commonly call PostQuitMessage from this handler.
-    let _ = call_wnd_proc(
-        state.wnd_proc,
-        hwnd.as_raw(),
-        window_message::WM_DESTROY,
-        0,
-        0,
-    );
+    let _ = call_wnd_proc(state.wnd_proc, hwnd, window_message::WM_DESTROY, 0, 0);
 
     destroy_native_window(hwnd);
 
     if WINDOW_MANAGER.destroy_window(hwnd) {
         rine_types::dev_notify!(on_handle_closed(hwnd.as_raw() as i64));
-        1
+        WinBool::TRUE
     } else {
-        0
+        WinBool::FALSE
     }
 }
 

@@ -1,5 +1,6 @@
 use rine_common_user32 as common;
 use rine_types::errors::WinBool;
+use rine_types::handles::HMenu;
 use rine_types::strings::{read_cstr, read_wstr};
 use rine_types::windows::*;
 
@@ -14,8 +15,8 @@ use rine_types::windows::*;
 /// * `y`: Y position of the window.
 /// * `width`: Width of the window.
 /// * `height`: Height of the window.
-/// * `parent`: Handle of the parent window, or 0 for no parent.
-/// * `_menu`: Handle of the menu, or 0 for no menu. Ignored.
+/// * `parent`: Handle of the parent window, or `Hwnd::NULL` for no parent.
+/// * `_menu`: Handle of the menu, or `HMenu::NULL` for no menu. Ignored.
 /// * `_instance`: Handle of the instance, or 0 for the current instance. Ignored.
 /// * `_param`: Pointer to window creation data. Ignored.
 ///
@@ -47,7 +48,7 @@ pub unsafe extern "win64" fn CreateWindowExA(
     width: i32,
     height: i32,
     parent: Hwnd,
-    _menu: usize,
+    _menu: HMenu,
     _instance: usize,
     _param: *mut u8,
 ) -> Hwnd {
@@ -77,8 +78,8 @@ pub unsafe extern "win64" fn CreateWindowExA(
 /// * `y`: Y position of the window.
 /// * `width`: Width of the window.
 /// * `height`: Height of the window.
-/// * `parent`: Handle of the parent window, or 0 for no parent.
-/// * `_menu`: Handle of the menu, or 0 for no menu. Ignored.
+/// * `parent`: Handle of the parent window, or `Hwnd::NULL` for no parent.
+/// * `_menu`: Handle of the menu, or `HMenu::NULL` for no menu. Ignored.
 /// * `_instance`: Handle of the instance, or 0 for the current instance. Ignored.
 /// * `_param`: Pointer to window creation data. Ignored.
 ///
@@ -110,7 +111,7 @@ pub unsafe extern "win64" fn CreateWindowExW(
     width: i32,
     height: i32,
     parent: Hwnd,
-    _menu: usize,
+    _menu: HMenu,
     _instance: usize,
     _param: *mut u8,
 ) -> Hwnd {
@@ -147,7 +148,7 @@ pub unsafe extern "win64" fn CreateWindowExW(
 /// The caller is responsible for eventually destroying the created window to avoid resource leaks.
 ///
 /// # Returns
-/// 1 on success, 0 if the HWND was not found.
+/// `WinBool::TRUE` on success, `WinBool::FALSE` if the HWND was not found.
 ///
 /// # Notes
 /// On error the `GetLastError` code should be set to indicate the reason for failure, such as
@@ -156,10 +157,10 @@ pub unsafe extern "win64" fn CreateWindowExW(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn DestroyWindow(hwnd: Hwnd) -> i32 {
+pub unsafe extern "win64" fn DestroyWindow(hwnd: Hwnd) -> WinBool {
     unsafe {
         common::destroy_window(hwnd, |proc_fn: usize, h, msg, wp, lp| {
-            let f: extern "win64" fn(usize, u32, usize, isize) -> isize =
+            let f: extern "win64" fn(Hwnd, u32, usize, isize) -> isize =
                 std::mem::transmute(proc_fn);
             f(h, msg, wp, lp)
         })
@@ -178,9 +179,9 @@ pub unsafe extern "win64" fn DestroyWindow(hwnd: Hwnd) -> i32 {
 /// as this would lead to undefined behavior.
 ///
 /// # Returns
-/// The return value is the result of the `ShowWindow` operation, which is nonzero if the window was
-/// previously visible and zero if it was hidden.
-/// On error (e.g. if the window handle is invalid), the function returns 0, which is the same as the
+/// The return value is the result of the `ShowWindow` operation, which is `WinBool::TRUE` if the window was
+/// previously visible and `WinBool::FALSE` if it was hidden.
+/// On error (e.g. if the window handle is invalid), the function returns `WinBool::FALSE`, which is the same as the
 /// return value for a window that was hidden.
 ///
 /// # Notes

@@ -46,6 +46,15 @@ pub struct HeapState {
 #[repr(transparent)]
 pub struct Handle(isize);
 
+/// A handle to a menu (from `CreateMenu` and related functions).
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct HMenu(Handle);
+
+impl HMenu {
+    pub const NULL: Self = Self(Handle::NULL);
+}
+
 /// Well-known pseudo-handle returned by `GetStdHandle`.
 pub const STD_INPUT_HANDLE: u32 = 0xFFFF_FFF6; // (DWORD)-10
 pub const STD_OUTPUT_HANDLE: u32 = 0xFFFF_FFF5; // (DWORD)-11
