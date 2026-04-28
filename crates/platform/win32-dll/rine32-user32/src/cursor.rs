@@ -35,8 +35,6 @@ pub extern "stdcall" fn LoadCursorA(_hinstance: u32, _name: *const u8) -> u32 {
             return 0;
         };
 
-        warn!("LoadCursorA is not implemented yet. Returning 0 as a placeholder.");
-
         common::load_cursor(_hinstance, &cursor_name).unwrap_or_default()
     }
 }
@@ -73,8 +71,29 @@ pub unsafe extern "stdcall" fn LoadCursorW(_hinstance: u32, _name: *const u8) ->
             return 0;
         };
 
-        warn!("LoadCursorW is not implemented yet. Returning 0 as a placeholder.");
-
         common::load_cursor(_hinstance, &cursor_name).unwrap_or_default()
     }
+}
+
+/// Sets the cursor shape, returning the handle to the previous cursor if successful.
+///
+/// # Arguments
+/// * `_cursor` - A handle to the cursor to be set.
+///   If this parameter is `0`, the function sets the cursor to `None`, which means that the cursor will be hidden until the next mouse movement.
+///
+/// # Safety
+/// The cursor must have been created by either the `CreateCursor` function or the `CreateIconIndirect` function,
+/// or loaded by either the `LoadCursor` function or the `LoadImage` function.
+///
+/// # Returns
+/// An `u32` containing the handle to the previous cursor if the operation was successful, or `0` if the function
+/// fails to set the specified cursor (for example, if the specified cursor handle is invalid).
+///
+/// # Notes
+/// This function is currently a stub and returns `0` as a placeholder.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn SetCursor(_cursor: u32) -> u32 {
+    common::set_cursor(_cursor).unwrap_or_default()
 }

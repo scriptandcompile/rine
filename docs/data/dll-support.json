@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-28T01:51:46.509963+00:00",
+  "generatedAt": "2026-04-28T02:11:43.729591+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2061,7 +2061,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 44,
+      "functionCount": 45,
       "functions": [
         {
           "name": "CheckMenuItem",
@@ -2545,6 +2545,19 @@
           }
         },
         {
+          "name": "SetCursor",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "cursor::SetCursor",
+            "source": "user32 - cursor.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "cursor::SetCursor",
+            "source": "user32 - cursor.rs"
+          }
+        },
+        {
           "name": "SetWindowTextA",
           "x64": {
             "status": "partial",
@@ -2639,17 +2652,17 @@
     }
   ],
   "totals": {
-    "functions": 199,
+    "functions": 200,
     "x64": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 30,
+      "stubbed": 31,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 30,
+      "stubbed": 31,
       "unimplemented": 0
     }
   }

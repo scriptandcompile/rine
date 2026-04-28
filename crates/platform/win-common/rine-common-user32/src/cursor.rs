@@ -24,3 +24,24 @@ pub fn load_cursor(_hinstance: u32, _name: &str) -> Option<u32> {
     warn!("load_cursor is not implemented yet. Returning None as a placeholder.");
     None
 }
+
+/// Sets the cursor shape, returning the handle to the previous cursor if successful.
+///
+/// # Arguments
+/// * `_cursor` - A handle to the cursor to be set.
+///   If this parameter is `0`, the function sets the cursor to `None`, which means that the cursor will be hidden until the next mouse movement.
+///
+/// # Safety
+/// The cursor must have been created by either the `CreateCursor` function or the `CreateIconIndirect` function,
+/// or loaded by either the `LoadCursor` function or the `LoadImage` function.
+///
+/// # Returns
+/// An `Option<u32>` containing the handle to the previous cursor if the operation was successful, or `None` if the function
+/// fails to set the specified cursor (for example, if the specified cursor handle is invalid).
+///
+/// # Notes
+/// This function is currently a stub and returns `None` as a placeholder.
+pub fn set_cursor(_cursor: u32) -> Option<u32> {
+    warn!("set_cursor is not implemented yet. Returning None as a placeholder.");
+    None
+}
