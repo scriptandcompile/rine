@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 use rine_types::errors::WinBool;
-use rine_types::strings::{read_cstr, read_wstr, write_cstr, write_wstr};
+use rine_types::strings::{LPCSTR, LPCWSTR, write_cstr, write_wstr};
 
 /// Thin wrapper so a raw pointer can live in a `static OnceLock`.
 /// Cached wide environment block for `GetEnvironmentStringsW`.
@@ -95,8 +95,8 @@ pub unsafe fn get_environment_strings_w() -> *mut u16 {
 /// If the function fails for any other reason, the return value is zero.
 /// To get extended error information, call GetLastError.
 /// Currently, this implementation does not set GetLastError on failure.
-pub unsafe fn get_environment_variable_a(name: *const u8, buffer: *mut u8, size: u32) -> u32 {
-    let var_name = match unsafe { read_cstr(name) } {
+pub unsafe fn get_environment_variable_a(name: LPCSTR, buffer: *mut u8, size: u32) -> u32 {
+    let var_name = match name.read_string() {
         Some(n) => n,
         None => return 0,
     };
@@ -128,8 +128,8 @@ pub unsafe fn get_environment_variable_a(name: *const u8, buffer: *mut u8, size:
 /// If the function fails for any other reason, the return value is zero.
 /// To get extended error information, call GetLastError.
 /// Currently, this implementation does not set GetLastError on failure.
-pub unsafe fn get_environment_variable_w(name: *const u16, buffer: *mut u16, size: u32) -> u32 {
-    let var_name = match unsafe { read_wstr(name) } {
+pub unsafe fn get_environment_variable_w(name: LPCWSTR, buffer: *mut u16, size: u32) -> u32 {
+    let var_name = match name.read_string() {
         Some(n) => n,
         None => return 0,
     };
@@ -154,13 +154,13 @@ pub unsafe fn get_environment_variable_w(name: *const u16, buffer: *mut u16, siz
 /// # Returns
 /// If the function succeeds, the return value is TRUE.
 /// If the function fails, the return value is FALSE.
-pub unsafe fn set_environment_variable_a(name: *const u8, value: *const u8) -> WinBool {
-    let var_name = match unsafe { read_cstr(name) } {
+pub unsafe fn set_environment_variable_a(name: LPCSTR, value: LPCSTR) -> WinBool {
+    let var_name = match name.read_string() {
         Some(n) => n,
         None => return WinBool::FALSE,
     };
 
-    let var_value = unsafe { read_cstr(value) };
+    let var_value = value.read_string();
     rine_types::environment::set_var(&var_name, var_value.as_deref());
     WinBool::TRUE
 }
@@ -179,13 +179,13 @@ pub unsafe fn set_environment_variable_a(name: *const u8, value: *const u8) -> W
 /// # Returns
 /// If the function succeeds, the return value is TRUE.
 /// If the function fails, the return value is FALSE.
-pub unsafe fn set_environment_variable_w(name: *const u16, value: *const u16) -> WinBool {
-    let var_name = match unsafe { read_wstr(name) } {
+pub unsafe fn set_environment_variable_w(name: LPCWSTR, value: LPCWSTR) -> WinBool {
+    let var_name = match name.read_string() {
         Some(n) => n,
         None => return WinBool::FALSE,
     };
 
-    let var_value = unsafe { read_wstr(value) };
+    let var_value = value.read_string();
     rine_types::environment::set_var(&var_name, var_value.as_deref());
     WinBool::TRUE
 }
@@ -210,8 +210,8 @@ pub unsafe fn set_environment_variable_w(name: *const u16, value: *const u16) ->
 /// If the function fails for any other reason, the return value is zero.
 /// To get extended error information, call GetLastError.
 /// Currently, this implementation does not set GetLastError on failure.
-pub unsafe fn expand_environment_strings_a(src: *const u8, dst: *mut u8, dst_size: u32) -> u32 {
-    let input = match unsafe { read_cstr(src) } {
+pub unsafe fn expand_environment_strings_a(src: LPCSTR, dst: *mut u8, dst_size: u32) -> u32 {
+    let input = match src.read_string() {
         Some(s) => s,
         None => return 0,
     };
@@ -250,8 +250,8 @@ pub unsafe fn expand_environment_strings_a(src: *const u8, dst: *mut u8, dst_siz
 /// If the function fails for any other reason, the return value is zero.
 /// To get extended error information, call GetLastError.
 /// Currently, this implementation does not set GetLastError on failure.
-pub unsafe fn expand_environment_strings_w(src: *const u16, dst: *mut u16, dst_size: u32) -> u32 {
-    let input = match unsafe { read_wstr(src) } {
+pub unsafe fn expand_environment_strings_w(src: LPCWSTR, dst: *mut u16, dst_size: u32) -> u32 {
+    let input = match src.read_string() {
         Some(s) => s,
         None => return 0,
     };

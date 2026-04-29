@@ -6,7 +6,7 @@ use rine_types::errors::WinBool;
 use rine_types::handles::{
     Handle, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE, Win32FindDataA, Win32FindDataW,
 };
-use rine_types::strings::{read_cstr, read_wstr};
+use rine_types::strings::{LPCSTR, LPCWSTR};
 
 /// CreateFileA — open or create a file (ANSI path).
 ///
@@ -35,7 +35,7 @@ use rine_types::strings::{read_cstr, read_wstr};
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateFileA(
-    file_name: *const u8,
+    file_name: LPCSTR,
     desired_access: u32,
     _share_mode: u32,
     _security_attributes: usize, // LPSECURITY_ATTRIBUTES (ignored)
@@ -47,7 +47,7 @@ pub unsafe extern "win64" fn CreateFileA(
         return INVALID_HANDLE_VALUE.as_raw();
     }
 
-    let c_str = unsafe { read_cstr(file_name).unwrap_or_default() };
+    let c_str = unsafe { file_name.read_string().unwrap_or_default() };
     let path_str = c_str.to_string();
 
     common::file::create_file(&path_str, desired_access, creation_disposition)
@@ -80,7 +80,7 @@ pub unsafe extern "win64" fn CreateFileA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateFileW(
-    file_name: *const u16,
+    file_name: LPCWSTR,
     desired_access: u32,
     _share_mode: u32,
     _security_attributes: usize, // LPSECURITY_ATTRIBUTES (ignored)
@@ -92,7 +92,7 @@ pub unsafe extern "win64" fn CreateFileW(
         return INVALID_HANDLE_VALUE.as_raw();
     }
 
-    let wide_file_name = unsafe { read_wstr(file_name).unwrap_or_default() };
+    let wide_file_name = unsafe { file_name.read_string().unwrap_or_default() };
     let path_str = wide_file_name.to_string();
 
     common::file::create_file(&path_str, desired_access, creation_disposition)
@@ -112,12 +112,12 @@ pub unsafe extern "win64" fn CreateFileW(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn DeleteFileW(file_name: *const u16) -> WinBool {
+pub unsafe extern "win64" fn DeleteFileW(file_name: LPCWSTR) -> WinBool {
     if file_name.is_null() {
         return WinBool::FALSE;
     }
 
-    let wide_file_name = unsafe { read_wstr(file_name).unwrap_or_default() };
+    let wide_file_name = unsafe { file_name.read_string().unwrap_or_default() };
     let path_str = wide_file_name.to_string();
     common::file::delete_file(&path_str)
 }
@@ -136,12 +136,12 @@ pub unsafe extern "win64" fn DeleteFileW(file_name: *const u16) -> WinBool {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn DeleteFileA(file_name: *const u8) -> WinBool {
+pub unsafe extern "win64" fn DeleteFileA(file_name: LPCSTR) -> WinBool {
     if file_name.is_null() {
         return WinBool::FALSE;
     }
 
-    let c_str = unsafe { read_cstr(file_name).unwrap_or_default() };
+    let c_str = unsafe { file_name.read_string().unwrap_or_default() };
     let path_str = c_str.to_string();
     common::file::delete_file(&path_str)
 }
@@ -355,7 +355,7 @@ pub unsafe extern "win64" fn SetFilePointer(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindFirstFileA(
-    file_name: *const u8,
+    file_name: LPCSTR,
     find_data: *mut Win32FindDataA,
 ) -> isize {
     if file_name.is_null() {
@@ -363,7 +363,7 @@ pub unsafe extern "win64" fn FindFirstFileA(
     }
 
     unsafe {
-        let Some(path_str) = read_cstr(file_name) else {
+        let Some(path_str) = file_name.read_string() else {
             return INVALID_HANDLE_VALUE.as_raw();
         };
 
@@ -388,14 +388,14 @@ pub unsafe extern "win64" fn FindFirstFileA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindFirstFileW(
-    file_name: *const u16,
+    file_name: LPCWSTR,
     find_data: *mut Win32FindDataW,
 ) -> isize {
     if file_name.is_null() {
         return INVALID_HANDLE_VALUE.as_raw();
     }
     unsafe {
-        let Some(path_str) = read_wstr(file_name) else {
+        let Some(path_str) = file_name.read_string() else {
             return INVALID_HANDLE_VALUE.as_raw();
         };
 

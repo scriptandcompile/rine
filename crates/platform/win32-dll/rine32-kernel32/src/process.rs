@@ -2,7 +2,7 @@ use rine_common_kernel32 as common;
 use rine_types::errors::{ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER, WinBool};
 use rine_types::handles::Handle;
 use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
-use rine_types::strings::{read_cstr, read_wstr};
+use rine_types::strings::{LPCSTR, LPCWSTR, read_cstr, read_wstr};
 
 use tracing::warn;
 
@@ -35,7 +35,7 @@ use tracing::warn;
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn LoadLibraryA(_file_name: *const u8) -> u32 {
+pub unsafe extern "stdcall" fn LoadLibraryA(_file_name: LPCSTR) -> u32 {
     tracing::warn!(
         api = "LoadLibraryA",
         dll = "kernel32",
@@ -46,7 +46,7 @@ pub unsafe extern "stdcall" fn LoadLibraryA(_file_name: *const u8) -> u32 {
         let file_name = if _file_name.is_null() {
             return 0;
         } else {
-            read_cstr(_file_name).unwrap_or_default()
+            _file_name.read_string().unwrap_or_default()
         };
 
         common::process::load_library(&file_name)
@@ -82,7 +82,7 @@ pub unsafe extern "stdcall" fn LoadLibraryA(_file_name: *const u8) -> u32 {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn LoadLibraryW(_file_name: *const u16) -> u32 {
+pub unsafe extern "stdcall" fn LoadLibraryW(_file_name: LPCWSTR) -> u32 {
     tracing::warn!(
         api = "LoadLibraryW",
         dll = "kernel32",
@@ -93,7 +93,7 @@ pub unsafe extern "stdcall" fn LoadLibraryW(_file_name: *const u16) -> u32 {
         let file_name = if _file_name.is_null() {
             return 0;
         } else {
-            read_wstr(_file_name).unwrap_or_default()
+            _file_name.read_string().unwrap_or_default()
         };
 
         common::process::load_library(&file_name)
@@ -213,19 +213,19 @@ pub unsafe extern "stdcall" fn FreeLibrary(_module: u32) -> WinBool {
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateProcessA(
-    application_name: *const u8,           // rcx
+    application_name: LPCSTR,              // rcx
     command_line: *mut u8,                 // rdx
     _process_attrs: usize,                 // r8
     _thread_attrs: usize,                  // r9
     _inherit_handles: i32,                 // [rsp+0x28]
     _creation_flags: u32,                  // [rsp+0x30]
     environment: *const u8,                // [rsp+0x38]
-    _current_directory: *const u8,         // [rsp+0x40]
+    _current_directory: LPCSTR,            // [rsp+0x40]
     _startup_info: *const StartupInfoA,    // [rsp+0x48]
     process_info: *mut ProcessInformation, // [rsp+0x50]
 ) -> WinBool {
-    let app = unsafe { read_cstr(application_name) }.unwrap_or_default();
-    let cmd = unsafe { read_cstr(command_line.cast_const()) }.unwrap_or_default();
+    let app = unsafe { application_name.read_string() }.unwrap_or_default();
+    let cmd = unsafe { read_cstr(command_line) }.unwrap_or_default();
 
     let (exe, args) = if !app.is_empty() {
         (app, common::process::split_cmd_line(&cmd))
@@ -289,18 +289,18 @@ pub unsafe extern "stdcall" fn CreateProcessA(
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateProcessW(
-    application_name: *const u16,          // rcx
+    application_name: LPCWSTR,             // rcx
     command_line: *mut u16,                // rdx
     _process_attrs: usize,                 // r8
     _thread_attrs: usize,                  // r9
     _inherit_handles: i32,                 // [rsp+0x28]
     _creation_flags: u32,                  // [rsp+0x30]
     environment: *const u16,               // [rsp+0x38]
-    _current_directory: *const u16,        // [rsp+0x40]
+    _current_directory: LPCWSTR,           // [rsp+0x40]
     _startup_info: *const StartupInfoW,    // [rsp+0x48]
     process_info: *mut ProcessInformation, // [rsp+0x50]
 ) -> WinBool {
-    let app = unsafe { read_wstr(application_name) }.unwrap_or_default();
+    let app = unsafe { application_name.read_string() }.unwrap_or_default();
     let cmd = unsafe { read_wstr(command_line.cast_const()) }.unwrap_or_default();
 
     let (exe, args) = if !app.is_empty() {
@@ -454,7 +454,7 @@ pub unsafe extern "stdcall" fn GetCurrentProcessId() -> u32 {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetModuleHandleA(module_name: *const u8) -> usize {
+pub unsafe extern "stdcall" fn GetModuleHandleA(module_name: LPCSTR) -> usize {
     if module_name.is_null() {
         // TODO: return the actual image base once the loader exposes it.
         tracing::debug!("GetModuleHandleA(NULL) — returning 0 (placeholder)");
@@ -462,7 +462,7 @@ pub unsafe extern "stdcall" fn GetModuleHandleA(module_name: *const u8) -> usize
     }
 
     unsafe {
-        let name = read_cstr(module_name).unwrap_or_default();
+        let name = module_name.read_string().unwrap_or_default();
         tracing::warn!("GetModuleHandleA({name}) — returning 0 (stubbed)");
 
         common::process::get_module_handle(&name)
@@ -497,7 +497,7 @@ pub unsafe extern "stdcall" fn GetModuleHandleA(module_name: *const u8) -> usize
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetModuleHandleW(module_name: *const u16) -> usize {
+pub unsafe extern "stdcall" fn GetModuleHandleW(module_name: LPCWSTR) -> usize {
     if module_name.is_null() {
         // TODO: return the actual image base once the loader exposes it.
         tracing::debug!("GetModuleHandleW(NULL) — returning 0 (placeholder)");
@@ -505,7 +505,7 @@ pub unsafe extern "stdcall" fn GetModuleHandleW(module_name: *const u16) -> usiz
     }
 
     unsafe {
-        let name = read_wstr(module_name).unwrap_or_default();
+        let name = module_name.read_string().unwrap_or_default();
         tracing::warn!("GetModuleHandleW({name}) — returning 0 (stubbed)");
 
         common::process::get_module_handle(&name)

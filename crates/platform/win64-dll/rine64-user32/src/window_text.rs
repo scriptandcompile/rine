@@ -1,6 +1,6 @@
 use rine_common_user32 as common;
 use rine_types::errors::WinBool;
-use rine_types::strings::{read_cstr, read_wstr};
+use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::*;
 
 /// Set the title bar text for a window.
@@ -21,8 +21,8 @@ use rine_types::windows::*;
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn SetWindowTextA(hwnd: Hwnd, text: *const u8) -> WinBool {
-    common::set_window_text(hwnd, read_cstr(text).unwrap_or_default())
+pub unsafe extern "win64" fn SetWindowTextA(hwnd: Hwnd, text: LPCSTR) -> WinBool {
+    common::set_window_text(hwnd, text.read_string().unwrap_or_default())
 }
 
 /// Set the title bar text for a window.
@@ -43,8 +43,8 @@ pub unsafe extern "win64" fn SetWindowTextA(hwnd: Hwnd, text: *const u8) -> WinB
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn SetWindowTextW(hwnd: Hwnd, text: *const u16) -> WinBool {
-    common::set_window_text(hwnd, read_wstr(text).unwrap_or_default())
+pub unsafe extern "win64" fn SetWindowTextW(hwnd: Hwnd, text: LPCWSTR) -> WinBool {
+    common::set_window_text(hwnd, text.read_string().unwrap_or_default())
 }
 
 /// Copy the window title into an ANSI buffer.

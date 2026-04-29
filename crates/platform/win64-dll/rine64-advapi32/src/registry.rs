@@ -1,5 +1,5 @@
 use rine_common_advapi32 as common;
-use rine_types::strings::{read_cstr, read_wstr};
+use rine_types::strings::{LPCSTR, LPCWSTR};
 
 /// Open a registry key, returning a handle to the key in `result_key`.
 ///
@@ -20,13 +20,13 @@ use rine_types::strings::{read_cstr, read_wstr};
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegOpenKeyExA(
     hkey: isize,
-    sub_key: *const u8,
+    sub_key: LPCSTR,
     _options: u32,
     _desired: u32,
     result_key: *mut isize,
 ) -> u32 {
     unsafe {
-        let sub = read_cstr(sub_key).unwrap_or_default();
+        let sub = sub_key.read_string().unwrap_or_default();
         common::registry::reg_open_key(hkey, &sub, _options, _desired, result_key)
     }
 }
@@ -50,13 +50,13 @@ pub unsafe extern "win64" fn RegOpenKeyExA(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegOpenKeyExW(
     hkey: isize,
-    sub_key: *const u16,
+    sub_key: LPCWSTR,
     _options: u32,
     _desired: u32,
     result_key: *mut isize,
 ) -> u32 {
     unsafe {
-        let sub = read_wstr(sub_key).unwrap_or_default();
+        let sub = sub_key.read_string().unwrap_or_default();
         common::registry::reg_open_key(hkey, &sub, _options, _desired, result_key)
     }
 }
@@ -84,9 +84,9 @@ pub unsafe extern "win64" fn RegOpenKeyExW(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCreateKeyExA(
     hkey: isize,
-    sub_key: *const u8,
+    sub_key: LPCSTR,
     _reserved: u32,
-    _class: *const u8,
+    _class: LPCSTR,
     _options: u32,
     _desired: u32,
     _security: usize,
@@ -94,8 +94,8 @@ pub unsafe extern "win64" fn RegCreateKeyExA(
     _disposition: *mut u32,
 ) -> u32 {
     unsafe {
-        let sub = read_cstr(sub_key).unwrap_or_default();
-        let _class_type = read_cstr(_class).unwrap_or_default();
+        let sub = sub_key.read_string().unwrap_or_default();
+        let _class_type = _class.read_string().unwrap_or_default();
         common::registry::reg_create_key_ex(
             hkey,
             &sub,
@@ -133,9 +133,9 @@ pub unsafe extern "win64" fn RegCreateKeyExA(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegCreateKeyExW(
     hkey: isize,
-    sub_key: *const u16,
+    sub_key: LPCWSTR,
     _reserved: u32,
-    _class: *const u16,
+    _class: LPCWSTR,
     _options: u32,
     _desired: u32,
     _security: usize,
@@ -143,8 +143,8 @@ pub unsafe extern "win64" fn RegCreateKeyExW(
     _disposition: *mut u32,
 ) -> u32 {
     unsafe {
-        let sub = read_wstr(sub_key).unwrap_or_default();
-        let _class_type = read_wstr(_class).unwrap_or_default();
+        let sub = sub_key.read_string().unwrap_or_default();
+        let _class_type = _class.read_string().unwrap_or_default();
         common::registry::reg_create_key_ex(
             hkey,
             &sub,
@@ -183,14 +183,14 @@ pub unsafe extern "win64" fn RegCreateKeyExW(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegQueryValueExA(
     hkey: isize,
-    value_name: *const u8,
+    value_name: LPCSTR,
     _reserved: *const u32,
     value_type: *mut u32,
     data: *mut u8,
     data_size: *mut u32,
 ) -> u32 {
     unsafe {
-        let name = read_cstr(value_name).unwrap_or_default();
+        let name = value_name.read_string().unwrap_or_default();
         common::registry::reg_query_value(hkey, &name, _reserved, value_type, data, data_size)
     }
 }
@@ -219,14 +219,14 @@ pub unsafe extern "win64" fn RegQueryValueExA(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegQueryValueExW(
     hkey: isize,
-    value_name: *const u16,
+    value_name: LPCWSTR,
     _reserved: *const u32,
     value_type: *mut u32,
     data: *mut u8,
     data_size: *mut u32,
 ) -> u32 {
     unsafe {
-        let name = read_wstr(value_name).unwrap_or_default();
+        let name = value_name.read_string().unwrap_or_default();
         common::registry::reg_query_value(hkey, &name, _reserved, value_type, data, data_size)
     }
 }
@@ -251,14 +251,14 @@ pub unsafe extern "win64" fn RegQueryValueExW(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegSetValueExA(
     hkey: isize,
-    value_name: *const u8,
+    value_name: LPCSTR,
     _reserved: u32,
     value_type: u32,
     data: *const u8,
     data_size: u32,
 ) -> u32 {
     unsafe {
-        let name = read_cstr(value_name).unwrap_or_default();
+        let name = value_name.read_string().unwrap_or_default();
         common::registry::reg_set_value(hkey, &name, _reserved, value_type, data, data_size)
     }
 }
@@ -283,14 +283,14 @@ pub unsafe extern "win64" fn RegSetValueExA(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegSetValueExW(
     hkey: isize,
-    value_name: *const u16,
+    value_name: LPCWSTR,
     _reserved: u32,
     value_type: u32,
     data: *const u8,
     data_size: u32,
 ) -> u32 {
     unsafe {
-        let name = read_wstr(value_name).unwrap_or_default();
+        let name = value_name.read_string().unwrap_or_default();
         common::registry::reg_set_value(hkey, &name, _reserved, value_type, data, data_size)
     }
 }

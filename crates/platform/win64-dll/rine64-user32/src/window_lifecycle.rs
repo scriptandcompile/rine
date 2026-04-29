@@ -1,7 +1,7 @@
 use rine_common_user32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::HMenu;
-use rine_types::strings::{read_cstr, read_wstr};
+use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::*;
 
 /// Create a new window.
@@ -40,8 +40,8 @@ use rine_types::windows::*;
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateWindowExA(
     ex_style: u32,
-    class_name: *const u8,
-    window_name: *const u8,
+    class_name: LPCSTR,
+    window_name: LPCSTR,
     style: u32,
     x: i32,
     y: i32,
@@ -54,8 +54,8 @@ pub unsafe extern "win64" fn CreateWindowExA(
 ) -> Hwnd {
     common::create_window(
         ex_style,
-        read_cstr(class_name).unwrap_or_default(),
-        read_cstr(window_name).unwrap_or_default(),
+        class_name.read_string().unwrap_or_default(),
+        window_name.read_string().unwrap_or_default(),
         style,
         Rect {
             left: x,
@@ -103,8 +103,8 @@ pub unsafe extern "win64" fn CreateWindowExA(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateWindowExW(
     ex_style: u32,
-    class_name: *const u16,
-    window_name: *const u16,
+    class_name: LPCWSTR,
+    window_name: LPCWSTR,
     style: u32,
     x: i32,
     y: i32,
@@ -117,8 +117,8 @@ pub unsafe extern "win64" fn CreateWindowExW(
 ) -> Hwnd {
     common::create_window(
         ex_style,
-        read_wstr(class_name).unwrap_or_default(),
-        read_wstr(window_name).unwrap_or_default(),
+        class_name.read_string().unwrap_or_default(),
+        window_name.read_string().unwrap_or_default(),
         style,
         Rect {
             left: x,

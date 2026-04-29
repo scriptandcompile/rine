@@ -4,7 +4,7 @@ use rine_types::handles::{
 };
 use rine_types::{
     errors::WinBool,
-    strings::{read_cstr, read_wstr},
+    strings::{LPCSTR, LPCWSTR},
 };
 
 /// CreateFileA — open or create a file (ANSI path).
@@ -34,7 +34,7 @@ use rine_types::{
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateFileA(
-    file_name: *const u8,
+    file_name: LPCSTR,
     desired_access: u32,
     _share_mode: u32,
     _security_attributes: usize, // LPSECURITY_ATTRIBUTES (ignored)
@@ -46,10 +46,11 @@ pub unsafe extern "stdcall" fn CreateFileA(
         return INVALID_HANDLE_VALUE.as_raw();
     }
 
-    let c_str = unsafe { read_cstr(file_name).unwrap_or_default() };
-    let path_str = c_str.to_string();
-
-    common::file::create_file(&path_str, desired_access, creation_disposition)
+    unsafe {
+        let c_str = file_name.read_string().unwrap_or_default();
+        let path_str = c_str.to_string();
+        common::file::create_file(&path_str, desired_access, creation_disposition)
+    }
 }
 
 /// CreateFileW — open or create a file (wide/UTF-16 path).
@@ -79,7 +80,7 @@ pub unsafe extern "stdcall" fn CreateFileA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateFileW(
-    file_name: *const u16,
+    file_name: LPCWSTR,
     desired_access: u32,
     _share_mode: u32,
     _security_attributes: usize, // LPSECURITY_ATTRIBUTES (ignored)
@@ -91,10 +92,11 @@ pub unsafe extern "stdcall" fn CreateFileW(
         return INVALID_HANDLE_VALUE.as_raw();
     }
 
-    let wide_file_name = unsafe { read_wstr(file_name).unwrap_or_default() };
-    let path_str = wide_file_name.to_string();
-
-    common::file::create_file(&path_str, desired_access, creation_disposition)
+    unsafe {
+        let wide_file_name = file_name.read_string().unwrap_or_default();
+        let path_str = wide_file_name.to_string();
+        common::file::create_file(&path_str, desired_access, creation_disposition)
+    }
 }
 
 /// DeleteFileW — delete a file (wide/UTF-16 path).
@@ -111,14 +113,16 @@ pub unsafe extern "stdcall" fn CreateFileW(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn DeleteFileW(file_name: *const u16) -> WinBool {
+pub unsafe extern "stdcall" fn DeleteFileW(file_name: LPCWSTR) -> WinBool {
     if file_name.is_null() {
         return WinBool::FALSE;
     }
 
-    let wide_file_name = unsafe { read_wstr(file_name).unwrap_or_default() };
-    let path_str = wide_file_name.to_string();
-    common::file::delete_file(&path_str)
+    unsafe {
+        let wide_file_name = file_name.read_string().unwrap_or_default();
+        let path_str = wide_file_name.to_string();
+        common::file::delete_file(&path_str)
+    }
 }
 
 /// DeleteFileA — delete a file (ANSI path).
@@ -135,14 +139,16 @@ pub unsafe extern "stdcall" fn DeleteFileW(file_name: *const u16) -> WinBool {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn DeleteFileA(file_name: *const u8) -> WinBool {
+pub unsafe extern "stdcall" fn DeleteFileA(file_name: LPCSTR) -> WinBool {
     if file_name.is_null() {
         return WinBool::FALSE;
     }
 
-    let c_str = unsafe { read_cstr(file_name).unwrap_or_default() };
-    let path_str = c_str.to_string();
-    common::file::delete_file(&path_str)
+    unsafe {
+        let c_str = file_name.read_string().unwrap_or_default();
+        let path_str = c_str.to_string();
+        common::file::delete_file(&path_str)
+    }
 }
 
 /// GetFileSize — return the size of a file in bytes.
@@ -349,7 +355,7 @@ pub unsafe extern "stdcall" fn SetFilePointer(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindFirstFileA(
-    file_name: *const u8,
+    file_name: LPCSTR,
     find_data: *mut Win32FindDataA,
 ) -> isize {
     if file_name.is_null() {
@@ -357,7 +363,7 @@ pub unsafe extern "stdcall" fn FindFirstFileA(
     }
 
     unsafe {
-        let Some(path_str) = read_cstr(file_name) else {
+        let Some(path_str) = file_name.read_string() else {
             return INVALID_HANDLE_VALUE.as_raw();
         };
 
@@ -382,14 +388,14 @@ pub unsafe extern "stdcall" fn FindFirstFileA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindFirstFileW(
-    file_name: *const u16,
+    file_name: LPCWSTR,
     find_data: *mut Win32FindDataW,
 ) -> isize {
     if file_name.is_null() {
         return INVALID_HANDLE_VALUE.as_raw();
     }
     unsafe {
-        let Some(path_str) = read_wstr(file_name) else {
+        let Some(path_str) = file_name.read_string() else {
             return INVALID_HANDLE_VALUE.as_raw();
         };
 

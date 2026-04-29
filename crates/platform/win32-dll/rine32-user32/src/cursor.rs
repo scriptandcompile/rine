@@ -1,6 +1,6 @@
 use rine_common_user32::cursor as common;
 use rine_types::errors::WinBool;
-use rine_types::strings::read_cstr;
+use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::Point;
 
 use tracing::warn;
@@ -28,9 +28,9 @@ use tracing::warn;
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub extern "stdcall" fn LoadCursorA(_hinstance: u32, _name: *const u8) -> u32 {
+pub unsafe extern "stdcall" fn LoadCursorA(_hinstance: u32, _name: LPCSTR) -> u32 {
     unsafe {
-        let Some(cursor_name) = read_cstr(_name) else {
+        let Some(cursor_name) = _name.read_string() else {
             warn!(
                 "LoadCursorA received an invalid cursor name pointer. Returning 0 as a placeholder."
             );
@@ -64,9 +64,9 @@ pub extern "stdcall" fn LoadCursorA(_hinstance: u32, _name: *const u8) -> u32 {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn LoadCursorW(_hinstance: u32, _name: *const u8) -> u32 {
+pub unsafe extern "stdcall" fn LoadCursorW(_hinstance: u32, _name: LPCWSTR) -> u32 {
     unsafe {
-        let Some(cursor_name) = read_cstr(_name) else {
+        let Some(cursor_name) = _name.read_string() else {
             warn!(
                 "LoadCursorW received an invalid cursor name pointer. Returning 0 as a placeholder."
             );

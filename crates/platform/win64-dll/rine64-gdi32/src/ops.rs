@@ -1,6 +1,6 @@
 use rine_common_gdi32 as common;
 use rine_types::errors::WinBool;
-use rine_types::strings::{read_cstr_counted, read_wstr_counted};
+use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::Rect;
 
 /// Creates a memory device context (DC) compatible with the specified device.
@@ -273,11 +273,11 @@ pub unsafe extern "win64" fn TextOutA(
     hdc: usize,
     x: i32,
     y: i32,
-    text: *const u8,
+    text: LPCSTR,
     count: i32,
 ) -> WinBool {
     unsafe {
-        let Some(text) = read_cstr_counted(text, count) else {
+        let Some(text) = text.read_string_counted(count) else {
             return WinBool::FALSE;
         };
 
@@ -311,11 +311,11 @@ pub unsafe extern "win64" fn TextOutW(
     hdc: usize,
     x: i32,
     y: i32,
-    text: *const u16,
+    text: LPCWSTR,
     count: i32,
 ) -> WinBool {
     unsafe {
-        let Some(text) = read_wstr_counted(text, count) else {
+        let Some(text) = text.read_string_counted(count) else {
             return WinBool::FALSE;
         };
 

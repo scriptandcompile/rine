@@ -1,5 +1,5 @@
 use rine_common_user32 as common;
-use rine_types::strings::{read_cstr, read_wstr};
+use rine_types::strings::{LPCSTR, LPCWSTR};
 
 /// Registers a new window message with the system and returns its message ID.
 ///
@@ -23,9 +23,9 @@ use rine_types::strings::{read_cstr, read_wstr};
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn RegisterWindowMessageA(lpString: *const u8) -> u32 {
+pub unsafe extern "win64" fn RegisterWindowMessageA(lpString: LPCSTR) -> u32 {
     unsafe {
-        let Some(message_kind) = read_cstr(lpString) else {
+        let Some(message_kind) = lpString.read_string() else {
             // If the pointer is invalid or the string is not null-terminated, we treat it as an empty string.
             // In a real implementation, we would set GetLastError to indicate the error.
             return 0;
@@ -55,9 +55,9 @@ pub unsafe extern "win64" fn RegisterWindowMessageA(lpString: *const u8) -> u32 
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn RegisterWindowMessageW(lpString: *const u16) -> u32 {
+pub unsafe extern "win64" fn RegisterWindowMessageW(lpString: LPCWSTR) -> u32 {
     unsafe {
-        let Some(message_kind) = read_wstr(lpString) else {
+        let Some(message_kind) = lpString.read_string() else {
             // If the pointer is invalid or the string is not null-terminated, we treat it as an empty string.
             // In a real implementation, we would set GetLastError to indicate the error.
             return 0;

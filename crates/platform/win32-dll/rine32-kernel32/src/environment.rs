@@ -1,6 +1,6 @@
 use rine_common_kernel32 as common;
-
 use rine_types::errors::WinBool;
+use rine_types::strings::{LPCSTR, LPCWSTR};
 
 /// Get the value of an environment variable.
 ///
@@ -27,7 +27,7 @@ use rine_types::errors::WinBool;
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetEnvironmentVariableA(
-    name: *const u8,
+    name: LPCSTR,
     buffer: *mut u8,
     size: u32,
 ) -> u32 {
@@ -59,7 +59,7 @@ pub unsafe extern "stdcall" fn GetEnvironmentVariableA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetEnvironmentVariableW(
-    name: *const u16,
+    name: LPCWSTR,
     buffer: *mut u16,
     size: u32,
 ) -> u32 {
@@ -83,10 +83,7 @@ pub unsafe extern "stdcall" fn GetEnvironmentVariableW(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn SetEnvironmentVariableA(
-    name: *const u8,
-    value: *const u8,
-) -> WinBool {
+pub unsafe extern "stdcall" fn SetEnvironmentVariableA(name: LPCSTR, value: LPCSTR) -> WinBool {
     unsafe { common::environment::set_environment_variable_a(name, value) }
 }
 
@@ -107,10 +104,7 @@ pub unsafe extern "stdcall" fn SetEnvironmentVariableA(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn SetEnvironmentVariableW(
-    name: *const u16,
-    value: *const u16,
-) -> WinBool {
+pub unsafe extern "stdcall" fn SetEnvironmentVariableW(name: LPCWSTR, value: LPCWSTR) -> WinBool {
     unsafe { common::environment::set_environment_variable_w(name, value) }
 }
 
@@ -142,7 +136,7 @@ pub unsafe extern "stdcall" fn SetEnvironmentVariableW(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ExpandEnvironmentStringsA(
-    src: *const u8,
+    src: LPCSTR,
     dst: *mut u8,
     dst_size: u32,
 ) -> u32 {
@@ -177,7 +171,7 @@ pub unsafe extern "stdcall" fn ExpandEnvironmentStringsA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ExpandEnvironmentStringsW(
-    src: *const u16,
+    src: LPCWSTR,
     dst: *mut u16,
     dst_size: u32,
 ) -> u32 {

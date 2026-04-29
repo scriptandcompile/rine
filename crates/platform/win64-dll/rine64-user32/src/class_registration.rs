@@ -1,6 +1,6 @@
 use rine_common_user32::class_registration as common;
 use rine_types::errors::WinBool;
-use rine_types::strings::{read_cstr, read_wstr};
+use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::*;
 
 /// Window class registration
@@ -118,11 +118,8 @@ pub unsafe extern "win64" fn RegisterClassExW(wc: *const WndClassExW) -> ATOM {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn UnregisterClassA(
-    class_name: *const u8,
-    _h_instance: usize,
-) -> WinBool {
-    let name = read_cstr(class_name).unwrap_or_default();
+pub unsafe extern "win64" fn UnregisterClassA(class_name: LPCSTR, _h_instance: usize) -> WinBool {
+    let name = class_name.read_string().unwrap_or_default();
     common::unregister_class(&name)
 }
 
@@ -143,10 +140,7 @@ pub unsafe extern "win64" fn UnregisterClassA(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn UnregisterClassW(
-    class_name: *const u16,
-    _h_instance: usize,
-) -> WinBool {
-    let name = read_wstr(class_name).unwrap_or_default();
+pub unsafe extern "win64" fn UnregisterClassW(class_name: LPCWSTR, _h_instance: usize) -> WinBool {
+    let name = class_name.read_string().unwrap_or_default();
     common::unregister_class(&name)
 }
