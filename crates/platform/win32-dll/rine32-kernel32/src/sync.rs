@@ -7,6 +7,7 @@ use rine_common_kernel32 as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::Handle;
 use rine_types::strings::{LPCSTR, LPCWSTR};
+use rine_types::sync::LPCriticalSection;
 use tracing::{debug, warn};
 
 /// Initialize a critical section.
@@ -22,7 +23,7 @@ use tracing::{debug, warn};
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn InitializeCriticalSection(cs: *mut u8) {
+pub unsafe extern "stdcall" fn InitializeCriticalSection(cs: LPCriticalSection) {
     if cs.is_null() {
         return;
     }
@@ -48,7 +49,7 @@ pub unsafe extern "stdcall" fn InitializeCriticalSection(cs: *mut u8) {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn InitializeCriticalSectionAndSpinCount(
-    cs: *mut u8,
+    cs: LPCriticalSection,
     _spin_count: u32,
 ) -> WinBool {
     if cs.is_null() {
@@ -73,7 +74,7 @@ pub unsafe extern "stdcall" fn InitializeCriticalSectionAndSpinCount(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn EnterCriticalSection(cs: *mut u8) {
+pub unsafe extern "stdcall" fn EnterCriticalSection(cs: LPCriticalSection) {
     unsafe {
         common::sync::enter_critical_section(cs);
     }
@@ -95,7 +96,7 @@ pub unsafe extern "stdcall" fn EnterCriticalSection(cs: *mut u8) {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
+pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: LPCriticalSection) -> WinBool {
     unsafe { common::sync::try_enter_critical_section(cs) }
 }
 
@@ -121,7 +122,7 @@ pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: *mut u8) -> WinBool {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn LeaveCriticalSection(cs: *mut u8) {
+pub unsafe extern "stdcall" fn LeaveCriticalSection(cs: LPCriticalSection) {
     unsafe { common::sync::leave_critical_section(cs) };
 }
 
@@ -136,7 +137,7 @@ pub unsafe extern "stdcall" fn LeaveCriticalSection(cs: *mut u8) {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn DeleteCriticalSection(cs: *mut u8) {
+pub unsafe extern "stdcall" fn DeleteCriticalSection(cs: LPCriticalSection) {
     unsafe {
         common::sync::delete_critical_section(cs);
     }
@@ -488,6 +489,7 @@ pub unsafe extern "stdcall" fn ReleaseSemaphore(
 mod tests {
     use super::*;
     use rine_types::handles::handle_table;
+    use rine_types::sync::CriticalSection;
     use rine_types::threading::{WaitStatus, wait_on};
 
     use std::ptr;
@@ -497,7 +499,7 @@ mod tests {
 
     #[test]
     fn critical_section_init_enter_leave_delete() {
-        let mut cs = [0u8; 40];
+        let mut cs = CriticalSection::new();
         unsafe {
             InitializeCriticalSection(cs.as_mut_ptr());
             EnterCriticalSection(cs.as_mut_ptr());
@@ -508,7 +510,7 @@ mod tests {
 
     #[test]
     fn critical_section_recursive_entry() {
-        let mut cs = [0u8; 40];
+        let mut cs = CriticalSection::new();
         unsafe {
             InitializeCriticalSection(cs.as_mut_ptr());
             // Recursive lock on same thread should not deadlock.
@@ -522,7 +524,7 @@ mod tests {
 
     #[test]
     fn critical_section_and_spin_count() {
-        let mut cs = [0u8; 40];
+        let mut cs = CriticalSection::new();
         unsafe {
             let result = InitializeCriticalSectionAndSpinCount(cs.as_mut_ptr(), 4000);
             assert!(result.is_true());
@@ -534,7 +536,7 @@ mod tests {
 
     #[test]
     fn try_enter_critical_section_succeeds_when_free() {
-        let mut cs = [0u8; 40];
+        let mut cs = CriticalSection::new();
         unsafe {
             InitializeCriticalSection(cs.as_mut_ptr());
             let result = TryEnterCriticalSection(cs.as_mut_ptr());

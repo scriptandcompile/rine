@@ -6,6 +6,7 @@ pub mod memory;
 pub mod os;
 pub mod registry;
 pub mod strings;
+pub mod sync;
 pub mod threading;
 pub mod windows;
 

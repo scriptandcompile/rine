@@ -3,6 +3,7 @@ use std::sync::{Arc, Condvar, Mutex};
 
 use rine_types::errors::WinBool;
 use rine_types::handles::{Handle, HandleEntry, NULL_HANDLE_VALUE, handle_table};
+use rine_types::sync::{CriticalSection, LPCriticalSection};
 use rine_types::threading::{
     EventInner, EventWaitable, MutexInner, MutexState, MutexWaitable, SemaphoreInner,
     SemaphoreWaitable, Waitable,
@@ -27,19 +28,9 @@ use tracing::warn;
 /// that can hold the necessary data for a critical section.
 /// The caller must also ensure that the critical section is properly initialized before
 /// use, and that it is not used after being deleted.
-pub unsafe fn init_critical_section(cs: *mut u8) {
+pub unsafe fn init_critical_section(cs: LPCriticalSection) {
     unsafe {
-        ptr::write_bytes(cs, 0, 24);
-
-        let mutex = Box::into_raw(Box::new(core::mem::zeroed::<libc::pthread_mutex_t>()));
-
-        let mut attr: libc::pthread_mutexattr_t = core::mem::zeroed();
-        libc::pthread_mutexattr_init(&mut attr);
-        libc::pthread_mutexattr_settype(&mut attr, libc::PTHREAD_MUTEX_RECURSIVE);
-        libc::pthread_mutex_init(mutex, &attr);
-        libc::pthread_mutexattr_destroy(&mut attr);
-
-        ptr::write(cs as *mut *mut libc::pthread_mutex_t, mutex)
+        *cs = CriticalSection::new();
     }
 }
 
@@ -53,17 +44,17 @@ pub unsafe fn init_critical_section(cs: *mut u8) {
 /// The caller must also ensure that the critical section is not used after being deleted.
 /// If `cs` is null, this function does nothing and returns immediately.
 /// Otherwise, it will block until the mutex can be locked.
-pub unsafe fn enter_critical_section(cs: *mut u8) {
+pub unsafe fn enter_critical_section(cs: LPCriticalSection) {
     if cs.is_null() {
         return;
     }
 
     unsafe {
-        let mut mutex = get_mutex(cs);
+        let mut mutex = (*cs).get_mutex();
 
         if mutex.is_null() {
             init_critical_section(cs);
-            mutex = get_mutex(cs);
+            mutex = (*cs).get_mutex();
         }
 
         libc::pthread_mutex_lock(mutex);
@@ -83,13 +74,13 @@ pub unsafe fn enter_critical_section(cs: *mut u8) {
 /// # Returns
 /// Returns `WinBool::TRUE` if the lock was successfully acquired, or `WinBool::FALSE`
 /// if the critical section is already owned by another thread or if an error occurred (e.g. invalid pointer).
-pub unsafe fn try_enter_critical_section(cs: *mut u8) -> WinBool {
+pub unsafe fn try_enter_critical_section(cs: LPCriticalSection) -> WinBool {
     if cs.is_null() {
         return WinBool::FALSE;
     }
 
     unsafe {
-        let mutex = get_mutex(cs);
+        let mutex = (*cs).get_mutex();
 
         if mutex.is_null() {
             return WinBool::FALSE;
@@ -122,13 +113,13 @@ pub unsafe fn try_enter_critical_section(cs: *mut u8) -> WinBool {
 /// - No Win32-accurate `GetLastError` mapping is provided for invalid-pointer
 ///   and unlock-error cases.
 /// - Error handling does not map pthread failure codes to Win32 behavior.
-pub unsafe fn leave_critical_section(cs: *mut u8) {
+pub unsafe fn leave_critical_section(cs: LPCriticalSection) {
     if cs.is_null() {
         return;
     }
 
     unsafe {
-        let mutex = get_mutex(cs);
+        let mutex = (*cs).get_mutex();
 
         if mutex.is_null() {
             return;
@@ -146,13 +137,13 @@ pub unsafe fn leave_critical_section(cs: *mut u8) {
 /// # Safety
 /// The caller must ensure that `cs` points to a valid CRITICAL_SECTION structure that has been
 /// properly initialized and is not currently in use.
-pub unsafe fn delete_critical_section(cs: *mut u8) {
+pub unsafe fn delete_critical_section(cs: LPCriticalSection) {
     if cs.is_null() {
         return;
     }
 
     unsafe {
-        let mutex = get_mutex(cs);
+        let mutex = (*cs).get_mutex();
 
         if mutex.is_null() {
             return;
@@ -160,20 +151,12 @@ pub unsafe fn delete_critical_section(cs: *mut u8) {
 
         libc::pthread_mutex_destroy(mutex);
 
+        // Mutex was heap-allocated by CriticalSection::new(); free it.
         drop(Box::from_raw(mutex));
-        ptr::write(cs as *mut *mut libc::pthread_mutex_t, ptr::null_mut());
-    }
-}
 
-/// Read the mutex pointer from a CRITICAL_SECTION.
-///
-/// # Safety
-///
-/// The caller must ensure that `cs` is a valid pointer to a CRITICAL_SECTION that
-/// has been initialized with `init_critical_section`.
-#[inline]
-pub unsafe fn get_mutex(cs: *const u8) -> *mut libc::pthread_mutex_t {
-    unsafe { ptr::read(cs as *const *mut libc::pthread_mutex_t) }
+        // Clear the stored pointer in the CRITICAL_SECTION structure.
+        ptr::write(cs as *mut *mut libc::pthread_mutex_t, core::ptr::null_mut());
+    }
 }
 
 /// Release a mutex, decrementing its ownership count and potentially unblocking waiters.
