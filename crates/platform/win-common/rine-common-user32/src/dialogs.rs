@@ -1,5 +1,6 @@
 use rine_types::errors::WinBool;
 use rine_types::handles::HInstance;
+use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::{Hwnd, LPARAM, LRESULT, WPARAM};
 
 use tracing::warn;
@@ -176,6 +177,76 @@ pub fn send_dialog_item_message(
 pub fn get_dialog_control_id(_hwnd: Hwnd) -> i32 {
     warn!(
         "GetDlgCtrlID is not implemented yet. This is a stub implementation that always returns 0."
+    );
+    0
+}
+
+/// Retrieves the ANSI title or text of a control in a dialog box.
+///
+/// # Arguments
+/// * `_hdlg` - A handle to the dialog box that contains the control.
+/// * `_dlg_item_id` - The identifier of the control.
+/// * `_buffer` - A pointer to the buffer that receives the text.
+/// * `_max_text_length` - The maximum length, in characters, of the string to be copied to the buffer pointed to by _buffer.
+///   If the length of the string, including the null character, exceeds the limit, the string is truncated.
+///
+/// # Safety
+/// `_hdlg` must be a valid handle to a dialog box.
+/// `_dlg_item_id` must be a valid control identifier within that dialog box.
+/// `_buffer` must be a valid pointer to a buffer that can receive the text.
+/// `_max_text_length` must be a valid maximum length for the text to be copied to the buffer.
+///
+/// # Returns
+/// If the function succeeds, the return value is the length of the string copied to the buffer, not including the terminating null character.
+/// If the function fails, the return value is `0`.
+/// On failure, to get extended error information, call `GetLastError`.
+///
+/// # Notes
+/// The current implementation is a stub and always returns `0`.
+/// We currently do not set the value of `GetLastError` on failure.
+pub fn get_dialog_item_text_a(
+    _hdlg: Hwnd,
+    _dlg_item_id: i32,
+    _buffer: LPCSTR,
+    _max_text_length: i32,
+) -> u32 {
+    warn!(
+        "GetDlgItemTextA/W is not implemented yet. This is a stub implementation that always returns 0."
+    );
+    0
+}
+
+/// Retrieves the wide (Unicode) title or text of a control in a dialog box.
+///
+/// # Arguments
+/// * `_hdlg` - A handle to the dialog box that contains the control.
+/// * `_dlg_item_id` - The identifier of the control.
+/// * `_buffer` - A pointer to the buffer that receives the text.
+/// * `_max_text_length` - The maximum length, in characters, of the string to be copied to the buffer pointed to by _buffer.
+///   If the length of the string, including the null character, exceeds the limit, the string is truncated.
+///
+/// # Safety
+/// `_hdlg` must be a valid handle to a dialog box.
+/// `_dlg_item_id` must be a valid control identifier within that dialog box.
+/// `_buffer` must be a valid pointer to a buffer that can receive the text.
+/// `_max_text_length` must be a valid maximum length for the text to be copied to the buffer.
+///
+/// # Returns
+/// If the function succeeds, the return value is the length of the string copied to the buffer, not including the terminating null character.
+/// If the function fails, the return value is `0`.
+/// On failure, to get extended error information, call `GetLastError`.
+///
+/// # Notes
+/// The current implementation is a stub and always returns `0`.
+/// We currently do not set the value of `GetLastError` on failure.
+pub fn get_dialog_item_text_w(
+    _hdlg: Hwnd,
+    _dlg_item_id: i32,
+    _buffer: LPCWSTR,
+    _max_text_length: i32,
+) -> u32 {
+    warn!(
+        "GetDlgItemTextA/W is not implemented yet. This is a stub implementation that always returns 0."
     );
     0
 }

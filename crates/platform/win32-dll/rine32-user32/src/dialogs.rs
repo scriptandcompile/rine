@@ -257,3 +257,73 @@ pub unsafe extern "stdcall" fn SendDlgItemMessageW(
 pub unsafe extern "stdcall" fn GetDlgCtrlID(_hwnd: Hwnd) -> i32 {
     common::get_dialog_control_id(_hwnd)
 }
+
+/// Retrieves the ANSI title or text of a control in a dialog box.
+///
+/// # Arguments
+/// * `_hdlg` - A handle to the dialog box that contains the control.
+/// * `_dlg_item_id` - The identifier of the control.
+/// * `_buffer` - A pointer to the buffer that receives the text.
+/// * `_max_text_length` - The maximum length, in characters, of the string to be copied to the buffer pointed to by _buffer.
+///   If the length of the string, including the null character, exceeds the limit, the string is truncated.
+///
+/// # Safety
+/// `_hdlg` must be a valid handle to a dialog box.
+/// `_dlg_item_id` must be a valid control identifier within that dialog box.
+/// `_buffer` must be a valid pointer to a buffer that can receive the text.
+/// `_max_text_length` must be a valid maximum length for the text to be copied to the buffer.
+///
+/// # Returns
+/// If the function succeeds, the return value is the length of the string copied to the buffer, not including the terminating null character.
+/// If the function fails, the return value is `0`.
+/// On failure, to get extended error information, call `GetLastError`.
+///
+/// # Notes
+/// The current implementation is a stub and always returns `0`.
+/// We currently do not set the value of `GetLastError` on failure.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GetDlgItemTextA(
+    _hdlg: Hwnd,
+    _dlg_item_id: i32,
+    _buffer: LPCSTR,
+    _max_text_length: i32,
+) -> u32 {
+    common::get_dialog_item_text_a(_hdlg, _dlg_item_id, _buffer, _max_text_length)
+}
+
+/// Retrieves the wide (Unicode) title or text of a control in a dialog box.
+///
+/// # Arguments
+/// * `_hdlg` - A handle to the dialog box that contains the control.
+/// * `_dlg_item_id` - The identifier of the control.
+/// * `_buffer` - A pointer to the buffer that receives the text.
+/// * `_max_text_length` - The maximum length, in characters, of the string to be copied to the buffer pointed to by _buffer.
+///   If the length of the string, including the null character, exceeds the limit, the string is truncated.
+///
+/// # Safety
+/// `_hdlg` must be a valid handle to a dialog box.
+/// `_dlg_item_id` must be a valid control identifier within that dialog box.
+/// `_buffer` must be a valid pointer to a buffer that can receive the text.
+/// `_max_text_length` must be a valid maximum length for the text to be copied to the buffer.
+///
+/// # Returns
+/// If the function succeeds, the return value is the length of the string copied to the buffer, not including the terminating null character.
+/// If the function fails, the return value is `0`.
+/// On failure, to get extended error information, call `GetLastError`.
+///
+/// # Notes
+/// The current implementation is a stub and always returns `0`.
+/// We currently do not set the value of `GetLastError` on failure.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GetDlgItemTextW(
+    _hdlg: Hwnd,
+    _dlg_item_id: i32,
+    _buffer: LPCWSTR,
+    _max_text_length: i32,
+) -> u32 {
+    common::get_dialog_item_text_w(_hdlg, _dlg_item_id, _buffer, _max_text_length)
+}
