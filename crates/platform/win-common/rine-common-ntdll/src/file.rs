@@ -29,7 +29,7 @@ use rine_types::os::IoStatusBlock;
 #[allow(clippy::too_many_arguments)]
 pub unsafe fn nt_read_file(
     handle: Handle,
-    _event: usize,
+    _event: Handle,
     _apc_routine: usize,
     _apc_context: usize,
     io_status_block: *mut IoStatusBlock,
@@ -95,7 +95,7 @@ pub unsafe fn nt_read_file(
 #[allow(clippy::too_many_arguments)]
 pub unsafe fn nt_write_file(
     file_handle: Handle,
-    _event: isize,
+    _event: Handle,
     _apc_routine: usize,
     _apc_context: usize,
     io_status_block: *mut IoStatusBlock,
@@ -156,7 +156,7 @@ pub unsafe fn nt_write_file(
 /// Many NT-specific features (EaBuffer, AllocationSize, etc.) are ignored.
 #[allow(clippy::too_many_arguments)]
 pub unsafe fn nt_create_file(
-    file_handle: *mut isize,  // PHANDLE (out)
+    file_handle: *mut Handle,
     desired_access: u32,      // ACCESS_MASK
     object_attributes: usize, // POBJECT_ATTRIBUTES (opaque for now)
     io_status_block: *mut IoStatusBlock,
@@ -224,7 +224,9 @@ pub unsafe fn nt_create_file(
     }
 
     let h = handle_table().insert(HandleEntry::File(fd));
-    unsafe { *file_handle = h.as_raw() };
+    unsafe {
+        *file_handle = h;
+    }
 
     if !io_status_block.is_null() {
         unsafe {

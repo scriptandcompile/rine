@@ -31,8 +31,8 @@ use rine_types::os::IoStatusBlock;
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtReadFile(
-    file_handle: isize,
-    _event: usize,
+    file_handle: Handle,
+    _event: Handle,
     _apc_routine: usize,
     _apc_context: usize,
     io_status_block: *mut IoStatusBlock,
@@ -42,10 +42,8 @@ pub unsafe extern "stdcall" fn NtReadFile(
     _key: *const u32,
 ) -> u32 {
     unsafe {
-        let handle = Handle::from_raw(file_handle);
-
         common::nt_read_file(
-            handle,
+            file_handle,
             _event,
             _apc_routine,
             _apc_context,
@@ -81,8 +79,8 @@ pub unsafe extern "stdcall" fn NtReadFile(
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtWriteFile(
-    file_handle: isize,
-    _event: isize,
+    file_handle: Handle,
+    _event: Handle,
     _apc_routine: usize,
     _apc_context: usize,
     io_status_block: *mut IoStatusBlock,
@@ -91,11 +89,9 @@ pub unsafe extern "stdcall" fn NtWriteFile(
     _byte_offset: *const i64,
     _key: *const u32,
 ) -> u32 {
-    let handle = Handle::from_raw(file_handle);
-
     unsafe {
         common::nt_write_file(
-            handle,
+            file_handle,
             _event,
             _apc_routine,
             _apc_context,
@@ -137,7 +133,7 @@ pub unsafe extern "stdcall" fn NtWriteFile(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtCreateFile(
-    file_handle: *mut isize,  // PHANDLE (out)
+    file_handle: *mut Handle,
     desired_access: u32,      // ACCESS_MASK
     object_attributes: usize, // POBJECT_ATTRIBUTES (opaque for now)
     io_status_block: *mut IoStatusBlock,
