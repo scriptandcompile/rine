@@ -327,3 +327,30 @@ pub unsafe extern "win64" fn GetDlgItemTextW(
 ) -> u32 {
     common::get_dialog_item_text_w(_hdlg, _dlg_item_id, _buffer, _max_text_length)
 }
+
+/// Ends a modal dialog box, causing the system to end any processing for the dialog box.
+///
+/// # Arguments
+/// * `_hdlg` - A handle to the dialog box.
+/// * `_result` - The value to be returned to the dialog box's owner window in the `lParam` parameter
+///   of the `WM_COMMAND` message when the dialog box is closed.
+///
+/// # Safety
+/// `_hdlg` must be a valid handle to a dialog box.
+/// `_result` must be a valid value to be returned to the dialog box's owner window in the `lParam` parameter
+///   of the `WM_COMMAND` message when the dialog box is closed.
+///
+/// # Returns
+/// If the function succeeds, the return value is `WinBool::TRUE`.
+/// If the function fails, the return value is `WinBool::FALSE`.
+/// On failure, to get extended error information, call `GetLastError`.
+///
+/// # Notes
+/// The current implementation is a stub and always returns `FALSE`.
+/// We currently do not set the value of `GetLastError` on failure.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn EndDialog(_hdlg: Hwnd, _result: isize) -> WinBool {
+    common::end_dialog(_hdlg, _result)
+}

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-30T22:36:47.667236+00:00",
+  "generatedAt": "2026-04-30T22:41:43.493448+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2061,7 +2061,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 55,
+      "functionCount": 56,
       "functions": [
         {
           "name": "CheckMenuItem",
@@ -2217,6 +2217,19 @@
             "status": "stubbed",
             "symbol": "menu::EnableMenuItem",
             "source": "user32 - menu.rs"
+          }
+        },
+        {
+          "name": "EndDialog",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "dialogs::EndDialog",
+            "source": "user32 - dialogs.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "dialogs::EndDialog",
+            "source": "user32 - dialogs.rs"
           }
         },
         {
@@ -2782,17 +2795,17 @@
     }
   ],
   "totals": {
-    "functions": 210,
+    "functions": 211,
     "x64": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 41,
+      "stubbed": 42,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 41,
+      "stubbed": 42,
       "unimplemented": 0
     }
   }
