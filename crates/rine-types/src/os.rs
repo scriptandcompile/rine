@@ -1,5 +1,7 @@
 //! Miscellaneous Windows structures used by DLL implementations.
 
+use crate::handles::Handle;
+
 use std::sync::{LazyLock, RwLock};
 
 // ---------------------------------------------------------------------------
@@ -243,9 +245,9 @@ pub struct StartupInfoA {
     pub show_window: u16,
     pub cb_reserved2: u16,
     pub reserved2: *mut u8,
-    pub std_input: isize,
-    pub std_output: isize,
-    pub std_error: isize,
+    pub std_input: Handle,
+    pub std_output: Handle,
+    pub std_error: Handle,
 }
 
 /// `STARTUPINFOW` — wide variant.
@@ -266,16 +268,16 @@ pub struct StartupInfoW {
     pub show_window: u16,
     pub cb_reserved2: u16,
     pub reserved2: *mut u8,
-    pub std_input: isize,
-    pub std_output: isize,
-    pub std_error: isize,
+    pub std_input: Handle,
+    pub std_output: Handle,
+    pub std_error: Handle,
 }
 
 /// `PROCESS_INFORMATION` — filled in by `CreateProcessA/W`.
 #[repr(C)]
 pub struct ProcessInformation {
-    pub process: isize,
-    pub thread: isize,
+    pub process: Handle,
+    pub thread: Handle,
     pub process_id: u32,
     pub thread_id: u32,
 }

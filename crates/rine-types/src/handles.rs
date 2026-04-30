@@ -60,17 +60,16 @@ pub const STD_INPUT_HANDLE: u32 = 0xFFFF_FFF6; // (DWORD)-10
 pub const STD_OUTPUT_HANDLE: u32 = 0xFFFF_FFF5; // (DWORD)-11
 pub const STD_ERROR_HANDLE: u32 = 0xFFFF_FFF4; // (DWORD)-12
 
-/// The invalid handle sentinel (`INVALID_HANDLE_VALUE`).
-pub const INVALID_HANDLE_VALUE: Handle = Handle(-1);
-
-/// The null handle (`NULL`).  Note that `NULL` is a valid
-/// handle value that represents "no object", while
-/// `INVALID_HANDLE_VALUE` indicates an error.
-pub const NULL_HANDLE_VALUE: Handle = Handle(0);
-
 impl Handle {
     /// The null handle (`NULL`).
+    ///
+    /// Note that `NULL` is a valid handle value that represents "no object", while `INVALID_HANDLE_VALUE` indicates an error.
     pub const NULL: Self = Self(0);
+
+    /// The invalid handle sentinel (`INVALID_HANDLE_VALUE`).
+    ///
+    /// Note that `INVALID_HANDLE_VALUE` (−1) indicates an error, while `NULL` (0) is a valid handle value that represents "no object".
+    pub const INVALID: Self = Self(-1);
 
     /// Create a `Handle` from a raw `isize` value, for use in the Windows ABI.
     #[inline]
@@ -654,7 +653,7 @@ mod tests {
 
     #[test]
     fn invalid_handle() {
-        assert!(INVALID_HANDLE_VALUE.is_invalid());
+        assert!(Handle::INVALID.is_invalid());
         assert!(!Handle::NULL.is_invalid());
     }
 

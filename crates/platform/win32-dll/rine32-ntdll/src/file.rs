@@ -176,9 +176,8 @@ pub unsafe extern "stdcall" fn NtCreateFile(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn NtClose(object_handle: isize) -> u32 {
-    let handle = Handle::from_raw(object_handle);
-    unsafe { common::nt_close(handle) }
+pub unsafe extern "stdcall" fn NtClose(object_handle: Handle) -> u32 {
+    unsafe { common::nt_close(object_handle) }
 }
 
 /// Query metadata about an open file.
@@ -204,16 +203,15 @@ pub unsafe extern "stdcall" fn NtClose(object_handle: isize) -> u32 {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtQueryInformationFile(
-    file_handle: isize,
+    file_handle: Handle,
     io_status_block: *mut IoStatusBlock,
     file_information: *mut u8,
     _length: u32,
     file_information_class: u32,
 ) -> u32 {
-    let handle = Handle::from_raw(file_handle);
     unsafe {
         common::nt_query_information_file(
-            handle,
+            file_handle,
             io_status_block,
             file_information,
             _length,

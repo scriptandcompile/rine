@@ -157,8 +157,8 @@ pub unsafe fn create_process(
 
     if !proc_info.is_null() {
         unsafe {
-            (*proc_info).process = proc_handle.as_raw();
-            (*proc_info).thread = thread_handle.as_raw();
+            (*proc_info).process = proc_handle;
+            (*proc_info).thread = thread_handle;
             (*proc_info).process_id = pid;
             (*proc_info).thread_id = pid; // no separate thread id
         }

@@ -2,9 +2,9 @@ use rine_types::{
     errors::WinBool,
     handles::{
         CREATE_ALWAYS, CREATE_NEW, FILE_BEGIN, FILE_CURRENT, FILE_END, FindDataState, GENERIC_READ,
-        GENERIC_WRITE, Handle, HandleEntry, INVALID_HANDLE_VALUE, INVALID_SET_FILE_POINTER,
-        OPEN_ALWAYS, OPEN_EXISTING, TRUNCATE_EXISTING, Win32FindDataA, Win32FindDataW,
-        collect_find_entries, handle_table, handle_to_fd, split_find_path, std_handle_to_fd,
+        GENERIC_WRITE, Handle, HandleEntry, INVALID_SET_FILE_POINTER, OPEN_ALWAYS, OPEN_EXISTING,
+        TRUNCATE_EXISTING, Win32FindDataA, Win32FindDataW, collect_find_entries, handle_table,
+        handle_to_fd, split_find_path, std_handle_to_fd,
     },
 };
 
@@ -113,8 +113,8 @@ pub unsafe fn set_file_pointer(
 ///
 /// # Returns
 /// On success, returns a valid Windows file handle (which must be closed with `CloseHandle` when no longer needed).
-/// On failure, returns `INVALID_HANDLE_VALUE`.
-pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u32) -> isize {
+/// On failure, returns `Handle::INVALID`.
+pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u32) -> Handle {
     tracing::debug!(
         path = win_path,
         access = desired_access,
@@ -146,7 +146,7 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
                 disp = creation_disposition,
                 "CreateFile: unknown creation disposition"
             );
-            return INVALID_HANDLE_VALUE.as_raw();
+            return Handle::INVALID;
         }
     }
 
@@ -155,14 +155,14 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
 
     let c_path = match std::ffi::CString::new(linux_path.to_string_lossy().as_bytes()) {
         Ok(s) => s,
-        Err(_) => return INVALID_HANDLE_VALUE.as_raw(),
+        Err(_) => return Handle::INVALID,
     };
 
     let mode: libc::mode_t = 0o644;
     let fd = unsafe { libc::open(c_path.as_ptr(), flags, mode as libc::c_uint) };
     if fd < 0 {
         tracing::debug!(path = %linux_path.display(), errno = std::io::Error::last_os_error().raw_os_error(), "CreateFile: open failed");
-        return INVALID_HANDLE_VALUE.as_raw();
+        return Handle::INVALID;
     }
 
     let h = handle_table().insert(HandleEntry::File(fd));
@@ -172,7 +172,7 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
         "File",
         &linux_path.display().to_string()
     ));
-    h.as_raw()
+    h
 }
 
 /// CloseHandle — close an open object handle (e.g. file handle).
@@ -341,11 +341,11 @@ pub unsafe fn read_file(
 /// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
 ///
 /// # Returns
-/// A search handle that can be used with `FindNextFile` and `FindClose`, or `INVALID_HANDLE_VALUE` if no
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `Handle::INVALID` if no
 /// matching files were found or an error occurred.
 pub unsafe fn find_first_file_a(file_path: &str, find_data: *mut Win32FindDataA) -> Handle {
     if find_data.is_null() {
-        return INVALID_HANDLE_VALUE;
+        return Handle::INVALID;
     }
 
     let (dir_part, pattern) = split_find_path(file_path);
@@ -353,7 +353,7 @@ pub unsafe fn find_first_file_a(file_path: &str, find_data: *mut Win32FindDataA)
     let linux_dir = translate_find_dir(dir_part);
     let entries = collect_find_entries(&linux_dir, pattern);
     if entries.is_empty() {
-        return INVALID_HANDLE_VALUE;
+        return Handle::INVALID;
     }
 
     // Write the first entry.
@@ -380,11 +380,11 @@ pub unsafe fn find_first_file_a(file_path: &str, find_data: *mut Win32FindDataA)
 /// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
 ///
 /// # Returns
-/// A search handle that can be used with `FindNextFile` and `FindClose`, or `INVALID_HANDLE_VALUE` if no
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `Handle::INVALID` if no
 /// matching files were found or an error occurred.
 pub unsafe fn find_first_file_w(file_path: &str, find_data: *mut Win32FindDataW) -> Handle {
     if find_data.is_null() {
-        return INVALID_HANDLE_VALUE;
+        return Handle::INVALID;
     }
 
     let (dir_part, pattern) = split_find_path(file_path);
@@ -392,7 +392,7 @@ pub unsafe fn find_first_file_w(file_path: &str, find_data: *mut Win32FindDataW)
     let linux_dir = translate_find_dir(dir_part);
     let entries = collect_find_entries(&linux_dir, pattern);
     if entries.is_empty() {
-        return INVALID_HANDLE_VALUE;
+        return Handle::INVALID;
     }
 
     // Write the first entry.
@@ -558,8 +558,8 @@ mod tests {
             GENERIC_READ | GENERIC_WRITE,
             CREATE_ALWAYS,
         );
-        assert_ne!(raw, INVALID_HANDLE_VALUE.as_raw());
-        (path, Handle::from_raw(raw))
+        assert_ne!(raw, Handle::INVALID);
+        (path, raw)
     }
 
     fn cleanup_test_file(path: &PathBuf, handle: Handle) {
@@ -598,7 +598,7 @@ mod tests {
     #[test]
     fn set_file_pointer_invalid_handle_returns_invalid_set_file_pointer() {
         let pos =
-            unsafe { set_file_pointer(INVALID_HANDLE_VALUE, 0, core::ptr::null_mut(), FILE_BEGIN) };
+            unsafe { set_file_pointer(Handle::INVALID, 0, core::ptr::null_mut(), FILE_BEGIN) };
         assert_eq!(pos, INVALID_SET_FILE_POINTER);
     }
 

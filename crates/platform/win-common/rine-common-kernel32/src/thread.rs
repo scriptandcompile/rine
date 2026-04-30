@@ -3,7 +3,7 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, HandleEntry, INVALID_HANDLE_VALUE, handle_table};
+use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::threading::{
     self, INFINITE, STILL_ACTIVE, TLS_OUT_OF_INDEXES, ThreadWaitable, WaitStatus, Waitable,
 };
@@ -46,13 +46,13 @@ pub fn create_thread<F>(
     creation_flags: u32,
     thread_id_out: Option<&mut u32>,
     run_start: F,
-) -> isize
+) -> Handle
 where
     F: FnOnce(usize, usize) -> u32 + Send + 'static,
 {
     if start_address == 0 {
         warn!("CreateThread: null start address");
-        return INVALID_HANDLE_VALUE.as_raw();
+        return Handle::NULL;
     }
 
     if creation_flags & CREATE_SUSPENDED != 0 {
@@ -102,12 +102,12 @@ where
     match result {
         Ok(join_handle) => {
             drop(join_handle);
-            h.as_raw()
+            h
         }
         Err(e) => {
             warn!("CreateThread: spawn failed: {e}");
             handle_table().remove(h);
-            INVALID_HANDLE_VALUE.as_raw()
+            Handle::NULL
         }
     }
 }
@@ -336,14 +336,14 @@ pub fn wait_for_single_object(handle: Handle, duration: Duration) -> u32 {
 /// `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
 /// If `wait_all` is `WinBool::TRUE`, returns `WAIT_OBJECT_0` if all handles are signalled,
 /// `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
-pub fn wait_for_multiple_objects(handles: &[isize], wait_all: bool, duration: Duration) -> u32 {
+pub fn wait_for_multiple_objects(handles: &[Handle], wait_all: bool, duration: Duration) -> u32 {
     if handles.is_empty() || handles.len() > 64 {
         return WaitStatus::WAIT_FAILED.0;
     }
 
     let waitables: Vec<Option<Waitable>> = handles
         .iter()
-        .map(|&raw| handle_table().get_waitable(Handle::from_raw(raw)))
+        .map(|&handle| handle_table().get_waitable(handle))
         .collect();
 
     if waitables.iter().any(|w| w.is_none()) {

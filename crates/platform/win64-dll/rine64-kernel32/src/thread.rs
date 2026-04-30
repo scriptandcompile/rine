@@ -108,7 +108,7 @@ pub unsafe extern "win64" fn CreateThread(
     parameter: usize,
     creation_flags: u32,
     thread_id_out: *mut u32,
-) -> isize {
+) -> Handle {
     let thread_id_out = unsafe { thread_id_out.as_mut() };
     common_thread::create_thread(
         start_address,
@@ -296,12 +296,11 @@ pub unsafe extern "win64" fn GetCurrentThreadId() -> u32 {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetExitCodeThread(
-    thread_handle: isize,
+    thread_handle: Handle,
     exit_code_out: *mut u32,
 ) -> WinBool {
     let exit_code_out = unsafe { exit_code_out.as_mut() };
-    let handle = Handle::from_raw(thread_handle);
-    common_thread::get_exit_code_thread(handle, exit_code_out)
+    common_thread::get_exit_code_thread(thread_handle, exit_code_out)
 }
 
 // ── Wait ─────────────────────────────────────────────────────────
@@ -321,10 +320,9 @@ pub unsafe extern "win64" fn GetExitCodeThread(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn WaitForSingleObject(handle: isize, timeout_ms: u32) -> u32 {
-    let wait_handle = Handle::from_raw(handle);
+pub unsafe extern "win64" fn WaitForSingleObject(handle: Handle, timeout_ms: u32) -> u32 {
     let duration = Duration::from_millis(timeout_ms as u64);
-    common_thread::wait_for_single_object(wait_handle, duration)
+    common_thread::wait_for_single_object(handle, duration)
 }
 
 /// Block the current thread until one or all of the specified handles are signalled, or the timeout elapses.
@@ -353,7 +351,7 @@ pub unsafe extern "win64" fn WaitForSingleObject(handle: isize, timeout_ms: u32)
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn WaitForMultipleObjects(
     count: u32,
-    handles_ptr: *const isize,
+    handles_ptr: *const Handle,
     wait_all: WinBool,
     timeout_ms: u32,
 ) -> u32 {

@@ -15,8 +15,8 @@ use rine_types::handles::Handle;
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetProcessHeap() -> isize {
-    common::memory::DEFAULT_HEAP.as_raw()
+pub unsafe extern "win64" fn GetProcessHeap() -> Handle {
+    *common::memory::DEFAULT_HEAP
 }
 
 /// HeapCreate — create a new private heap.
@@ -43,10 +43,10 @@ pub unsafe extern "win64" fn HeapCreate(
     options: u32,
     _initial_size: usize,
     _maximum_size: usize,
-) -> isize {
+) -> Handle {
     match unsafe { common::memory::heap_create(options) } {
-        Some(handle) => handle.as_raw(),
-        None => 0,
+        Some(handle) => handle,
+        None => Handle::NULL,
     }
 }
 
@@ -69,11 +69,10 @@ pub unsafe extern "win64" fn HeapCreate(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
-    let handle = Handle::from_raw(heap_handle);
-    rine_types::dev_notify!(on_handle_closed(heap_handle as i64));
+pub unsafe extern "win64" fn HeapDestroy(heap_handle: Handle) -> WinBool {
+    rine_types::dev_notify!(on_handle_closed(heap_handle.as_raw() as i64));
 
-    common::memory::heap_destroy(handle)
+    common::memory::heap_destroy(heap_handle)
 }
 
 /// Allocate a block from a heap.
@@ -97,13 +96,12 @@ pub unsafe extern "win64" fn HeapDestroy(heap_handle: isize) -> WinBool {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn HeapAlloc(heap_handle: isize, flags: u32, size: usize) -> *mut u8 {
-    let handle = Handle::from_raw(heap_handle);
+pub unsafe extern "win64" fn HeapAlloc(heap_handle: Handle, flags: u32, size: usize) -> *mut u8 {
     if size == 0 {
         // Windows HeapAlloc with size 0 returns a valid non-null pointer.
-        return common::memory::heap_alloc(handle, flags, 1);
+        return common::memory::heap_alloc(heap_handle, flags, 1);
     }
-    common::memory::heap_alloc(handle, flags, size)
+    common::memory::heap_alloc(heap_handle, flags, size)
 }
 
 /// Free a block of memory allocated from a heap by HeapAlloc.
@@ -134,14 +132,12 @@ pub unsafe extern "win64" fn HeapAlloc(heap_handle: isize, flags: u32, size: usi
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut u8) -> WinBool {
+pub unsafe extern "win64" fn HeapFree(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> WinBool {
     if ptr.is_null() {
         return WinBool::TRUE;
     }
 
-    let handle = Handle::from_raw(heap_handle);
-
-    unsafe { common::memory::heap_free(handle, _flags, ptr) }
+    unsafe { common::memory::heap_free(heap_handle, _flags, ptr) }
 }
 /// Reallocate a block of memory from a heap by HeapReAlloc.
 ///
@@ -168,18 +164,16 @@ pub unsafe extern "win64" fn HeapFree(heap_handle: isize, _flags: u32, ptr: *mut
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn HeapReAlloc(
-    heap_handle: isize,
+    heap_handle: Handle,
     flags: u32,
     ptr: *mut u8,
     new_size: usize,
 ) -> *mut u8 {
-    let handle = Handle::from_raw(heap_handle);
-
     if ptr.is_null() {
-        return common::memory::heap_alloc(handle, flags, new_size);
+        return common::memory::heap_alloc(heap_handle, flags, new_size);
     }
 
-    unsafe { common::memory::heap_realloc(handle, flags, ptr, new_size) }
+    unsafe { common::memory::heap_realloc(heap_handle, flags, ptr, new_size) }
 }
 
 /// Get the size of a heap allocation.
@@ -200,10 +194,8 @@ pub unsafe extern "win64" fn HeapReAlloc(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn HeapSize(heap_handle: isize, _flags: u32, ptr: *const u8) -> usize {
-    let handle = Handle::from_raw(heap_handle);
-
-    common::memory::heap_size(handle, _flags, ptr)
+pub unsafe extern "win64" fn HeapSize(heap_handle: Handle, _flags: u32, ptr: *const u8) -> usize {
+    common::memory::heap_size(heap_handle, _flags, ptr)
 }
 
 // ---------------------------------------------------------------------------
@@ -392,7 +384,11 @@ mod tests {
     #[test]
     fn get_process_heap_returns_nonzero() {
         let h = unsafe { GetProcessHeap() };
-        assert_ne!(h, 0, "GetProcessHeap should return a valid handle");
+        assert_ne!(
+            h,
+            Handle::NULL,
+            "GetProcessHeap should return a valid handle"
+        );
     }
 
     #[test]
@@ -407,7 +403,7 @@ mod tests {
     #[test]
     fn heap_create_returns_nonzero() {
         let h = unsafe { HeapCreate(0, 0, 0) };
-        assert_ne!(h, 0);
+        assert_ne!(h, Handle::NULL);
         unsafe { HeapDestroy(h) };
     }
 
@@ -431,7 +427,7 @@ mod tests {
 
     #[test]
     fn heap_destroy_invalid_handle_fails() {
-        let result = unsafe { HeapDestroy(0xDEAD) };
+        let result = unsafe { HeapDestroy(Handle::from_raw(0xDEAD)) };
         assert!(!result.is_true());
     }
 

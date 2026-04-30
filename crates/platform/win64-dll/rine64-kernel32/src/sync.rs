@@ -173,7 +173,7 @@ pub unsafe extern "win64" fn CreateEventA(
     manual_reset: WinBool,
     initial_state: WinBool,
     _name: LPCSTR,
-) -> isize {
+) -> Handle {
     let handle = common::sync::create_event(manual_reset, initial_state);
 
     debug!(?handle, "CreateEventA");
@@ -187,7 +187,7 @@ pub unsafe extern "win64" fn CreateEventA(
         }
     ));
 
-    handle.as_raw()
+    handle
 }
 
 /// Create an event object, which can be in a signaled or non-signaled state and can be waited on by threads.
@@ -214,7 +214,7 @@ pub unsafe extern "win64" fn CreateEventW(
     manual_reset: WinBool,
     initial_state: WinBool,
     _name: LPCWSTR,
-) -> isize {
+) -> Handle {
     let handle = common::sync::create_event(manual_reset, initial_state);
 
     debug!(?handle, "CreateEventW");
@@ -228,7 +228,7 @@ pub unsafe extern "win64" fn CreateEventW(
         }
     ));
 
-    handle.as_raw()
+    handle
 }
 
 /// Set an event to the signaled state, releasing any waiting threads.
@@ -247,10 +247,8 @@ pub unsafe extern "win64" fn CreateEventW(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
-    let handle = Handle::from_raw(event_handle);
-
-    common::sync::set_event(handle)
+pub unsafe extern "win64" fn SetEvent(event_handle: Handle) -> WinBool {
+    common::sync::set_event(event_handle)
 }
 
 /// Reset an event to the non-signaled state, causing threads that wait on it to block until it is set again.
@@ -269,10 +267,8 @@ pub unsafe extern "win64" fn SetEvent(event_handle: isize) -> WinBool {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn ResetEvent(event_handle: isize) -> WinBool {
-    let handle = Handle::from_raw(event_handle);
-
-    common::sync::reset_event(handle)
+pub unsafe extern "win64" fn ResetEvent(event_handle: Handle) -> WinBool {
+    common::sync::reset_event(event_handle)
 }
 
 // ── Mutexes ──────────────────────────────────────────────────────
@@ -299,14 +295,14 @@ pub unsafe extern "win64" fn CreateMutexA(
     _security_attrs: usize,
     initial_owner: WinBool,
     name: LPCSTR,
-) -> isize {
+) -> Handle {
     let name_str = unsafe { name.read_string() };
     let (handle, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
 
     debug!(?handle, name = ?name_str, "CreateMutexA");
     rine_types::dev_notify!(on_handle_created(handle.as_raw() as i64, "Mutex", &detail));
 
-    handle.as_raw()
+    handle
 }
 
 /// Create a mutex object, optionally initially owned and with an optional (UTF-16) name.
@@ -332,14 +328,14 @@ pub unsafe extern "win64" fn CreateMutexW(
     _security_attrs: usize,
     initial_owner: WinBool,
     name: LPCWSTR,
-) -> isize {
+) -> Handle {
     let name_str = unsafe { name.read_string() };
     let (handle, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
 
     debug!(?handle, name = ?name_str, "CreateMutexW");
     rine_types::dev_notify!(on_handle_created(handle.as_raw() as i64, "Mutex", &detail));
 
-    handle.as_raw()
+    handle
 }
 
 /// Release a mutex, decrementing its ownership count and potentially unblocking waiters.
@@ -360,9 +356,8 @@ pub unsafe extern "win64" fn CreateMutexW(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn ReleaseMutex(mutex_handle: isize) -> WinBool {
-    let handle = Handle::from_raw(mutex_handle);
-    unsafe { common::sync::release_mutex(handle) }
+pub unsafe extern "win64" fn ReleaseMutex(mutex_handle: Handle) -> WinBool {
+    unsafe { common::sync::release_mutex(mutex_handle) }
 }
 
 // ── Semaphores ───────────────────────────────────────────────────
@@ -393,12 +388,12 @@ pub unsafe extern "win64" fn CreateSemaphoreA(
     initial_count: i32,
     maximum_count: i32,
     _name: LPCSTR,
-) -> isize {
+) -> Handle {
     let handle = common::sync::create_semaphore(initial_count, maximum_count);
 
     debug!(?handle, "CreateSemaphoreA");
     rine_types::dev_notify!(on_handle_created(
-        handle as i64,
+        handle.as_raw() as i64,
         "SemaphoreA",
         &format!("initial={initial_count}, max={maximum_count}")
     ));
@@ -432,12 +427,12 @@ pub unsafe extern "win64" fn CreateSemaphoreW(
     initial_count: i32,
     maximum_count: i32,
     _name: LPCWSTR,
-) -> isize {
+) -> Handle {
     let handle = common::sync::create_semaphore(initial_count, maximum_count);
 
     debug!(?handle, "CreateSemaphoreW");
     rine_types::dev_notify!(on_handle_created(
-        handle as i64,
+        handle.as_raw() as i64,
         "SemaphoreW",
         &format!("initial={initial_count}, max={maximum_count}")
     ));
@@ -473,7 +468,7 @@ pub unsafe extern "win64" fn CreateSemaphoreW(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ReleaseSemaphore(
-    semaphore_handle: isize,
+    semaphore_handle: Handle,
     release_count: i32,
     previous_count: *mut i32,
 ) -> WinBool {
@@ -482,8 +477,7 @@ pub unsafe extern "win64" fn ReleaseSemaphore(
         return WinBool::FALSE;
     }
 
-    let handle = Handle::from_raw(semaphore_handle);
-    unsafe { common::sync::release_semaphore(handle, release_count, previous_count) }
+    unsafe { common::sync::release_semaphore(semaphore_handle, release_count, previous_count) }
 }
 
 #[cfg(test)]
@@ -563,16 +557,16 @@ mod tests {
     fn create_event_and_set_reset() {
         unsafe {
             let h = CreateEventA(0, WinBool::TRUE, WinBool::FALSE, LPCSTR::NULL);
-            assert_ne!(h, 0);
+            assert_ne!(h, Handle::NULL);
 
             assert!(SetEvent(h).is_true());
             // Event is signaled, wait should succeed.
-            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
+            let w = handle_table().get_waitable(h).unwrap();
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
 
             assert!(ResetEvent(h).is_true());
             // Event is now unsignaled.
-            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
+            let w = handle_table().get_waitable(h).unwrap();
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
         }
     }
@@ -581,8 +575,8 @@ mod tests {
     fn create_event_w_initially_signaled() {
         unsafe {
             let h = CreateEventW(0, WinBool::FALSE, WinBool::TRUE, LPCWSTR::NULL);
-            assert_ne!(h, 0);
-            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
+            assert_ne!(h, Handle::NULL);
+            let w = handle_table().get_waitable(h).unwrap();
             // Auto-reset, initially signaled — first wait succeeds, second times out.
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
@@ -592,8 +586,8 @@ mod tests {
     #[test]
     fn set_event_invalid_handle_returns_false() {
         unsafe {
-            assert!(!SetEvent(0xDEAD).is_true());
-            assert!(!ResetEvent(0xDEAD).is_true());
+            assert!(!SetEvent(Handle::from_raw(0xDEAD)).is_true());
+            assert!(!ResetEvent(Handle::from_raw(0xDEAD)).is_true());
         }
     }
 
@@ -603,9 +597,9 @@ mod tests {
     fn create_mutex_unowned_and_wait() {
         unsafe {
             let h = CreateMutexA(0, WinBool::FALSE, LPCSTR::NULL);
-            assert_ne!(h, 0);
+            assert_ne!(h, Handle::NULL);
 
-            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
+            let w = handle_table().get_waitable(h).unwrap();
             // Unowned mutex should be immediately acquirable.
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
         }
@@ -615,10 +609,10 @@ mod tests {
     fn create_mutex_initially_owned() {
         unsafe {
             let h = CreateMutexA(0, WinBool::TRUE, LPCSTR::NULL);
-            assert_ne!(h, 0);
+            assert_ne!(h, Handle::NULL);
 
             // Same thread can recursively acquire.
-            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
+            let w = handle_table().get_waitable(h).unwrap();
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
         }
     }
@@ -627,7 +621,7 @@ mod tests {
     fn create_mutex_w_variant_works() {
         unsafe {
             let h = CreateMutexW(0, WinBool::FALSE, LPCWSTR::NULL);
-            assert_ne!(h, 0);
+            assert_ne!(h, Handle::NULL);
         }
     }
 
@@ -652,7 +646,7 @@ mod tests {
     #[test]
     fn release_mutex_invalid_handle_fails() {
         unsafe {
-            assert!(!ReleaseMutex(0xDEAD).is_true());
+            assert!(!ReleaseMutex(Handle::from_raw(0xDEAD)).is_true());
         }
     }
 
@@ -661,7 +655,7 @@ mod tests {
         unsafe {
             let h = CreateMutexA(0, WinBool::TRUE, LPCSTR::NULL);
             // Recursive acquire.
-            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
+            let w = handle_table().get_waitable(h).unwrap();
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0); // count = 2
 
             // First release (count → 1): still owned.
@@ -684,7 +678,7 @@ mod tests {
 
             // Spawn a thread that tries to acquire (should block/timeout).
             let child = std::thread::spawn(move || {
-                let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
+                let w = handle_table().get_waitable(h).unwrap();
                 let result = wait_on(&w, 10);
                 // Should timeout because parent holds it.
                 assert_eq!(result, WaitStatus::WAIT_TIMEOUT.0);
@@ -714,7 +708,7 @@ mod tests {
     fn create_semaphore_valid_params() {
         unsafe {
             let h = CreateSemaphoreA(0, 2, 5, LPCSTR::NULL);
-            assert_ne!(h, 0);
+            assert_ne!(h, Handle::NULL);
         }
     }
 
@@ -722,7 +716,7 @@ mod tests {
     fn create_semaphore_w_variant_works() {
         unsafe {
             let h = CreateSemaphoreW(0, 1, 10, LPCWSTR::NULL);
-            assert_ne!(h, 0);
+            assert_ne!(h, Handle::NULL);
         }
     }
 
@@ -730,11 +724,11 @@ mod tests {
     fn create_semaphore_invalid_params_returns_null() {
         unsafe {
             // max_count <= 0
-            assert_eq!(CreateSemaphoreA(0, 0, 0, LPCSTR::NULL), 0);
+            assert_eq!(CreateSemaphoreA(0, 0, 0, LPCSTR::NULL), Handle::NULL);
             // initial_count < 0
-            assert_eq!(CreateSemaphoreA(0, -1, 5, LPCSTR::NULL), 0);
+            assert_eq!(CreateSemaphoreA(0, -1, 5, LPCSTR::NULL), Handle::NULL);
             // initial_count > max_count
-            assert_eq!(CreateSemaphoreA(0, 6, 5, LPCSTR::NULL), 0);
+            assert_eq!(CreateSemaphoreA(0, 6, 5, LPCSTR::NULL), Handle::NULL);
         }
     }
 
@@ -742,7 +736,7 @@ mod tests {
     fn semaphore_wait_and_release() {
         unsafe {
             let h = CreateSemaphoreA(0, 1, 5, LPCSTR::NULL);
-            let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
+            let w = handle_table().get_waitable(h).unwrap();
 
             // Count is 1, first wait succeeds.
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
@@ -787,7 +781,7 @@ mod tests {
     #[test]
     fn release_semaphore_invalid_handle_fails() {
         unsafe {
-            assert!(!ReleaseSemaphore(0xDEAD, 1, ptr::null_mut()).is_true());
+            assert!(!ReleaseSemaphore(Handle::from_raw(0xDEAD), 1, ptr::null_mut()).is_true());
         }
     }
 
@@ -797,7 +791,7 @@ mod tests {
             let h = CreateSemaphoreA(0, 0, 5, LPCSTR::NULL);
 
             let child = std::thread::spawn(move || {
-                let w = handle_table().get_waitable(Handle::from_raw(h)).unwrap();
+                let w = handle_table().get_waitable(h).unwrap();
                 wait_on(&w, 2000)
             });
 

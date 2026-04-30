@@ -2,7 +2,7 @@ use std::ptr;
 use std::sync::{Arc, Condvar, Mutex};
 
 use rine_types::errors::WinBool;
-use rine_types::handles::{Handle, HandleEntry, NULL_HANDLE_VALUE, handle_table};
+use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::sync::{CriticalSection, LPCriticalSection};
 use rine_types::threading::{
     EventInner, EventWaitable, MutexInner, MutexState, MutexWaitable, SemaphoreInner,
@@ -336,30 +336,30 @@ pub fn create_mutex(initial_owner: WinBool, name: Option<String>) -> (Handle, St
 /// * `maximum_count` - The maximum count for the semaphore. Must be greater than 0.
 ///
 /// # Returns
-/// A handle to the newly created semaphore, or `NULL_HANDLE_VALUE` if the parameters are
+/// A handle to the newly created semaphore, or `Handle::NULL` if the parameters are
 /// invalid.
 ///
 /// # Examples
 /// ```
 /// use rine_common_kernel32::sync::create_semaphore;
-/// use rine_types::handles::NULL_HANDLE_VALUE;
+/// use rine_types::handles::Handle;
 ///
 /// let semaphore = create_semaphore(2, 5);
 /// assert!(semaphore.is_valid());
 ///
 /// let invalid_semaphore = create_semaphore(-1, 5);
-/// assert_eq!(invalid_semaphore, NULL_HANDLE_VALUE);
+/// assert_eq!(invalid_semaphore, Handle::NULL);
 ///
 /// let invalid_semaphore = create_semaphore(3, 2);
-/// assert_eq!(invalid_semaphore, NULL_HANDLE_VALUE);
+/// assert_eq!(invalid_semaphore, Handle::NULL);
 /// ```
-pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> isize {
+pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> Handle {
     if maximum_count <= 0 || initial_count < 0 || initial_count > maximum_count {
         warn!(
             initial_count,
             maximum_count, "CreateSemaphore: invalid parameters"
         );
-        return NULL_HANDLE_VALUE.as_raw();
+        return Handle::NULL;
     }
 
     let waitable = SemaphoreWaitable {
@@ -370,9 +370,7 @@ pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> isize {
         }),
     };
 
-    let handle = handle_table().insert(HandleEntry::Semaphore(waitable));
-
-    handle.as_raw()
+    handle_table().insert(HandleEntry::Semaphore(waitable))
 }
 
 /// Release a semaphore, incrementing its count by `release_count` and potentially unblocking waiters.
@@ -558,38 +556,38 @@ mod tests {
     #[test]
     fn create_semaphore_valid() {
         let h = create_semaphore(2, 5);
-        assert!(h != NULL_HANDLE_VALUE.as_raw());
+        assert!(h != Handle::NULL);
     }
 
     #[test]
     fn create_semaphore_invalid_initial_count() {
         let h = create_semaphore(-1, 5);
-        assert_eq!(h, NULL_HANDLE_VALUE.as_raw());
+        assert_eq!(h, Handle::NULL);
     }
 
     #[test]
     fn create_semaphore_invalid_maximum_count() {
         let h = create_semaphore(3, 2);
-        assert_eq!(h, NULL_HANDLE_VALUE.as_raw());
+        assert_eq!(h, Handle::NULL);
     }
 
     #[test]
     fn create_semaphore_zero_initial() {
         let h = create_semaphore(0, 5);
-        assert!(h != NULL_HANDLE_VALUE.as_raw());
+        assert!(h != Handle::NULL);
     }
 
     #[test]
     fn create_semaphore_initial_equals_maximum() {
         let h = create_semaphore(5, 5);
-        assert!(h != NULL_HANDLE_VALUE.as_raw());
+        assert!(h != Handle::NULL);
     }
 
     #[test]
     fn create_semaphore_multiple_instances() {
         let h1 = create_semaphore(1, 3);
         let h2 = create_semaphore(2, 4);
-        assert!(h1 != NULL_HANDLE_VALUE.as_raw());
-        assert!(h2 != NULL_HANDLE_VALUE.as_raw());
+        assert!(h1 != Handle::NULL);
+        assert!(h2 != Handle::NULL);
     }
 }

@@ -1,7 +1,5 @@
 use rine_common_kernel32 as common;
-use rine_types::handles::{
-    Handle, INVALID_FILE_SIZE, INVALID_HANDLE_VALUE, Win32FindDataA, Win32FindDataW,
-};
+use rine_types::handles::{Handle, INVALID_FILE_SIZE, Win32FindDataA, Win32FindDataW};
 use rine_types::{
     errors::WinBool,
     strings::{LPCSTR, LPCWSTR},
@@ -40,10 +38,10 @@ pub unsafe extern "stdcall" fn CreateFileA(
     _security_attributes: usize, // LPSECURITY_ATTRIBUTES (ignored)
     creation_disposition: u32,
     _flags_and_attributes: u32,
-    _template_file: isize, // HANDLE (ignored)
-) -> isize {
+    _template_file: Handle, // HANDLE (ignored)
+) -> Handle {
     if file_name.is_null() {
-        return INVALID_HANDLE_VALUE.as_raw();
+        return Handle::INVALID;
     }
 
     unsafe {
@@ -86,10 +84,10 @@ pub unsafe extern "stdcall" fn CreateFileW(
     _security_attributes: usize, // LPSECURITY_ATTRIBUTES (ignored)
     creation_disposition: u32,
     _flags_and_attributes: u32,
-    _template_file: isize, // HANDLE (ignored)
-) -> isize {
+    _template_file: Handle, // HANDLE (ignored)
+) -> Handle {
     if file_name.is_null() {
-        return INVALID_HANDLE_VALUE.as_raw();
+        return Handle::INVALID;
     }
 
     unsafe {
@@ -171,10 +169,8 @@ pub unsafe extern "stdcall" fn DeleteFileA(file_name: LPCSTR) -> WinBool {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetFileSize(file: isize, file_size_high: *mut u32) -> u32 {
-    let handle = Handle::from_raw(file);
-
-    let Some(size) = common::file::get_file_size(handle) else {
+pub unsafe extern "stdcall" fn GetFileSize(file: Handle, file_size_high: *mut u32) -> u32 {
+    let Some(size) = common::file::get_file_size(file) else {
         return INVALID_FILE_SIZE;
     };
 
@@ -211,14 +207,13 @@ pub unsafe extern "stdcall" fn GetFileSize(file: isize, file_size_high: *mut u32
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WriteFile(
-    file: isize,
+    file: Handle,
     buffer: *const u8,
     bytes_to_write: u32,
     bytes_written: *mut u32,
     _overlapped: *mut core::ffi::c_void,
 ) -> WinBool {
-    let handle = Handle::from_raw(file);
-    unsafe { common::file::write_file(handle, buffer, bytes_to_write, bytes_written, _overlapped) }
+    unsafe { common::file::write_file(file, buffer, bytes_to_write, bytes_written, _overlapped) }
 }
 
 /// ReadFile — read data from a file.
@@ -248,15 +243,13 @@ pub unsafe extern "stdcall" fn WriteFile(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ReadFile(
-    file: isize,
+    file: Handle,
     buffer: *mut u8,
     bytes_to_read: u32,
     bytes_read: *mut u32,
     _overlapped: *mut core::ffi::c_void,
 ) -> WinBool {
-    let handle = Handle::from_raw(file);
-
-    unsafe { common::file::read_file(handle, buffer, bytes_to_read, bytes_read, _overlapped) }
+    unsafe { common::file::read_file(file, buffer, bytes_to_read, bytes_read, _overlapped) }
 }
 
 /// FlushFileBuffers — flush file buffers to disk.
@@ -275,9 +268,8 @@ pub unsafe extern "stdcall" fn ReadFile(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn FlushFileBuffers(file: isize) -> WinBool {
-    let handle = Handle::from_raw(file);
-    common::file::flush_file_buffers(handle)
+pub unsafe extern "stdcall" fn FlushFileBuffers(file: Handle) -> WinBool {
+    common::file::flush_file_buffers(file)
 }
 
 /// CloseHandle — close an open object handle (e.g. file handle).
@@ -294,12 +286,10 @@ pub unsafe extern "stdcall" fn FlushFileBuffers(file: isize) -> WinBool {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn CloseHandle(object: isize) -> WinBool {
-    let handle = Handle::from_raw(object);
+pub unsafe extern "stdcall" fn CloseHandle(object: Handle) -> WinBool {
+    rine_types::dev_notify!(on_handle_closed(object.as_raw() as i64));
 
-    rine_types::dev_notify!(on_handle_closed(object as i64));
-
-    common::file::close_handle(handle)
+    common::file::close_handle(object)
 }
 
 /// SetFilePointer — move the file pointer for a file handle.
@@ -327,15 +317,13 @@ pub unsafe extern "stdcall" fn CloseHandle(object: isize) -> WinBool {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetFilePointer(
-    file: isize,
+    file: Handle,
     distance_to_move: i32,           // low 32 bits
     distance_to_move_high: *mut i32, // high 32 bits (in/out, optional)
     move_method: u32,
 ) -> u32 {
-    let handle = Handle::from_raw(file);
-
     unsafe {
-        common::file::set_file_pointer(handle, distance_to_move, distance_to_move_high, move_method)
+        common::file::set_file_pointer(file, distance_to_move, distance_to_move_high, move_method)
     }
 }
 /// Begin searching for files matching a pattern (ansi).
@@ -357,17 +345,17 @@ pub unsafe extern "stdcall" fn SetFilePointer(
 pub unsafe extern "stdcall" fn FindFirstFileA(
     file_name: LPCSTR,
     find_data: *mut Win32FindDataA,
-) -> isize {
+) -> Handle {
     if file_name.is_null() {
-        return INVALID_HANDLE_VALUE.as_raw();
+        return Handle::INVALID;
     }
 
     unsafe {
         let Some(path_str) = file_name.read_string() else {
-            return INVALID_HANDLE_VALUE.as_raw();
+            return Handle::INVALID;
         };
 
-        common::file::find_first_file_a(&path_str, find_data).as_raw()
+        common::file::find_first_file_a(&path_str, find_data)
     }
 }
 
@@ -390,16 +378,16 @@ pub unsafe extern "stdcall" fn FindFirstFileA(
 pub unsafe extern "stdcall" fn FindFirstFileW(
     file_name: LPCWSTR,
     find_data: *mut Win32FindDataW,
-) -> isize {
+) -> Handle {
     if file_name.is_null() {
-        return INVALID_HANDLE_VALUE.as_raw();
+        return Handle::INVALID;
     }
     unsafe {
         let Some(path_str) = file_name.read_string() else {
-            return INVALID_HANDLE_VALUE.as_raw();
+            return Handle::INVALID;
         };
 
-        common::file::find_first_file_w(&path_str, find_data).as_raw()
+        common::file::find_first_file_w(&path_str, find_data)
     }
 }
 
@@ -420,15 +408,14 @@ pub unsafe extern "stdcall" fn FindFirstFileW(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindNextFileA(
-    find_file: isize,
+    find_file: Handle,
     find_data: *mut Win32FindDataA,
 ) -> WinBool {
     if find_data.is_null() {
         return WinBool::FALSE;
     }
-    let handle = Handle::from_raw(find_file);
 
-    unsafe { common::file::find_next_file_a(handle, find_data) }
+    unsafe { common::file::find_next_file_a(find_file, find_data) }
 }
 
 /// Continue a directory search (wide).
@@ -448,15 +435,14 @@ pub unsafe extern "stdcall" fn FindNextFileA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindNextFileW(
-    find_file: isize,
+    find_file: Handle,
     find_data: *mut Win32FindDataW,
 ) -> WinBool {
     if find_data.is_null() {
         return WinBool::FALSE;
     }
-    let handle = Handle::from_raw(find_file);
 
-    unsafe { common::file::find_next_file_w(handle, find_data) }
+    unsafe { common::file::find_next_file_w(find_file, find_data) }
 }
 
 /// FindClose — close a search handle opened by FindFirstFile.
@@ -476,6 +462,6 @@ pub unsafe extern "stdcall" fn FindNextFileW(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn FindClose(find_file: isize) -> WinBool {
+pub unsafe extern "stdcall" fn FindClose(find_file: Handle) -> WinBool {
     unsafe { CloseHandle(find_file) }
 }

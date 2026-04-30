@@ -21,9 +21,8 @@ use rine_types::handles::Handle;
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtTerminateProcess(
-    process_handle: isize, // HANDLE — NULL or current-process pseudo-handle
-    exit_status: u32,      // NTSTATUS
+    process_handle: Handle,
+    exit_status: u32, // NTSTATUS
 ) -> u32 {
-    let handle = Handle::from_raw(process_handle);
-    common::nt_terminate_process(handle, exit_status)
+    common::nt_terminate_process(process_handle, exit_status)
 }

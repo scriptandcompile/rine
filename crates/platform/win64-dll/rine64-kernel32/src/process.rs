@@ -613,20 +613,19 @@ pub unsafe extern "win64" fn GetCurrentProcess() -> isize {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetExitCodeProcess(process: isize, exit_code: *mut u32) -> WinBool {
+pub unsafe extern "win64" fn GetExitCodeProcess(process: Handle, exit_code: *mut u32) -> WinBool {
     if exit_code.is_null() {
         common::process::set_last_error(ERROR_INVALID_PARAMETER);
         return WinBool::FALSE;
     }
 
-    let handle = Handle::from_raw(process);
-    if let Some(code) = common::process::get_exit_code_process(handle) {
+    if let Some(code) = common::process::get_exit_code_process(process) {
         unsafe { *exit_code = code };
         return WinBool::TRUE;
     };
 
     common::process::set_last_error(ERROR_INVALID_HANDLE);
-    warn!(handle = ?handle, "GetExitCodeProcess: invalid handle");
+    warn!(handle = ?process.as_raw(), "GetExitCodeProcess: invalid handle");
     WinBool::FALSE
 }
 
@@ -652,14 +651,14 @@ mod tests {
 
     #[test]
     fn exit_code_null_ptr_returns_false() {
-        let result = unsafe { GetExitCodeProcess(0x9999, std::ptr::null_mut()) };
+        let result = unsafe { GetExitCodeProcess(Handle::from_raw(0x9999), std::ptr::null_mut()) };
         assert_eq!(result, WinBool::FALSE);
     }
 
     #[test]
     fn exit_code_invalid_handle_returns_false() {
         let mut code: u32 = 0;
-        let result = unsafe { GetExitCodeProcess(0x9999, &mut code) };
+        let result = unsafe { GetExitCodeProcess(Handle::from_raw(0x9999), &mut code) };
         assert_eq!(result, WinBool::FALSE);
     }
 }

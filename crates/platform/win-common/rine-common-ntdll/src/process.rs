@@ -21,15 +21,14 @@ pub fn nt_terminate_process(
     process_handle: Handle,
     exit_status: u32, // NTSTATUS
 ) -> u32 {
-    let handle = process_handle.as_raw();
     // NULL (0) or the current-process pseudo-handle (-1) both mean "self".
-    if handle == 0 || handle == -1 {
+    if process_handle.is_null() || process_handle.is_invalid() {
         std::process::exit(exit_status as i32);
     }
 
     // Terminating other processes is not yet supported.
     tracing::warn!(
-        handle = handle,
+        handle = process_handle.as_raw(),
         "NtTerminateProcess: terminating other processes not implemented"
     );
     NtStatus::NOT_IMPLEMENTED.0

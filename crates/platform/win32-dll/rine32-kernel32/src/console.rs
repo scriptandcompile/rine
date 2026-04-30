@@ -18,7 +18,7 @@ use rine_types::strings::{read_cstr_counted, read_wstr_counted};
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetStdHandle(nstd_handle: u32) -> isize {
+pub unsafe extern "stdcall" fn GetStdHandle(nstd_handle: u32) -> Handle {
     unsafe { common::console::get_std_handle(nstd_handle) }
 }
 
@@ -41,20 +41,18 @@ pub unsafe extern "stdcall" fn GetStdHandle(nstd_handle: u32) -> isize {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WriteConsoleA(
-    console_output: isize,
+    console_output: Handle,
     buffer: *const u8,
     chars_to_write: u32,
     chars_written: *mut u32,
     _reserved: *const core::ffi::c_void,
 ) -> WinBool {
-    let handle = Handle::from_raw(console_output);
-
     unsafe {
         let Some(text) = read_cstr_counted(buffer, chars_to_write as i32) else {
             return WinBool::FALSE;
         };
 
-        common::console::write_console(handle, &text, chars_written)
+        common::console::write_console(console_output, &text, chars_written)
     }
 }
 
@@ -77,19 +75,17 @@ pub unsafe extern "stdcall" fn WriteConsoleA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WriteConsoleW(
-    console_output: isize,
+    console_output: Handle,
     buffer: *const u16,
     chars_to_write: u32,
     chars_written: *mut u32,
     _reserved: *const core::ffi::c_void,
 ) -> WinBool {
-    let handle = Handle::from_raw(console_output);
-
     unsafe {
         let Some(text) = read_wstr_counted(buffer, chars_to_write as i32) else {
             return WinBool::FALSE;
         };
 
-        common::console::write_console(handle, &text, chars_written)
+        common::console::write_console(console_output, &text, chars_written)
     }
 }
