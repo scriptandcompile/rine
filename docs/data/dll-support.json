@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-30T03:25:22.293774+00:00",
+  "generatedAt": "2026-04-30T07:28:42.544201+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2061,7 +2061,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 48,
+      "functionCount": 50,
       "functions": [
         {
           "name": "CheckMenuItem",
@@ -2087,6 +2087,32 @@
             "status": "stubbed",
             "symbol": "clipboard::CloseClipboard",
             "source": "user32 - clipboard.rs"
+          }
+        },
+        {
+          "name": "CreateDialogParamA",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "dialogs::CreateDialogParamA",
+            "source": "user32 - dialogs.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "dialogs::CreateDialogParamA",
+            "source": "user32 - dialogs.rs"
+          }
+        },
+        {
+          "name": "CreateDialogParamW",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "dialogs::CreateDialogParamW",
+            "source": "user32 - dialogs.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "dialogs::CreateDialogParamW",
+            "source": "user32 - dialogs.rs"
           }
         },
         {
@@ -2691,17 +2717,17 @@
     }
   ],
   "totals": {
-    "functions": 203,
+    "functions": 205,
     "x64": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 34,
+      "stubbed": 36,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 82,
       "partial": 87,
-      "stubbed": 34,
+      "stubbed": 36,
       "unimplemented": 0
     }
   }

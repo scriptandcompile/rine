@@ -46,6 +46,16 @@ pub struct HeapState {
 #[repr(transparent)]
 pub struct Handle(isize);
 
+/// A handle to an instance/module (from `LoadLibrary` and related functions).
+/// This the base address of the module in memory.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct HInstance(Handle);
+
+impl HInstance {
+    pub const NULL: Self = Self(Handle::NULL);
+}
+
 /// A handle to a menu (from `CreateMenu` and related functions).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
