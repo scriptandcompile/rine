@@ -3,7 +3,7 @@ use rine_common_user32::dialogs as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::HInstance;
 use rine_types::strings::{LPCSTR, LPCWSTR};
-use rine_types::windows::Hwnd;
+use rine_types::windows::{Hwnd, LPARAM};
 
 /// Sets the title or text of a control in a dialog box.
 ///
@@ -106,7 +106,7 @@ pub unsafe extern "win64" fn CreateDialogParamA(
     _template: LPCSTR,
     _parent: Hwnd,
     _dlgproc: common::DLGPROC,
-    _init_param: isize,
+    _init_param: LPARAM,
 ) -> Hwnd {
     let _template = unsafe { _template.read_string().unwrap_or_default() };
 
@@ -154,7 +154,7 @@ pub unsafe extern "win64" fn CreateDialogParamW(
     _template: LPCWSTR,
     _parent: Hwnd,
     _dlgproc: common::DLGPROC,
-    _init_param: isize,
+    _init_param: LPARAM,
 ) -> Hwnd {
     let _template = unsafe { _template.read_string().unwrap_or_default() };
 

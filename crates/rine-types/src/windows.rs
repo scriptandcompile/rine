@@ -368,6 +368,12 @@ pub mod window_message {
 /// Handle into the AtomTable for registered window classes.
 pub type ATOM = u16;
 
+/// Pointer-sized Windows parameter/result aliases.
+/// WPARAM is an unsigned pointer-sized value, LPARAM and LRESULT are signed.
+pub type WPARAM = usize;
+pub type LPARAM = isize;
+pub type LRESULT = isize;
+
 // ---------------------------------------------------------------------------
 // MSG structure
 // ---------------------------------------------------------------------------
@@ -378,8 +384,8 @@ pub type ATOM = u16;
 pub struct Msg {
     pub hwnd: Hwnd,
     pub message: u32,
-    pub w_param: usize,
-    pub l_param: isize,
+    pub w_param: WPARAM,
+    pub l_param: LPARAM,
     pub time: u32,
     pub pt: Point,
 }
