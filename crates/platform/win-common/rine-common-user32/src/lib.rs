@@ -12,6 +12,7 @@ pub mod backend;
 pub mod class_registration;
 pub mod clipboard;
 pub mod cursor;
+pub mod dialogs;
 pub mod menu;
 pub mod message_queue;
 pub mod message_registration;
