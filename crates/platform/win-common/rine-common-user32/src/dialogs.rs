@@ -154,3 +154,28 @@ pub fn send_dialog_item_message(
     );
     0
 }
+
+/// Retrieves the identifier of a specified control.
+///
+/// # Arguments
+/// * `_hwnd` - A handle to the control.
+///
+/// # Safety
+/// `_hwnd` must be a valid handle to a control.
+/// The function does not perform any validation on the input parameter.
+/// It is the caller's responsibility to ensure that it is valid and that it identifies a control.
+///
+/// # Returns
+/// If the function succeeds, the return value is the identifier of the control.
+/// If the function fails, the return value is `0`.
+/// On failure, to get extended error information, call `GetLastError`.
+///
+/// # Notes
+/// The current implementation is a stub and always returns `0`.
+/// We currently do not set the value of `GetLastError` on failure.
+pub fn get_dialog_control_id(_hwnd: Hwnd) -> i32 {
+    warn!(
+        "GetDlgCtrlID is not implemented yet. This is a stub implementation that always returns 0."
+    );
+    0
+}
