@@ -142,7 +142,7 @@ pub fn create_dialog_param(
 ///
 /// # Notes
 /// The current implementation is a stub and always returns `0`.
-pub fn send_dlg_item_message(
+pub fn send_dialog_item_message(
     _hdlg: Hwnd,
     _dlg_item_id: i32,
     _message: u32,

@@ -194,7 +194,7 @@ pub unsafe extern "win64" fn SendDlgItemMessageA(
     _wparam: WPARAM,
     _lparam: LPARAM,
 ) -> LRESULT {
-    common::send_dlg_item_message(_hdlg, _dlg_item_id, _message, _wparam, _lparam)
+    common::send_dialog_item_message(_hdlg, _dlg_item_id, _message, _wparam, _lparam)
 }
 
 /// Sends a specified message to a control in a dialog box.
@@ -230,5 +230,5 @@ pub unsafe extern "win64" fn SendDlgItemMessageW(
     _wparam: WPARAM,
     _lparam: LPARAM,
 ) -> LRESULT {
-    common::send_dlg_item_message(_hdlg, _dlg_item_id, _message, _wparam, _lparam)
+    common::send_dialog_item_message(_hdlg, _dlg_item_id, _message, _wparam, _lparam)
 }
