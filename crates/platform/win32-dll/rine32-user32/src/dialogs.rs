@@ -3,7 +3,7 @@ use rine_common_user32::dialogs as common;
 use rine_types::errors::WinBool;
 use rine_types::handles::HInstance;
 use rine_types::strings::{LPCSTR, LPCWSTR};
-use rine_types::windows::{Hwnd, LPARAM};
+use rine_types::windows::{Hwnd, LPARAM, LRESULT, WPARAM};
 
 /// Sets the title or text of a control in a dialog box.
 ///
@@ -159,4 +159,76 @@ pub unsafe extern "stdcall" fn CreateDialogParamW(
     let _template = unsafe { _template.read_string().unwrap_or_default() };
 
     common::create_dialog_param(_hinstance, &_template, _parent, _dlgproc, _init_param)
+}
+
+/// Sends a specified message to a control in a dialog box.
+///
+/// # Arguments
+/// * `_hdlg` - A handle to the dialog box that contains the control.
+/// * `_dlg_item_id` - The identifier of the control.
+/// * `_message` - The message to be sent.
+/// * `_wparam` - Additional message-specific information.
+/// * `_lparam` - Additional message-specific information.
+///
+/// # Safety
+/// `_hdlg` must be a valid handle to a dialog box.
+/// `_dlg_item_id` must be a valid control identifier within that dialog box.
+/// `_message` must be a valid message that can be sent to the control.
+/// `_wparam` and `_lparam` must be valid additional message-specific information for the message being sent.
+/// The function does not perform any validation on the input parameters.
+/// It is the caller's responsibility to ensure that they are valid and that the message being sent is appropriate for
+/// the control identified by `_dlg_item_id`.
+///
+/// # Returns
+/// The return value is the result of the message processing; it depends on the message sent.
+///
+/// # Notes
+/// The current implementation is a stub and always returns `0`.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn SendDlgItemMessageA(
+    _hdlg: Hwnd,
+    _dlg_item_id: i32,
+    _message: u32,
+    _wparam: WPARAM,
+    _lparam: LPARAM,
+) -> LRESULT {
+    common::send_dlg_item_message(_hdlg, _dlg_item_id, _message, _wparam, _lparam)
+}
+
+/// Sends a specified message to a control in a dialog box.
+///
+/// # Arguments
+/// * `_hdlg` - A handle to the dialog box that contains the control.
+/// * `_dlg_item_id` - The identifier of the control.
+/// * `_message` - The message to be sent.
+/// * `_wparam` - Additional message-specific information.
+/// * `_lparam` - Additional message-specific information.
+///
+/// # Safety
+/// `_hdlg` must be a valid handle to a dialog box.
+/// `_dlg_item_id` must be a valid control identifier within that dialog box.
+/// `_message` must be a valid message that can be sent to the control.
+/// `_wparam` and `_lparam` must be valid additional message-specific information for the message being sent.
+/// The function does not perform any validation on the input parameters.
+/// It is the caller's responsibility to ensure that they are valid and that the message being sent is appropriate for
+/// the control identified by `_dlg_item_id`.
+///
+/// # Returns
+/// The return value is the result of the message processing; it depends on the message sent.
+///
+/// # Notes
+/// The current implementation is a stub and always returns `0`.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn SendDlgItemMessageW(
+    _hdlg: Hwnd,
+    _dlg_item_id: i32,
+    _message: u32,
+    _wparam: WPARAM,
+    _lparam: LPARAM,
+) -> LRESULT {
+    common::send_dlg_item_message(_hdlg, _dlg_item_id, _message, _wparam, _lparam)
 }

@@ -1,6 +1,8 @@
 use rine_types::errors::WinBool;
 use rine_types::handles::HInstance;
-use rine_types::windows::{Hwnd, LPARAM, WPARAM};
+use rine_types::windows::{Hwnd, LPARAM, LRESULT, WPARAM};
+
+use tracing::warn;
 
 /// Sets the title or text of a control in a dialog box.
 ///
@@ -20,6 +22,9 @@ use rine_types::windows::{Hwnd, LPARAM, WPARAM};
 /// This function Does not support setting the text of a combo box or list box control.
 /// To set the text of these controls, use the `CB_SETLBTEXT` or `LB_SETLBTEXT` message, respectively.
 pub fn set_dlg_item_text(_hdlg: Hwnd, _dlg_item_id: i32, _text: &str) -> WinBool {
+    warn!(
+        "SetDlgItemTextA/W is not implemented yet. This is a stub implementation that always returns FALSE."
+    );
     WinBool::FALSE
 }
 
@@ -108,5 +113,44 @@ pub fn create_dialog_param(
     _dialog_proc: DLGPROC,
     _init_param: LPARAM,
 ) -> Hwnd {
+    warn!(
+        "CreateDialogParam is not implemented yet. This is a stub implementation that always returns NULL."
+    );
     Hwnd::NULL
+}
+
+/// Sends a specified message to a control in a dialog box.
+///
+/// # Arguments
+/// * `_hdlg` - A handle to the dialog box that contains the control.
+/// * `_dlg_item_id` - The identifier of the control.
+/// * `_message` - The message to be sent.
+/// * `_wparam` - Additional message-specific information.
+/// * `_lparam` - Additional message-specific information.
+///
+/// # Safety
+/// `_hdlg` must be a valid handle to a dialog box.
+/// `_dlg_item_id` must be a valid control identifier within that dialog box.
+/// `_message` must be a valid message that can be sent to the control.
+/// `_wparam` and `_lparam` must be valid additional message-specific information for the message being sent.
+/// The function does not perform any validation on the input parameters.
+/// It is the caller's responsibility to ensure that they are valid and that the message being sent is appropriate for
+/// the control identified by `_dlg_item_id`.
+///
+/// # Returns
+/// The return value is the result of the message processing; it depends on the message sent.
+///
+/// # Notes
+/// The current implementation is a stub and always returns `0`.
+pub fn send_dlg_item_message(
+    _hdlg: Hwnd,
+    _dlg_item_id: i32,
+    _message: u32,
+    _wparam: WPARAM,
+    _lparam: LPARAM,
+) -> LRESULT {
+    warn!(
+        "SendDlgItemMessageA/W is not implemented yet. This is a stub implementation that always returns 0."
+    );
+    0
 }
