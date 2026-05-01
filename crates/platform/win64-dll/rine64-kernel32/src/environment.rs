@@ -243,12 +243,11 @@ pub unsafe extern "win64" fn GetEnvironmentStringsW() -> *mut u16 {
 /// Missing implementation features:
 /// - This function is a no-op and never validates that `_block` points to the cached environment block.
 /// - Failure paths (`NULL`/foreign pointer) are not implemented; it always returns `TRUE`.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn FreeEnvironmentStringsA(_block: *mut u8) -> WinBool {
-    // No-op: the block is leaked for the process lifetime.
-    WinBool::TRUE
+pub unsafe extern "win64" fn FreeEnvironmentStringsA(block: *mut u8) -> WinBool {
+    unsafe { common::environment::free_environment_strings_a(block) }
 }
 
 /// Free a block of environment strings returned by the GetEnvironmentStringsW function.
@@ -268,13 +267,10 @@ pub unsafe extern "win64" fn FreeEnvironmentStringsA(_block: *mut u8) -> WinBool
 /// If the function succeeds, the return value is TRUE.
 ///
 /// # Notes
-/// Missing implementation features:
-/// - This function is a no-op and never validates that `_block` points to the cached environment block.
-/// - Failure paths (`NULL`/foreign pointer) are not implemented; it always returns `TRUE`.
-#[rine_dlls::stubbed]
+/// This function currently does not set `GetLastError` on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn FreeEnvironmentStringsW(_block: *mut u16) -> WinBool {
-    // No-op: the block is leaked for the process lifetime.
-    WinBool::TRUE
+pub unsafe extern "win64" fn FreeEnvironmentStringsW(block: *mut u16) -> WinBool {
+    unsafe { common::environment::free_environment_strings_w(block) }
 }

@@ -69,8 +69,10 @@ pub unsafe extern "stdcall" fn GetEnvironmentVariableW(
 /// Set the value of an environment variable.
 ///
 /// # Arguments
-/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable. The string is case-sensitive.
-/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable. If this parameter is NULL, the variable is deleted from the environment.
+/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable.
+///   The string is case-sensitive.
+/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable.
+///   If this parameter is NULL, the variable is deleted from the environment.
 ///
 /// # Safety
 /// * `name` must be a valid pointer to a null-terminated string.
@@ -90,8 +92,10 @@ pub unsafe extern "stdcall" fn SetEnvironmentVariableA(name: LPCSTR, value: LPCS
 /// Set the value of an environment variable.
 ///
 /// # Arguments
-/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable. The string is case-sensitive.
-/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable. If this parameter is NULL, the variable is deleted from the environment.
+/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable.
+///   The string is case-sensitive.
+/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable.
+///   If this parameter is NULL, the variable is deleted from the environment.
 ///
 /// # Safety
 /// * `name` must be a valid pointer to a null-terminated string.
@@ -238,12 +242,11 @@ pub unsafe extern "stdcall" fn GetEnvironmentStringsW() -> *mut u16 {
 /// Missing implementation features:
 /// - This function is a no-op and never validates that `_block` points to the cached environment block.
 /// - Failure paths (`NULL`/foreign pointer) are not implemented; it always returns `TRUE`.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn FreeEnvironmentStringsA(_block: *mut u8) -> WinBool {
-    // No-op: the block is leaked for the process lifetime.
-    WinBool::TRUE
+pub unsafe extern "stdcall" fn FreeEnvironmentStringsA(block: *mut u8) -> WinBool {
+    unsafe { common::environment::free_environment_strings_a(block) }
 }
 
 /// Free a block of environment strings returned by the GetEnvironmentStringsW function.
@@ -263,12 +266,10 @@ pub unsafe extern "stdcall" fn FreeEnvironmentStringsA(_block: *mut u8) -> WinBo
 /// If the function succeeds, the return value is TRUE.
 ///
 /// # Notes
-/// Missing implementation features:
-/// - This function is a no-op and never validates that `_block` points to the cached environment block.
-/// - Failure paths (`NULL`/foreign pointer) are not implemented; it always returns `TRUE`.
-#[rine_dlls::stubbed]
+/// This function currently does not set `GetLastError` on failure.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn FreeEnvironmentStringsW(_block: *mut u16) -> WinBool {
-    WinBool::TRUE
+pub unsafe extern "stdcall" fn FreeEnvironmentStringsW(block: *mut u16) -> WinBool {
+    unsafe { common::environment::free_environment_strings_w(block) }
 }

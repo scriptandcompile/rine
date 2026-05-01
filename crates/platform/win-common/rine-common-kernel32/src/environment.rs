@@ -74,6 +74,75 @@ pub unsafe fn get_environment_strings_w() -> *mut u16 {
         .0
 }
 
+/// Free a block of environment strings returned by `get_environment_strings`.
+///
+/// # Arguments
+/// * `block`: A pointer to a block of environment strings returned by `get_environment_strings`.
+///   The block is a null-terminated block of null-terminated strings.
+///   The last string is followed by a null character.
+///
+/// # Safety
+/// `block` must be either null or a pointer previously returned by `get_environment_strings`.
+/// This currently validates pointer ownership but does not reclaim memory,
+/// because the environment block is intentionally process-lifetime cached.
+///
+/// # Returns
+/// If `block` is null, the return value is `WinBool::FALSE`.
+/// If `block` is a pointer previously returned by `get_environment_strings`, the return value is `WinBool::TRUE`.
+/// If `block` is a non-null pointer not returned by `get_environment_strings`, the return value is `WinBool::FALSE`.
+/// Currently, this implementation does not set GetLastError on failure.
+pub unsafe fn free_environment_strings_a(block: *mut u8) -> WinBool {
+    if block.is_null() {
+        return WinBool::FALSE;
+    }
+
+    let Some(cached) = ENV_BLOCK_W.get() else {
+        return WinBool::FALSE;
+    };
+
+    if cached.0 as *mut u8 == block {
+        WinBool::TRUE
+    } else {
+        WinBool::FALSE
+    }
+}
+
+/// Free a block of environment strings returned by `get_environment_strings_w`.
+///
+/// # Arguments
+/// * `block`: A pointer to a block of environment strings returned by `get_environment_strings_w`.
+///   The block is a null-terminated block of null-terminated strings.
+///   The last string is followed by a null character.
+///
+/// # Safety
+/// `block` must be either null or a pointer previously returned by `get_environment_strings_w`.
+/// This currently validates pointer ownership but does not reclaim memory,
+/// because the environment block is intentionally process-lifetime cached.
+///
+/// # Returns
+/// If `block` is null, the return value is `WinBool::FALSE`.
+/// If `block` is a pointer previously returned by `get_environment_strings_w`, the return value is `WinBool::TRUE`.
+/// If `block` is a non-null pointer not returned by `get_environment_strings_w`, the return value is `WinBool::FALSE`.
+/// Currently, this implementation does not set GetLastError on failure.
+///
+/// # Notes
+/// This function currently does not set `GetLastError` on failure.
+pub unsafe fn free_environment_strings_w(block: *mut u16) -> WinBool {
+    if block.is_null() {
+        return WinBool::FALSE;
+    }
+
+    let Some(cached) = ENV_BLOCK_W.get() else {
+        return WinBool::FALSE;
+    };
+
+    if cached.0 == block {
+        WinBool::TRUE
+    } else {
+        WinBool::FALSE
+    }
+}
+
 /// Get the value of an environment variable.
 ///
 /// # Arguments
@@ -143,8 +212,10 @@ pub unsafe fn get_environment_variable_w(name: LPCWSTR, buffer: *mut u16, size: 
 /// Set the value of an environment variable.
 ///
 /// # Arguments
-/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable. The string is case-sensitive.
-/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable. If this parameter is NULL, the variable is deleted from the environment.
+/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable.
+///   The string is case-sensitive.
+/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable.
+///   If this parameter is NULL, the variable is deleted from the environment.
 ///
 /// # Safety
 /// * `name` must be a valid pointer to a null-terminated string.
@@ -168,8 +239,10 @@ pub unsafe fn set_environment_variable_a(name: LPCSTR, value: LPCSTR) -> WinBool
 /// Set the value of an environment variable.
 ///
 /// # Arguments
-/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable. The string is case-sensitive.
-/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable. If this parameter is NULL, the variable is deleted from the environment.
+/// * `name`: A pointer to a null-terminated string that specifies the name of the environment variable.
+///   The string is case-sensitive.
+/// * `value`: A pointer to a null-terminated string that specifies the value of the environment variable.
+///   If this parameter is NULL, the variable is deleted from the environment.
 ///
 /// # Safety
 /// * `name` must be a valid pointer to a null-terminated string.
@@ -195,7 +268,8 @@ pub unsafe fn set_environment_variable_w(name: LPCWSTR, value: LPCWSTR) -> WinBo
 ///
 /// # Arguments
 /// * `src`: A pointer to a null-terminated string that contains environment-variable strings of the form `%VAR%`. The string is case-sensitive.
-/// * `dst`: A pointer to a buffer that receives the expanded string. If the buffer is not large enough to hold the expanded string, the function fails and returns the required buffer size, in characters, including the terminating null character.
+/// * `dst`: A pointer to a buffer that receives the expanded string. If the buffer is not large enough to hold the expanded string,
+///   the function fails and returns the required buffer size, in characters, including the terminating null character.
 /// * `dst_size`: The size of the buffer pointed to by `dst`, in characters.
 ///
 /// # Safety
@@ -206,7 +280,8 @@ pub unsafe fn set_environment_variable_w(name: LPCWSTR, value: LPCWSTR) -> WinBo
 /// # Returns
 /// If the function succeeds, the return value is the number of characters stored in the buffer,
 /// not including the terminating null character.
-/// If the buffer is too small to hold the expanded string, the return value is the size of the buffer required to hold the expanded string, including the terminating null character.
+/// If the buffer is too small to hold the expanded string, the return value is the size of the buffer required to hold the expanded string,
+/// including the terminating null character.
 /// If the function fails for any other reason, the return value is zero.
 /// To get extended error information, call GetLastError.
 /// Currently, this implementation does not set GetLastError on failure.
@@ -234,8 +309,10 @@ pub unsafe fn expand_environment_strings_a(src: LPCSTR, dst: *mut u8, dst_size: 
 /// For more information, see Environment Variables.
 ///
 /// # Arguments
-/// * `src`: A pointer to a null-terminated string that contains environment-variable strings of the form `%VAR%`. The string is case-sensitive.
-/// * `dst`: A pointer to a buffer that receives the expanded string. If the buffer is not large enough to hold the expanded string, the function fails and returns the required buffer size, in characters, including the terminating null character.
+/// * `src`: A pointer to a null-terminated string that contains environment-variable strings of the form `%VAR%`.
+///   The string is case-sensitive.
+/// * `dst`: A pointer to a buffer that receives the expanded string. If the buffer is not large enough to hold the expanded string,
+///   the function fails and returns the required buffer size, in characters, including the terminating null character.
 /// * `dst_size`: The size of the buffer pointed to by `dst`, in characters.
 ///
 /// # Safety
@@ -246,7 +323,8 @@ pub unsafe fn expand_environment_strings_a(src: LPCSTR, dst: *mut u8, dst_size: 
 /// # Returns
 /// If the function succeeds, the return value is the number of characters stored in the buffer,
 /// not including the terminating null character.
-/// If the buffer is too small to hold the expanded string, the return value is the size of the buffer required to hold the expanded string, including the terminating null character.
+/// If the buffer is too small to hold the expanded string, the return value is the size of the buffer required to hold the expanded string,
+/// including the terminating null character.
 /// If the function fails for any other reason, the return value is zero.
 /// To get extended error information, call GetLastError.
 /// Currently, this implementation does not set GetLastError on failure.

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T16:59:52.199340+00:00",
+  "generatedAt": "2026-05-01T17:12:48.519163+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -670,12 +670,12 @@
         {
           "name": "FreeEnvironmentStringsA",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "environment::FreeEnvironmentStringsA",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "environment::FreeEnvironmentStringsA",
             "source": "kernel32 - environment.rs"
           }
@@ -683,12 +683,12 @@
         {
           "name": "FreeEnvironmentStringsW",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "environment::FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "environment::FreeEnvironmentStringsW",
             "source": "kernel32 - environment.rs"
           }
@@ -2798,14 +2798,14 @@
     "functions": 211,
     "x64": {
       "implemented": 84,
-      "partial": 87,
-      "stubbed": 40,
+      "partial": 89,
+      "stubbed": 38,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 84,
-      "partial": 87,
-      "stubbed": 40,
+      "partial": 89,
+      "stubbed": 38,
       "unimplemented": 0
     }
   }
