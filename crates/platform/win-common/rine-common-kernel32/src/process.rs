@@ -1,8 +1,9 @@
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::ffi::{CString, OsStr};
+use std::panic::{UnwindSafe, catch_unwind, resume_unwind};
 use std::process::Command;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 
 use rine_types::errors::{ERROR_SUCCESS, WinBool};
@@ -19,6 +20,16 @@ pub struct CmdLineCache {
 }
 
 static CMD_LINE: OnceLock<CmdLineCache> = OnceLock::new();
+static UNHANDLED_EXCEPTION_FILTER: AtomicUsize = AtomicUsize::new(0);
+static FAULT_HANDLER_GUARD: Mutex<()> = Mutex::new(());
+
+const FATAL_SIGNALS: [i32; 5] = [
+    libc::SIGSEGV,
+    libc::SIGBUS,
+    libc::SIGILL,
+    libc::SIGFPE,
+    libc::SIGABRT,
+];
 
 thread_local! {
     static LAST_ERROR_CODE: Cell<u32> = const { Cell::new(ERROR_SUCCESS) };
@@ -416,13 +427,80 @@ pub fn set_last_error(error_code: u32) {
 /// - No integration with structured exception handling dispatch exists.
 pub fn set_unhandled_exception_filter(_filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
 ) -> usize {
-    tracing::warn!(
-        api = "SetUnhandledExceptionFilter",
-        dll = "kernel32",
-        "stub called — exceptions are not yet implemented"
-    );
+    UNHANDLED_EXCEPTION_FILTER.swap(_filter, Ordering::AcqRel)
+}
 
-    0 // NULL — no previous handler
+/// Call the currently installed top-level exception filter, if one exists.
+///
+/// # Arguments
+/// * `exception_pointers` - Placeholder pointer to exception context.
+///
+/// # Returns
+/// `Some(filter_return_value)` if a filter is installed, otherwise `None`.
+pub fn invoke_unhandled_exception_filter(exception_pointers: usize) -> Option<i32> {
+    let filter = UNHANDLED_EXCEPTION_FILTER.load(Ordering::Acquire);
+    if filter == 0 {
+        return None;
+    }
+
+    type TopLevelExceptionFilter = unsafe extern "system" fn(usize) -> i32;
+    let callback: TopLevelExceptionFilter = unsafe { std::mem::transmute(filter) };
+    Some(unsafe { callback(exception_pointers) })
+}
+
+/// Run a top-level execution boundary and invoke the installed unhandled
+/// exception filter when execution unwinds due to a panic.
+///
+/// This models the runtime behavior where a process-level boundary catches an
+/// otherwise-unhandled fault and dispatches to `SetUnhandledExceptionFilter`.
+///
+/// # Panics
+/// Re-throws the original panic after invoking the filter.
+pub fn run_with_unhandled_exception_filter<F, R>(f: F) -> R
+where
+    F: FnOnce() -> R + UnwindSafe,
+{
+    let _signal_guard = FAULT_HANDLER_GUARD.lock().unwrap();
+    let previous_handlers = install_fault_signal_handlers();
+
+    match catch_unwind(f) {
+        Ok(value) => {
+            restore_fault_signal_handlers(&previous_handlers);
+            value
+        }
+        Err(payload) => {
+            restore_fault_signal_handlers(&previous_handlers);
+            let _ = invoke_unhandled_exception_filter(0);
+            resume_unwind(payload)
+        }
+    }
+}
+
+extern "C" fn top_level_fault_signal_handler(signal: i32) {
+    let _ = invoke_unhandled_exception_filter(0);
+    unsafe {
+        libc::_exit(128 + signal);
+    }
+}
+
+fn install_fault_signal_handlers() -> [libc::sighandler_t; FATAL_SIGNALS.len()] {
+    let mut previous = [libc::SIG_DFL; FATAL_SIGNALS.len()];
+
+    for (index, signal) in FATAL_SIGNALS.iter().copied().enumerate() {
+        let handler = top_level_fault_signal_handler as *const () as usize as libc::sighandler_t;
+        let prior = unsafe { libc::signal(signal, handler) };
+        previous[index] = prior;
+    }
+
+    previous
+}
+
+fn restore_fault_signal_handlers(previous: &[libc::sighandler_t; FATAL_SIGNALS.len()]) {
+    for (index, signal) in FATAL_SIGNALS.iter().copied().enumerate() {
+        unsafe {
+            libc::signal(signal, previous[index]);
+        }
+    }
 }
 
 /// Get a module handle by name. Currently only supports NULL (main executable) and returns 0 as a placeholder.
@@ -563,6 +641,17 @@ pub unsafe fn parse_env_block_wide(ptr: *const u16) -> HashMap<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static TEST_GUARD: Mutex<()> = Mutex::new(());
+    static FILTER_CALL_COUNT: AtomicUsize = AtomicUsize::new(0);
+    static LAST_EXCEPTION_PTR: AtomicUsize = AtomicUsize::new(usize::MAX);
+
+    unsafe extern "system" fn test_top_level_filter(exception_ptr: usize) -> i32 {
+        LAST_EXCEPTION_PTR.store(exception_ptr, Ordering::SeqCst);
+        FILTER_CALL_COUNT.fetch_add(1, Ordering::SeqCst);
+        1
+    }
 
     // ── split_cmd_line ───────────────────────────────────────────
 
@@ -628,5 +717,28 @@ mod tests {
         let block: Vec<u16> = "KEY=val\0\0".encode_utf16().collect();
         let env = unsafe { parse_env_block_wide(block.as_ptr()) };
         assert_eq!(env.get("KEY").unwrap(), "val");
+    }
+
+    #[test]
+    fn unhandled_exception_filter_invoked_when_boundary_panics() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        FILTER_CALL_COUNT.store(0, Ordering::SeqCst);
+        LAST_EXCEPTION_PTR.store(usize::MAX, Ordering::SeqCst);
+
+        let test_filter_ptr = test_top_level_filter as *const () as usize;
+        let previous = set_unhandled_exception_filter(test_filter_ptr);
+
+        let panic_result = std::panic::catch_unwind(|| {
+            run_with_unhandled_exception_filter(|| {
+                panic!("simulate unhandled exception");
+            });
+        });
+
+        assert!(panic_result.is_err());
+        assert_eq!(FILTER_CALL_COUNT.load(Ordering::SeqCst), 1);
+        assert_eq!(LAST_EXCEPTION_PTR.load(Ordering::SeqCst), 0);
+
+        let restored_previous = set_unhandled_exception_filter(previous);
+        assert_eq!(restored_previous, test_filter_ptr);
     }
 }

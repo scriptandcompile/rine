@@ -1,4 +1,4 @@
-use super::common::assert_run;
+use super::common::{assert_run, fixture, run_rine};
 
 #[test]
 fn process_threads() {
@@ -106,5 +106,22 @@ fn get_exit_code_process_last_error() {
         0,
         "get_exit_code_process_null_out_error: ok\n\
          get_exit_code_process_invalid_handle_error: ok",
+    );
+}
+
+#[test]
+fn set_unhandled_exception_filter() {
+    let output = run_rine(&fixture("set_unhandled_exception_filter"), &[]);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let code = output.status.code().unwrap_or(-1);
+
+    assert_eq!(
+        code, 139,
+        "expected SIGSEGV-style exit code 139\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    );
+    assert!(
+        stdout.contains("seh_filter_called: ok"),
+        "expected filter marker in stdout\nstdout:\n{stdout}\nstderr:\n{stderr}"
     );
 }

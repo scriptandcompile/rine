@@ -418,7 +418,9 @@ pub fn run(
     rine_types::dev_notify!(on_thread_created(-2, main_tid, main_entry));
 
     // 6. Execute the PE entry point.
-    let exit_code = entry::execute(&image, &parsed)?;
+    let exit_code = rine_common_kernel32::process::run_with_unhandled_exception_filter(|| {
+        entry::execute(&image, &parsed)
+    })?;
     rine_types::dev_notify!(on_thread_exited(main_tid, exit_code as u32));
 
     // ProcessExited + shutdown are normally handled by ExitProcess

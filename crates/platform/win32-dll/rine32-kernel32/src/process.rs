@@ -362,7 +362,7 @@ pub unsafe extern "stdcall" fn ExitProcess(exit_code: u32) -> ! {
 /// - No process-wide top-level exception filter is stored.
 /// - The previous filter is not tracked/returned.
 /// - No integration with structured exception handling dispatch exists.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetUnhandledExceptionFilter(

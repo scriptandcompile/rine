@@ -252,7 +252,9 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     let main_entry = image.base().as_usize() as u64 + parsed.pe.entry as u64;
     rine_types::dev_notify!(on_thread_created(-2, main_tid, main_entry));
 
-    let exit_code = entry::execute(&image, &parsed)?;
+    let exit_code = rine_common_kernel32::process::run_with_unhandled_exception_filter(|| {
+        entry::execute(&image, &parsed)
+    })?;
     rine_types::dev_notify!(on_thread_exited(main_tid, exit_code as u32));
     dev_emit!(dev_bridge, DevEvent::ProcessExited { exit_code });
     Ok(exit_code)
