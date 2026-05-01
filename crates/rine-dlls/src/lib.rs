@@ -4,8 +4,14 @@
 //! `rine-msvcrt`) and implements the [`DllPlugin`] trait. The [`DllRegistry`]
 //! collects plugins and provides import resolution at load time.
 
+mod dynamic_provider;
 mod registry;
 
+pub use dynamic_provider::{
+    DYNAMIC_PROVIDER_ABI_VERSION, DYNAMIC_PROVIDER_ENTRYPOINT, DynamicProviderArch,
+    DynamicProviderDescriptor, DynamicProviderExport, DynamicProviderExportKind,
+    DynamicProviderExportStatus, OwnedDynamicProviderDescriptor,
+};
 pub use registry::{DllRegistry, DllRegistryMetrics, LookupResult, WinApiFunc};
 pub use rine_dll_attrs::{data_export, dll, implemented, ordinal, partial, stubbed};
 
@@ -47,6 +53,11 @@ pub struct PartialExport {
 /// Depending on registry mode, [`exports()`](DllPlugin::exports) may be
 /// called eagerly at startup or lazily on first lookup for a DLL.
 pub trait DllPlugin {
+    /// Stable Rust-side identifier for diagnostics and dynamic provider metadata.
+    fn provider_name(&self) -> &'static str {
+        std::any::type_name::<Self>()
+    }
+
     /// The canonical DLL name(s) this plugin provides, including the `.dll`
     /// suffix. e.g. `&["kernel32.dll"]` or `&["msvcrt.dll", "api-ms-win-crt-runtime-l1-1-0.dll"]`.
     fn dll_names(&self) -> &[&str];
@@ -138,5 +149,24 @@ macro_rules! as_win_api {
         // SAFETY: all function pointers are pointer-sized. The PE caller
         // will invoke through the IAT with the matching argument layout.
         unsafe { core::mem::transmute::<*const (), $crate::WinApiFunc>($f as *const ()) }
+    };
+}
+
+/// Export the standard dynamic provider entrypoint for a DLL plugin crate.
+#[macro_export]
+macro_rules! export_dynamic_provider {
+    ($factory:expr) => {
+        #[unsafe(no_mangle)]
+        pub extern "C" fn rine_dynamic_provider_v1() -> *const $crate::DynamicProviderDescriptor {
+            static DESCRIPTOR: ::std::sync::OnceLock<$crate::OwnedDynamicProviderDescriptor> =
+                ::std::sync::OnceLock::new();
+
+            DESCRIPTOR
+                .get_or_init(|| {
+                    let plugin = ($factory)();
+                    $crate::OwnedDynamicProviderDescriptor::from_plugin(&plugin)
+                })
+                .as_ptr()
+        }
     };
 }

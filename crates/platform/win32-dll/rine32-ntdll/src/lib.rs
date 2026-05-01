@@ -31,3 +31,5 @@ impl DllPlugin for NtdllPlugin32 {
         ))
     }
 }
+
+rine_dlls::export_dynamic_provider!(|| NtdllPlugin32);
