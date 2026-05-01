@@ -230,8 +230,8 @@ pub fn sleep(duration: Duration) {
 ///   the internal handle table.
 /// - APIs expecting a queryable thread handle may still reject this pseudo-
 ///   handle instead of treating it as `GetCurrentThread()`.
-pub fn current_thread() -> isize {
-    -2
+pub fn current_thread() -> Handle {
+    Handle::from_raw(-2)
 }
 
 /// Get the current thread's ID.

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T16:51:29.046408+00:00",
+  "generatedAt": "2026-05-01T16:59:52.199340+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -761,12 +761,12 @@
         {
           "name": "GetCurrentThread",
           "x64": {
-            "status": "stubbed",
+            "status": "implemented",
             "symbol": "thread::GetCurrentThread",
             "source": "kernel32 - thread.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "implemented",
             "symbol": "thread::GetCurrentThread",
             "source": "kernel32 - thread.rs"
           }
@@ -2797,15 +2797,15 @@
   "totals": {
     "functions": 211,
     "x64": {
-      "implemented": 83,
+      "implemented": 84,
       "partial": 87,
-      "stubbed": 41,
+      "stubbed": 40,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 83,
+      "implemented": 84,
       "partial": 87,
-      "stubbed": 41,
+      "stubbed": 40,
       "unimplemented": 0
     }
   }

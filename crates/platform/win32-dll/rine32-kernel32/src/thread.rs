@@ -249,10 +249,10 @@ pub unsafe extern "stdcall" fn Sleep(milliseconds: u32) {
 ///   the internal handle table.
 /// - APIs expecting a queryable thread handle may still reject this pseudo-
 ///   handle instead of treating it as `GetCurrentThread()`.
-#[rine_dlls::stubbed]
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetCurrentThread() -> isize {
+pub unsafe extern "stdcall" fn GetCurrentThread() -> Handle {
     common_thread::current_thread()
 }
 
