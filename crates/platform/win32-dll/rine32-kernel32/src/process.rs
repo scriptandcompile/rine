@@ -528,10 +528,10 @@ pub unsafe extern "stdcall" fn GetModuleHandleW(module_name: LPCWSTR) -> usize {
 ///   the internal handle table.
 /// - APIs expecting a queryable process handle may still reject this pseudo-
 ///   handle instead of treating it as `GetCurrentProcess()`.
-#[rine_dlls::stubbed]
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetCurrentProcess() -> isize {
+pub unsafe extern "stdcall" fn GetCurrentProcess() -> Handle {
     common::process::get_current_process()
 }
 

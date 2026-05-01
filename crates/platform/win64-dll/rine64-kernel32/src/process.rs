@@ -572,10 +572,10 @@ pub unsafe extern "win64" fn GetCurrentProcessId() -> u32 {
 ///   the internal handle table.
 /// - APIs expecting a queryable process handle may still reject this pseudo-
 ///   handle instead of treating it as `GetCurrentProcess()`.
-#[rine_dlls::stubbed]
+#[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetCurrentProcess() -> isize {
+pub unsafe extern "win64" fn GetCurrentProcess() -> Handle {
     common::process::get_current_process()
 }
 
@@ -644,7 +644,7 @@ mod tests {
     #[test]
     fn current_process_pseudo_handle() {
         let h = unsafe { GetCurrentProcess() };
-        assert_eq!(h, -1);
+        assert_eq!(h, Handle::from_raw(-1));
     }
 
     // ── GetExitCodeProcess with null pointer ─────────────────────

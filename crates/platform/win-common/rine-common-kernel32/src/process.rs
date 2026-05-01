@@ -332,8 +332,8 @@ pub fn free_library(_module: u32) -> WinBool {
 ///   the internal handle table.
 /// - APIs expecting a queryable process handle may still reject this pseudo-
 ///   handle instead of treating it as `GetCurrentProcess()`.
-pub fn get_current_process() -> isize {
-    -1
+pub fn get_current_process() -> Handle {
+    Handle::from_raw(-1)
 }
 
 /// Gets the exit code of a process handle.
