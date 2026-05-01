@@ -7,4 +7,6 @@ description = "DLL plugin trait and registry for rine"
 
 [dependencies]
 rine-dll-attrs = { workspace = true }
+libloading = { workspace = true }
+thiserror = { workspace = true }
 tracing = { workspace = true }

@@ -18,7 +18,6 @@ rine-dev-bridge = { workspace = true, optional = true }
 rine-runtime-core = { workspace = true }
 rine64-kernel32 = { workspace = true }
 rine64-msvcrt = { workspace = true }
-rine64-ntdll = { workspace = true }
 rine64-advapi32 = { workspace = true }
 rine64-gdi32 = { workspace = true }
 rine64-comdlg32 = { workspace = true }

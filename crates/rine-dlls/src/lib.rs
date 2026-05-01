@@ -10,7 +10,8 @@ mod registry;
 pub use dynamic_provider::{
     DYNAMIC_PROVIDER_ABI_VERSION, DYNAMIC_PROVIDER_ENTRYPOINT, DynamicProviderArch,
     DynamicProviderDescriptor, DynamicProviderExport, DynamicProviderExportKind,
-    DynamicProviderExportStatus, OwnedDynamicProviderDescriptor,
+    DynamicProviderExportStatus, DynamicProviderLoadError, LoadedDynamicProviderLibrary,
+    OwnedDynamicProviderDescriptor, ResolvedDynamicExport, ResolvedDynamicProvider,
 };
 pub use registry::{DllRegistry, DllRegistryMetrics, LookupResult, WinApiFunc};
 pub use rine_dll_attrs::{data_export, dll, implemented, ordinal, partial, stubbed};

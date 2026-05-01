@@ -1,11 +1,18 @@
 use std::collections::HashMap;
-use std::ffi::{CString, c_char};
+use std::ffi::{CStr, CString, c_char};
+use std::path::{Path, PathBuf};
 use std::ptr;
+use std::str::Utf8Error;
+
+use libloading::{Library, Symbol};
+use thiserror::Error;
 
 use crate::{DllPlugin, Export};
 
 pub const DYNAMIC_PROVIDER_ABI_VERSION: u32 = 1;
 pub const DYNAMIC_PROVIDER_ENTRYPOINT: &str = "rine_dynamic_provider_v1";
+
+pub type DynamicProviderEntrypoint = unsafe extern "C" fn() -> *const DynamicProviderDescriptor;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
@@ -74,10 +81,88 @@ pub struct OwnedDynamicProviderDescriptor {
     _exports: Box<[DynamicProviderExport]>,
 }
 
+#[derive(Debug, Clone)]
+pub struct ResolvedDynamicProvider {
+    pub provider_name: String,
+    pub dll_names: Vec<String>,
+    pub exports: Vec<ResolvedDynamicExport>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ResolvedDynamicExport {
+    pub dll_name: String,
+    pub export_name: Option<String>,
+    pub ordinal: u16,
+    pub kind: DynamicProviderExportKind,
+    pub status: DynamicProviderExportStatus,
+    pub target: *const (),
+}
+
+pub struct LoadedDynamicProviderLibrary {
+    pub resolved: ResolvedDynamicProvider,
+    _library: Library,
+}
+
+#[derive(Debug, Error)]
+pub enum DynamicProviderLoadError {
+    #[error("failed to open dynamic provider library {path}: {source}")]
+    Open {
+        path: PathBuf,
+        #[source]
+        source: libloading::Error,
+    },
+
+    #[error(
+        "failed to resolve entrypoint {entrypoint} in dynamic provider library {path}: {source}"
+    )]
+    MissingEntrypoint {
+        path: PathBuf,
+        entrypoint: &'static str,
+        #[source]
+        source: libloading::Error,
+    },
+
+    #[error("dynamic provider library {path} returned a null descriptor")]
+    NullDescriptor { path: PathBuf },
+
+    #[error(
+        "dynamic provider library {path} uses unsupported ABI version {found}; expected {expected}"
+    )]
+    AbiVersionMismatch {
+        path: PathBuf,
+        expected: u32,
+        found: u32,
+    },
+
+    #[error(
+        "dynamic provider library {path} targets {found:?}, but this runtime expects {expected:?}"
+    )]
+    ArchMismatch {
+        path: PathBuf,
+        expected: DynamicProviderArch,
+        found: DynamicProviderArch,
+    },
+
+    #[error("dynamic provider library {path} contains invalid UTF-8 in {field}: {source}")]
+    InvalidUtf8 {
+        path: PathBuf,
+        field: &'static str,
+        #[source]
+        source: Utf8Error,
+    },
+
+    #[error("dynamic provider library {path} contains a null pointer for {field}")]
+    NullField { path: PathBuf, field: &'static str },
+}
+
 // SAFETY: exported metadata is immutable after construction and points either
 // to process-lifetime C strings or function/data addresses owned by the plugin.
 unsafe impl Send for DynamicProviderExport {}
 unsafe impl Sync for DynamicProviderExport {}
+
+// SAFETY: resolved dynamic exports are immutable values copied from provider metadata.
+unsafe impl Send for ResolvedDynamicExport {}
+unsafe impl Sync for ResolvedDynamicExport {}
 
 // SAFETY: the descriptor only contains immutable pointers into the owned string
 // and export storage retained by OwnedDynamicProviderDescriptor.
@@ -89,6 +174,11 @@ unsafe impl Sync for DynamicProviderDescriptor {}
 unsafe impl Send for OwnedDynamicProviderDescriptor {}
 unsafe impl Sync for OwnedDynamicProviderDescriptor {}
 
+// SAFETY: loaded dynamic provider state is immutable after load and the library
+// handle remains owned for the life of the registry that stores it.
+unsafe impl Send for LoadedDynamicProviderLibrary {}
+unsafe impl Sync for LoadedDynamicProviderLibrary {}
+
 impl OwnedDynamicProviderDescriptor {
     pub fn from_plugin(plugin: &dyn DllPlugin) -> Self {
         let mut string_pool = Vec::new();
@@ -97,13 +187,22 @@ impl OwnedDynamicProviderDescriptor {
         let dll_name_ptrs = plugin
             .dll_names()
             .iter()
-            .map(|dll_name| (dll_name.to_string(), push_c_string(&mut string_pool, dll_name)))
+            .map(|dll_name| {
+                (
+                    dll_name.to_string(),
+                    push_c_string(&mut string_pool, dll_name),
+                )
+            })
             .collect::<HashMap<_, _>>();
 
         let dll_names = plugin
             .dll_names()
             .iter()
-            .map(|dll_name| *dll_name_ptrs.get(*dll_name).expect("missing DLL name pointer"))
+            .map(|dll_name| {
+                *dll_name_ptrs
+                    .get(*dll_name)
+                    .expect("missing DLL name pointer")
+            })
             .collect::<Vec<_>>()
             .into_boxed_slice();
 
@@ -120,7 +219,9 @@ impl OwnedDynamicProviderDescriptor {
         for stub in plugin.stubs() {
             for dll_name in plugin.dll_names() {
                 exports.push(DynamicProviderExport {
-                    dll_name: *dll_name_ptrs.get(*dll_name).expect("missing DLL name pointer"),
+                    dll_name: *dll_name_ptrs
+                        .get(*dll_name)
+                        .expect("missing DLL name pointer"),
                     export_name: push_c_string(&mut string_pool, stub.name),
                     ordinal: 0,
                     kind: DynamicProviderExportKind::NamedFunction,
@@ -133,7 +234,9 @@ impl OwnedDynamicProviderDescriptor {
         for partial in plugin.partials() {
             for dll_name in plugin.dll_names() {
                 exports.push(DynamicProviderExport {
-                    dll_name: *dll_name_ptrs.get(*dll_name).expect("missing DLL name pointer"),
+                    dll_name: *dll_name_ptrs
+                        .get(*dll_name)
+                        .expect("missing DLL name pointer"),
                     export_name: push_c_string(&mut string_pool, partial.name),
                     ordinal: 0,
                     kind: DynamicProviderExportKind::NamedFunction,
@@ -172,6 +275,149 @@ impl OwnedDynamicProviderDescriptor {
     }
 }
 
+impl LoadedDynamicProviderLibrary {
+    /// # Safety
+    /// The loaded library must export a descriptor compatible with the current
+    /// ABI and keep all pointed-to metadata alive while the library remains loaded.
+    pub unsafe fn open(path: &Path) -> Result<Self, DynamicProviderLoadError> {
+        let path = path.to_path_buf();
+        let library =
+            unsafe { Library::new(&path) }.map_err(|source| DynamicProviderLoadError::Open {
+                path: path.clone(),
+                source,
+            })?;
+
+        let entrypoint: Symbol<'_, DynamicProviderEntrypoint> = unsafe {
+            library.get(DYNAMIC_PROVIDER_ENTRYPOINT.as_bytes())
+        }
+        .map_err(|source| DynamicProviderLoadError::MissingEntrypoint {
+            path: path.clone(),
+            entrypoint: DYNAMIC_PROVIDER_ENTRYPOINT,
+            source,
+        })?;
+
+        let descriptor = unsafe { entrypoint() };
+        if descriptor.is_null() {
+            return Err(DynamicProviderLoadError::NullDescriptor { path });
+        }
+
+        let resolved = unsafe { resolve_descriptor(&path, &*descriptor) }?;
+        Ok(Self {
+            resolved,
+            _library: library,
+        })
+    }
+}
+
+unsafe fn resolve_descriptor(
+    path: &Path,
+    descriptor: &DynamicProviderDescriptor,
+) -> Result<ResolvedDynamicProvider, DynamicProviderLoadError> {
+    if descriptor.abi_version != DYNAMIC_PROVIDER_ABI_VERSION {
+        return Err(DynamicProviderLoadError::AbiVersionMismatch {
+            path: path.to_path_buf(),
+            expected: DYNAMIC_PROVIDER_ABI_VERSION,
+            found: descriptor.abi_version,
+        });
+    }
+
+    let expected_arch = DynamicProviderArch::current();
+    if descriptor.arch != expected_arch {
+        return Err(DynamicProviderLoadError::ArchMismatch {
+            path: path.to_path_buf(),
+            expected: expected_arch,
+            found: descriptor.arch,
+        });
+    }
+
+    let provider_name = read_c_string(path, descriptor.provider_name, "provider_name")?;
+    let dll_ptrs = read_ptr_slice(
+        path,
+        descriptor.dll_names,
+        descriptor.dll_count,
+        "dll_names",
+    )?;
+    let dll_names = dll_ptrs
+        .iter()
+        .map(|dll_name| read_c_string(path, *dll_name, "dll_name"))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let exports = read_ptr_slice(path, descriptor.exports, descriptor.export_count, "exports")?
+        .iter()
+        .map(|export| resolve_export(path, export))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(ResolvedDynamicProvider {
+        provider_name,
+        dll_names,
+        exports,
+    })
+}
+
+fn resolve_export(
+    path: &Path,
+    export: &DynamicProviderExport,
+) -> Result<ResolvedDynamicExport, DynamicProviderLoadError> {
+    let dll_name = read_c_string(path, export.dll_name, "export.dll_name")?;
+    let export_name = match export.kind {
+        DynamicProviderExportKind::NamedFunction | DynamicProviderExportKind::NamedData => Some(
+            read_c_string(path, export.export_name, "export.export_name")?,
+        ),
+        DynamicProviderExportKind::OrdinalFunction => None,
+    };
+
+    Ok(ResolvedDynamicExport {
+        dll_name,
+        export_name,
+        ordinal: export.ordinal,
+        kind: export.kind,
+        status: export.status,
+        target: export.target,
+    })
+}
+
+fn read_c_string(
+    path: &Path,
+    ptr: *const c_char,
+    field: &'static str,
+) -> Result<String, DynamicProviderLoadError> {
+    if ptr.is_null() {
+        return Err(DynamicProviderLoadError::NullField {
+            path: path.to_path_buf(),
+            field,
+        });
+    }
+
+    unsafe { CStr::from_ptr(ptr) }
+        .to_str()
+        .map(|value| value.to_owned())
+        .map_err(|source| DynamicProviderLoadError::InvalidUtf8 {
+            path: path.to_path_buf(),
+            field,
+            source,
+        })
+}
+
+fn read_ptr_slice<'a, T>(
+    path: &Path,
+    ptr: *const T,
+    len: usize,
+    field: &'static str,
+) -> Result<&'a [T], DynamicProviderLoadError> {
+    if len == 0 {
+        return Ok(&[]);
+    }
+
+    if ptr.is_null() {
+        return Err(DynamicProviderLoadError::NullField {
+            path: path.to_path_buf(),
+            field,
+        });
+    }
+
+    Ok(unsafe { std::slice::from_raw_parts(ptr, len) })
+}
+
 fn append_exports(
     dynamic_exports: &mut Vec<DynamicProviderExport>,
     dll_names: &[&str],
@@ -184,7 +430,9 @@ fn append_exports(
             Export::Func(name, func) => {
                 for dll_name in dll_names {
                     dynamic_exports.push(DynamicProviderExport {
-                        dll_name: *dll_name_ptrs.get(*dll_name).expect("missing DLL name pointer"),
+                        dll_name: *dll_name_ptrs
+                            .get(*dll_name)
+                            .expect("missing DLL name pointer"),
                         export_name: push_c_string(string_pool, name),
                         ordinal: 0,
                         kind: DynamicProviderExportKind::NamedFunction,
@@ -196,7 +444,9 @@ fn append_exports(
             Export::Ordinal(ordinal, func) => {
                 for dll_name in dll_names {
                     dynamic_exports.push(DynamicProviderExport {
-                        dll_name: *dll_name_ptrs.get(*dll_name).expect("missing DLL name pointer"),
+                        dll_name: *dll_name_ptrs
+                            .get(*dll_name)
+                            .expect("missing DLL name pointer"),
                         export_name: ptr::null(),
                         ordinal,
                         kind: DynamicProviderExportKind::OrdinalFunction,
@@ -208,7 +458,9 @@ fn append_exports(
             Export::Data(name, addr) => {
                 for dll_name in dll_names {
                     dynamic_exports.push(DynamicProviderExport {
-                        dll_name: *dll_name_ptrs.get(*dll_name).expect("missing DLL name pointer"),
+                        dll_name: *dll_name_ptrs
+                            .get(*dll_name)
+                            .expect("missing DLL name pointer"),
                         export_name: push_c_string(string_pool, name),
                         ordinal: 0,
                         kind: DynamicProviderExportKind::NamedData,
@@ -289,19 +541,27 @@ mod tests {
             .expect("provider name should be utf-8");
         assert!(provider_name.contains("DynamicTestPlugin"));
 
-        let dll_names = unsafe { std::slice::from_raw_parts(descriptor.dll_names, descriptor.dll_count) };
+        let dll_names =
+            unsafe { std::slice::from_raw_parts(descriptor.dll_names, descriptor.dll_count) };
         let dll_names = dll_names
             .iter()
-            .map(|ptr| unsafe { CStr::from_ptr(*ptr) }.to_str().expect("dll name should be utf-8"))
+            .map(|ptr| {
+                unsafe { CStr::from_ptr(*ptr) }
+                    .to_str()
+                    .expect("dll name should be utf-8")
+            })
             .collect::<Vec<_>>();
         assert_eq!(dll_names, vec!["alpha.dll", "beta.dll"]);
 
-        let exports = unsafe { std::slice::from_raw_parts(descriptor.exports, descriptor.export_count) };
+        let exports =
+            unsafe { std::slice::from_raw_parts(descriptor.exports, descriptor.export_count) };
         assert_eq!(
             exports
                 .iter()
-                .filter(|export| export.kind == DynamicProviderExportKind::NamedFunction
-                    && export.status == DynamicProviderExportStatus::Implemented)
+                .filter(
+                    |export| export.kind == DynamicProviderExportKind::NamedFunction
+                        && export.status == DynamicProviderExportStatus::Implemented
+                )
                 .count(),
             2
         );

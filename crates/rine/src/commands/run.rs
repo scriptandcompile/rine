@@ -25,7 +25,6 @@ use rine64_comdlg32::Comdlg32Plugin;
 use rine64_gdi32::Gdi32Plugin;
 use rine64_kernel32::Kernel32Plugin;
 use rine64_msvcrt::{CrtForwarderPlugin, MsvcrtPlugin};
-use rine64_ntdll::NtdllPlugin;
 use rine64_user32::User32Plugin;
 use rine64_ws2_32::Ws2_32Plugin;
 
@@ -50,6 +49,9 @@ fn emit_registry_metrics(registry: &DllRegistry) {
     ));
 }
 
+const DYNAMIC_PROVIDER_DIR_ENV: &str = "RINE_PLUGIN_DIR";
+const NTDLL_PROVIDER_LIBRARY_NAME: &str = "librine64_ntdll.so";
+
 fn set_var_if_absent(key: &str, value: &str) {
     if std::env::var_os(key).is_none() {
         // SAFETY: invoked before PE entry while runtime is still single-threaded.
@@ -60,6 +62,34 @@ fn set_var_if_absent(key: &str, value: &str) {
 fn current_thread_id() -> u32 {
     // Linux thread ID is the closest runtime identifier to Win32 thread ID.
     unsafe { libc::syscall(libc::SYS_gettid) as u32 }
+}
+
+fn resolve_ntdll_provider_path() -> Result<std::path::PathBuf, RunError> {
+    if let Some(dir) = std::env::var_os(DYNAMIC_PROVIDER_DIR_ENV) {
+        let path = std::path::PathBuf::from(dir).join(NTDLL_PROVIDER_LIBRARY_NAME);
+        if path.is_file() {
+            return Ok(path);
+        }
+
+        return Err(RunError::DynamicProviderNotFound {
+            path,
+            lookup: DYNAMIC_PROVIDER_DIR_ENV,
+        });
+    }
+
+    let exe = std::env::current_exe().map_err(RunError::CurrentExe)?;
+    let path = exe
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join(NTDLL_PROVIDER_LIBRARY_NAME);
+    if path.is_file() {
+        return Ok(path);
+    }
+
+    Err(RunError::DynamicProviderNotFound {
+        path,
+        lookup: "runtime directory",
+    })
 }
 
 /// Conditionally emits a dev event. Compiles to nothing without the `dev` feature.
@@ -340,11 +370,13 @@ pub fn run(
     );
 
     // 3. Resolve imports (write function pointers into the IAT).
+    let ntdll_provider_path = resolve_ntdll_provider_path()?;
+
     let mut registry = DllRegistry::new_lazy();
     registry.register_plugin_factory(|| Box::new(Kernel32Plugin));
     registry.register_plugin_factory(|| Box::new(MsvcrtPlugin));
     registry.register_plugin_factory(|| Box::new(CrtForwarderPlugin));
-    registry.register_plugin_factory(|| Box::new(NtdllPlugin));
+    registry.register_dynamic_provider_library(&["ntdll.dll"], &ntdll_provider_path);
     registry.register_plugin_factory(|| Box::new(Advapi32Plugin));
     registry.register_plugin_factory(|| Box::new(Gdi32Plugin));
     registry.register_plugin_factory(|| Box::new(Comdlg32Plugin));
@@ -472,6 +504,15 @@ pub enum RunError {
 
     #[error("{0}")]
     Dispatch(#[from] DispatchError),
+
+    #[error("failed to determine runtime executable path: {0}")]
+    CurrentExe(#[source] std::io::Error),
+
+    #[error("dynamic provider not found at {path} ({lookup})")]
+    DynamicProviderNotFound {
+        path: std::path::PathBuf,
+        lookup: &'static str,
+    },
 
     #[error("{0}")]
     Pe(#[from] PeError),

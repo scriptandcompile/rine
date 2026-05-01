@@ -2,9 +2,14 @@
 //! to Rust function pointers that implement the corresponding Windows API.
 
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 
+use crate::dynamic_provider::{
+    DynamicProviderExportKind, DynamicProviderExportStatus, LoadedDynamicProviderLibrary,
+    ResolvedDynamicExport, ResolvedDynamicProvider,
+};
 use crate::{DllPlugin, Export, PartialExport, StubExport};
 
 /// A function pointer stored in the registry, castable to the appropriate signature.
@@ -26,12 +31,19 @@ pub type WinApiFunc = unsafe extern "C" fn();
 pub struct DllRegistry {
     /// Map from lowercase DLL name → per-DLL function table.
     dlls: RwLock<HashMap<String, DllModule>>,
-    /// Map from lowercase DLL name -> lazy plugin factory.
-    factories: HashMap<String, DllFactory>,
+    /// Map from lowercase DLL name -> lazy provider factory.
+    factories: HashMap<String, ProviderFactory>,
+    dynamic_libraries: RwLock<Vec<LoadedDynamicProviderLibrary>>,
     metrics: RegistryCounters,
 }
 
 type DllFactory = Arc<dyn Fn() -> Box<dyn DllPlugin> + Send + Sync + 'static>;
+
+#[derive(Clone)]
+enum ProviderFactory {
+    Static(DllFactory),
+    Dynamic(Arc<PathBuf>),
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DllRegistryMetrics {
@@ -118,6 +130,7 @@ impl DllRegistry {
         Self {
             dlls: RwLock::new(HashMap::new()),
             factories: HashMap::new(),
+            dynamic_libraries: RwLock::new(Vec::new()),
             metrics: RegistryCounters::default(),
         }
     }
@@ -141,7 +154,22 @@ impl DllRegistry {
         };
 
         for name in names {
-            self.factories.insert(name, Arc::clone(&factory));
+            self.factories
+                .insert(name, ProviderFactory::Static(Arc::clone(&factory)));
+        }
+    }
+
+    /// Register a lazily loaded dynamic provider library for specific DLL names.
+    pub fn register_dynamic_provider_library<P>(&mut self, dll_names: &[&str], library_path: P)
+    where
+        P: AsRef<Path>,
+    {
+        let library_path = Arc::new(library_path.as_ref().to_path_buf());
+        for dll_name in dll_names {
+            self.factories.insert(
+                normalize_dll_name(dll_name),
+                ProviderFactory::Dynamic(Arc::clone(&library_path)),
+            );
         }
     }
 
@@ -275,6 +303,52 @@ impl DllRegistry {
         dlls.insert(key, module);
     }
 
+    fn insert_dynamic_provider(&self, provider: &ResolvedDynamicProvider) {
+        let mut modules = provider
+            .dll_names
+            .iter()
+            .map(|dll_name| (normalize_dll_name(dll_name), DllModule::new()))
+            .collect::<HashMap<_, _>>();
+
+        for export in &provider.exports {
+            let normalized_dll_name = normalize_dll_name(&export.dll_name);
+            let module = modules
+                .entry(normalized_dll_name)
+                .or_insert_with(DllModule::new);
+            let target = dynamic_export_target(export);
+
+            match export.kind {
+                DynamicProviderExportKind::NamedFunction | DynamicProviderExportKind::NamedData => {
+                    let Some(name) = export.export_name.as_deref() else {
+                        continue;
+                    };
+                    let name = Box::leak(name.to_owned().into_boxed_str());
+                    module.by_name.insert(name, target);
+                    match export.status {
+                        DynamicProviderExportStatus::Implemented => {}
+                        DynamicProviderExportStatus::Partial => {
+                            module.partial_names.insert(name);
+                        }
+                        DynamicProviderExportStatus::Stub => {
+                            module.stub_names.insert(name);
+                        }
+                    }
+                }
+                DynamicProviderExportKind::OrdinalFunction => {
+                    module.by_ordinal.insert(export.ordinal, target);
+                }
+            }
+        }
+
+        let mut dlls = self
+            .dlls
+            .write()
+            .expect("dll registry write lock poisoned while inserting dynamic provider modules");
+        for (dll_name, module) in modules {
+            dlls.insert(dll_name, module);
+        }
+    }
+
     fn ensure_dll_loaded(&self, normalized_dll_name: &str) {
         {
             let dlls = self
@@ -291,21 +365,69 @@ impl DllRegistry {
             return;
         };
 
-        let plugin = factory();
-        let exports = plugin.exports();
-        let stubs = plugin.stubs();
-        let partials = plugin.partials();
+        match factory {
+            ProviderFactory::Static(factory) => {
+                let plugin = factory();
+                let exports = plugin.exports();
+                let stubs = plugin.stubs();
+                let partials = plugin.partials();
 
-        self.insert_module_for_dll(normalized_dll_name, &exports, &stubs, &partials);
-        self.metrics.lazy_loads.fetch_add(1, Ordering::Relaxed);
+                self.insert_module_for_dll(normalized_dll_name, &exports, &stubs, &partials);
+                self.metrics.lazy_loads.fetch_add(1, Ordering::Relaxed);
 
-        tracing::debug!(
-            dll = normalized_dll_name,
-            exports = exports.len(),
-            stubs = stubs.len(),
-            partials = partials.len(),
-            "loaded DLL plugin on demand"
-        );
+                tracing::debug!(
+                    dll = normalized_dll_name,
+                    exports = exports.len(),
+                    stubs = stubs.len(),
+                    partials = partials.len(),
+                    "loaded DLL plugin on demand"
+                );
+            }
+            ProviderFactory::Dynamic(path) => {
+                let result = unsafe { LoadedDynamicProviderLibrary::open(path.as_ref()) };
+                match result {
+                    Ok(provider) => {
+                        let provider_name = provider.resolved.provider_name.clone();
+                        let export_count = provider.resolved.exports.len();
+                        self.insert_dynamic_provider(&provider.resolved);
+                        self.dynamic_libraries
+                            .write()
+                            .expect(
+                                "dll registry write lock poisoned while storing dynamic library",
+                            )
+                            .push(provider);
+                        self.metrics.lazy_loads.fetch_add(1, Ordering::Relaxed);
+
+                        tracing::debug!(
+                            dll = normalized_dll_name,
+                            provider = provider_name,
+                            path = %path.display(),
+                            exports = export_count,
+                            "loaded dynamic DLL provider on demand"
+                        );
+                    }
+                    Err(error) => {
+                        tracing::error!(
+                            dll = normalized_dll_name,
+                            path = %path.display(),
+                            error = %error,
+                            "failed to load dynamic DLL provider"
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn dynamic_export_target(export: &ResolvedDynamicExport) -> WinApiFunc {
+    match export.kind {
+        DynamicProviderExportKind::NamedData => unsafe {
+            core::mem::transmute::<*const (), WinApiFunc>(export.target)
+        },
+        DynamicProviderExportKind::NamedFunction | DynamicProviderExportKind::OrdinalFunction => unsafe {
+            core::mem::transmute::<*const (), WinApiFunc>(export.target)
+        },
     }
 }
 
@@ -376,6 +498,7 @@ unsafe extern "C" fn stub_function() {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     use super::*;
@@ -507,6 +630,20 @@ mod tests {
 
         assert!(matches!(
             reg.resolve_by_name("missing.dll", "Anything"),
+            LookupResult::Unimplemented(_)
+        ));
+    }
+
+    #[test]
+    fn dynamic_provider_missing_library_keeps_stub_fallback() {
+        let mut reg = DllRegistry::new_lazy();
+        reg.register_dynamic_provider_library(
+            &["dynamic-missing.dll"],
+            Path::new("/definitely/missing/librine_missing_provider.so"),
+        );
+
+        assert!(matches!(
+            reg.resolve_by_name("dynamic-missing.dll", "Anything"),
             LookupResult::Unimplemented(_)
         ));
     }
