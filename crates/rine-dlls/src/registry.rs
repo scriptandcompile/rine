@@ -2,6 +2,7 @@
 //! to Rust function pointers that implement the corresponding Windows API.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 
 use crate::{DllPlugin, Export, PartialExport, StubExport};
@@ -27,9 +28,41 @@ pub struct DllRegistry {
     dlls: RwLock<HashMap<String, DllModule>>,
     /// Map from lowercase DLL name -> lazy plugin factory.
     factories: HashMap<String, DllFactory>,
+    metrics: RegistryCounters,
 }
 
 type DllFactory = Arc<dyn Fn() -> Box<dyn DllPlugin> + Send + Sync + 'static>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DllRegistryMetrics {
+    pub registered_dlls: usize,
+    pub loaded_dlls: usize,
+    pub name_lookups: usize,
+    pub ordinal_lookups: usize,
+    pub lazy_loads: usize,
+    pub cache_hits: usize,
+}
+
+#[derive(Default)]
+struct RegistryCounters {
+    name_lookups: AtomicUsize,
+    ordinal_lookups: AtomicUsize,
+    lazy_loads: AtomicUsize,
+    cache_hits: AtomicUsize,
+}
+
+impl RegistryCounters {
+    fn snapshot(&self, registered_dlls: usize, loaded_dlls: usize) -> DllRegistryMetrics {
+        DllRegistryMetrics {
+            registered_dlls,
+            loaded_dlls,
+            name_lookups: self.name_lookups.load(Ordering::Relaxed),
+            ordinal_lookups: self.ordinal_lookups.load(Ordering::Relaxed),
+            lazy_loads: self.lazy_loads.load(Ordering::Relaxed),
+            cache_hits: self.cache_hits.load(Ordering::Relaxed),
+        }
+    }
+}
 
 /// A single reimplemented DLL module with its exported functions.
 struct DllModule {
@@ -85,6 +118,7 @@ impl DllRegistry {
         Self {
             dlls: RwLock::new(HashMap::new()),
             factories: HashMap::new(),
+            metrics: RegistryCounters::default(),
         }
     }
 
@@ -144,6 +178,7 @@ impl DllRegistry {
 
     /// Look up a function by DLL name and function name.
     pub fn resolve_by_name(&self, dll: &str, name: &str) -> LookupResult {
+        self.metrics.name_lookups.fetch_add(1, Ordering::Relaxed);
         let key = normalize_dll_name(dll);
         self.ensure_dll_loaded(&key);
 
@@ -167,6 +202,7 @@ impl DllRegistry {
 
     /// Look up a function by DLL name and ordinal number.
     pub fn resolve_by_ordinal(&self, dll: &str, ordinal: u16) -> LookupResult {
+        self.metrics.ordinal_lookups.fetch_add(1, Ordering::Relaxed);
         let key = normalize_dll_name(dll);
         self.ensure_dll_loaded(&key);
 
@@ -194,6 +230,17 @@ impl DllRegistry {
         names.sort_unstable();
         names.dedup();
         names
+    }
+
+    /// Return a lightweight snapshot of registry counters.
+    pub fn metrics(&self) -> DllRegistryMetrics {
+        let registered_dlls = self.known_dlls().len();
+        let loaded_dlls = self
+            .dlls
+            .read()
+            .expect("dll registry read lock poisoned in metrics")
+            .len();
+        self.metrics.snapshot(registered_dlls, loaded_dlls)
     }
 
     /// Returns true if the registry has any implementation for the given DLL.
@@ -235,6 +282,7 @@ impl DllRegistry {
                 .read()
                 .expect("dll registry read lock poisoned while checking module cache");
             if dlls.contains_key(normalized_dll_name) {
+                self.metrics.cache_hits.fetch_add(1, Ordering::Relaxed);
                 return;
             }
         }
@@ -249,6 +297,7 @@ impl DllRegistry {
         let partials = plugin.partials();
 
         self.insert_module_for_dll(normalized_dll_name, &exports, &stubs, &partials);
+        self.metrics.lazy_loads.fetch_add(1, Ordering::Relaxed);
 
         tracing::debug!(
             dll = normalized_dll_name,
@@ -426,18 +475,29 @@ mod tests {
         assert!(reg.has_dll("lazy.dll"));
         assert_eq!(LAZY_FACTORY_CALLS.load(Ordering::SeqCst), 1);
         assert_eq!(LAZY_EXPORT_CALLS.load(Ordering::SeqCst), 0);
+        assert_eq!(reg.metrics().registered_dlls, 1);
+        assert_eq!(reg.metrics().loaded_dlls, 0);
 
         assert!(matches!(
             reg.resolve_by_name("lazy.dll", "LazyFunc"),
             LookupResult::Found(_)
         ));
         assert_eq!(LAZY_EXPORT_CALLS.load(Ordering::SeqCst), 1);
+        let metrics = reg.metrics();
+        assert_eq!(metrics.name_lookups, 1);
+        assert_eq!(metrics.lazy_loads, 1);
+        assert_eq!(metrics.loaded_dlls, 1);
+        assert_eq!(metrics.cache_hits, 0);
 
         assert!(matches!(
             reg.resolve_by_name("lazy.dll", "LazyFunc"),
             LookupResult::Found(_)
         ));
         assert_eq!(LAZY_EXPORT_CALLS.load(Ordering::SeqCst), 1);
+        let metrics = reg.metrics();
+        assert_eq!(metrics.name_lookups, 2);
+        assert_eq!(metrics.lazy_loads, 1);
+        assert_eq!(metrics.cache_hits, 1);
     }
 
     #[test]

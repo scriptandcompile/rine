@@ -28,6 +28,20 @@ use rine32_user32::User32Plugin32;
 use thiserror::Error;
 use tracing::{error, info, warn};
 
+fn emit_registry_metrics(registry: &DllRegistry) {
+    let metrics = registry.metrics();
+    rine_types::dev_notify!(on_dll_registry_metrics(
+        rine_types::dev_hooks::DllRegistryMetricsTelemetry {
+            registered_dlls: metrics.registered_dlls,
+            loaded_dlls: metrics.loaded_dlls,
+            name_lookups: metrics.name_lookups,
+            ordinal_lookups: metrics.ordinal_lookups,
+            lazy_loads: metrics.lazy_loads,
+            cache_hits: metrics.cache_hits,
+        }
+    ));
+}
+
 const IMAGE_FILE_MACHINE_I386: u16 = 0x014c;
 
 #[cfg(target_arch = "x86")]
@@ -191,6 +205,7 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     registry.register_plugin_factory(|| Box::new(MsvcrtPlugin32));
     registry.register_plugin_factory(|| Box::new(CrtForwarderPlugin32));
     registry.register_plugin_factory(|| Box::new(NtdllPlugin32));
+    emit_registry_metrics(&registry);
 
     info!(
         exe = %resolved.display(),
@@ -215,6 +230,7 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     let report = match resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry) {
         Ok(report) => report,
         Err(ResolverError::UnimplementedImports { imports, report }) => {
+            emit_registry_metrics(&registry);
             dev_emit!(dev_bridge, imports_resolved_event(&report));
             return Err(Run32Error::Resolver(ResolverError::UnimplementedImports {
                 imports,
@@ -239,6 +255,7 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     }
 
     dev_emit!(dev_bridge, imports_resolved_event(&report));
+    emit_registry_metrics(&registry);
 
     let _ = resolver::resolve_delay_imports(&image, &parsed.pe, &registry);
     image.protect(&parsed.pe)?;

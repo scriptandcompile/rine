@@ -1,11 +1,10 @@
 /* Cards grid */
 .cards {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 .card {
-  flex: 1 1 0;
   min-width: 0;
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -13,7 +12,7 @@
   overflow: hidden;
 }
 .card-wide {
-  flex-basis: 100%;
+  grid-column: 1 / -1;
 }
 .card h2 {
   font-size: 12px;
@@ -82,4 +81,14 @@
 .table-wrap {
   flex: 1;
   overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .card-wide {
+    grid-column: auto;
+  }
 }

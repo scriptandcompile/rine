@@ -342,6 +342,23 @@ fn apply_event(snap: &mut StateSnapshot, event: &DevEvent) {
                 total_stubbed: *total_stubbed,
             });
         }
+        DevEvent::DllRegistryMetrics {
+            registered_dlls,
+            loaded_dlls,
+            name_lookups,
+            ordinal_lookups,
+            lazy_loads,
+            cache_hits,
+        } => {
+            snap.dll_registry_metrics = Some(rine_dev_lib::DllRegistryMetricsInfo {
+                registered_dlls: *registered_dlls,
+                loaded_dlls: *loaded_dlls,
+                name_lookups: *name_lookups,
+                ordinal_lookups: *ordinal_lookups,
+                lazy_loads: *lazy_loads,
+                cache_hits: *cache_hits,
+            });
+        }
         DevEvent::ProcessExited { exit_code } => {
             snap.exited = Some(*exit_code);
         }

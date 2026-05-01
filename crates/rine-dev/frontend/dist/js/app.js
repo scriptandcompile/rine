@@ -15,6 +15,7 @@ let state = {
   pe: null,
   config: null,
   imports: null,
+  dll_registry_metrics: null,
   exited: null,
   exitCode: null,
   stdout: '',
@@ -107,6 +108,20 @@ function renderImportSummary(imp) {
   renderImportTable(imp);
 }
 
+function renderRegistryMetrics(metrics) {
+  const el = document.getElementById('registry-metrics');
+  const totalLookups = metrics.name_lookups + metrics.ordinal_lookups;
+  el.innerHTML = [
+    kv('Registered DLLs', metrics.registered_dlls),
+    kv('Loaded DLLs', metrics.loaded_dlls),
+    kv('Lazy Loads', metrics.lazy_loads),
+    kv('Cache Hits', metrics.cache_hits),
+    kv('Name Lookups', metrics.name_lookups),
+    kv('Ordinal Lookups', metrics.ordinal_lookups),
+    kv('Total Lookups', totalLookups),
+  ].join('');
+}
+
 function renderSections(sections) {
   const el = document.getElementById('sections-info');
   let html = '<table class="sections-table"><thead><tr>' +
@@ -140,6 +155,9 @@ function addEventEntry(event) {
       break;
     case 'ImportsResolved':
       detail = `resolved=${event.total_resolved}  stubbed=${event.total_stubbed}`;
+      break;
+    case 'DllRegistryMetrics':
+      detail = `registered=${event.registered_dlls}  loaded=${event.loaded_dlls}  lazy_loads=${event.lazy_loads}  cache_hits=${event.cache_hits}  lookups=${event.name_lookups + event.ordinal_lookups}`;
       break;
     case 'ProcessExited':
       detail = `exit_code=${event.exit_code}`;
@@ -211,7 +229,12 @@ function updateStatusBar() {
     document.getElementById('stat-imports').textContent =
       `Imports: ${state.imports.total_resolved} resolved, ${state.imports.total_stubbed} stubbed`;
   }
-  if (state.pe) {
+  if (state.dll_registry_metrics) {
+    document.getElementById('stat-sections').textContent =
+      state.pe
+        ? `Sections: ${state.pe.sections.length}  DLLs: ${state.dll_registry_metrics.loaded_dlls}/${state.dll_registry_metrics.registered_dlls} loaded`
+        : `DLLs: ${state.dll_registry_metrics.loaded_dlls}/${state.dll_registry_metrics.registered_dlls} loaded`;
+  } else if (state.pe) {
     document.getElementById('stat-sections').textContent =
       `Sections: ${state.pe.sections.length}`;
   }
@@ -275,6 +298,10 @@ function handleEvent(event) {
     case 'ImportsResolved':
       state.imports = event;
       renderImportSummary(event);
+      break;
+    case 'DllRegistryMetrics':
+      state.dll_registry_metrics = event;
+      renderRegistryMetrics(event);
       break;
     case 'ProcessExited':
       state.exited = true;
@@ -408,6 +435,10 @@ invoke('get_state').then(snap => {
   if (snap.pe) { state.pe = snap.pe; renderPeInfo(snap.pe); renderSections(snap.pe.sections); }
   if (snap.config) { state.config = snap.config; renderConfigInfo(snap.config); }
   if (snap.imports) { state.imports = snap.imports; renderImportSummary(snap.imports); }
+  if (snap.dll_registry_metrics) {
+    state.dll_registry_metrics = snap.dll_registry_metrics;
+    renderRegistryMetrics(snap.dll_registry_metrics);
+  }
   if (snap.exited != null) {
     state.exited = true;
     state.exitCode = snap.exited === -1 ? null : snap.exited;

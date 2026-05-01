@@ -28,6 +28,17 @@ pub struct DialogResultTelemetry<'a> {
     pub selected_path: Option<&'a str>,
 }
 
+/// Telemetry payload for DLL registry counters.
+#[derive(Debug, Clone, Copy)]
+pub struct DllRegistryMetricsTelemetry {
+    pub registered_dlls: usize,
+    pub loaded_dlls: usize,
+    pub name_lookups: usize,
+    pub ordinal_lookups: usize,
+    pub lazy_loads: usize,
+    pub cache_hits: usize,
+}
+
 /// Trait implemented by the dev-channel bridge in `rine`.
 ///
 /// All methods take `&self` — implementations must use interior
@@ -53,6 +64,8 @@ pub trait DevHook: Send + Sync {
     fn on_dialog_opened(&self, opened: DialogOpenTelemetry<'_>);
     /// A common-dialog API call completed.
     fn on_dialog_result(&self, result: DialogResultTelemetry<'_>);
+    /// A DLL registry metrics snapshot is available.
+    fn on_dll_registry_metrics(&self, _metrics: DllRegistryMetricsTelemetry) {}
     /// The process is about to exit.  Implementations should flush any
     /// buffered events and shut down the channel.
     fn on_process_exiting(&self, exit_code: i32);

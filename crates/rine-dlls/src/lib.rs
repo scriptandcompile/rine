@@ -6,7 +6,7 @@
 
 mod registry;
 
-pub use registry::{DllRegistry, LookupResult, WinApiFunc};
+pub use registry::{DllRegistry, DllRegistryMetrics, LookupResult, WinApiFunc};
 pub use rine_dll_attrs::{data_export, dll, implemented, ordinal, partial, stubbed};
 
 /// A function pointer stored in the registry, castable to the appropriate

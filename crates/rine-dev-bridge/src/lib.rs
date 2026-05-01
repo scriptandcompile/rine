@@ -5,7 +5,9 @@ use std::sync::{Arc, Mutex};
 use rine_channel::{DevEvent, DevSender, DllSummary, SectionInfo};
 use rine_runtime_core::loader::{memory::LoadedImage, resolver::ResolutionReport};
 use rine_runtime_core::pe::parser::{ParsedPe, PeFormat};
-use rine_types::dev_hooks::{self, DevHook, DialogOpenTelemetry, DialogResultTelemetry};
+use rine_types::dev_hooks::{
+    self, DevHook, DialogOpenTelemetry, DialogResultTelemetry, DllRegistryMetricsTelemetry,
+};
 use tracing::{info, warn};
 
 pub trait DevEventSink: Send + Sync {
@@ -180,6 +182,17 @@ impl DevHook for ChannelDevHook {
             success: result.success,
             error_code: result.error_code,
             selected_path: result.selected_path.map(str::to_owned),
+        });
+    }
+
+    fn on_dll_registry_metrics(&self, metrics: DllRegistryMetricsTelemetry) {
+        self.bridge.send_event(DevEvent::DllRegistryMetrics {
+            registered_dlls: metrics.registered_dlls,
+            loaded_dlls: metrics.loaded_dlls,
+            name_lookups: metrics.name_lookups,
+            ordinal_lookups: metrics.ordinal_lookups,
+            lazy_loads: metrics.lazy_loads,
+            cache_hits: metrics.cache_hits,
         });
     }
 

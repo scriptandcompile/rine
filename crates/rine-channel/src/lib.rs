@@ -33,6 +33,14 @@ pub enum DevEvent {
         total_resolved: usize,
         total_stubbed: usize,
     },
+    DllRegistryMetrics {
+        registered_dlls: usize,
+        loaded_dlls: usize,
+        name_lookups: usize,
+        ordinal_lookups: usize,
+        lazy_loads: usize,
+        cache_hits: usize,
+    },
     // ── Handle & thread tracking ───────────────────────
     HandleCreated {
         handle: i64,

@@ -6,6 +6,7 @@ pub struct StateSnapshot {
     pub pe: Option<PeInfo>,
     pub config: Option<ConfigInfo>,
     pub imports: Option<ImportsInfo>,
+    pub dll_registry_metrics: Option<DllRegistryMetricsInfo>,
     pub handles: Vec<HandleInfo>,
     pub threads: Vec<ThreadInfo>,
     pub tls_slots: Vec<u32>,
@@ -44,6 +45,16 @@ pub struct ImportsInfo {
     pub summaries: Vec<rine_channel::DllSummary>,
     pub total_resolved: usize,
     pub total_stubbed: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DllRegistryMetricsInfo {
+    pub registered_dlls: usize,
+    pub loaded_dlls: usize,
+    pub name_lookups: usize,
+    pub ordinal_lookups: usize,
+    pub lazy_loads: usize,
+    pub cache_hits: usize,
 }
 
 /// A tracked handle (open or closed).

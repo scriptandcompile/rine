@@ -36,6 +36,20 @@ use crate::config::manager::ConfigManager;
 use crate::pe::probe::{PeArchitecture, ProbeError, detect_architecture};
 use crate::subsys;
 
+fn emit_registry_metrics(registry: &DllRegistry) {
+    let metrics = registry.metrics();
+    rine_types::dev_notify!(on_dll_registry_metrics(
+        rine_types::dev_hooks::DllRegistryMetricsTelemetry {
+            registered_dlls: metrics.registered_dlls,
+            loaded_dlls: metrics.loaded_dlls,
+            name_lookups: metrics.name_lookups,
+            ordinal_lookups: metrics.ordinal_lookups,
+            lazy_loads: metrics.lazy_loads,
+            cache_hits: metrics.cache_hits,
+        }
+    ));
+}
+
 fn set_var_if_absent(key: &str, value: &str) {
     if std::env::var_os(key).is_none() {
         // SAFETY: invoked before PE entry while runtime is still single-threaded.
@@ -336,9 +350,11 @@ pub fn run(
     registry.register_plugin_factory(|| Box::new(Comdlg32Plugin));
     registry.register_plugin_factory(|| Box::new(User32Plugin));
     registry.register_plugin_factory(|| Box::new(Ws2_32Plugin));
+    emit_registry_metrics(&registry);
     let report = match resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry) {
         Ok(report) => report,
         Err(resolver::ResolverError::UnimplementedImports { imports, report }) => {
+            emit_registry_metrics(&registry);
             dev_emit!(_dev_channel, imports_resolved_event(&report));
             return Err(RunError::Resolver(
                 resolver::ResolverError::UnimplementedImports { imports, report },
@@ -362,6 +378,7 @@ pub fn run(
     }
 
     dev_emit!(_dev_channel, imports_resolved_event(&report));
+    emit_registry_metrics(&registry);
 
     // Also attempt delay-load imports (currently just warns if present).
     let _ = resolver::resolve_delay_imports(&image, &parsed.pe, &registry);
