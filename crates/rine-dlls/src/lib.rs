@@ -44,8 +44,8 @@ pub struct PartialExport {
 
 /// Trait implemented by each DLL crate to declare its exports.
 ///
-/// The registry calls [`exports()`](DllPlugin::exports) once at startup to
-/// collect all function/data pointers into the lookup tables.
+/// Depending on registry mode, [`exports()`](DllPlugin::exports) may be
+/// called eagerly at startup or lazily on first lookup for a DLL.
 pub trait DllPlugin {
     /// The canonical DLL name(s) this plugin provides, including the `.dll`
     /// suffix. e.g. `&["kernel32.dll"]` or `&["msvcrt.dll", "api-ms-win-crt-runtime-l1-1-0.dll"]`.

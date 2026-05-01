@@ -2,8 +2,9 @@
 //! to Rust function pointers that implement the corresponding Windows API.
 
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
-use crate::{DllPlugin, Export};
+use crate::{DllPlugin, Export, PartialExport, StubExport};
 
 /// A function pointer stored in the registry, castable to the appropriate signature.
 ///
@@ -23,8 +24,12 @@ pub type WinApiFunc = unsafe extern "C" fn();
 /// (Windows API names are case-sensitive).
 pub struct DllRegistry {
     /// Map from lowercase DLL name → per-DLL function table.
-    dlls: HashMap<String, DllModule>,
+    dlls: RwLock<HashMap<String, DllModule>>,
+    /// Map from lowercase DLL name -> lazy plugin factory.
+    factories: HashMap<String, DllFactory>,
 }
+
+type DllFactory = Arc<dyn Fn() -> Box<dyn DllPlugin> + Send + Sync + 'static>;
 
 /// A single reimplemented DLL module with its exported functions.
 struct DllModule {
@@ -75,6 +80,37 @@ impl LookupResult {
 }
 
 impl DllRegistry {
+    /// Create an empty registry that can be populated lazily via plugin factories.
+    pub fn new_lazy() -> Self {
+        Self {
+            dlls: RwLock::new(HashMap::new()),
+            factories: HashMap::new(),
+        }
+    }
+
+    /// Register a plugin factory for all DLL names declared by the plugin.
+    ///
+    /// The factory is called on first lookup of a DLL name, and the resulting
+    /// module is cached for subsequent lookups.
+    pub fn register_plugin_factory<F>(&mut self, factory: F)
+    where
+        F: Fn() -> Box<dyn DllPlugin> + Send + Sync + 'static,
+    {
+        let factory: DllFactory = Arc::new(factory);
+        let names = {
+            let plugin = factory();
+            plugin
+                .dll_names()
+                .iter()
+                .map(|name| normalize_dll_name(name))
+                .collect::<Vec<_>>()
+        };
+
+        for name in names {
+            self.factories.insert(name, Arc::clone(&factory));
+        }
+    }
+
     /// Build the registry from a set of DLL plugins.
     ///
     /// Each plugin declares which DLL name(s) it provides and returns its
@@ -82,9 +118,7 @@ impl DllRegistry {
     /// collects everything into lookup tables and tracks them separately
     /// to distinguish fully-implemented, partial, and stubbed functions.
     pub fn from_plugins(plugins: &[&dyn DllPlugin]) -> Self {
-        let mut reg = Self {
-            dlls: HashMap::new(),
-        };
+        let reg = Self::new_lazy();
 
         for plugin in plugins {
             let dll_names = plugin.dll_names();
@@ -93,41 +127,7 @@ impl DllRegistry {
             let partials = plugin.partials();
 
             for dll_name in dll_names {
-                let module = reg.get_or_create_module(dll_name);
-
-                // Register fully-implemented exports
-                for export in &exports {
-                    match export {
-                        Export::Func(name, func) => {
-                            module.by_name.insert(name, *func);
-                        }
-                        Export::Ordinal(ord, func) => {
-                            module.by_ordinal.insert(*ord, *func);
-                        }
-                        Export::Data(name, addr) => {
-                            // SAFETY: data pointers are stored as WinApiFunc
-                            // for uniform IAT writing. The PE reads the raw
-                            // address, not calling it as a function.
-                            let func =
-                                unsafe { core::mem::transmute::<*const (), WinApiFunc>(*addr) };
-                            module.by_name.insert(name, func);
-                        }
-                    }
-                }
-
-                // Register stubs
-                for stub_export in &stubs {
-                    module.by_name.insert(stub_export.name, stub_export.func);
-                    module.stub_names.insert(stub_export.name);
-                }
-
-                // Register partials
-                for partial_export in &partials {
-                    module
-                        .by_name
-                        .insert(partial_export.name, partial_export.func);
-                    module.partial_names.insert(partial_export.name);
-                }
+                reg.insert_module_for_dll(dll_name, &exports, &stubs, &partials);
             }
 
             tracing::debug!(
@@ -145,7 +145,13 @@ impl DllRegistry {
     /// Look up a function by DLL name and function name.
     pub fn resolve_by_name(&self, dll: &str, name: &str) -> LookupResult {
         let key = normalize_dll_name(dll);
-        if let Some(module) = self.dlls.get(key.as_str())
+        self.ensure_dll_loaded(&key);
+
+        let dlls = self
+            .dlls
+            .read()
+            .expect("dll registry read lock poisoned in resolve_by_name");
+        if let Some(module) = dlls.get(key.as_str())
             && let Some(&func) = module.by_name.get(name)
         {
             if module.stub_names.contains(name) {
@@ -162,7 +168,13 @@ impl DllRegistry {
     /// Look up a function by DLL name and ordinal number.
     pub fn resolve_by_ordinal(&self, dll: &str, ordinal: u16) -> LookupResult {
         let key = normalize_dll_name(dll);
-        if let Some(module) = self.dlls.get(key.as_str())
+        self.ensure_dll_loaded(&key);
+
+        let dlls = self
+            .dlls
+            .read()
+            .expect("dll registry read lock poisoned in resolve_by_ordinal");
+        if let Some(module) = dlls.get(key.as_str())
             && let Some(&func) = module.by_ordinal.get(&ordinal)
         {
             return LookupResult::Found(func);
@@ -171,19 +183,120 @@ impl DllRegistry {
     }
 
     /// Returns the list of DLL names this registry knows about.
-    pub fn known_dlls(&self) -> Vec<&str> {
-        self.dlls.keys().map(|s| s.as_str()).collect()
+    pub fn known_dlls(&self) -> Vec<String> {
+        let mut names = self.factories.keys().cloned().collect::<Vec<_>>();
+
+        let dlls = self
+            .dlls
+            .read()
+            .expect("dll registry read lock poisoned in known_dlls");
+        names.extend(dlls.keys().cloned());
+        names.sort_unstable();
+        names.dedup();
+        names
     }
 
     /// Returns true if the registry has any implementation for the given DLL.
     pub fn has_dll(&self, dll: &str) -> bool {
         let key = normalize_dll_name(dll);
-        self.dlls.contains_key(key.as_str())
+        if self.factories.contains_key(key.as_str()) {
+            return true;
+        }
+
+        let dlls = self
+            .dlls
+            .read()
+            .expect("dll registry read lock poisoned in has_dll");
+        dlls.contains_key(key.as_str())
     }
 
-    fn get_or_create_module(&mut self, dll_name: &str) -> &mut DllModule {
+    fn insert_module_for_dll(
+        &self,
+        dll_name: &str,
+        exports: &[Export],
+        stubs: &[StubExport],
+        partials: &[PartialExport],
+    ) {
         let key = normalize_dll_name(dll_name);
-        self.dlls.entry(key).or_insert_with(DllModule::new)
+        let mut module = DllModule::new();
+        populate_module(&mut module, exports, stubs, partials);
+
+        let mut dlls = self
+            .dlls
+            .write()
+            .expect("dll registry write lock poisoned while inserting module");
+        dlls.insert(key, module);
+    }
+
+    fn ensure_dll_loaded(&self, normalized_dll_name: &str) {
+        {
+            let dlls = self
+                .dlls
+                .read()
+                .expect("dll registry read lock poisoned while checking module cache");
+            if dlls.contains_key(normalized_dll_name) {
+                return;
+            }
+        }
+
+        let Some(factory) = self.factories.get(normalized_dll_name).cloned() else {
+            return;
+        };
+
+        let plugin = factory();
+        let exports = plugin.exports();
+        let stubs = plugin.stubs();
+        let partials = plugin.partials();
+
+        self.insert_module_for_dll(normalized_dll_name, &exports, &stubs, &partials);
+
+        tracing::debug!(
+            dll = normalized_dll_name,
+            exports = exports.len(),
+            stubs = stubs.len(),
+            partials = partials.len(),
+            "loaded DLL plugin on demand"
+        );
+    }
+}
+
+fn populate_module(
+    module: &mut DllModule,
+    exports: &[Export],
+    stubs: &[StubExport],
+    partials: &[PartialExport],
+) {
+    // Register fully-implemented exports.
+    for export in exports {
+        match export {
+            Export::Func(name, func) => {
+                module.by_name.insert(name, *func);
+            }
+            Export::Ordinal(ord, func) => {
+                module.by_ordinal.insert(*ord, *func);
+            }
+            Export::Data(name, addr) => {
+                // SAFETY: data pointers are stored as WinApiFunc for
+                // uniform IAT writing. The PE reads the raw address and
+                // does not call it as a function.
+                let func = unsafe { core::mem::transmute::<*const (), WinApiFunc>(*addr) };
+                module.by_name.insert(name, func);
+            }
+        }
+    }
+
+    // Register stubs.
+    for stub_export in stubs {
+        module.by_name.insert(stub_export.name, stub_export.func);
+        module.stub_names.insert(stub_export.name);
+    }
+
+    // Register partials.
+    for partial_export in partials {
+        module
+            .by_name
+            .insert(partial_export.name, partial_export.func);
+        module.partial_names.insert(partial_export.name);
     }
 }
 
@@ -214,10 +327,23 @@ unsafe extern "C" fn stub_function() {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
     use super::*;
     use crate::Export;
 
     struct TestPlugin;
+
+    #[cfg(target_arch = "x86_64")]
+    unsafe extern "win64" fn lazy_fake_func() {}
+
+    #[cfg(not(target_arch = "x86_64"))]
+    unsafe extern "C" fn lazy_fake_func() {}
+
+    static LAZY_FACTORY_CALLS: AtomicUsize = AtomicUsize::new(0);
+    static LAZY_EXPORT_CALLS: AtomicUsize = AtomicUsize::new(0);
+
+    struct LazyTestPlugin;
 
     impl DllPlugin for TestPlugin {
         fn dll_names(&self) -> &[&str] {
@@ -235,6 +361,17 @@ mod tests {
                 Export::Func("TestFunc", fake_func),
                 Export::Ordinal(42, fake_func),
             ]
+        }
+    }
+
+    impl DllPlugin for LazyTestPlugin {
+        fn dll_names(&self) -> &[&str] {
+            &["lazy.dll"]
+        }
+
+        fn exports(&self) -> Vec<Export> {
+            LAZY_EXPORT_CALLS.fetch_add(1, Ordering::SeqCst);
+            vec![Export::Func("LazyFunc", lazy_fake_func)]
         }
     }
 
@@ -271,6 +408,45 @@ mod tests {
         assert!(!reg.has_dll("imaginary.dll"));
         assert!(matches!(
             reg.resolve_by_name("imaginary.dll", "Foo"),
+            LookupResult::Unimplemented(_)
+        ));
+    }
+
+    #[test]
+    fn lazy_factory_loads_on_first_hit_and_caches() {
+        LAZY_FACTORY_CALLS.store(0, Ordering::SeqCst);
+        LAZY_EXPORT_CALLS.store(0, Ordering::SeqCst);
+
+        let mut reg = DllRegistry::new_lazy();
+        reg.register_plugin_factory(|| {
+            LAZY_FACTORY_CALLS.fetch_add(1, Ordering::SeqCst);
+            Box::new(LazyTestPlugin)
+        });
+
+        assert!(reg.has_dll("lazy.dll"));
+        assert_eq!(LAZY_FACTORY_CALLS.load(Ordering::SeqCst), 1);
+        assert_eq!(LAZY_EXPORT_CALLS.load(Ordering::SeqCst), 0);
+
+        assert!(matches!(
+            reg.resolve_by_name("lazy.dll", "LazyFunc"),
+            LookupResult::Found(_)
+        ));
+        assert_eq!(LAZY_EXPORT_CALLS.load(Ordering::SeqCst), 1);
+
+        assert!(matches!(
+            reg.resolve_by_name("lazy.dll", "LazyFunc"),
+            LookupResult::Found(_)
+        ));
+        assert_eq!(LAZY_EXPORT_CALLS.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn lazy_unknown_dll_still_falls_back_to_unimplemented() {
+        let mut reg = DllRegistry::new_lazy();
+        reg.register_plugin_factory(|| Box::new(LazyTestPlugin));
+
+        assert!(matches!(
+            reg.resolve_by_name("missing.dll", "Anything"),
             LookupResult::Unimplemented(_)
         ));
     }

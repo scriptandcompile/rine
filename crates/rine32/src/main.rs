@@ -182,16 +182,15 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
 
     apply_dialog_policy_env(&app_config);
 
-    let registry = DllRegistry::from_plugins(&[
-        &Kernel32Plugin32,
-        &Advapi32Plugin32,
-        &Comdlg32Plugin32,
-        &Gdi32Plugin32,
-        &User32Plugin32,
-        &MsvcrtPlugin32,
-        &CrtForwarderPlugin32,
-        &NtdllPlugin32,
-    ]);
+    let mut registry = DllRegistry::new_lazy();
+    registry.register_plugin_factory(|| Box::new(Kernel32Plugin32));
+    registry.register_plugin_factory(|| Box::new(Advapi32Plugin32));
+    registry.register_plugin_factory(|| Box::new(Comdlg32Plugin32));
+    registry.register_plugin_factory(|| Box::new(Gdi32Plugin32));
+    registry.register_plugin_factory(|| Box::new(User32Plugin32));
+    registry.register_plugin_factory(|| Box::new(MsvcrtPlugin32));
+    registry.register_plugin_factory(|| Box::new(CrtForwarderPlugin32));
+    registry.register_plugin_factory(|| Box::new(NtdllPlugin32));
 
     info!(
         exe = %resolved.display(),

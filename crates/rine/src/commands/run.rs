@@ -326,17 +326,16 @@ pub fn run(
     );
 
     // 3. Resolve imports (write function pointers into the IAT).
-    let registry = DllRegistry::from_plugins(&[
-        &Kernel32Plugin,
-        &MsvcrtPlugin,
-        &CrtForwarderPlugin,
-        &NtdllPlugin,
-        &Advapi32Plugin,
-        &Gdi32Plugin,
-        &Comdlg32Plugin,
-        &User32Plugin,
-        &Ws2_32Plugin,
-    ]);
+    let mut registry = DllRegistry::new_lazy();
+    registry.register_plugin_factory(|| Box::new(Kernel32Plugin));
+    registry.register_plugin_factory(|| Box::new(MsvcrtPlugin));
+    registry.register_plugin_factory(|| Box::new(CrtForwarderPlugin));
+    registry.register_plugin_factory(|| Box::new(NtdllPlugin));
+    registry.register_plugin_factory(|| Box::new(Advapi32Plugin));
+    registry.register_plugin_factory(|| Box::new(Gdi32Plugin));
+    registry.register_plugin_factory(|| Box::new(Comdlg32Plugin));
+    registry.register_plugin_factory(|| Box::new(User32Plugin));
+    registry.register_plugin_factory(|| Box::new(Ws2_32Plugin));
     let report = match resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry) {
         Ok(report) => report,
         Err(resolver::ResolverError::UnimplementedImports { imports, report }) => {
