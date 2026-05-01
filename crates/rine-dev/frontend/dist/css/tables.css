@@ -21,7 +21,10 @@
   font-size: 12px;
 }
 .status-resolved { color: var(--success); }
-.status-stub { color: var(--danger); }
+.status-partial { color: var(--warning); }
+.status-stubbed { color: var(--text-muted); }
+.status-unimplemented { color: var(--danger); }
+.status-unknown { color: var(--text-muted); }
 
 /* Files, Threads, Mutexes, GDI & Memory tables */
 #file-table,

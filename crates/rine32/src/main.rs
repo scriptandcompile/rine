@@ -245,11 +245,17 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
         "imports resolved"
     );
     for dll in &report.dll_summaries {
-        if !dll.stubbed_names.is_empty() {
+        let non_implemented = dll
+            .imports
+            .iter()
+            .filter(|entry| !matches!(entry.kind, resolver::ImportResolutionKind::Implemented))
+            .map(|entry| format!("{}:{:?}", entry.name, entry.kind))
+            .collect::<Vec<_>>();
+        if !non_implemented.is_empty() {
             warn!(
                 dll = dll.dll_name,
-                stubs = ?dll.stubbed_names,
-                "stubbed imports"
+                imports = ?non_implemented,
+                "non-implemented imports"
             );
         }
     }

@@ -44,7 +44,9 @@ pub struct ConfigInfo {
 pub struct ImportsInfo {
     pub summaries: Vec<rine_channel::DllSummary>,
     pub total_resolved: usize,
+    pub total_partial: usize,
     pub total_stubbed: usize,
+    pub total_unimplemented: usize,
 }
 
 #[derive(Debug, Clone, Serialize)]

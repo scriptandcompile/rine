@@ -334,12 +334,16 @@ fn apply_event(snap: &mut StateSnapshot, event: &DevEvent) {
         DevEvent::ImportsResolved {
             summaries,
             total_resolved,
+            total_partial,
             total_stubbed,
+            total_unimplemented,
         } => {
             snap.imports = Some(ImportsInfo {
                 summaries: summaries.clone(),
                 total_resolved: *total_resolved,
+                total_partial: *total_partial,
                 total_stubbed: *total_stubbed,
+                total_unimplemented: *total_unimplemented,
             });
         }
         DevEvent::DllRegistryMetrics {

@@ -7,7 +7,9 @@
   margin: 8px 0;
 }
 .import-bar-resolved { background: var(--success); }
+.import-bar-partial  { background: var(--warning); }
 .import-bar-stubbed  { background: var(--danger); }
+.import-bar-unimplemented { background: color-mix(in srgb, var(--danger) 70%, black); }
 
 .import-legend {
   display: flex;
@@ -24,7 +26,9 @@
   vertical-align: middle;
 }
 .legend-resolved::before { background: var(--success); }
-.legend-stubbed::before  { background: var(--danger); }
+.legend-partial::before  { background: var(--warning); }
+.legend-stubbed::before  { background: var(--text-muted); }
+.legend-unimplemented::before { background: color-mix(in srgb, var(--danger) 70%, black); }
 
 /* Sections table */
 .sections-table {

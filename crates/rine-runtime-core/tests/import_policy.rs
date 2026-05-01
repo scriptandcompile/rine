@@ -38,8 +38,12 @@ fn resolve_imports_fails_when_unimplemented_imports_exist() {
                 "expected import summary report for dev dashboard"
             );
             assert!(
-                report.total_stubbed > 0,
-                "expected stubbed imports in report when unimplemented imports exist"
+                report.total_unimplemented > 0,
+                "expected unimplemented imports in report when unimplemented imports exist"
+            );
+            assert_eq!(
+                report.total_stubbed, 0,
+                "expected pure unimplemented imports for empty registry"
             );
         }
         other => panic!("expected UnimplementedImports error, got {other:?}"),

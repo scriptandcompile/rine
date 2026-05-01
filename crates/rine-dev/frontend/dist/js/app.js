@@ -86,21 +86,29 @@ function renderConfigInfo(cfg) {
 
 function renderImportSummary(imp) {
   const el = document.getElementById('import-summary');
-  const total = imp.total_resolved + imp.total_stubbed;
+  const total = imp.total_resolved + imp.total_partial + imp.total_stubbed + imp.total_unimplemented;
   const pctResolved = total > 0 ? (imp.total_resolved / total * 100) : 100;
-  const pctStubbed  = total > 0 ? (imp.total_stubbed / total * 100) : 0;
+  const pctPartial = total > 0 ? (imp.total_partial / total * 100) : 0;
+  const pctStubbed = total > 0 ? (imp.total_stubbed / total * 100) : 0;
+  const pctUnimplemented = total > 0 ? (imp.total_unimplemented / total * 100) : 0;
 
   el.innerHTML = [
     kv('Total', total),
-    kv('Resolved', imp.total_resolved),
+    kv('OK', imp.total_resolved),
+    kv('Partial', imp.total_partial),
     kv('Stubbed', imp.total_stubbed),
+    kv('Not Implemented', imp.total_unimplemented),
     `<div class="import-bar">`,
     `  <div class="import-bar-resolved" style="width:${pctResolved}%"></div>`,
+    `  <div class="import-bar-partial" style="width:${pctPartial}%"></div>`,
     `  <div class="import-bar-stubbed" style="width:${pctStubbed}%"></div>`,
+    `  <div class="import-bar-unimplemented" style="width:${pctUnimplemented}%"></div>`,
     `</div>`,
     `<div class="import-legend">`,
-    `  <span class="legend-resolved">Resolved (${imp.total_resolved})</span>`,
+    `  <span class="legend-resolved">OK (${imp.total_resolved})</span>`,
+    `  <span class="legend-partial">Partial (${imp.total_partial})</span>`,
     `  <span class="legend-stubbed">Stubbed (${imp.total_stubbed})</span>`,
+    `  <span class="legend-unimplemented">Not Implemented (${imp.total_unimplemented})</span>`,
     `</div>`,
   ].join('');
 
@@ -154,7 +162,7 @@ function addEventEntry(event) {
       detail = `version=${event.windows_version}  overrides=${event.environment_overrides.length}`;
       break;
     case 'ImportsResolved':
-      detail = `resolved=${event.total_resolved}  stubbed=${event.total_stubbed}`;
+      detail = `ok=${event.total_resolved}  partial=${event.total_partial}  stubbed=${event.total_stubbed}  unimplemented=${event.total_unimplemented}`;
       break;
     case 'DllRegistryMetrics':
       detail = `registered=${event.registered_dlls}  loaded=${event.loaded_dlls}  lazy_loads=${event.lazy_loads}  cache_hits=${event.cache_hits}  lookups=${event.name_lookups + event.ordinal_lookups}`;
@@ -227,7 +235,7 @@ function updateStatusBar() {
 
   if (state.imports) {
     document.getElementById('stat-imports').textContent =
-      `Imports: ${state.imports.total_resolved} resolved, ${state.imports.total_stubbed} stubbed`;
+      `Imports: ${state.imports.total_resolved} ok, ${state.imports.total_partial} partial, ${state.imports.total_stubbed} stubbed, ${state.imports.total_unimplemented} not implemented`;
   }
   if (state.dll_registry_metrics) {
     document.getElementById('stat-sections').textContent =

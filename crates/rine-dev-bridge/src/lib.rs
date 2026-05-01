@@ -2,7 +2,9 @@ use std::io;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-use rine_channel::{DevEvent, DevSender, DllSummary, SectionInfo};
+use rine_channel::{
+    DevEvent, DevSender, DllSummary, ImportResolution, ImportResolutionKind, SectionInfo,
+};
 use rine_runtime_core::loader::{memory::LoadedImage, resolver::ResolutionReport};
 use rine_runtime_core::pe::parser::{ParsedPe, PeFormat};
 use rine_types::dev_hooks::{
@@ -241,13 +243,36 @@ pub fn imports_resolved_event(report: &ResolutionReport) -> DevEvent {
             .map(|dll| DllSummary {
                 dll_name: dll.dll_name.clone(),
                 resolved: dll.resolved,
+                partial: dll.partial,
                 stubbed: dll.stubbed,
-                resolved_names: dll.resolved_names.clone(),
-                stubbed_names: dll.stubbed_names.clone(),
+                unimplemented: dll.unimplemented,
+                imports: dll
+                    .imports
+                    .iter()
+                    .map(|entry| ImportResolution {
+                        name: entry.name.clone(),
+                        kind: match entry.kind {
+                            rine_runtime_core::loader::resolver::ImportResolutionKind::Implemented => {
+                                ImportResolutionKind::Implemented
+                            }
+                            rine_runtime_core::loader::resolver::ImportResolutionKind::Partial => {
+                                ImportResolutionKind::Partial
+                            }
+                            rine_runtime_core::loader::resolver::ImportResolutionKind::Stubbed => {
+                                ImportResolutionKind::Stubbed
+                            }
+                            rine_runtime_core::loader::resolver::ImportResolutionKind::Unimplemented => {
+                                ImportResolutionKind::Unimplemented
+                            }
+                        },
+                    })
+                    .collect(),
             })
             .collect(),
         total_resolved: report.total_resolved,
+        total_partial: report.total_partial,
         total_stubbed: report.total_stubbed,
+        total_unimplemented: report.total_unimplemented,
     }
 }
 

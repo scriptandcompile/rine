@@ -33,12 +33,27 @@ pub enum ResolverError {
 
 /// Summary of import resolution for one DLL.
 #[derive(Debug, Clone)]
+pub enum ImportResolutionKind {
+    Implemented,
+    Partial,
+    Stubbed,
+    Unimplemented,
+}
+
+#[derive(Debug, Clone)]
+pub struct ImportResolutionEntry {
+    pub name: String,
+    pub kind: ImportResolutionKind,
+}
+
+#[derive(Debug, Clone)]
 pub struct DllResolutionSummary {
     pub dll_name: String,
     pub resolved: usize,
+    pub partial: usize,
     pub stubbed: usize,
-    pub resolved_names: Vec<String>,
-    pub stubbed_names: Vec<String>,
+    pub unimplemented: usize,
+    pub imports: Vec<ImportResolutionEntry>,
 }
 
 /// Summary of the entire import resolution pass.
@@ -46,7 +61,9 @@ pub struct DllResolutionSummary {
 pub struct ResolutionReport {
     pub dll_summaries: Vec<DllResolutionSummary>,
     pub total_resolved: usize,
+    pub total_partial: usize,
     pub total_stubbed: usize,
+    pub total_unimplemented: usize,
 }
 
 /// Resolve all imports in a loaded PE image, writing function pointers into the IAT.
@@ -72,7 +89,9 @@ pub fn resolve_imports(
     let mut report = ResolutionReport {
         dll_summaries: Vec::new(),
         total_resolved: 0,
+        total_partial: 0,
         total_stubbed: 0,
+        total_unimplemented: 0,
     };
     let mut unimplemented_imports = Vec::new();
 
@@ -89,9 +108,10 @@ pub fn resolve_imports(
         let mut summary = DllResolutionSummary {
             dll_name: dll_name.to_string(),
             resolved: 0,
+            partial: 0,
             stubbed: 0,
-            resolved_names: Vec::new(),
-            stubbed_names: Vec::new(),
+            unimplemented: 0,
+            imports: Vec::new(),
         };
 
         if !registry.has_dll(dll_name) {
@@ -138,7 +158,10 @@ pub fn resolve_imports(
                         "resolved import"
                     );
                     summary.resolved += 1;
-                    summary.resolved_names.push(func_name);
+                    summary.imports.push(ImportResolutionEntry {
+                        name: func_name,
+                        kind: ImportResolutionKind::Implemented,
+                    });
                     write_iat_entry(iat_slot_va, func as usize, pe_format);
                 }
                 LookupResult::Partial(func) => {
@@ -147,8 +170,11 @@ pub fn resolve_imports(
                         func = func_name,
                         "partial import implementation"
                     );
-                    summary.stubbed += 1;
-                    summary.stubbed_names.push(func_name);
+                    summary.partial += 1;
+                    summary.imports.push(ImportResolutionEntry {
+                        name: func_name,
+                        kind: ImportResolutionKind::Partial,
+                    });
                     write_iat_entry(iat_slot_va, func as usize, pe_format);
                 }
                 LookupResult::Stub(func) => {
@@ -158,7 +184,10 @@ pub fn resolve_imports(
                         "stub import implementation"
                     );
                     summary.stubbed += 1;
-                    summary.stubbed_names.push(func_name);
+                    summary.imports.push(ImportResolutionEntry {
+                        name: func_name,
+                        kind: ImportResolutionKind::Stubbed,
+                    });
                     write_iat_entry(iat_slot_va, func as usize, pe_format);
                 }
                 LookupResult::Unimplemented(func) => {
@@ -168,8 +197,11 @@ pub fn resolve_imports(
                         addr = format_args!("{iat_slot_va}"),
                         "unimplemented import"
                     );
-                    summary.stubbed += 1;
-                    summary.stubbed_names.push(func_name.clone());
+                    summary.unimplemented += 1;
+                    summary.imports.push(ImportResolutionEntry {
+                        name: func_name.clone(),
+                        kind: ImportResolutionKind::Unimplemented,
+                    });
                     unimplemented_imports.push(format!("{dll_name}!{func_name}"));
                     write_iat_entry(iat_slot_va, func as usize, pe_format);
                 }
@@ -179,12 +211,16 @@ pub fn resolve_imports(
         info!(
             dll = dll_name,
             resolved = summary.resolved,
+            partial = summary.partial,
             stubbed = summary.stubbed,
+            unimplemented = summary.unimplemented,
             "import resolution complete"
         );
 
         report.total_resolved += summary.resolved;
+        report.total_partial += summary.partial;
         report.total_stubbed += summary.stubbed;
+        report.total_unimplemented += summary.unimplemented;
         report.dll_summaries.push(summary);
     }
 
@@ -197,7 +233,9 @@ pub fn resolve_imports(
 
     info!(
         total_resolved = report.total_resolved,
+        total_partial = report.total_partial,
         total_stubbed = report.total_stubbed,
+        total_unimplemented = report.total_unimplemented,
         dlls = report.dll_summaries.len(),
         "all imports resolved"
     );
@@ -236,7 +274,9 @@ pub fn resolve_delay_imports(
     Ok(ResolutionReport {
         dll_summaries: Vec::new(),
         total_resolved: 0,
+        total_partial: 0,
         total_stubbed: 0,
+        total_unimplemented: 0,
     })
 }
 

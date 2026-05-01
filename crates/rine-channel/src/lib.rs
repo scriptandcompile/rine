@@ -31,7 +31,9 @@ pub enum DevEvent {
     ImportsResolved {
         summaries: Vec<DllSummary>,
         total_resolved: usize,
+        total_partial: usize,
         total_stubbed: usize,
+        total_unimplemented: usize,
     },
     DllRegistryMetrics {
         registered_dlls: usize,
@@ -122,10 +124,26 @@ pub struct SectionInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ImportResolutionKind {
+    Implemented,
+    Partial,
+    Stubbed,
+    Unimplemented,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImportResolution {
+    pub name: String,
+    pub kind: ImportResolutionKind,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DllSummary {
     pub dll_name: String,
     pub resolved: usize,
+    pub partial: usize,
     pub stubbed: usize,
-    pub stubbed_names: Vec<String>,
-    pub resolved_names: Vec<String>,
+    pub unimplemented: usize,
+    pub imports: Vec<ImportResolution>,
 }
