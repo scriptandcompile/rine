@@ -23,7 +23,6 @@ use rine32_comdlg32::Comdlg32Plugin32;
 use rine32_gdi32::Gdi32Plugin32;
 use rine32_kernel32::Kernel32Plugin32;
 use rine32_msvcrt::{CrtForwarderPlugin32, MsvcrtPlugin32};
-use rine32_ntdll::NtdllPlugin32;
 use rine32_user32::User32Plugin32;
 use thiserror::Error;
 use tracing::{error, info, warn};
@@ -43,6 +42,37 @@ fn emit_registry_metrics(registry: &DllRegistry) {
 }
 
 const IMAGE_FILE_MACHINE_I386: u16 = 0x014c;
+
+const DYNAMIC_PROVIDER_DIR_ENV: &str = "RINE_PLUGIN_DIR";
+const NTDLL_PROVIDER_LIBRARY_NAME: &str = "librine32_ntdll.so";
+
+fn resolve_ntdll_provider_path() -> Result<std::path::PathBuf, Run32Error> {
+    if let Some(dir) = std::env::var_os(DYNAMIC_PROVIDER_DIR_ENV) {
+        let path = std::path::PathBuf::from(dir).join(NTDLL_PROVIDER_LIBRARY_NAME);
+        if path.is_file() {
+            return Ok(path);
+        }
+
+        return Err(Run32Error::DynamicProviderNotFound {
+            path,
+            lookup: DYNAMIC_PROVIDER_DIR_ENV,
+        });
+    }
+
+    let exe = std::env::current_exe().map_err(Run32Error::CurrentExe)?;
+    let path = exe
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join(NTDLL_PROVIDER_LIBRARY_NAME);
+    if path.is_file() {
+        return Ok(path);
+    }
+
+    Err(Run32Error::DynamicProviderNotFound {
+        path,
+        lookup: "runtime directory",
+    })
+}
 
 #[cfg(target_arch = "x86")]
 #[repr(C)]
@@ -130,6 +160,15 @@ enum Run32Error {
 
     #[error("failed to initialize 32-bit thread environment block")]
     TebInit,
+
+    #[error("failed to determine runtime executable path: {0}")]
+    CurrentExe(#[source] std::io::Error),
+
+    #[error("dynamic provider not found at {path} ({lookup})")]
+    DynamicProviderNotFound {
+        path: std::path::PathBuf,
+        lookup: &'static str,
+    },
 }
 
 fn main() -> ExitCode {
@@ -204,7 +243,8 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     registry.register_plugin_factory(|| Box::new(User32Plugin32));
     registry.register_plugin_factory(|| Box::new(MsvcrtPlugin32));
     registry.register_plugin_factory(|| Box::new(CrtForwarderPlugin32));
-    registry.register_plugin_factory(|| Box::new(NtdllPlugin32));
+    let ntdll_provider_path = resolve_ntdll_provider_path()?;
+    registry.register_dynamic_provider_library(&["ntdll.dll"], &ntdll_provider_path);
     emit_registry_metrics(&registry);
 
     info!(

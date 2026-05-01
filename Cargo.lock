@@ -3882,7 +3882,6 @@ dependencies = [
  "rine32-gdi32",
  "rine32-kernel32",
  "rine32-msvcrt",
- "rine32-ntdll",
  "rine32-user32",
  "rine32-ws2_32",
  "thiserror 2.0.18",
