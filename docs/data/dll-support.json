@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T17:12:48.519163+00:00",
+  "generatedAt": "2026-05-01T18:21:27.961846+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1464,7 +1464,7 @@
     },
     {
       "name": "msvcrt.dll",
-      "functionCount": 37,
+      "functionCount": 38,
       "functions": [
         {
           "name": "__C_specific_handler",
@@ -1573,12 +1573,12 @@
         {
           "name": "__setusermatherr",
           "x64": {
-            "status": "stubbed",
+            "status": "implemented",
             "symbol": "crt_support::__setusermatherr",
             "source": "msvcrt - crt_support.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "implemented",
             "symbol": "crt_support::__setusermatherr",
             "source": "msvcrt - crt_support.rs"
           }
@@ -1893,6 +1893,19 @@
             "status": "implemented",
             "symbol": "crt_support::signal",
             "source": "msvcrt - crt_support.rs"
+          }
+        },
+        {
+          "name": "sqrt",
+          "x64": {
+            "status": "implemented",
+            "symbol": "math::sqrt",
+            "source": "msvcrt - math.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "math::sqrt",
+            "source": "msvcrt - math.rs"
           }
         },
         {
@@ -2795,17 +2808,17 @@
     }
   ],
   "totals": {
-    "functions": 211,
+    "functions": 212,
     "x64": {
-      "implemented": 84,
+      "implemented": 86,
       "partial": 89,
-      "stubbed": 38,
+      "stubbed": 37,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 84,
+      "implemented": 86,
       "partial": 89,
-      "stubbed": 38,
+      "stubbed": 37,
       "unimplemented": 0
     }
   }

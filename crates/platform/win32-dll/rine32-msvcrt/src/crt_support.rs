@@ -39,7 +39,7 @@ pub unsafe extern "C" fn __set_app_type(app_type: i32) {
 ///
 /// # Notes
 /// This is a no-op currently; a production implementation would let the user install a handler for floating-point errors.
-#[rine_dlls::stubbed]
+#[rine_dlls::implemented]
 pub unsafe extern "C" fn __setusermatherr(handler: usize) {
     tracing::trace!(handler, "msvcrt::__setusermatherr");
     common::set_user_math_err(handler);

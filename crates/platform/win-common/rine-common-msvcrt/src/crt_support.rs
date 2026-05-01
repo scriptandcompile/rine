@@ -3,7 +3,7 @@
 //! as well as shared data exports like `_commode` and `_fmode`.
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 
 static FAKE_IOB_32: LazyLock<Box<[u8; 96]>> = LazyLock::new(build_fake_iob::<96, 32>);
@@ -12,8 +12,20 @@ static CRT_LOCKS: LazyLock<Mutex<HashMap<i32, Arc<RecursiveMutex>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 static ONEXIT_HANDLERS: LazyLock<Mutex<Vec<usize>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 static ONEXIT_DRAINED: AtomicBool = AtomicBool::new(false);
+static USER_MATH_ERR_HANDLER: AtomicUsize = AtomicUsize::new(0);
 static mut APP_TYPE: LazyLock<AppType> = LazyLock::new(|| AppType::ConsoleApp);
 const AMSG_EXIT_PREFIX: &[u8] = b"\nruntime error R6";
+
+pub const CRT_DOMAIN_ERROR: i32 = 1;
+
+#[repr(C)]
+pub struct CrtMathException {
+    pub type_: i32,
+    pub name: *const i8,
+    pub arg1: f64,
+    pub arg2: f64,
+    pub retval: f64,
+}
 
 #[repr(i32)]
 pub enum AppType {
@@ -117,8 +129,36 @@ pub fn set_app_type(app_type: AppType) {
 /// Installing an invalid handler could cause undefined behavior when math errors occur.
 ///
 /// # Notes
-/// This is a no-op currently; a production implementation would let the user install a handler for floating-point errors.
-pub fn set_user_math_err(_handler: usize) {}
+/// This stores the handler pointer so future floating-point error paths can call it.
+pub fn set_user_math_err(handler: usize) {
+    USER_MATH_ERR_HANDLER.store(handler, Ordering::Release);
+}
+
+/// Invoke the user-defined math error handler, if one is set.
+///
+/// # Arguments
+/// * `exception`: A pointer to a `CrtMathException` structure containing details about the math error that occurred.
+///
+/// # Returns
+/// `true` if a user math error handler was set and invoked, `false` if no handler was set.
+/// The CRT will use the return value to determine whether the math error was handled by the user handler or if it
+/// should perform default handling.
+///
+/// # Safety
+/// This is unsafe because it calls a user-defined handler function that must follow the correct calling convention
+/// and behavior expected by the CRT.
+/// The `exception` pointer must point to a valid `CrtMathException` structure with the expected layout.
+/// Incorrect handling could cause undefined behavior when math errors occur.
+pub unsafe fn invoke_user_math_err(exception: *mut CrtMathException) -> bool {
+    let handler = USER_MATH_ERR_HANDLER.load(Ordering::Acquire);
+    if handler == 0 {
+        return false;
+    }
+
+    let callback: unsafe extern "C" fn(*mut CrtMathException) -> i32 =
+        unsafe { std::mem::transmute(handler) };
+    unsafe { callback(exception) != 0 }
+}
 
 /// Called by the CRT when a SEH exception is thrown.
 ///

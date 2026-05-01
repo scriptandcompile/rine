@@ -18,6 +18,7 @@ compile_error!(
 
 pub mod crt_init;
 pub mod crt_support;
+pub mod math;
 pub mod memory;
 pub mod stdio;
 pub mod stdlib;
