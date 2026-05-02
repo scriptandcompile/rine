@@ -525,6 +525,81 @@ mod tests {
         }
     }
 
+    fn make_minimal_descriptor(
+        abi_version: u32,
+        arch: DynamicProviderArch,
+        provider_name: *const c_char,
+    ) -> DynamicProviderDescriptor {
+        DynamicProviderDescriptor {
+            abi_version,
+            arch,
+            provider_name,
+            dll_count: 0,
+            dll_names: std::ptr::null(),
+            export_count: 0,
+            exports: std::ptr::null(),
+        }
+    }
+
+    #[test]
+    fn resolve_descriptor_rejects_wrong_abi_version() {
+        let name = c"test-provider";
+        let bad_version = DYNAMIC_PROVIDER_ABI_VERSION + 1;
+        let descriptor =
+            make_minimal_descriptor(bad_version, DynamicProviderArch::current(), name.as_ptr());
+
+        let result = unsafe { resolve_descriptor(Path::new("fake.so"), &descriptor) };
+        assert!(
+            matches!(
+                result,
+                Err(DynamicProviderLoadError::AbiVersionMismatch {
+                    expected,
+                    found,
+                    ..
+                }) if expected == DYNAMIC_PROVIDER_ABI_VERSION && found == bad_version
+            ),
+            "expected AbiVersionMismatch, got: {result:?}"
+        );
+    }
+
+    #[test]
+    fn resolve_descriptor_rejects_wrong_arch() {
+        let name = c"test-provider";
+        let wrong_arch = match DynamicProviderArch::current() {
+            DynamicProviderArch::X64 => DynamicProviderArch::X86,
+            DynamicProviderArch::X86 => DynamicProviderArch::X64,
+        };
+        let descriptor =
+            make_minimal_descriptor(DYNAMIC_PROVIDER_ABI_VERSION, wrong_arch, name.as_ptr());
+
+        let result = unsafe { resolve_descriptor(Path::new("fake.so"), &descriptor) };
+        assert!(
+            matches!(
+                result,
+                Err(DynamicProviderLoadError::ArchMismatch { found, .. }) if found == wrong_arch
+            ),
+            "expected ArchMismatch, got: {result:?}"
+        );
+    }
+
+    #[test]
+    fn resolve_descriptor_rejects_null_provider_name() {
+        let descriptor = make_minimal_descriptor(
+            DYNAMIC_PROVIDER_ABI_VERSION,
+            DynamicProviderArch::current(),
+            std::ptr::null(),
+        );
+
+        let result = unsafe { resolve_descriptor(Path::new("fake.so"), &descriptor) };
+        assert!(
+            matches!(
+                result,
+                Err(DynamicProviderLoadError::NullField { field, .. }) if field == "provider_name"
+            ),
+            "expected NullField(provider_name), got: {result:?}"
+        );
+    }
+
     #[test]
     fn owned_descriptor_captures_plugin_metadata() {
         let plugin = DynamicTestPlugin;
