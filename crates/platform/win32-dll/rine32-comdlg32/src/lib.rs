@@ -33,3 +33,5 @@ impl DllPlugin for Comdlg32Plugin32 {
         include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
     }
 }
+
+rine_dlls::export_dynamic_provider!(|| Comdlg32Plugin32);

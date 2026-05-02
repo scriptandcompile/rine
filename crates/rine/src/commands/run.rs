@@ -20,13 +20,6 @@ use tracing::info;
 use rine_runtime_core::loader::{entry, memory::LoadedImage, resolver};
 use rine_runtime_core::loader::{entry::EntryError, memory::LoaderError, resolver::ResolverError};
 use rine_runtime_core::pe::parser::{ParsedPe, PeError};
-use rine64_advapi32::Advapi32Plugin;
-use rine64_comdlg32::Comdlg32Plugin;
-use rine64_gdi32::Gdi32Plugin;
-use rine64_kernel32::Kernel32Plugin;
-use rine64_msvcrt::{CrtForwarderPlugin, MsvcrtPlugin};
-use rine64_user32::User32Plugin;
-use rine64_ws2_32::Ws2_32Plugin;
 
 use crate::cli::Cli;
 use crate::commands::window_host::{WINDOW_HOST_SOCKET_ENV, WindowHostSession};
@@ -50,7 +43,61 @@ fn emit_registry_metrics(registry: &DllRegistry) {
 }
 
 const DYNAMIC_PROVIDER_DIR_ENV: &str = "RINE_PLUGIN_DIR";
-const NTDLL_PROVIDER_LIBRARY_NAME: &str = "librine64_ntdll.so";
+const MSVCRT_PROVIDER_DLL_NAMES: &[&str] = &[
+    "msvcrt.dll",
+    "api-ms-win-crt-runtime-l1-1-0.dll",
+    "api-ms-win-crt-stdio-l1-1-0.dll",
+    "api-ms-win-crt-math-l1-1-0.dll",
+    "api-ms-win-crt-locale-l1-1-0.dll",
+    "api-ms-win-crt-heap-l1-1-0.dll",
+    "api-ms-win-crt-string-l1-1-0.dll",
+    "api-ms-win-crt-convert-l1-1-0.dll",
+    "api-ms-win-crt-environment-l1-1-0.dll",
+    "api-ms-win-crt-time-l1-1-0.dll",
+    "api-ms-win-crt-filesystem-l1-1-0.dll",
+    "api-ms-win-crt-utility-l1-1-0.dll",
+    "vcruntime140.dll",
+];
+
+struct DynamicProviderSpec {
+    library_name: &'static str,
+    dll_names: &'static [&'static str],
+}
+
+const DYNAMIC_PROVIDER_SPECS: &[DynamicProviderSpec] = &[
+    DynamicProviderSpec {
+        library_name: "librine64_kernel32.so",
+        dll_names: &["kernel32.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine64_msvcrt.so",
+        dll_names: MSVCRT_PROVIDER_DLL_NAMES,
+    },
+    DynamicProviderSpec {
+        library_name: "librine64_ntdll.so",
+        dll_names: &["ntdll.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine64_advapi32.so",
+        dll_names: &["advapi32.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine64_gdi32.so",
+        dll_names: &["gdi32.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine64_comdlg32.so",
+        dll_names: &["comdlg32.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine64_user32.so",
+        dll_names: &["user32.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine64_ws2_32.so",
+        dll_names: &["ws2_32.dll"],
+    },
+];
 
 fn set_var_if_absent(key: &str, value: &str) {
     if std::env::var_os(key).is_none() {
@@ -64,9 +111,9 @@ fn current_thread_id() -> u32 {
     unsafe { libc::syscall(libc::SYS_gettid) as u32 }
 }
 
-fn resolve_ntdll_provider_path() -> Result<std::path::PathBuf, RunError> {
+fn resolve_dynamic_provider_path(library_name: &str) -> Result<std::path::PathBuf, RunError> {
     if let Some(dir) = std::env::var_os(DYNAMIC_PROVIDER_DIR_ENV) {
-        let path = std::path::PathBuf::from(dir).join(NTDLL_PROVIDER_LIBRARY_NAME);
+        let path = std::path::PathBuf::from(dir).join(library_name);
         if path.is_file() {
             return Ok(path);
         }
@@ -81,7 +128,7 @@ fn resolve_ntdll_provider_path() -> Result<std::path::PathBuf, RunError> {
     let path = exe
         .parent()
         .unwrap_or_else(|| Path::new("."))
-        .join(NTDLL_PROVIDER_LIBRARY_NAME);
+        .join(library_name);
     if path.is_file() {
         return Ok(path);
     }
@@ -90,6 +137,28 @@ fn resolve_ntdll_provider_path() -> Result<std::path::PathBuf, RunError> {
         path,
         lookup: "runtime directory",
     })
+}
+
+fn register_required_dynamic_providers(
+    registry: &mut DllRegistry,
+    parsed: &ParsedPe,
+) -> Result<(), RunError> {
+    for spec in DYNAMIC_PROVIDER_SPECS {
+        let provider_required = parsed.pe.import_data.as_ref().is_some_and(|imports| {
+            imports.import_data.iter().any(|entry| {
+                spec.dll_names
+                    .iter()
+                    .any(|dll_name| entry.name.eq_ignore_ascii_case(dll_name))
+            })
+        });
+
+        if provider_required {
+            let provider_path = resolve_dynamic_provider_path(spec.library_name)?;
+            registry.register_dynamic_provider_library(spec.dll_names, &provider_path);
+        }
+    }
+
+    Ok(())
 }
 
 /// Conditionally emits a dev event. Compiles to nothing without the `dev` feature.
@@ -370,18 +439,8 @@ pub fn run(
     );
 
     // 3. Resolve imports (write function pointers into the IAT).
-    let ntdll_provider_path = resolve_ntdll_provider_path()?;
-
     let mut registry = DllRegistry::new_lazy();
-    registry.register_plugin_factory(|| Box::new(Kernel32Plugin));
-    registry.register_plugin_factory(|| Box::new(MsvcrtPlugin));
-    registry.register_plugin_factory(|| Box::new(CrtForwarderPlugin));
-    registry.register_dynamic_provider_library(&["ntdll.dll"], &ntdll_provider_path);
-    registry.register_plugin_factory(|| Box::new(Advapi32Plugin));
-    registry.register_plugin_factory(|| Box::new(Gdi32Plugin));
-    registry.register_plugin_factory(|| Box::new(Comdlg32Plugin));
-    registry.register_plugin_factory(|| Box::new(User32Plugin));
-    registry.register_plugin_factory(|| Box::new(Ws2_32Plugin));
+    register_required_dynamic_providers(&mut registry, &parsed)?;
     emit_registry_metrics(&registry);
     let report = match resolver::resolve_imports(&image, &parsed.pe, parsed.format, &registry) {
         Ok(report) => report,

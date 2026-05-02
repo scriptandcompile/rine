@@ -6,6 +6,9 @@ license.workspace = true
 description = "gdi32.dll implementation for rine"
 build = "build.rs"
 
+[lib]
+crate-type = ["rlib", "cdylib"]
+
 [dependencies]
 rine-dlls = { workspace = true }
 rine-types = { workspace = true }

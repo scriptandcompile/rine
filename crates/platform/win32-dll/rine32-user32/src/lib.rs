@@ -39,3 +39,5 @@ impl DllPlugin for User32Plugin32 {
         ))
     }
 }
+
+rine_dlls::export_dynamic_provider!(|| User32Plugin32);

@@ -31,3 +31,5 @@ impl DllPlugin for Advapi32Plugin32 {
         include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
     }
 }
+
+rine_dlls::export_dynamic_provider!(|| Advapi32Plugin32);

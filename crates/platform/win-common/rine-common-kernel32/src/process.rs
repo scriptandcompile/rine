@@ -1,6 +1,6 @@
 use std::cell::Cell;
 use std::collections::HashMap;
-use std::ffi::{CString, OsStr};
+use std::ffi::{CStr, CString, OsStr};
 use std::panic::{UnwindSafe, catch_unwind, resume_unwind};
 use std::process::Command;
 use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
@@ -22,6 +22,8 @@ pub struct CmdLineCache {
 static CMD_LINE: OnceLock<CmdLineCache> = OnceLock::new();
 static UNHANDLED_EXCEPTION_FILTER: AtomicUsize = AtomicUsize::new(0);
 static FAULT_HANDLER_GUARD: Mutex<()> = Mutex::new(());
+
+const UNHANDLED_EXCEPTION_FILTER_ENV: &[u8] = b"RINE_UNHANDLED_EXCEPTION_FILTER_PTR\0";
 
 const FATAL_SIGNALS: [i32; 5] = [
     libc::SIGSEGV,
@@ -427,7 +429,13 @@ pub fn set_last_error(error_code: u32) {
 /// - No integration with structured exception handling dispatch exists.
 pub fn set_unhandled_exception_filter(_filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
 ) -> usize {
-    UNHANDLED_EXCEPTION_FILTER.swap(_filter, Ordering::AcqRel)
+    let previous = read_shared_unhandled_exception_filter().unwrap_or_else(|| {
+        UNHANDLED_EXCEPTION_FILTER.load(Ordering::Acquire)
+    });
+
+    UNHANDLED_EXCEPTION_FILTER.store(_filter, Ordering::Release);
+    write_shared_unhandled_exception_filter(_filter);
+    previous
 }
 
 /// Call the currently installed top-level exception filter, if one exists.
@@ -438,7 +446,9 @@ pub fn set_unhandled_exception_filter(_filter: usize, // LPTOP_LEVEL_EXCEPTION_F
 /// # Returns
 /// `Some(filter_return_value)` if a filter is installed, otherwise `None`.
 pub fn invoke_unhandled_exception_filter(exception_pointers: usize) -> Option<i32> {
-    let filter = UNHANDLED_EXCEPTION_FILTER.load(Ordering::Acquire);
+    let filter = read_shared_unhandled_exception_filter().unwrap_or_else(|| {
+        UNHANDLED_EXCEPTION_FILTER.load(Ordering::Acquire)
+    });
     if filter == 0 {
         return None;
     }
@@ -446,6 +456,39 @@ pub fn invoke_unhandled_exception_filter(exception_pointers: usize) -> Option<i3
     type TopLevelExceptionFilter = unsafe extern "system" fn(usize) -> i32;
     let callback: TopLevelExceptionFilter = unsafe { std::mem::transmute(filter) };
     Some(unsafe { callback(exception_pointers) })
+}
+
+fn read_shared_unhandled_exception_filter() -> Option<usize> {
+    let value = unsafe { libc::getenv(UNHANDLED_EXCEPTION_FILTER_ENV.as_ptr().cast()) };
+    if value.is_null() {
+        return None;
+    }
+
+    let raw = unsafe { CStr::from_ptr(value) };
+    let text = raw.to_str().ok()?;
+    text.parse::<usize>().ok()
+}
+
+fn write_shared_unhandled_exception_filter(filter: usize) {
+    if filter == 0 {
+        unsafe {
+            libc::unsetenv(UNHANDLED_EXCEPTION_FILTER_ENV.as_ptr().cast());
+        }
+        return;
+    }
+
+    let value = filter.to_string();
+    let Ok(c_value) = CString::new(value) else {
+        return;
+    };
+
+    unsafe {
+        libc::setenv(
+            UNHANDLED_EXCEPTION_FILTER_ENV.as_ptr().cast(),
+            c_value.as_ptr(),
+            1,
+        );
+    }
 }
 
 /// Run a top-level execution boundary and invoke the installed unhandled

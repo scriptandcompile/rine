@@ -22,3 +22,5 @@ impl DllPlugin for Ws2_32Plugin {
         ))
     }
 }
+
+rine_dlls::export_dynamic_provider!(|| Ws2_32Plugin);

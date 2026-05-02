@@ -30,3 +30,5 @@ impl DllPlugin for Kernel32Plugin {
         ))
     }
 }
+
+rine_dlls::export_dynamic_provider!(|| Kernel32Plugin);

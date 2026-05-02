@@ -26,6 +26,7 @@ pub mod string;
 
 pub struct MsvcrtPlugin32;
 pub struct CrtForwarderPlugin32;
+pub struct DynamicMsvcrtProvider32;
 
 impl DllPlugin for MsvcrtPlugin32 {
     fn dll_names(&self) -> &[&str] {
@@ -81,3 +82,40 @@ impl DllPlugin for CrtForwarderPlugin32 {
         ))
     }
 }
+
+impl DllPlugin for DynamicMsvcrtProvider32 {
+    fn dll_names(&self) -> &[&str] {
+        &[
+            "msvcrt.dll",
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "api-ms-win-crt-math-l1-1-0.dll",
+            "api-ms-win-crt-locale-l1-1-0.dll",
+            "api-ms-win-crt-heap-l1-1-0.dll",
+            "api-ms-win-crt-string-l1-1-0.dll",
+            "api-ms-win-crt-convert-l1-1-0.dll",
+            "api-ms-win-crt-environment-l1-1-0.dll",
+            "api-ms-win-crt-time-l1-1-0.dll",
+            "api-ms-win-crt-filesystem-l1-1-0.dll",
+            "api-ms-win-crt-utility-l1-1-0.dll",
+            "vcruntime140.dll",
+        ]
+    }
+
+    fn exports(&self) -> Vec<rine_dlls::Export> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated.rs"))
+    }
+
+    fn stubs(&self) -> Vec<rine_dlls::StubExport> {
+        include!(concat!(env!("OUT_DIR"), "/dll_plugin_generated_stubs.rs"))
+    }
+
+    fn partials(&self) -> Vec<rine_dlls::PartialExport> {
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/dll_plugin_generated_partials.rs"
+        ))
+    }
+}
+
+rine_dlls::export_dynamic_provider!(|| DynamicMsvcrtProvider32);

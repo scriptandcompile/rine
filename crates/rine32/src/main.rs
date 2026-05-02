@@ -18,12 +18,6 @@ use rine_types::config::{
     AppConfig, ConfigError, DialogTheme, EmulatedDialogTheme, NativeDialogBackend, WindowsVersion,
 };
 use rine_types::os::{VersionInfo, set_version};
-use rine32_advapi32::Advapi32Plugin32;
-use rine32_comdlg32::Comdlg32Plugin32;
-use rine32_gdi32::Gdi32Plugin32;
-use rine32_kernel32::Kernel32Plugin32;
-use rine32_msvcrt::{CrtForwarderPlugin32, MsvcrtPlugin32};
-use rine32_user32::User32Plugin32;
 use thiserror::Error;
 use tracing::{error, info, warn};
 
@@ -44,11 +38,65 @@ fn emit_registry_metrics(registry: &DllRegistry) {
 const IMAGE_FILE_MACHINE_I386: u16 = 0x014c;
 
 const DYNAMIC_PROVIDER_DIR_ENV: &str = "RINE_PLUGIN_DIR";
-const NTDLL_PROVIDER_LIBRARY_NAME: &str = "librine32_ntdll.so";
+const MSVCRT_PROVIDER_DLL_NAMES: &[&str] = &[
+    "msvcrt.dll",
+    "api-ms-win-crt-runtime-l1-1-0.dll",
+    "api-ms-win-crt-stdio-l1-1-0.dll",
+    "api-ms-win-crt-math-l1-1-0.dll",
+    "api-ms-win-crt-locale-l1-1-0.dll",
+    "api-ms-win-crt-heap-l1-1-0.dll",
+    "api-ms-win-crt-string-l1-1-0.dll",
+    "api-ms-win-crt-convert-l1-1-0.dll",
+    "api-ms-win-crt-environment-l1-1-0.dll",
+    "api-ms-win-crt-time-l1-1-0.dll",
+    "api-ms-win-crt-filesystem-l1-1-0.dll",
+    "api-ms-win-crt-utility-l1-1-0.dll",
+    "vcruntime140.dll",
+];
 
-fn resolve_ntdll_provider_path() -> Result<std::path::PathBuf, Run32Error> {
+struct DynamicProviderSpec {
+    library_name: &'static str,
+    dll_names: &'static [&'static str],
+}
+
+const DYNAMIC_PROVIDER_SPECS: &[DynamicProviderSpec] = &[
+    DynamicProviderSpec {
+        library_name: "librine32_kernel32.so",
+        dll_names: &["kernel32.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine32_msvcrt.so",
+        dll_names: MSVCRT_PROVIDER_DLL_NAMES,
+    },
+    DynamicProviderSpec {
+        library_name: "librine32_ntdll.so",
+        dll_names: &["ntdll.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine32_advapi32.so",
+        dll_names: &["advapi32.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine32_gdi32.so",
+        dll_names: &["gdi32.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine32_comdlg32.so",
+        dll_names: &["comdlg32.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine32_user32.so",
+        dll_names: &["user32.dll"],
+    },
+    DynamicProviderSpec {
+        library_name: "librine32_ws2_32.so",
+        dll_names: &["ws2_32.dll"],
+    },
+];
+
+fn resolve_dynamic_provider_path(library_name: &str) -> Result<std::path::PathBuf, Run32Error> {
     if let Some(dir) = std::env::var_os(DYNAMIC_PROVIDER_DIR_ENV) {
-        let path = std::path::PathBuf::from(dir).join(NTDLL_PROVIDER_LIBRARY_NAME);
+        let path = std::path::PathBuf::from(dir).join(library_name);
         if path.is_file() {
             return Ok(path);
         }
@@ -63,7 +111,7 @@ fn resolve_ntdll_provider_path() -> Result<std::path::PathBuf, Run32Error> {
     let path = exe
         .parent()
         .unwrap_or_else(|| Path::new("."))
-        .join(NTDLL_PROVIDER_LIBRARY_NAME);
+        .join(library_name);
     if path.is_file() {
         return Ok(path);
     }
@@ -72,6 +120,28 @@ fn resolve_ntdll_provider_path() -> Result<std::path::PathBuf, Run32Error> {
         path,
         lookup: "runtime directory",
     })
+}
+
+fn register_required_dynamic_providers(
+    registry: &mut DllRegistry,
+    parsed: &ParsedPe,
+) -> Result<(), Run32Error> {
+    for spec in DYNAMIC_PROVIDER_SPECS {
+        let provider_required = parsed.pe.import_data.as_ref().is_some_and(|imports| {
+            imports.import_data.iter().any(|entry| {
+                spec.dll_names
+                    .iter()
+                    .any(|dll_name| entry.name.eq_ignore_ascii_case(dll_name))
+            })
+        });
+
+        if provider_required {
+            let provider_path = resolve_dynamic_provider_path(spec.library_name)?;
+            registry.register_dynamic_provider_library(spec.dll_names, &provider_path);
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg(target_arch = "x86")]
@@ -235,16 +305,16 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
 
     apply_dialog_policy_env(&app_config);
 
+    let parsed = ParsedPe::load(&resolved)?;
+    if parsed.format != PeFormat::Pe32 {
+        return Err(Run32Error::NotPe32 {
+            path: resolved,
+            machine: parsed.pe.header.coff_header.machine,
+        });
+    }
+
     let mut registry = DllRegistry::new_lazy();
-    registry.register_plugin_factory(|| Box::new(Kernel32Plugin32));
-    registry.register_plugin_factory(|| Box::new(Advapi32Plugin32));
-    registry.register_plugin_factory(|| Box::new(Comdlg32Plugin32));
-    registry.register_plugin_factory(|| Box::new(Gdi32Plugin32));
-    registry.register_plugin_factory(|| Box::new(User32Plugin32));
-    registry.register_plugin_factory(|| Box::new(MsvcrtPlugin32));
-    registry.register_plugin_factory(|| Box::new(CrtForwarderPlugin32));
-    let ntdll_provider_path = resolve_ntdll_provider_path()?;
-    registry.register_dynamic_provider_library(&["ntdll.dll"], &ntdll_provider_path);
+    register_required_dynamic_providers(&mut registry, &parsed)?;
     emit_registry_metrics(&registry);
 
     info!(
@@ -253,14 +323,6 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
         known_dlls = registry.known_dlls().len(),
         "validated 32-bit executable"
     );
-
-    let parsed = ParsedPe::load(&resolved)?;
-    if parsed.format != PeFormat::Pe32 {
-        return Err(Run32Error::NotPe32 {
-            path: resolved,
-            machine: parsed.pe.header.coff_header.machine,
-        });
-    }
 
     init_version_from_config(app_config.windows_version);
 
