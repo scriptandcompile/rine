@@ -38,8 +38,15 @@
     <!-- Overview Tab -->
     <section id="tab-overview" class="tab-content active">
       <div class="cards">
+        <div class="card card-wide" id="card-drop-hint" hidden>
+          <h2>Load an Executable</h2>
+          <div class="card-body">
+            <p>Drag and drop a Windows executable (.exe) into this window to load and run the program with rine.</p>
+          </div>
+        </div>
+
         <!-- PE Info Card -->
-        <div class="card" id="card-pe">
+        <div class="card overview-data-card" id="card-pe">
           <h2>PE Info</h2>
           <div class="card-body" id="pe-info">
             <p class="placeholder">Waiting for PE load…</p>
@@ -47,7 +54,7 @@
         </div>
 
         <!-- Config Card -->
-        <div class="card" id="card-config">
+        <div class="card overview-data-card" id="card-config">
           <h2>Configuration</h2>
           <div class="card-body" id="config-info">
             <p class="placeholder">Waiting for config…</p>
@@ -55,7 +62,7 @@
         </div>
 
         <!-- Import Summary Card -->
-        <div class="card" id="card-imports">
+        <div class="card overview-data-card" id="card-imports">
           <h2>Import Summary</h2>
           <div class="card-body" id="import-summary">
             <p class="placeholder">Waiting for import resolution…</p>
@@ -63,7 +70,7 @@
         </div>
 
         <!-- Registry Metrics Card -->
-        <div class="card" id="card-registry-metrics">
+        <div class="card overview-data-card" id="card-registry-metrics">
           <h2>Registry Metrics</h2>
           <div class="card-body" id="registry-metrics">
             <p class="placeholder">Waiting for registry metrics…</p>
@@ -71,7 +78,7 @@
         </div>
 
         <!-- Sections Card -->
-        <div class="card card-wide" id="card-sections">
+        <div class="card card-wide overview-data-card" id="card-sections">
           <h2>Sections</h2>
           <div class="card-body" id="sections-info">
             <p class="placeholder">Waiting for PE load…</p>

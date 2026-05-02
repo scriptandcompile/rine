@@ -49,6 +49,14 @@
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+.tab.disabled {
+  color: var(--text-muted);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.tab.disabled:hover {
+  color: var(--text-muted);
+}
 
 /* Tab content panels */
 .tab-content {

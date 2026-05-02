@@ -54,6 +54,45 @@ fn main() -> ExitCode {
         return uninstall_context_menu_cmd();
     }
 
+    // Warn if --dev is used without the dev feature.
+    #[cfg(not(feature = "dev"))]
+    if cli.dev {
+        error!(
+            "--dev requires rine to be built with the `dev` feature: cargo build --features dev"
+        );
+        return ExitCode::FAILURE;
+    }
+
+    // --dev without EXE: open the developer dashboard in drag-and-drop mode.
+    #[cfg(feature = "dev")]
+    if cli.dev && cli.exe_path.is_none() && std::env::var_os("RINE_DEV_SOCKET").is_none() {
+        let dev_bin = std::env::current_exe()
+            .ok()
+            .and_then(|p| {
+                let sibling = p.with_file_name("rine-dev");
+                sibling.is_file().then_some(sibling)
+            })
+            .unwrap_or_else(|| std::path::PathBuf::from("rine-dev"));
+
+        match std::process::Command::new(&dev_bin).status() {
+            Ok(status) => {
+                return if status.success() {
+                    ExitCode::SUCCESS
+                } else {
+                    ExitCode::FAILURE
+                };
+            }
+            Err(e) => {
+                error!(
+                    "failed to launch rine-dev ({}): {e}\n\
+                     hint: make sure rine-dev is built (`cargo build -p rine-dev`)",
+                    dev_bin.display()
+                );
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+
     let Some(ref exe_path) = cli.exe_path else {
         let _ = Cli::command().print_help();
         return ExitCode::FAILURE;
@@ -62,15 +101,6 @@ fn main() -> ExitCode {
     // Handle `--config`: print/create the per-app config and exit.
     if cli.show_config {
         return show_config(exe_path);
-    }
-
-    // Warn if --dev is used without the dev feature.
-    #[cfg(not(feature = "dev"))]
-    if cli.dev {
-        error!(
-            "--dev requires rine to be built with the `dev` feature: cargo build --features dev"
-        );
-        return ExitCode::FAILURE;
     }
 
     // --dev: launch rine-dev which will spawn us back as a child with

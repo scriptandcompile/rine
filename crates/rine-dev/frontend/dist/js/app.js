@@ -36,10 +36,14 @@ let state = {
 let events = [];
 let startTime = Date.now();
 let expandedWindows = new Set(); // Track expanded window nodes
+let awaitingExecutableDrop = false;
 
 // ── Tabs ───────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => {
+    if (btn.classList.contains('disabled')) {
+      return;
+    }
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
     btn.classList.add('active');
@@ -288,6 +292,33 @@ function esc(s) {
   return d.innerHTML;
 }
 
+function applyAwaitingExecutableDropMode() {
+  const dropHintCard = document.getElementById('card-drop-hint');
+  if (dropHintCard) {
+    dropHintCard.hidden = !awaitingExecutableDrop;
+  }
+
+  document.querySelectorAll('.overview-data-card').forEach(card => {
+    card.classList.toggle('hidden', awaitingExecutableDrop);
+  });
+
+  const overviewTab = document.querySelector('.tab[data-tab="overview"]');
+  if (overviewTab && !overviewTab.classList.contains('active')) {
+    overviewTab.click();
+  }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    const isOverview = tab.dataset.tab === 'overview';
+    if (awaitingExecutableDrop && !isOverview) {
+      tab.classList.add('disabled');
+      tab.setAttribute('aria-disabled', 'true');
+    } else {
+      tab.classList.remove('disabled');
+      tab.removeAttribute('aria-disabled');
+    }
+  });
+}
+
 // ── Event handlers ─────────────────────────────────
 function handleEvent(event) {
   events.push(event);
@@ -440,6 +471,9 @@ document.getElementById('event-filter').addEventListener('input', () => {
 
 // On load, try to get existing state (in case we reconnect)
 invoke('get_state').then(snap => {
+  awaitingExecutableDrop = Boolean(snap.awaiting_executable_drop);
+  applyAwaitingExecutableDropMode();
+
   if (snap.pe) { state.pe = snap.pe; renderPeInfo(snap.pe); renderSections(snap.pe.sections); }
   if (snap.config) { state.config = snap.config; renderConfigInfo(snap.config); }
   if (snap.imports) { state.imports = snap.imports; renderImportSummary(snap.imports); }
@@ -474,3 +508,5 @@ invoke('get_state').then(snap => {
   updateStatusBadge();
   renderFinalMemoryMapping();
 }).catch(() => {});
+
+applyAwaitingExecutableDropMode();

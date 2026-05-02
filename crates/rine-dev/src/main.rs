@@ -7,7 +7,8 @@ use std::sync::Mutex;
 
 use rine_channel::{DevEvent, DevReceiver, OutputStream};
 use rine_dev_lib::*;
-use tauri::{DragDropEvent, Emitter, Manager, State, WindowEvent};
+use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
+use tauri::{AppHandle, DragDropEvent, Emitter, Manager, State, WindowEvent};
 
 struct AppState(Mutex<StateSnapshot>);
 
@@ -82,23 +83,52 @@ fn parse_args() -> (Option<String>, Option<String>) {
 
 fn main() {
     let (socket_arg, exe_arg) = parse_args();
+    let awaiting_executable_drop = socket_arg.is_none() && exe_arg.is_none();
 
     // Determine socket path: provided explicitly, or generated for a child rine process.
     let socket_path: String = if let Some(s) = socket_arg {
         s
-    } else if exe_arg.is_some() {
+    } else {
         let path = std::env::temp_dir().join(format!("rine-dev-{}.sock", std::process::id()));
         path.to_string_lossy().into_owned()
-    } else {
-        eprintln!("usage: rine-dev --socket <path>  OR  rine-dev --exe <pe-path>");
-        std::process::exit(1);
     };
 
     tauri::Builder::default()
-        .manage(AppState(Mutex::new(StateSnapshot::default())))
+        .manage(AppState(Mutex::new(StateSnapshot {
+            awaiting_executable_drop,
+            ..StateSnapshot::default()
+        })))
         .setup(move |app| {
             let socket = PathBuf::from(&socket_path);
             let handle = app.handle().clone();
+
+            let load_executable_item =
+                MenuItemBuilder::with_id("load-executable", "Load Executable...")
+                    .accelerator("CmdOrCtrl+O")
+                    .build(app)?;
+            let exit_item = MenuItemBuilder::with_id("exit", "Exit")
+                .accelerator("CmdOrCtrl+Q")
+                .build(app)?;
+            let file_menu = SubmenuBuilder::new(app, "File")
+                .item(&load_executable_item)
+                .separator()
+                .item(&exit_item)
+                .build()?;
+            let menu = MenuBuilder::new(app).item(&file_menu).build()?;
+            app.set_menu(menu)?;
+
+            let menu_handle = app.handle().clone();
+            app.on_menu_event(move |_app, event| match event.id().as_ref() {
+                "load-executable" => {
+                    if let Err(err) = load_executable_from_file_menu(&menu_handle) {
+                        eprintln!("rine-dev: failed to relaunch from file menu: {err}");
+                    }
+                }
+                "exit" => {
+                    std::process::exit(0);
+                }
+                _ => {}
+            });
 
             if let Some(window) = app.get_webview_window("main") {
                 let drop_handle = handle.clone();
@@ -203,6 +233,25 @@ fn is_exe_path(path: &std::path::Path) -> bool {
         .and_then(|ext| ext.to_str())
         .map(|ext| ext.eq_ignore_ascii_case("exe"))
         .unwrap_or(false)
+}
+
+fn load_executable_from_file_menu(handle: &AppHandle) -> Result<(), String> {
+    let exe_path = rfd::FileDialog::new()
+        .set_title("Load Windows Executable")
+        .add_filter("Windows Executable", &["exe"])
+        .pick_file();
+
+    let Some(exe_path) = exe_path else {
+        return Ok(());
+    };
+
+    if !is_exe_path(&exe_path) {
+        return Err("selected file is not a .exe".to_string());
+    }
+
+    relaunch_rine_dev_with_exe(&exe_path)?;
+    handle.exit(0);
+    Ok(())
 }
 
 fn relaunch_rine_dev_with_exe(exe_path: &std::path::Path) -> Result<(), String> {

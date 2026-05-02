@@ -48,3 +48,13 @@
   font-family: var(--mono);
   font-size: 12px;
 }
+
+#card-drop-hint .card-body p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.overview-data-card.hidden {
+  display: none;
+}

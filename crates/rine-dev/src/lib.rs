@@ -3,6 +3,7 @@ use serde::Serialize;
 /// Accumulated snapshot of the runtime state, served to the frontend on demand.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct StateSnapshot {
+    pub awaiting_executable_drop: bool,
     pub pe: Option<PeInfo>,
     pub config: Option<ConfigInfo>,
     pub imports: Option<ImportsInfo>,
