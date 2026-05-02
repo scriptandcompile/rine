@@ -112,30 +112,41 @@ fn current_thread_id() -> u32 {
 }
 
 fn resolve_dynamic_provider_path(library_name: &str) -> Result<std::path::PathBuf, RunError> {
+    let exe = std::env::current_exe().map_err(RunError::CurrentExe)?;
+    let runtime_dir = exe.parent().unwrap_or_else(|| Path::new("."));
+
+    let mut candidates: Vec<(std::path::PathBuf, &'static str)> = Vec::new();
+
     if let Some(dir) = std::env::var_os(DYNAMIC_PROVIDER_DIR_ENV) {
-        let path = std::path::PathBuf::from(dir).join(library_name);
+        candidates.push((
+            std::path::PathBuf::from(dir).join(library_name),
+            DYNAMIC_PROVIDER_DIR_ENV,
+        ));
+    }
+
+    candidates.push((runtime_dir.join(library_name), "runtime directory"));
+    candidates.push((
+        runtime_dir
+            .join("..")
+            .join("platform")
+            .join("x64")
+            .join(library_name),
+        "runtime platform directory",
+    ));
+
+    let mut missing_path = std::path::PathBuf::from(library_name);
+    let mut missing_lookup = "runtime directory";
+    for (path, lookup) in candidates {
         if path.is_file() {
             return Ok(path);
         }
-
-        return Err(RunError::DynamicProviderNotFound {
-            path,
-            lookup: DYNAMIC_PROVIDER_DIR_ENV,
-        });
-    }
-
-    let exe = std::env::current_exe().map_err(RunError::CurrentExe)?;
-    let path = exe
-        .parent()
-        .unwrap_or_else(|| Path::new("."))
-        .join(library_name);
-    if path.is_file() {
-        return Ok(path);
+        missing_path = path;
+        missing_lookup = lookup;
     }
 
     Err(RunError::DynamicProviderNotFound {
-        path,
-        lookup: "runtime directory",
+        path: missing_path,
+        lookup: missing_lookup,
     })
 }
 
