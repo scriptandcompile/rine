@@ -12,7 +12,7 @@
     <div id="no-exe" class="panel">
       <p>No executable selected. Launch with:</p>
       <code>rine --config &lt;path-to-exe&gt;</code>
-      <p>Tip: drag and drop a .exe file onto this window and confirm to relaunch with it.</p>
+      <p>Drag and drop an .exe file onto this window and confirm to relaunch with it.</p>
     </div>
 
     <div id="editor" class="hidden">
@@ -49,7 +49,7 @@
         <div class="field">
           <label for="default-root">Default Root</label>
           <div class="input-browse">
-            <input type="text" id="default-root" placeholder="~/.rine/drives (default)">
+            <input type="text" id="default-root" placeholder="Example: ~/.rine/drives">
             <button id="browse-root" class="btn-small" title="Browse…">…</button>
           </div>
         </div>
@@ -71,12 +71,12 @@
         <div class="field">
           <label for="search-order">DLL Search Order</label>
           <p class="hint">DLLs tried before built-in registry, one per line.</p>
-          <textarea id="search-order" rows="4" placeholder="msvcrt.dll&#10;kernel32.dll"></textarea>
+          <textarea id="search-order" rows="4" placeholder="Example entries (one per line):&#10;msvcrt.dll&#10;kernel32.dll"></textarea>
         </div>
         <div class="field">
           <label for="force-stub">Force Stub DLLs</label>
           <p class="hint">DLLs that are never loaded from disk, one per line.</p>
-          <textarea id="force-stub" rows="4" placeholder="d3d11.dll"></textarea>
+          <textarea id="force-stub" rows="4" placeholder="Example entry:&#10;d3d11.dll"></textarea>
         </div>
       </section>
 

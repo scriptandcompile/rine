@@ -8,11 +8,52 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::{AppHandle, DragDropEvent, Emitter, Manager, State, WindowEvent};
 
 /// Holds the exe path passed as a CLI argument.
-struct ExePath(Mutex<Option<String>>);
+struct OpenPath(Mutex<Option<String>>);
 
 #[tauri::command]
-fn get_exe_path(state: State<'_, ExePath>) -> Option<String> {
+fn get_exe_path(state: State<'_, OpenPath>) -> Option<String> {
     state.0.lock().unwrap().clone()
+}
+
+#[derive(Serialize)]
+struct OpenedConfig {
+    exe_path: Option<String>,
+    config_path: String,
+    config: AppConfig,
+}
+
+#[tauri::command]
+fn open_config_target(path: String) -> Result<OpenedConfig, String> {
+    let input = PathBuf::from(path);
+    if is_exe_path(&input) {
+        let cfg = lib::load_config(&input).map_err(|e| e.to_string())?;
+        let cfg_path = lib::config_path(&input);
+        let exe_path = input
+            .canonicalize()
+            .unwrap_or_else(|_| input.clone())
+            .to_string_lossy()
+            .into_owned();
+        return Ok(OpenedConfig {
+            exe_path: Some(exe_path),
+            config_path: cfg_path.to_string_lossy().into_owned(),
+            config: cfg,
+        });
+    }
+
+    if is_config_toml_path(&input) {
+        let cfg_path = input.canonicalize().unwrap_or(input.clone());
+        let content = std::fs::read_to_string(&cfg_path)
+            .map_err(|e| format!("failed to read config file {}: {e}", cfg_path.display()))?;
+        let cfg = toml::from_str::<AppConfig>(&content)
+            .map_err(|e| format!("failed to parse config file {}: {e}", cfg_path.display()))?;
+        return Ok(OpenedConfig {
+            exe_path: None,
+            config_path: cfg_path.to_string_lossy().into_owned(),
+            config: cfg,
+        });
+    }
+
+    Err("unsupported file type: select a .exe or a .toml config file".to_string())
 }
 
 #[tauri::command]
@@ -37,6 +78,17 @@ fn save_config_cmd(exe_path: String, config: AppConfig) -> Result<(), String> {
     lib::save_config(Path::new(&exe_path), &config)
         .map(|_| ())
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn save_config_file(config_path: String, config: AppConfig) -> Result<(), String> {
+    let path = PathBuf::from(&config_path);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("failed to create {}: {e}", parent.display()))?;
+    }
+    let content = toml::to_string_pretty(&config).map_err(|e| format!("serialize error: {e}"))?;
+    std::fs::write(&path, content).map_err(|e| format!("failed to write {}: {e}", path.display()))
 }
 
 #[tauri::command]
@@ -111,12 +163,15 @@ fn pick_folder(start_dir: Option<String>) -> Option<String> {
 }
 
 fn main() {
-    // First non-flag argument is the exe path (e.g. `rine-config /path/to/app.exe`)
-    let exe_path = std::env::args().nth(1).filter(|arg| !arg.starts_with('-'));
+    // First non-flag argument is an open target path (.exe or config .toml).
+    let open_path = std::env::args().nth(1).filter(|arg| !arg.starts_with('-'));
 
     tauri::Builder::default()
-        .manage(ExePath(Mutex::new(exe_path)))
+        .manage(OpenPath(Mutex::new(open_path)))
         .setup(|app| {
+            let open_item = MenuItemBuilder::with_id("open-configuration", "Open Configuration...")
+                .accelerator("CmdOrCtrl+O")
+                .build(app)?;
             let save_item = MenuItemBuilder::with_id("save", "Save")
                 .accelerator("CmdOrCtrl+S")
                 .enabled(false)
@@ -128,6 +183,8 @@ fn main() {
                 .accelerator("CmdOrCtrl+Q")
                 .build(app)?;
             let file_menu = SubmenuBuilder::new(app, "File")
+                .item(&open_item)
+                .separator()
                 .item(&save_item)
                 .separator()
                 .item(&reset_item)
@@ -139,6 +196,15 @@ fn main() {
 
             let handle = app.handle().clone();
             app.on_menu_event(move |_app, event| match event.id().as_ref() {
+                "open-configuration" => {
+                    if let Some(path) = pick_open_configuration_path() {
+                        if let Err(err) = relaunch_rine_config_with_path(&path) {
+                            eprintln!("rine-config: failed to relaunch from open target: {err}");
+                            return;
+                        }
+                        handle.exit(0);
+                    }
+                }
                 "save" => {
                     let _ = handle.emit("menu-save", ());
                 }
@@ -154,9 +220,19 @@ fn main() {
             if let Some(window) = app.get_webview_window("main") {
                 let drop_handle = app.handle().clone();
                 window.on_window_event(move |event| {
-                    if let WindowEvent::DragDrop(DragDropEvent::Drop { paths, .. }) = event
-                        && let Some(exe_path) = paths.iter().find(|p| is_exe_path(p))
-                    {
+                    if let WindowEvent::DragDrop(DragDropEvent::Drop { paths, .. }) = event {
+                        if let Some(config_path) = paths.iter().find(|p| is_config_toml_path(p)) {
+                            if let Err(err) = relaunch_rine_config_with_path(config_path) {
+                                eprintln!(
+                                    "rine-config: failed to relaunch from dropped config file: {err}"
+                                );
+                                return;
+                            }
+                            drop_handle.exit(0);
+                            return;
+                        }
+
+                        if let Some(exe_path) = paths.iter().find(|p| is_exe_path(p)) {
                         let should_relaunch = matches!(
                             rfd::MessageDialog::new()
                                 .set_title("Relaunch rine-config?")
@@ -179,6 +255,7 @@ fn main() {
                         }
                         drop_handle.exit(0);
                     }
+                    }
                 });
             }
 
@@ -187,8 +264,10 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_exe_path,
             set_menu_enabled,
+            open_config_target,
             get_config,
             save_config_cmd,
+            save_config_file,
             get_config_path,
             get_windows_versions,
             launch_exe,
@@ -204,11 +283,32 @@ fn is_exe_path(path: &Path) -> bool {
         .map(|ext| ext.eq_ignore_ascii_case("exe"))
         .unwrap_or(false)
 }
+
+fn is_config_toml_path(path: &Path) -> bool {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.eq_ignore_ascii_case("toml"))
+        .unwrap_or(false)
+}
+
+fn pick_open_configuration_path() -> Option<PathBuf> {
+    rfd::FileDialog::new()
+        .set_title("Open Configuration or Executable")
+        .add_filter("Supported", &["exe", "toml"])
+        .add_filter("Windows Executable", &["exe"])
+        .add_filter("Config File", &["toml"])
+        .pick_file()
+}
+
 fn relaunch_rine_config_with_exe(exe_path: &Path) -> Result<(), String> {
+    relaunch_rine_config_with_path(exe_path)
+}
+
+fn relaunch_rine_config_with_path(path: &Path) -> Result<(), String> {
     let config_bin = std::env::current_exe()
         .map_err(|e| format!("failed to resolve current executable: {e}"))?;
     std::process::Command::new(&config_bin)
-        .arg(exe_path)
+        .arg(path)
         .spawn()
         .map_err(|e| format!("failed to spawn {}: {e}", config_bin.display()))?;
     Ok(())

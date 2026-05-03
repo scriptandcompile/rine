@@ -3,8 +3,10 @@ const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
 
 let exePath = null;
+let configPath = null;
 let config = null;
 let dirty = false;
+let editorObserversBound = false;
 
 function markDirty() {
   if (dirty) return;
@@ -24,15 +26,16 @@ function markClean() {
 // ---------------------------------------------------------------------------
 
 async function init() {
-  // Ask the backend for the exe path passed as a CLI argument.
+  // Ask the backend for the initial open path passed as a CLI argument.
+  let openPath = null;
   try {
-    exePath = await invoke("get_exe_path");
+    openPath = await invoke("get_exe_path");
   } catch (_) {
     // ignore — will show the welcome screen
   }
 
-  if (exePath) {
-    await loadConfig(exePath);
+  if (openPath) {
+    await openConfigTarget(openPath);
   } else {
     document.getElementById("no-exe").classList.remove("hidden");
     document.getElementById("editor").classList.add("hidden");
@@ -47,16 +50,23 @@ async function init() {
 // ---------------------------------------------------------------------------
 
 async function loadConfig(path) {
-  exePath = path;
+  return openConfigTarget(path);
+}
+
+async function openConfigTarget(path) {
   try {
-    config = await invoke("get_config", { exePath: path });
-    const cfgPath = await invoke("get_config_path", { exePath: path });
+    const opened = await invoke("open_config_target", { path });
+    config = opened.config;
+    exePath = opened.exe_path;
+    configPath = opened.config_path;
 
     document.getElementById("no-exe").classList.add("hidden");
     document.getElementById("editor").classList.remove("hidden");
 
-    document.getElementById("exe-path-display").textContent = path;
-    document.getElementById("config-path-display").textContent = cfgPath;
+    document.getElementById("exe-path-display").textContent = exePath || "(direct config file)";
+    document.getElementById("config-path-display").textContent = configPath;
+    document.getElementById("launch-btn").disabled = !exePath;
+    setRunnerTabEnabled(Boolean(exePath));
 
     await populateVersions();
     populateForm();
@@ -148,7 +158,13 @@ function readForm() {
 async function saveConfig() {
   readForm();
   try {
-    await invoke("save_config_cmd", { exePath, config });
+    if (exePath) {
+      await invoke("save_config_cmd", { exePath, config });
+    } else if (configPath) {
+      await invoke("save_config_file", { configPath, config });
+    } else {
+      throw new Error("No configuration target selected");
+    }
     markClean();
     showStatus("Saved", false);
   } catch (err) {
@@ -157,6 +173,8 @@ async function saveConfig() {
 }
 
 function observeChanges() {
+  if (editorObserversBound) return;
+  editorObserversBound = true;
   const editor = document.getElementById("editor");
   editor.addEventListener("input", markDirty);
   editor.addEventListener("change", markDirty);
@@ -169,11 +187,36 @@ function observeChanges() {
 function setupTabs() {
   for (const btn of document.querySelectorAll(".tab")) {
     btn.addEventListener("click", () => {
+      if (btn.classList.contains("hidden")) return;
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".tab-content").forEach(s => s.classList.remove("active"));
       btn.classList.add("active");
       document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
     });
+  }
+}
+
+function setRunnerTabEnabled(enabled) {
+  const runnerTab = document.querySelector('.tab[data-tab="runner"]');
+  const runnerPanel = document.getElementById("tab-runner");
+  if (!runnerTab || !runnerPanel) return;
+
+  if (enabled) {
+    runnerTab.classList.remove("hidden");
+    return;
+  }
+
+  runnerTab.classList.add("hidden");
+  runnerPanel.classList.remove("active");
+
+  if (runnerTab.classList.contains("active")) {
+    runnerTab.classList.remove("active");
+    const generalTab = document.querySelector('.tab[data-tab="general"]');
+    const generalPanel = document.getElementById("tab-general");
+    if (generalTab && generalPanel) {
+      generalTab.classList.add("active");
+      generalPanel.classList.add("active");
+    }
   }
 }
 
@@ -187,6 +230,13 @@ function setupButtons() {
     if (!droppedPath) return;
     await loadConfig(droppedPath);
     showStatus("Loaded dropped executable", false);
+  });
+
+  listen("open-path-selected", async (event) => {
+    const selectedPath = event && typeof event.payload === "string" ? event.payload : null;
+    if (!selectedPath) return;
+    await openConfigTarget(selectedPath);
+    showStatus("Loaded selected target", false);
   });
 
   // Listen for File > Reset to Defaults from native menu

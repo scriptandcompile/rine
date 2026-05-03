@@ -54,6 +54,11 @@ fn main() -> ExitCode {
         return uninstall_context_menu_cmd();
     }
 
+    // --config without EXE: open the config editor in drag-and-drop mode.
+    if cli.show_config && cli.exe_path.is_none() {
+        return show_config_dashboard();
+    }
+
     // Warn if --dev is used without the dev feature.
     #[cfg(not(feature = "dev"))]
     if cli.dev {

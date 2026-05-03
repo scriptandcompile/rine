@@ -178,6 +178,13 @@ select:focus {
 
 textarea { resize: vertical; }
 
+#default-root::placeholder,
+#search-order::placeholder,
+#force-stub::placeholder {
+  color: color-mix(in srgb, var(--text-muted) 70%, white);
+  opacity: 1;
+}
+
 .input-browse {
   display: flex;
   gap: 6px;

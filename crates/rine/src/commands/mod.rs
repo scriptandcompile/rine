@@ -6,7 +6,7 @@ mod run;
 mod window_host;
 
 pub use self::binfmt::{binfmt_status_cmd, install_binfmt_cmd, uninstall_binfmt_cmd};
-pub use self::config::show_config;
+pub use self::config::{show_config, show_config_dashboard};
 pub use self::context_menu::{
     context_menu_status_cmd, install_context_menu_cmd, uninstall_context_menu_cmd,
 };

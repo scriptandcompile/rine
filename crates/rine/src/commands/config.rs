@@ -5,6 +5,32 @@ use tracing::{error, info};
 
 use crate::config::manager::ConfigManager;
 
+/// Open the Tauri config editor without a selected executable.
+///
+/// The editor starts in drag-and-drop mode with configuration controls
+/// unavailable until an executable is provided.
+pub fn show_config_dashboard() -> ExitCode {
+    let config_bin = std::env::current_exe()
+        .ok()
+        .and_then(|p| {
+            let sibling = p.with_file_name("rine-config");
+            sibling.is_file().then_some(sibling)
+        })
+        .unwrap_or_else(|| "rine-config".into());
+
+    match std::process::Command::new(&config_bin).spawn() {
+        Ok(_) => ExitCode::SUCCESS,
+        Err(e) => {
+            error!(
+                "failed to launch rine-config ({}): {e}\n\
+                 hint: make sure rine-config is built (`cargo build -p rine-config`)",
+                config_bin.display()
+            );
+            ExitCode::FAILURE
+        }
+    }
+}
+
 /// Open the Tauri config editor for the given exe.
 /// Creates a default config file if one does not yet exist, then launches
 /// the `rine-config` GUI binary.
