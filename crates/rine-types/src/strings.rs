@@ -53,6 +53,18 @@ impl LPCSTR {
         self.0.is_null()
     }
 
+    /// Get the raw pointer value.
+    ///
+    /// # Safety
+    /// The caller must ensure that the pointer is valid for the intended use.
+    /// This function does not perform any safety checks.
+    ///
+    /// # Returns
+    /// The raw pointer as a `*const u8`.
+    pub fn as_ptr(self) -> *const u8 {
+        self.0
+    }
+
     /// Read a string from the pointer location, treating it as a null-terminated ANSI string.
     ///
     /// # Safety
