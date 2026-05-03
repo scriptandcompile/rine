@@ -212,7 +212,7 @@ Type=Application
 Name=rine Developer Dashboard
 Comment=Inspect and debug the rine runtime
 Exec=rine-dev
-    Icon=rine-dev
+Icon=rine-dev
 Terminal=false
 Categories=Development;Debugger;
 EOF
