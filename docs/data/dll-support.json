@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-03T21:19:17.777135+00:00",
+  "generatedAt": "2026-05-03T22:41:03.040429+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 88,
+      "functionCount": 89,
       "functions": [
         {
           "name": "CloseHandle",
@@ -1470,6 +1470,19 @@
           "x86": {
             "status": "partial",
             "symbol": "strings::lstrcmpa",
+            "source": "kernel32 - strings.rs"
+          }
+        },
+        {
+          "name": "lstrcmpiA",
+          "x64": {
+            "status": "partial",
+            "symbol": "strings::lstrcmpiA",
+            "source": "kernel32 - strings.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "strings::lstrcmpiA",
             "source": "kernel32 - strings.rs"
           }
         },
@@ -2834,16 +2847,16 @@
     }
   ],
   "totals": {
-    "functions": 214,
+    "functions": 215,
     "x64": {
       "implemented": 87,
-      "partial": 91,
+      "partial": 92,
       "stubbed": 36,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 87,
-      "partial": 91,
+      "partial": 92,
       "stubbed": 36,
       "unimplemented": 0
     }

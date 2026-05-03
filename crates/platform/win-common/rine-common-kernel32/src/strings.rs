@@ -57,3 +57,32 @@ pub fn lstrcmpa(lpstring1: LPCSTR, lpstring2: LPCSTR) -> i32 {
         )
     }
 }
+
+/// A case-insensitive version of `lstrcmpa` that handles null pointers by treating them as empty strings.
+///
+/// # Arguments
+/// * `lpstring1` - A pointer to the first null-terminated string. Can be null, in which case it is treated as an empty string.
+/// * `lpstring2` - A pointer to the second null-terminated string. Can be null, in which case it is treated as an empty string.
+///
+/// # Safety
+/// If a non-null pointer is passed for either argument, it must point to a valid null-terminated string, or the behavior is undefined.
+///
+/// # Returns
+/// An integer less than, equal to, or greater than zero if `lpstring1` is found, respectively, to be less than, to match,
+/// or be greater than `lpstring2`, ignoring ASCII case differences.
+pub fn lstrcmpia(lpstring1: LPCSTR, lpstring2: LPCSTR) -> i32 {
+    if lpstring1.is_null() && lpstring2.is_null() {
+        return 0;
+    } else if lpstring1.is_null() {
+        return -1;
+    } else if lpstring2.is_null() {
+        return 1;
+    }
+
+    unsafe {
+        libc::strcasecmp(
+            lpstring1.as_ptr() as *const c_char,
+            lpstring2.as_ptr() as *const c_char,
+        )
+    }
+}
