@@ -1,4 +1,4 @@
-use rine_types::strings::LPCSTR;
+use rine_types::strings::{LPCSTR, LPSTR};
 
 use core::ffi::c_char;
 use libc::strlen;
@@ -85,4 +85,36 @@ pub fn lstrcmpia(lpstring1: LPCSTR, lpstring2: LPCSTR) -> i32 {
             lpstring2.as_ptr() as *const c_char,
         )
     }
+}
+
+/// Copies a string to a buffer.
+///
+/// # Arguments
+/// * `lpstring1` - A pointer to the destination buffer. Must be large enough to hold the source string and null terminator.
+///   Behavior is undefined if the buffer is too small and may cause a buffer overflow.
+///   Can be null, in which case the function does nothing and returns 0.
+/// * `lpstring2` - A pointer to the source null-terminated string.
+///   Can be null, in which case the destination buffer will be set to an empty string.
+///
+/// # Safety
+/// If a non-null pointer is passed for either argument, it must point to a valid null-terminated string, or the behavior is undefined.
+/// The lstrcpya function has an undefined behavior if source and destination buffers overlap,
+/// so the caller must ensure that the buffers do not overlap.
+pub fn lstrcpya(lpstring1: LPSTR, lpstring2: LPCSTR) -> LPSTR {
+    if lpstring1.is_null() {
+        return LPSTR::NULL;
+    }
+
+    if lpstring2.is_null() {
+        return LPSTR::NULL;
+    }
+
+    unsafe {
+        libc::strcpy(
+            lpstring1.as_mut_ptr() as *mut c_char,
+            lpstring2.as_ptr() as *const c_char,
+        );
+    }
+
+    lpstring1
 }

@@ -1,5 +1,5 @@
 use rine_common_kernel32::strings as common;
-use rine_types::strings::LPCSTR;
+use rine_types::strings::{LPCSTR, LPSTR};
 
 /// A safe wrapper around `strlen` that returns 0 for null pointers, matching the behavior of `lstrlenA` in the Windows API.
 ///
@@ -67,4 +67,24 @@ pub unsafe extern "stdcall" fn lstrcmpa(lpstring1: LPCSTR, lpstring2: LPCSTR) ->
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn lstrcmpiA(lpString1: LPCSTR, lpString2: LPCSTR) -> i32 {
     common::lstrcmpia(lpString1, lpString2)
+}
+
+/// Copies a string to a buffer.
+///
+/// # Arguments
+/// * `lpstring1` - A pointer to the destination buffer. Must be large enough to hold the source string and null terminator.
+///   Behavior is undefined if the buffer is too small and may cause a buffer overflow.
+///   Can be null, in which case the function does nothing and returns 0.
+/// * `lpstring2` - A pointer to the source null-terminated string.
+///   Can be null, in which case the destination buffer will be set to an empty string.
+///
+/// # Safety
+/// If a non-null pointer is passed for either argument, it must point to a valid null-terminated string, or the behavior is undefined.
+/// The lstrcpyA function has an undefined behavior if source and destination buffers overlap,
+/// so the caller must ensure that the buffers do not overlap.
+#[rine_dlls::implemented]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn lstrcpyA(lpString1: LPSTR, lpString2: LPCSTR) -> LPSTR {
+    common::lstrcpya(lpString1, lpString2)
 }
