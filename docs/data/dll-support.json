@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-04T00:16:13.685058+00:00",
+  "generatedAt": "2026-05-04T01:55:11.376707+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 90,
+      "functionCount": 91,
       "functions": [
         {
           "name": "CloseHandle",
@@ -1458,6 +1458,19 @@
             "status": "partial",
             "symbol": "file::WriteFile",
             "source": "kernel32 - file.rs"
+          }
+        },
+        {
+          "name": "lstrcatA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "strings::lstrcatA",
+            "source": "kernel32 - strings.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "strings::lstrcatA",
+            "source": "kernel32 - strings.rs"
           }
         },
         {
@@ -2860,15 +2873,15 @@
     }
   ],
   "totals": {
-    "functions": 216,
+    "functions": 217,
     "x64": {
-      "implemented": 88,
+      "implemented": 89,
       "partial": 92,
       "stubbed": 36,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 88,
+      "implemented": 89,
       "partial": 92,
       "stubbed": 36,
       "unimplemented": 0

@@ -118,3 +118,39 @@ pub fn lstrcpya(lpstring1: LPSTR, lpstring2: LPCSTR) -> LPSTR {
 
     lpstring1
 }
+
+/// Concatenates two strings and stores the result in a buffer.
+///
+/// # Arguments
+/// * `lpstring1` - A pointer to the destination buffer. Must be large enough to hold the resulting string and null terminator.
+///   Behavior is undefined if the buffer is too small and may cause a buffer overflow.
+///   Can be null, in which case the function does nothing and returns 0.
+/// * `lpstring2` - A pointer to the source null-terminated string to append to the destination buffer.
+///   Can be null, in which case the destination buffer is left unchanged.
+///
+/// # Safety
+/// If a non-null pointer is passed for either argument, it must point to a valid null-terminated string, or the behavior is undefined.
+/// The `lstrcata` function has an undefined behavior if source and destination buffers overlap,
+/// so the caller must ensure that the buffers do not overlap.
+///
+/// # Returns
+/// A pointer to the destination buffer, or null if `lpstring1` is null.
+/// If `lpstring2` is null, the destination buffer is returned unchanged.
+pub fn lstrcata(lpstring1: LPSTR, lpstring2: LPCSTR) -> LPSTR {
+    if lpstring1.is_null() {
+        return LPSTR::NULL;
+    }
+
+    if lpstring2.is_null() {
+        return lpstring1;
+    }
+
+    unsafe {
+        libc::strcat(
+            lpstring1.as_mut_ptr() as *mut c_char,
+            lpstring2.as_ptr() as *const c_char,
+        );
+    }
+
+    lpstring1
+}
