@@ -2,6 +2,7 @@ use rine_common_kernel32 as common;
 use rine_types::handles::{Handle, INVALID_FILE_SIZE, Win32FindDataA, Win32FindDataW};
 use rine_types::{
     errors::WinBool,
+    handles::HFile,
     strings::{LPCSTR, LPCWSTR},
 };
 
@@ -464,4 +465,23 @@ pub unsafe extern "stdcall" fn FindNextFileW(
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn FindClose(find_file: Handle) -> WinBool {
     unsafe { CloseHandle(find_file) }
+}
+
+/// Close a file handle from the legacy _lopen API.
+///
+/// # Arguments
+/// * `hfile` - The file handle to close.
+///
+/// # Returns
+/// The input `hfile` on success, or an error code on failure.
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or close these handles,
+/// but it allows the DLLs to link successfully if they reference _lclose.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn _lclose(hfile: HFile) -> HFile {
+    common::file::_lclose(hfile)
 }

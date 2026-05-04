@@ -46,6 +46,62 @@ pub struct HeapState {
 #[repr(transparent)]
 pub struct Handle(isize);
 
+/// A handle to a file from `OpenFile`, not `CreateFile`.
+/// `HFILE` is a legacy API file handle instead of a `HANDLE`.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct HFile(i32);
+
+impl HFile {
+    /// The invalid HFILE sentinel (`HFILE_ERROR`), returned by `OpenFile` on error.
+    pub const INVALID: Self = Self(-1);
+
+    /// The null file handle (`NULL`).
+    pub const NULL: Self = Self(0);
+
+    /// Create an `HFile` from a raw `i32` value, for use in the Windows ABI.
+    ///
+    /// # Return
+    /// An `HFile` wrapping the given raw value.
+    pub const fn from_raw(value: i32) -> Self {
+        Self(value)
+    }
+
+    /// Get the raw `i32` value of this HFILE, for use in the Windows ABI.
+    ///
+    /// # Return
+    /// The raw `i32` value of this HFILE.
+    ///
+    /// # Notes
+    /// Valid values are non-negative integers representing file handles,
+    /// while `INVALID` (-1) indicates an error and `NULL` (0) represents "no file".
+    pub const fn as_raw(self) -> i32 {
+        self.0
+    }
+
+    /// Check if this HFILE is `INVALID` (-1), which indicates an error.
+    ///
+    /// # Return
+    /// `true` if this HFILE is `INVALID`, `false` otherwise.
+    ///
+    /// # Notes
+    /// `INVALID` (-1) indicates an error, while `NULL` (0) is a valid HFILE value that represents "no file".
+    pub const fn is_invalid(self) -> bool {
+        self.0 == -1
+    }
+
+    /// Check if this handle is `NULL` (0), which is a valid but non-functional handle.
+    ///
+    /// # Return
+    /// `true` if this handle is `NULL`, `false` otherwise.
+    ///
+    /// # Notes
+    /// `NULL` (0) is a valid handle value that represents "no object", while `INVALID` (-1) indicates an error.
+    pub const fn is_null(self) -> bool {
+        self.0 == 0
+    }
+}
+
 /// A handle to an instance/module (from `LoadLibrary` and related functions).
 /// This the base address of the module in memory.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]

@@ -2,9 +2,9 @@ use rine_types::{
     errors::WinBool,
     handles::{
         CREATE_ALWAYS, CREATE_NEW, FILE_BEGIN, FILE_CURRENT, FILE_END, FindDataState, GENERIC_READ,
-        GENERIC_WRITE, Handle, HandleEntry, INVALID_SET_FILE_POINTER, OPEN_ALWAYS, OPEN_EXISTING,
-        TRUNCATE_EXISTING, Win32FindDataA, Win32FindDataW, collect_find_entries, handle_table,
-        handle_to_fd, split_find_path, std_handle_to_fd,
+        GENERIC_WRITE, HFile, Handle, HandleEntry, INVALID_SET_FILE_POINTER, OPEN_ALWAYS,
+        OPEN_EXISTING, TRUNCATE_EXISTING, Win32FindDataA, Win32FindDataW, collect_find_entries,
+        handle_table, handle_to_fd, split_find_path, std_handle_to_fd,
     },
 };
 
@@ -476,6 +476,25 @@ pub unsafe fn find_next_file_w(handle: Handle, find_data: *mut Win32FindDataW) -
         Some(true) => WinBool::TRUE,
         _ => WinBool::FALSE,
     }
+}
+
+/// Close a file handle from the legacy _lopen API.
+///
+/// # Arguments
+/// * `hfile` - The file handle to close.
+///
+/// # Returns
+/// The input `hfile` on success, or an error code on failure.
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or close these handles,
+/// but it allows the DLLs to link successfully if they reference _lclose.
+pub fn _lclose(hfile: HFile) -> HFile {
+    // HFile is a 16-bit handle type used by legacy file I/O APIs like _lopen/_lclose.
+    // We don't support those APIs, but we need to provide a stub implementation to link successfully.
+    // Just return the input value, which is what the Windows implementation does on success.
+    hfile
 }
 
 // ---------------------------------------------------------------------------
