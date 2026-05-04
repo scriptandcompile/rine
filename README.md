@@ -6,7 +6,7 @@ Project website: https://scriptandcompile.github.io/rine/
 
 rine translates Windows NT syscalls to Linux syscalls in userspace and provides Rust reimplementations of core Windows DLLs, allowing you to run Windows `.exe` files directly on Linux — no virtual machine, no CPU emulator, no Wine.
 
-> **Status:** v0.1.0 — early development. Console applications with basic I/O, threading, and synchronization work. GUI and networking support are planned.
+> **Status:** v0.1.3 — early development. Console applications with basic I/O, threading, and synchronization work. GUI and networking support are planned and initial implementation are in the works. Current Goal: Load and run the Windows 95 version of notepad.exe.
 
 ## How It Works
 
