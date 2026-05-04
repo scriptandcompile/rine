@@ -154,3 +154,46 @@ pub fn lstrcata(lpstring1: LPSTR, lpstring2: LPCSTR) -> LPSTR {
 
     lpstring1
 }
+
+/// Copies up to a specified number of characters from a source string to a destination buffer, ensuring null termination.
+///
+/// # Arguments
+/// * `llpstring1` - A pointer to the destination buffer.
+///   Must be large enough to hold at least `imaxlength` bytes, including the null terminator.
+///   Behavior is undefined if the buffer is too small.
+///   Can be null, in which case the function does nothing and returns null.
+/// * `lpstring2` - A pointer to the source null-terminated string.
+///   Can be null, in which case the destination buffer will be set to an empty string.
+///
+/// # Safety
+/// If a non-null pointer is passed for either argument, it must point to a valid null-terminated string, or the behavior is undefined.
+/// The `lstrcpyna` function has an undefined behavior if source and destination buffers overlap,
+/// so the caller must ensure that the buffers do not overlap.
+///
+/// # Returns
+/// A pointer to the destination buffer, or null if `llpstring1` is null.
+/// If `lpstring2` is null, the destination buffer will be set to an empty string and returned.
+pub fn lstrcpyna(llpstring1: LPSTR, lpstring2: LPCSTR, imaxlength: u32) -> LPSTR {
+    if llpstring1.is_null() {
+        return LPSTR::NULL;
+    }
+
+    if lpstring2.is_null() {
+        unsafe {
+            *llpstring1.as_mut_ptr() = 0;
+        }
+        return llpstring1;
+    }
+
+    unsafe {
+        libc::strncpy(
+            llpstring1.as_mut_ptr() as *mut c_char,
+            lpstring2.as_ptr() as *const c_char,
+            imaxlength as usize,
+        );
+        // Ensure null termination
+        *llpstring1.as_mut_ptr().add(imaxlength as usize - 1) = 0;
+    }
+
+    llpstring1
+}
