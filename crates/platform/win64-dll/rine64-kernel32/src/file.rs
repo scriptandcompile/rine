@@ -518,3 +518,28 @@ pub unsafe extern "win64" fn _lopen(_lppathname: LPCSTR, _ireadwrite: i32) -> HF
 pub unsafe extern "win64" fn _lclose(hfile: HFile) -> HFile {
     common::file::_lclose(hfile)
 }
+
+/// Read from a file handle using the legacy _lread API.
+///
+/// # Arguments
+/// * `_hfile` - The file handle to read from.
+/// * `_buffer` - Pointer to a buffer to receive the data.
+/// * `_count` - Number of bytes to read.
+///
+/// # Returns
+/// The number of bytes read on success, or an error code on failure.
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or read from these handles,
+/// but it allows the DLLs to link successfully if they reference _lread.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn _lread(
+    _hfile: HFile,
+    _buffer: *mut core::ffi::c_void,
+    _count: u32,
+) -> i32 {
+    common::file::_lread(_hfile, _buffer, _count)
+}

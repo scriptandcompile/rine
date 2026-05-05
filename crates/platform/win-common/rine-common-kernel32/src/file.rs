@@ -517,6 +517,27 @@ pub fn _lclose(hfile: HFile) -> HFile {
     hfile
 }
 
+/// Read from a file handle using the legacy _lread API.
+///
+/// # Arguments
+/// * `_hfile` - The file handle to read from.
+/// * `_buffer` - Pointer to a buffer to receive the data.
+/// * `_count` - Number of bytes to read.
+///
+/// # Returns
+/// The number of bytes read on success, or an error code on failure.
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or read from these handles,
+/// but it allows the DLLs to link successfully if they reference _lread.
+pub fn _lread(_hfile: HFile, _buffer: *mut core::ffi::c_void, _count: u32) -> i32 {
+    // Stub implementation for legacy _lread API.
+    // This API is not commonly used and we don't need it for our purposes, but we provide a stub to link successfully.
+    // Just return an error code to indicate failure.
+    HFile::INVALID.as_raw()
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
