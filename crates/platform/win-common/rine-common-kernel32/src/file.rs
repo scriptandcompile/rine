@@ -581,6 +581,35 @@ pub fn _llseek(_hfile: HFile, _offset: i64, _origin: u32) -> i64 {
     HFile::INVALID.as_raw() as i64
 }
 
+/// Create a file handle using the legacy _lcreat API.
+///
+/// # Arguments
+/// * `_lppathname` - Windows-style file path (e.g. `C:\foo\bar.txt`).
+/// * `_iattribute` - File attribute flags.
+///   Normal (0), Can be read from or written to without restrictions.
+///   Read-only (1), Cannot be written to. Attempting to write will fail with an error.
+///   Hidden (2), Not visible when enumerating files in a directory. This attribute has no effect on file access permissions.
+///   System (4), Reserved for use by the operating system. This attribute has no effect on file access permissions.
+///
+/// # Safety
+/// * `_lppathname` must be a valid Windows-style file path string.
+/// * `_iattribute` must be a valid file attribute flag value (0, 1, 2, or 4).
+///
+/// # Returns
+/// A file handle on success, or `HFile::INVALID` on failure.
+/// Currently always returns `HFile::INVALID` since we don't support this legacy API.
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or create these handles,
+/// but it allows the DLLs to link successfully if they reference _lcreat.
+pub fn _lcreat(_lppathname: LPCSTR, _iattribute: i32) -> HFile {
+    // Stub implementation for legacy _lcreat API.
+    // This API is not commonly used and we don't need it for our purposes, but we provide a stub to link successfully.
+    // Just return an error code to indicate failure.
+    HFile::INVALID
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

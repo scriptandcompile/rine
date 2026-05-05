@@ -593,3 +593,32 @@ pub unsafe extern "stdcall" fn _lwrite(
 pub unsafe extern "stdcall" fn _llseek(_hfile: HFile, _offset: i64, _origin: u32) -> i64 {
     common::file::_llseek(_hfile, _offset, _origin)
 }
+
+/// Create a file handle using the legacy _lcreat API.
+///
+/// # Arguments
+/// * `_lppathname` - Windows-style file path (e.g. `C:\foo\bar.txt`).
+/// * `_iattribute` - File attribute flags.
+///   Normal (0), Can be read from or written to without restrictions.
+///   Read-only (1), Cannot be written to. Attempting to write will fail with an error.
+///   Hidden (2), Not visible when enumerating files in a directory. This attribute has no effect on file access permissions.
+///   System (4), Reserved for use by the operating system. This attribute has no effect on file access permissions.
+///
+/// # Safety
+/// * `_lppathname` must be a valid Windows-style file path string.
+/// * `_iattribute` must be a valid file attribute flag value (0, 1, 2, or 4).
+///
+/// # Returns
+/// A file handle on success, or `HFile::INVALID` on failure.
+/// Currently always returns `HFile::INVALID` since we don't support this legacy API.
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or create these handles,
+/// but it allows the DLLs to link successfully if they reference _lcreat.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn _lcreat(_lppathname: LPCSTR, _iattribute: i32) -> HFile {
+    common::file::_lcreat(_lppathname, _iattribute)
+}
