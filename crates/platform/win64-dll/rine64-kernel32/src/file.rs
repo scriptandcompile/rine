@@ -578,3 +578,30 @@ pub unsafe extern "win64" fn _lwrite(
 ) -> i32 {
     common::file::_lwrite(_hfile, _buffer, _count)
 }
+
+/// Move the file pointer for a file handle using the legacy _llseek API.
+///
+/// # Arguments
+/// * `_hfile` - The file handle whose pointer to move.
+/// * `_offset` - The distance to move the file pointer, in bytes. Can be negative to move backwards.
+/// * `_origin` - The starting point for the move. Must be one of `FILE_BEGIN` (0), `FILE_CURRENT` (1), or `FILE_END` (2).
+///
+/// # Safety
+/// `_hfile` must be a valid file handle returned by `_lopen`.
+/// After this call, the caller must ensure that the file handle is properly closed with `_lclose`.
+/// `_origin` must be a valid seek method must be one of `FILE_BEGIN` (0), `FILE_CURRENT` (1), or `FILE_END` (2).
+///
+/// # Returns
+/// The new file pointer position on success, or an error code on failure.
+/// Currently always returns `HFILE_ERROR` (-1).
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or move these handles,
+/// This function does not currently report an error through `GetLastError`.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn _llseek(_hfile: HFile, _offset: i64, _origin: u32) -> i64 {
+    common::file::_llseek(_hfile, _offset, _origin)
+}

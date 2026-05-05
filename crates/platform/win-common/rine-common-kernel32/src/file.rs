@@ -559,6 +559,28 @@ pub fn _lwrite(_hfile: HFile, _buffer: *const core::ffi::c_void, _count: u32) ->
     HFile::INVALID.as_raw()
 }
 
+/// Move the file pointer for a file handle using the legacy _llseek API.
+///
+/// # Arguments
+/// * `_hfile` - The file handle whose pointer to move.
+/// * `_offset` - The distance to move the file pointer, in bytes. Can be negative to move backwards.
+/// * `_origin` - The starting point for the move. Must be one of `FILE_BEGIN` (0), `FILE_CURRENT` (1), or `FILE_END` (2).
+///
+/// # Returns
+/// The new file pointer position on success, or an error code on failure.
+/// Currently always returns `HFILE_ERROR` (-1).
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or move these handles,
+/// This function does not currently report an error through `GetLastError`.
+pub fn _llseek(_hfile: HFile, _offset: i64, _origin: u32) -> i64 {
+    // Stub implementation for legacy _llseek API.
+    // This API is not commonly used and we don't need it for our purposes, but we provide a stub to link successfully.
+    // Just return an error code to indicate failure.
+    HFile::INVALID.as_raw() as i64
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
