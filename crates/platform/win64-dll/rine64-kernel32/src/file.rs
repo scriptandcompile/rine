@@ -470,10 +470,40 @@ pub unsafe extern "win64" fn FindClose(find_file: Handle) -> WinBool {
     unsafe { CloseHandle(find_file) }
 }
 
+// ----- Legacy 16 bit windows APIs (not commonly used) -----
+
+/// Open a file handle from the legacy _lopen API.
+///
+/// # Arguments
+/// * `_lppathname` - Windows-style file path (e.g. `C:\foo\bar.txt`).
+/// * `_ireadwrite` - Access mode (0 for read-only, 1 for write-only, 2 for read/write).
+///
+/// # Safety
+/// `_lppathname` must be a valid null-terminated ANSI string.
+/// The caller must ensure that the file path is valid and that the access mode is appropriate.
+///
+/// # Returns
+/// A file handle on success, or `HFile::NULL` on failure.
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or open these handles,
+/// but it allows the DLLs to link successfully if they reference _lopen.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn _lopen(_lppathname: LPCSTR, _ireadwrite: i32) -> HFile {
+    common::file::_lopen(_lppathname, _ireadwrite)
+}
+
 /// Close a file handle from the legacy _lopen API.
 ///
 /// # Arguments
 /// * `hfile` - The file handle to close.
+///
+/// # Safety
+/// `hfile` must be a valid file handle returned by `_lopen`.
+/// After this call, `hfile` must not be used again.
 ///
 /// # Returns
 /// The input `hfile` on success, or an error code on failure.
@@ -482,7 +512,7 @@ pub unsafe extern "win64" fn FindClose(find_file: Handle) -> WinBool {
 /// The _lopen/_lclose APIs are legacy and not commonly used.
 /// This is a stub implementation that doesn't actually track or close these handles,
 /// but it allows the DLLs to link successfully if they reference _lclose.
-#[rine_dlls::partial]
+#[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _lclose(hfile: HFile) -> HFile {

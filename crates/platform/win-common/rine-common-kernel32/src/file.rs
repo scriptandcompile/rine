@@ -6,6 +6,7 @@ use rine_types::{
         OPEN_EXISTING, TRUNCATE_EXISTING, Win32FindDataA, Win32FindDataW, collect_find_entries,
         handle_table, handle_to_fd, split_find_path, std_handle_to_fd,
     },
+    strings::LPCSTR,
 };
 
 /// implementation of win32 WriteFile, shared between 32-bit and 64-bit DLLs.
@@ -478,7 +479,26 @@ pub unsafe fn find_next_file_w(handle: Handle, find_data: *mut Win32FindDataW) -
     }
 }
 
-/// Close a file handle from the legacy _lopen API.
+/// Open a file handle from the legacy _lopen API.
+///
+/// # Arguments
+/// * `_lppathname` - Windows-style file path (e.g. `C:\foo\bar.txt`).
+/// * `_ireadwrite` - Access mode (0 for read-only, 1 for write-only, 2 for read/write).
+///
+/// # Returns
+/// A file handle on success, or `HFile::NULL` on failure.
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or open these handles,
+/// but it allows the DLLs to link successfully if they reference _lopen.
+pub fn _lopen(_lppathname: LPCSTR, _ireadwrite: i32) -> HFile {
+    // We don't support the legacy _lopen API, but we need to provide a stub implementation to link successfully.
+    // Just return a non-error value (HFile::NULL is the error value for _lopen, so we return something else to indicate success).
+    HFile::NULL
+}
+
+/// Close a file handle from the legacy _lclose API.
 ///
 /// # Arguments
 /// * `hfile` - The file handle to close.
@@ -491,7 +511,7 @@ pub unsafe fn find_next_file_w(handle: Handle, find_data: *mut Win32FindDataW) -
 /// This is a stub implementation that doesn't actually track or close these handles,
 /// but it allows the DLLs to link successfully if they reference _lclose.
 pub fn _lclose(hfile: HFile) -> HFile {
-    // HFile is a 16-bit handle type used by legacy file I/O APIs like _lopen/_lclose.
+    // HFile is a 16-bit API handle type used by legacy file I/O APIs like _lopen/_lclose.
     // We don't support those APIs, but we need to provide a stub implementation to link successfully.
     // Just return the input value, which is what the Windows implementation does on success.
     hfile
