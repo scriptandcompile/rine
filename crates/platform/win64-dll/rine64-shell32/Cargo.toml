@@ -1,0 +1,18 @@
+[package]
+name = "rine64-shell32"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "shell32.dll implementation for rine"
+build = "build.rs"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+rine-dlls = { workspace = true }
+rine-types = { workspace = true }
+rine-common-shell32 = { workspace = true }
+
+[build-dependencies]
+rine-dll-build = { workspace = true }

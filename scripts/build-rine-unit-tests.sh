@@ -15,6 +15,7 @@ cargo test --workspace --lib --bins \
 	--exclude rine32-advapi32 \
 	--exclude rine32-kernel32 \
 	--exclude rine32-comdlg32 \
+	--exclude rine32-shell32 \
 	--exclude rine32-gdi32 \
 	--exclude rine32-msvcrt \
 	--exclude rine32-ntdll \

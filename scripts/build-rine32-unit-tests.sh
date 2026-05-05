@@ -18,6 +18,7 @@ cargo test \
     -p rine32-advapi32 \
     -p rine32-kernel32 \
     -p rine32-comdlg32 \
+    -p rine32-shell32 \
     -p rine32-gdi32 \
     -p rine32-msvcrt \
     -p rine32-ntdll \

@@ -85,6 +85,10 @@ const DYNAMIC_PROVIDER_SPECS: &[DynamicProviderSpec] = &[
         dll_names: &["comdlg32.dll"],
     },
     DynamicProviderSpec {
+        library_name: "librine32_shell32.so",
+        dll_names: &["shell32.dll"],
+    },
+    DynamicProviderSpec {
         library_name: "librine32_user32.so",
         dll_names: &["user32.dll"],
     },

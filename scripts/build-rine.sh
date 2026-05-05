@@ -15,6 +15,7 @@ HOST_PROVIDER_LIBS=(
     "librine64_advapi32.so"
     "librine64_gdi32.so"
     "librine64_comdlg32.so"
+    "librine64_shell32.so"
     "librine64_user32.so"
     "librine64_ws2_32.so"
 )
@@ -26,6 +27,7 @@ TARGET32_PROVIDER_PACKAGES=(
     "rine32-advapi32"
     "rine32-gdi32"
     "rine32-comdlg32"
+    "rine32-shell32"
     "rine32-user32"
     "rine32-ws2_32"
 )
@@ -37,6 +39,7 @@ TARGET32_PROVIDER_LIBS=(
     "librine32_advapi32.so"
     "librine32_gdi32.so"
     "librine32_comdlg32.so"
+    "librine32_shell32.so"
     "librine32_user32.so"
     "librine32_ws2_32.so"
 )
