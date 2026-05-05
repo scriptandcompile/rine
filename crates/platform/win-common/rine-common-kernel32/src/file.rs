@@ -538,6 +538,27 @@ pub fn _lread(_hfile: HFile, _buffer: *mut core::ffi::c_void, _count: u32) -> i3
     HFile::INVALID.as_raw()
 }
 
+/// Write to a file handle using the legacy _lwrite API.
+///
+/// # Arguments
+/// * `_hfile` - The file handle to write to.
+/// * `_buffer` - Pointer to the data to write.
+/// * `_count` - Number of bytes to write.
+///
+/// # Returns
+/// The number of bytes written on success, or an error code on failure.
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or write to these handles,
+/// but it allows the DLLs to link successfully if they reference _lwrite.
+pub fn _lwrite(_hfile: HFile, _buffer: *const core::ffi::c_void, _count: u32) -> i32 {
+    // Stub implementation for legacy _lwrite API.
+    // This API is not commonly used and we don't need it for our purposes, but we provide a stub to link successfully.
+    // Just return an error code to indicate failure.
+    HFile::INVALID.as_raw()
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

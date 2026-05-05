@@ -543,3 +543,28 @@ pub unsafe extern "win64" fn _lread(
 ) -> i32 {
     common::file::_lread(_hfile, _buffer, _count)
 }
+
+/// Write to a file handle using the legacy _lwrite API.
+///
+/// # Arguments
+/// * `_hfile` - The file handle to write to.
+/// * `_buffer` - Pointer to the data to write.
+/// * `_count` - Number of bytes to write.
+///
+/// # Returns
+/// The number of bytes written on success, or an error code on failure.
+///
+/// # Notes
+/// The _lopen/_lclose APIs are legacy and not commonly used.
+/// This is a stub implementation that doesn't actually track or write to these handles,
+/// but it allows the DLLs to link successfully if they reference _lwrite.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn _lwrite(
+    _hfile: HFile,
+    _buffer: *const core::ffi::c_void,
+    _count: u32,
+) -> i32 {
+    common::file::_lwrite(_hfile, _buffer, _count)
+}
