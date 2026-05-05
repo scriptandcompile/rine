@@ -519,6 +519,11 @@ pub unsafe extern "stdcall" fn _lclose(hfile: HFile) -> HFile {
 /// * `_buffer` - Pointer to a buffer to receive the data.
 /// * `_count` - Number of bytes to read.
 ///
+/// # Safety
+/// `_hfile` must be a valid file handle returned by `_lopen`.
+/// `_buffer` must point to at least `_count` writable bytes.
+/// After this call, the caller must ensure that the file handle is properly closed with `_lclose`.
+///
 /// # Returns
 /// The number of bytes read on success, or an error code on failure.
 ///
@@ -543,6 +548,11 @@ pub unsafe extern "stdcall" fn _lread(
 /// * `_hfile` - The file handle to write to.
 /// * `_buffer` - Pointer to the data to write.
 /// * `_count` - Number of bytes to write.
+///
+/// # Safety
+/// `_hfile` must be a valid file handle returned by `_lopen`.
+/// `_buffer` must point to at least `_count` readable bytes.
+/// After this call, the caller must ensure that the file handle is properly closed with `_lclose`.
 ///
 /// # Returns
 /// The number of bytes written on success, or an error code on failure.
