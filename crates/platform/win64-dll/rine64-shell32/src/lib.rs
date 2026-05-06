@@ -1,6 +1,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 mod dialogs;
+mod window;
 
 use rine_dlls::{DllPlugin, as_win_api};
 

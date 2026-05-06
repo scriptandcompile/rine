@@ -6,6 +6,7 @@ compile_error!(
 );
 
 mod dialogs;
+mod window;
 
 use rine_dlls::{DllPlugin, as_win_api};
 

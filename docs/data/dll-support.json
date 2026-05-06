@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T07:09:19.627320+00:00",
+  "generatedAt": "2026-05-06T20:05:14.010036+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2230,8 +2230,21 @@
     },
     {
       "name": "shell32.dll",
-      "functionCount": 2,
+      "functionCount": 3,
       "functions": [
+        {
+          "name": "DragAcceptFiles",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window::DragAcceptFiles",
+            "source": "shell32 - window.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window::DragAcceptFiles",
+            "source": "shell32 - window.rs"
+          }
+        },
         {
           "name": "ShellAboutA",
           "x64": {
@@ -2996,15 +3009,15 @@
     }
   ],
   "totals": {
-    "functions": 226,
+    "functions": 227,
     "x64": {
-      "implemented": 90,
+      "implemented": 91,
       "partial": 94,
       "stubbed": 42,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 90,
+      "implemented": 91,
       "partial": 94,
       "stubbed": 42,
       "unimplemented": 0
