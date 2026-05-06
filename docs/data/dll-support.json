@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T23:31:34.411411+00:00",
+  "generatedAt": "2026-05-06T07:09:19.627320+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2230,7 +2230,7 @@
     },
     {
       "name": "shell32.dll",
-      "functionCount": 1,
+      "functionCount": 2,
       "functions": [
         {
           "name": "ShellAboutA",
@@ -2242,6 +2242,19 @@
           "x86": {
             "status": "partial",
             "symbol": "dialogs::ShellAboutA",
+            "source": "shell32 - dialogs.rs"
+          }
+        },
+        {
+          "name": "ShellAboutW",
+          "x64": {
+            "status": "partial",
+            "symbol": "dialogs::ShellAboutW",
+            "source": "shell32 - dialogs.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "dialogs::ShellAboutW",
             "source": "shell32 - dialogs.rs"
           }
         }
@@ -2983,16 +2996,16 @@
     }
   ],
   "totals": {
-    "functions": 225,
+    "functions": 226,
     "x64": {
       "implemented": 90,
-      "partial": 93,
+      "partial": 94,
       "stubbed": 42,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 90,
-      "partial": 93,
+      "partial": 94,
       "stubbed": 42,
       "unimplemented": 0
     }

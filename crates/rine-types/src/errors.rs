@@ -48,6 +48,16 @@ impl WinBool {
     pub const fn is_true(self) -> bool {
         self.0 != 0
     }
+
+    /// Windows-style falsity check: only zero is false.
+    pub const fn is_false(self) -> bool {
+        self.0 == 0
+    }
+
+    /// Get the raw i32 value of this BOOL, which may be any value where 0 is false and non-zero is true.
+    pub const fn as_i32(self) -> i32 {
+        self.0
+    }
 }
 
 impl core::fmt::Debug for WinBool {

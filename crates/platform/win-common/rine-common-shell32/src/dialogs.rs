@@ -1,6 +1,6 @@
-use rine_types::handles::Handle;
 use rine_types::os::get_version;
 use rine_types::windows::Hwnd;
+use rine_types::{errors::WinBool, handles::Handle};
 
 use tracing::{info, warn};
 
@@ -84,10 +84,15 @@ fn build_shell_about_layout(
 /// # Notes
 /// This implementation applies the documented text-layout split between
 /// Windows 2000/XP/Server 2003 and Windows Vista/Server 2008+.
-pub fn shell_about_a(_hwnd: Hwnd, app_text: Option<&str>, other_stuff: Option<&str>, _icon: Handle) -> i32 {
+pub fn shell_about(
+    _hwnd: Hwnd,
+    app_text: Option<&str>,
+    other_stuff: Option<&str>,
+    _icon: Handle,
+) -> WinBool {
     let Some(app_text) = app_text else {
         warn!("ShellAboutA failed: szApp is NULL");
-        return 0;
+        return WinBool::FALSE;
     };
 
     let formatting = shell_about_text_formatting();
@@ -102,7 +107,7 @@ pub fn shell_about_a(_hwnd: Hwnd, app_text: Option<&str>, other_stuff: Option<&s
         "ShellAboutA layout resolved"
     );
 
-    1
+    WinBool::TRUE
 }
 
 #[cfg(test)]
@@ -124,11 +129,8 @@ mod tests {
 
     #[test]
     fn shell_about_modern_hides_app_text_without_separator() {
-        let layout = build_shell_about_layout(
-            ShellAboutTextFormatting::VistaAndNewer,
-            "My App",
-            None,
-        );
+        let layout =
+            build_shell_about_layout(ShellAboutTextFormatting::VistaAndNewer, "My App", None);
 
         assert_eq!(layout.title, "My App");
         assert_eq!(layout.microsoft_line, None);
@@ -136,16 +138,10 @@ mod tests {
 
     #[test]
     fn shell_about_separator_replaces_microsoft_line() {
-        let legacy = build_shell_about_layout(
-            ShellAboutTextFormatting::LegacyNt5,
-            "Title#Line",
-            None,
-        );
-        let modern = build_shell_about_layout(
-            ShellAboutTextFormatting::VistaAndNewer,
-            "Title#Line",
-            None,
-        );
+        let legacy =
+            build_shell_about_layout(ShellAboutTextFormatting::LegacyNt5, "Title#Line", None);
+        let modern =
+            build_shell_about_layout(ShellAboutTextFormatting::VistaAndNewer, "Title#Line", None);
 
         assert_eq!(legacy.title, "Title");
         assert_eq!(legacy.microsoft_line.as_deref(), Some("Line"));
@@ -156,7 +152,8 @@ mod tests {
     #[test]
     fn shell_about_modern_truncates_app_text_to_200_chars() {
         let source = "A".repeat(210);
-        let layout = build_shell_about_layout(ShellAboutTextFormatting::VistaAndNewer, &source, None);
+        let layout =
+            build_shell_about_layout(ShellAboutTextFormatting::VistaAndNewer, &source, None);
 
         assert_eq!(layout.title.len(), 200);
     }
