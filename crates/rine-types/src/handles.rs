@@ -169,10 +169,63 @@ impl HFILE {
 /// This is the base address of the module in memory.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct HInstance(HANDLE);
+pub struct HINSTANCE(HANDLE);
 
-impl HInstance {
+impl HINSTANCE {
+    /// The null instance handle (`NULL`).
     pub const NULL: Self = Self(HANDLE::NULL);
+    /// The invalid instance handle sentinel (`INVALID`).
+    pub const INVALID: Self = Self(HANDLE::INVALID);
+
+    /// Check if this handle is `NULL` (0), which is a valid but non-functional handle.
+    ///
+    /// # Return
+    /// `true` if this handle is `NULL`, `false` otherwise.
+    ///
+    /// # Notes
+    /// `NULL` (0) is a valid handle value that represents "no object", while `INVALID` (-1) indicates an error.
+    pub const fn is_null(self) -> bool {
+        self.0.is_null()
+    }
+
+    /// Check if this handle is `INVALID` (-1), which indicates an error.
+    ///
+    /// # Return
+    /// `true` if this handle is `INVALID`, `false` otherwise.
+    ///
+    /// # Notes
+    /// `INVALID` (-1) indicates an error, while `NULL` (0) is a valid handle value that represents "no object".
+    pub const fn is_invalid(self) -> bool {
+        self.0.is_invalid()
+    }
+
+    /// Create an `HINSTANCE` from a raw `usize` value, for use in the Windows ABI.
+    ///
+    /// # Arguments
+    /// * `value` - The raw `usize` value representing the base address of the module.
+    ///
+    /// # Return
+    /// An `HINSTANCE` wrapping the given raw value.
+    ///
+    /// # Notes
+    /// Valid values are non-zero addresses representing loaded modules, while `NULL` (0) is a valid handle value that
+    /// represents "no object", and `INVALID` (-1) indicates an error.
+    pub const fn from_raw(value: usize) -> Self {
+        Self(HANDLE::from_raw(value as isize))
+    }
+
+    /// Get the raw `usize` value of this `HINSTANCE`, for use in the Windows ABI.
+    ///
+    /// # Return
+    /// The raw `usize` value of this `HINSTANCE`, representing the base address of the module.
+    ///
+    /// # Notes
+    /// Valid values are non-zero addresses representing loaded modules, while `NULL` (0) is a valid handle value that
+    /// represents "no object", and `INVALID` (-1) indicates an error.
+    /// The returned value is the base address of the module in memory.
+    pub const fn as_raw(self) -> usize {
+        self.0.as_raw() as usize
+    }
 }
 
 /// A handle to a menu (from `CreateMenu` and related functions).

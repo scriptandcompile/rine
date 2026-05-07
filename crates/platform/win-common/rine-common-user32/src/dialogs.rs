@@ -1,5 +1,5 @@
 use rine_types::errors::BOOL;
-use rine_types::handles::HInstance;
+use rine_types::handles::HINSTANCE;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::{HWND, LPARAM, LRESULT, WPARAM};
 
@@ -108,7 +108,7 @@ pub type DLGPROC = *const unsafe extern "win64" fn(
 /// The current implementation is a stub and always returns `HWND::NULL`.
 /// We currently do not set the value of `GetLastError` on failure.
 pub fn create_dialog_param(
-    _hinstance: HInstance,
+    _hinstance: HINSTANCE,
     _template: &str,
     _parent: HWND,
     _dialog_proc: DLGPROC,

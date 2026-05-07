@@ -1,7 +1,7 @@
 use rine_common_user32::dialogs as common;
 
 use rine_types::errors::BOOL;
-use rine_types::handles::HInstance;
+use rine_types::handles::HINSTANCE;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::{HWND, LPARAM, LRESULT, WPARAM};
 
@@ -102,7 +102,7 @@ pub unsafe extern "win64" fn SetDlgItemTextW(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateDialogParamA(
-    _hinstance: HInstance,
+    _hinstance: HINSTANCE,
     _template: LPCSTR,
     _parent: HWND,
     _dlgproc: common::DLGPROC,
@@ -150,7 +150,7 @@ pub unsafe extern "win64" fn CreateDialogParamA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn CreateDialogParamW(
-    _hinstance: HInstance,
+    _hinstance: HINSTANCE,
     _template: LPCWSTR,
     _parent: HWND,
     _dlgproc: common::DLGPROC,
