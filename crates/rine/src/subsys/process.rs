@@ -12,7 +12,7 @@ use std::process::Command;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 
-use rine_types::handles::{Handle, HandleEntry, handle_table};
+use rine_types::handles::{HANDLE, HandleEntry, handle_table};
 use rine_types::threading::{ProcessWaitable, STILL_ACTIVE};
 use tracing::{debug, warn};
 
@@ -139,7 +139,7 @@ pub fn spawn_child(
     exe_path: &str,
     args: &[String],
     env: Option<&HashMap<String, String>>,
-) -> Option<(Handle, Handle, u32)> {
+) -> Option<(HANDLE, HANDLE, u32)> {
     let rine = rine_exe();
     debug!(rine = %rine.display(), exe = exe_path, "CreateProcess → spawning child rine");
 
@@ -225,7 +225,7 @@ fn wait_for_child(
 
 /// Get the exit code of a process handle.
 #[allow(dead_code)]
-pub fn get_process_exit_code(h: Handle) -> Option<u32> {
+pub fn get_process_exit_code(h: HANDLE) -> Option<u32> {
     // Delegate to the handle table (reads the atomic exit_code).
     let inner = handle_table();
     // We need to peek at the entry without removing it.

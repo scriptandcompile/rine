@@ -1,6 +1,6 @@
 use rine_common_kernel32 as common;
 use rine_types::errors::{BOOL, ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER};
-use rine_types::handles::Handle;
+use rine_types::handles::HANDLE;
 use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
 use rine_types::strings::{LPCSTR, LPCWSTR, read_cstr, read_wstr};
 
@@ -531,7 +531,7 @@ pub unsafe extern "stdcall" fn GetModuleHandleW(module_name: LPCWSTR) -> usize {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetCurrentProcess() -> Handle {
+pub unsafe extern "stdcall" fn GetCurrentProcess() -> HANDLE {
     common::process::get_current_process()
 }
 
@@ -602,7 +602,7 @@ pub unsafe extern "stdcall" fn SetLastError(error_code: u32) {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetExitCodeProcess(process: Handle, exit_code: *mut u32) -> BOOL {
+pub unsafe extern "stdcall" fn GetExitCodeProcess(process: HANDLE, exit_code: *mut u32) -> BOOL {
     if exit_code.is_null() {
         common::process::set_last_error(ERROR_INVALID_PARAMETER);
         return BOOL::FALSE;

@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 
 use rine_types::errors::{BOOL, ERROR_SUCCESS};
-use rine_types::handles::{Handle, HandleEntry, handle_table};
+use rine_types::handles::{HANDLE, HandleEntry, handle_table};
 use rine_types::os::ProcessInformation;
 use rine_types::threading::{ProcessWaitable, STILL_ACTIVE};
 
@@ -345,8 +345,8 @@ pub fn free_library(_module: u32) -> BOOL {
 ///   the internal handle table.
 /// - APIs expecting a queryable process handle may still reject this pseudo-
 ///   handle instead of treating it as `GetCurrentProcess()`.
-pub fn get_current_process() -> Handle {
-    Handle::from_raw(-1)
+pub fn get_current_process() -> HANDLE {
+    HANDLE::from_raw(-1)
 }
 
 /// Gets the exit code of a process handle.
@@ -380,7 +380,7 @@ pub fn get_current_process() -> Handle {
 /// - No explicit access-right checks are enforced against per-handle granted
 ///   permissions.
 /// - Pseudo-handle semantics (`GetCurrentProcess`) are not normalized here.
-pub fn get_exit_code_process(process_handle: Handle) -> Option<u32> {
+pub fn get_exit_code_process(process_handle: HANDLE) -> Option<u32> {
     if let Some(rine_types::threading::Waitable::Process(p)) =
         handle_table().get_waitable(process_handle)
     {

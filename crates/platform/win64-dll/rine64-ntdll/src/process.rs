@@ -1,7 +1,7 @@
 //! ntdll process management: NtTerminateProcess.
 
 use rine_common_ntdll::process as common;
-use rine_types::handles::Handle;
+use rine_types::handles::HANDLE;
 
 /// Terminate the current (or specified) process.
 ///
@@ -23,7 +23,7 @@ use rine_types::handles::Handle;
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn NtTerminateProcess(
-    process_handle: Handle,
+    process_handle: HANDLE,
     exit_status: u32, // NTSTATUS
 ) -> u32 {
     common::nt_terminate_process(process_handle, exit_status)

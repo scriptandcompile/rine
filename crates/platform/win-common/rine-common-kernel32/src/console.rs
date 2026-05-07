@@ -1,5 +1,5 @@
 use rine_types::errors::BOOL;
-use rine_types::handles::{Handle, fd_to_handle, handle_to_fd, std_handle_to_fd};
+use rine_types::handles::{HANDLE, fd_to_handle, handle_to_fd, std_handle_to_fd};
 
 /// Get a standard handle (stdin, stdout, stderr) as a raw handle value.
 ///
@@ -11,14 +11,14 @@ use rine_types::handles::{Handle, fd_to_handle, handle_to_fd, std_handle_to_fd};
 ///
 /// # Returns
 /// On success, returns a raw handle value corresponding to the requested standard handle.
-/// If the specified standard handle is not available, the function returns `Handle::INVALID`.
+/// If the specified standard handle is not available, the function returns `HANDLE::INVALID`.
 #[unsafe(no_mangle)]
-pub unsafe fn get_std_handle(nstd_handle: u32) -> Handle {
+pub unsafe fn get_std_handle(nstd_handle: u32) -> HANDLE {
     match std_handle_to_fd(nstd_handle) {
         Some(fd) => fd_to_handle(fd),
         None => {
             tracing::warn!(nstd_handle, "GetStdHandle: unknown handle constant");
-            Handle::INVALID
+            HANDLE::INVALID
         }
     }
 }
@@ -35,7 +35,7 @@ pub unsafe fn get_std_handle(nstd_handle: u32) -> Handle {
 /// `handle` must be a valid file descriptor corresponding to a console handle in this runtime,
 /// `chars_written` may be null; if non-null it must be a writable `*mut u32`.
 #[unsafe(no_mangle)]
-pub unsafe fn write_console(handle: Handle, text: &str, chars_written: *mut u32) -> BOOL {
+pub unsafe fn write_console(handle: HANDLE, text: &str, chars_written: *mut u32) -> BOOL {
     let Some(fd) = handle_to_fd(handle) else {
         return BOOL::FALSE;
     };

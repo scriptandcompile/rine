@@ -1,5 +1,5 @@
 use rine_types::errors::NtStatus;
-use rine_types::handles::Handle;
+use rine_types::handles::HANDLE;
 
 /// Terminate the current (or specified) process.
 ///
@@ -18,7 +18,7 @@ use rine_types::handles::Handle;
 /// # Note
 /// This is a partial implementation that only supports terminating the current process.
 pub fn nt_terminate_process(
-    process_handle: Handle,
+    process_handle: HANDLE,
     exit_status: u32, // NTSTATUS
 ) -> u32 {
     // NULL (0) or the current-process pseudo-handle (-1) both mean "self".

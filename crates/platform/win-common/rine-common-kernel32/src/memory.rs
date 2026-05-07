@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
 use rine_types::errors::BOOL;
-use rine_types::handles::{Handle, HandleEntry, HeapState, handle_table};
+use rine_types::handles::{HANDLE, HandleEntry, HeapState, handle_table};
 
 pub const HEAP_ZERO_MEMORY: u32 = 0x00000008;
 
@@ -31,7 +31,7 @@ pub static VIRTUAL_REGIONS: LazyLock<Mutex<HashMap<usize, usize>>> =
 
 /// The default process heap, used by HeapAlloc with a null heap handle.
 /// This is lazily initialized on first use.
-pub static DEFAULT_HEAP: LazyLock<Handle> = LazyLock::new(|| {
+pub static DEFAULT_HEAP: LazyLock<HANDLE> = LazyLock::new(|| {
     handle_table().insert(HandleEntry::Heap(HeapState {
         allocations: Mutex::new(HashMap::new()),
         flags: 0,
@@ -55,7 +55,7 @@ pub static DEFAULT_HEAP: LazyLock<Handle> = LazyLock::new(|| {
 /// # Note
 /// The default process heap returned by GetProcessHeap cannot be created or destroyed using
 /// HeapCreate or HeapDestroy, and attempting to do so will fail.
-pub unsafe fn heap_create(options: u32) -> Option<Handle> {
+pub unsafe fn heap_create(options: u32) -> Option<HANDLE> {
     let heap = HeapState {
         allocations: Mutex::new(HashMap::new()),
         flags: options,
@@ -83,7 +83,7 @@ pub unsafe fn heap_create(options: u32) -> Option<Handle> {
 ///
 /// # Note
 /// The default process heap cannot be destroyed, and attempting to do so will fail.
-pub fn heap_alloc(heap_handle: Handle, flags: u32, size: usize) -> *mut u8 {
+pub fn heap_alloc(heap_handle: HANDLE, flags: u32, size: usize) -> *mut u8 {
     let align = std::mem::align_of::<usize>(); // pointer-width alignment
     let layout = match Layout::from_size_align(size, align) {
         Ok(l) => l,
@@ -139,7 +139,7 @@ pub fn heap_alloc(heap_handle: Handle, flags: u32, size: usize) -> *mut u8 {
 /// * Missing implementation features:
 ///   * `_flags` semantics are ignored.
 ///   * No Win32-accurate `GetLastError` mapping is provided on failure.
-pub unsafe fn heap_free(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> BOOL {
+pub unsafe fn heap_free(heap_handle: HANDLE, _flags: u32, ptr: *mut u8) -> BOOL {
     if ptr.is_null() {
         return BOOL::TRUE;
     }
@@ -182,7 +182,7 @@ pub unsafe fn heap_free(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> BOOL 
 /// as `ptr` or a different location. If the function fails, the return value is `NULL`, and extended error
 /// information should be (but currently cannot) be obtained by calling GetLastError.
 pub unsafe fn heap_realloc(
-    heap_handle: Handle,
+    heap_handle: HANDLE,
     flags: u32,
     ptr: *mut u8,
     new_size: usize,
@@ -249,7 +249,7 @@ pub unsafe fn heap_realloc(
 ///
 /// # Note
 /// The default process heap cannot be destroyed, and attempting to do so will fail.
-pub fn heap_destroy(heap_handle: Handle) -> BOOL {
+pub fn heap_destroy(heap_handle: HANDLE) -> BOOL {
     // Don't allow destroying the default process heap.
     if heap_handle == *DEFAULT_HEAP {
         return BOOL::FALSE;
@@ -300,7 +300,7 @@ pub fn heap_destroy(heap_handle: Handle) -> BOOL {
 /// * Missing implementation features:
 ///   * Reserved `flags` validation/behavior is not implemented.
 ///   * No Win32-accurate `GetLastError` mapping is provided for invalid handle or pointer cases.
-pub fn heap_size(heap_handle: Handle, _flags: u32, ptr: *const u8) -> usize {
+pub fn heap_size(heap_handle: HANDLE, _flags: u32, ptr: *const u8) -> usize {
     let result = handle_table().with_heap(heap_handle, |state| {
         let allocs = state.allocations.lock().unwrap();
         allocs.get(&(ptr as usize)).map(|&(size, _)| size)

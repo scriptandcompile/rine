@@ -2,7 +2,7 @@ use std::ptr;
 use std::sync::{Arc, Condvar, Mutex};
 
 use rine_types::errors::BOOL;
-use rine_types::handles::{Handle, HandleEntry, handle_table};
+use rine_types::handles::{HANDLE, HandleEntry, handle_table};
 use rine_types::sync::{CriticalSection, LPCriticalSection};
 use rine_types::threading::{
     EventInner, EventWaitable, MutexInner, MutexState, MutexWaitable, SemaphoreInner,
@@ -175,7 +175,7 @@ pub unsafe fn delete_critical_section(cs: LPCriticalSection) {
 /// If the mutex handle is invalid or the caller does not have ownership of the mutex,
 /// the function returns `BOOL::FALSE` and no action is taken.
 #[inline]
-pub unsafe fn release_mutex(handle: Handle) -> BOOL {
+pub unsafe fn release_mutex(handle: HANDLE) -> BOOL {
     let waitable = match handle_table().get_waitable(handle) {
         Some(Waitable::Mutex(m)) => m,
         _ => return BOOL::FALSE,
@@ -216,7 +216,7 @@ pub unsafe fn release_mutex(handle: Handle) -> BOOL {
 /// let manual_reset_event = create_event(BOOL::TRUE, BOOL::FALSE);
 /// let auto_reset_event = create_event(BOOL::FALSE, BOOL::TRUE);
 /// ```
-pub fn create_event(manual_reset: BOOL, initial_state: BOOL) -> Handle {
+pub fn create_event(manual_reset: BOOL, initial_state: BOOL) -> HANDLE {
     let waitable = EventWaitable {
         inner: Arc::new(EventInner {
             signaled: Mutex::new(initial_state.is_true()),
@@ -240,7 +240,7 @@ pub fn create_event(manual_reset: BOOL, initial_state: BOOL) -> Handle {
 /// Setting an event with an invalid handle will result in failure and return `BOOL::FALSE`.
 /// If the event is successfully set to the signaled state, the function returns `BOOL::TRUE`
 /// and any waiting threads are released according to the event's reset mode (manual or auto).
-pub fn set_event(event_handle: Handle) -> BOOL {
+pub fn set_event(event_handle: HANDLE) -> BOOL {
     let waitable = match handle_table().get_waitable(event_handle) {
         Some(Waitable::Event(e)) => e,
         _ => return BOOL::FALSE,
@@ -271,7 +271,7 @@ pub fn set_event(event_handle: Handle) -> BOOL {
 /// Resetting an event with an invalid handle will result in failure and return `BOOL::FALSE`.
 /// If the event is successfully reset to the non-signaled state, the function returns `BOOL::TRUE`
 /// and any threads that wait on it will block until it is set again.
-pub fn reset_event(event_handle: Handle) -> BOOL {
+pub fn reset_event(event_handle: HANDLE) -> BOOL {
     let waitable = match handle_table().get_waitable(event_handle) {
         Some(Waitable::Event(e)) => e,
         _ => return BOOL::FALSE,
@@ -303,7 +303,7 @@ pub fn reset_event(event_handle: Handle) -> BOOL {
 /// let (named_mutex, desc) = create_mutex(BOOL::TRUE, Some("MyMutex".to_string()));
 /// assert_eq!(desc, "MyMutex (initially-owned)");
 /// ```
-pub fn create_mutex(initial_owner: BOOL, name: Option<String>) -> (Handle, String) {
+pub fn create_mutex(initial_owner: BOOL, name: Option<String>) -> (HANDLE, String) {
     let (owner, count) = if initial_owner.is_true() {
         (Some(std::thread::current().id()), 1)
     } else {
@@ -336,7 +336,7 @@ pub fn create_mutex(initial_owner: BOOL, name: Option<String>) -> (Handle, Strin
 /// * `maximum_count` - The maximum count for the semaphore. Must be greater than 0.
 ///
 /// # Returns
-/// A handle to the newly created semaphore, or `Handle::NULL` if the parameters are
+/// A handle to the newly created semaphore, or `HANDLE::NULL` if the parameters are
 /// invalid.
 ///
 /// # Examples
@@ -348,18 +348,18 @@ pub fn create_mutex(initial_owner: BOOL, name: Option<String>) -> (Handle, Strin
 /// assert!(semaphore.is_valid());
 ///
 /// let invalid_semaphore = create_semaphore(-1, 5);
-/// assert_eq!(invalid_semaphore, Handle::NULL);
+/// assert_eq!(invalid_semaphore, HANDLE::NULL);
 ///
 /// let invalid_semaphore = create_semaphore(3, 2);
-/// assert_eq!(invalid_semaphore, Handle::NULL);
+/// assert_eq!(invalid_semaphore, HANDLE::NULL);
 /// ```
-pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> Handle {
+pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> HANDLE {
     if maximum_count <= 0 || initial_count < 0 || initial_count > maximum_count {
         warn!(
             initial_count,
             maximum_count, "CreateSemaphore: invalid parameters"
         );
-        return Handle::NULL;
+        return HANDLE::NULL;
     }
 
     let waitable = SemaphoreWaitable {
@@ -398,7 +398,7 @@ pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> Handle {
 /// If the semaphore handle is invalid, the caller does not have appropriate access, or if releasing the
 /// semaphore would exceed its maximum count, the function returns `BOOL::FALSE` and no action is taken.
 pub unsafe fn release_semaphore(
-    handle: Handle,
+    handle: HANDLE,
     release_count: i32,
     previous_count: *mut i32,
 ) -> BOOL {
@@ -556,38 +556,38 @@ mod tests {
     #[test]
     fn create_semaphore_valid() {
         let h = create_semaphore(2, 5);
-        assert!(h != Handle::NULL);
+        assert!(h != HANDLE::NULL);
     }
 
     #[test]
     fn create_semaphore_invalid_initial_count() {
         let h = create_semaphore(-1, 5);
-        assert_eq!(h, Handle::NULL);
+        assert_eq!(h, HANDLE::NULL);
     }
 
     #[test]
     fn create_semaphore_invalid_maximum_count() {
         let h = create_semaphore(3, 2);
-        assert_eq!(h, Handle::NULL);
+        assert_eq!(h, HANDLE::NULL);
     }
 
     #[test]
     fn create_semaphore_zero_initial() {
         let h = create_semaphore(0, 5);
-        assert!(h != Handle::NULL);
+        assert!(h != HANDLE::NULL);
     }
 
     #[test]
     fn create_semaphore_initial_equals_maximum() {
         let h = create_semaphore(5, 5);
-        assert!(h != Handle::NULL);
+        assert!(h != HANDLE::NULL);
     }
 
     #[test]
     fn create_semaphore_multiple_instances() {
         let h1 = create_semaphore(1, 3);
         let h2 = create_semaphore(2, 4);
-        assert!(h1 != Handle::NULL);
-        assert!(h2 != Handle::NULL);
+        assert!(h1 != HANDLE::NULL);
+        assert!(h2 != HANDLE::NULL);
     }
 }

@@ -2,7 +2,7 @@ use rine_types::{
     errors::BOOL,
     handles::{
         CREATE_ALWAYS, CREATE_NEW, FILE_BEGIN, FILE_CURRENT, FILE_END, FindDataState, GENERIC_READ,
-        GENERIC_WRITE, HFile, Handle, HandleEntry, INVALID_SET_FILE_POINTER, OPEN_ALWAYS,
+        GENERIC_WRITE, HANDLE, HFile, HandleEntry, INVALID_SET_FILE_POINTER, OPEN_ALWAYS,
         OPEN_EXISTING, TRUNCATE_EXISTING, Win32FindDataA, Win32FindDataW, collect_find_entries,
         handle_table, handle_to_fd, split_find_path, std_handle_to_fd,
     },
@@ -27,7 +27,7 @@ use rine_types::{
 /// - Overlapped/asynchronous I/O is not implemented (`_overlapped` is ignored).
 /// - This implementation does not set `GetLastError` on failure.
 pub unsafe fn write_file(
-    handle: Handle,
+    handle: HANDLE,
     buffer: *const u8,
     bytes_to_write: u32,
     bytes_written: *mut u32,
@@ -70,7 +70,7 @@ pub unsafe fn write_file(
 /// Currently, this implementation does not set the error code, so it will return INVALID_SET_FILE_POINTER on
 /// failure and 0xFFFFFFFF on success if the new file pointer is exactly 0xFFFFFFFF.
 pub unsafe fn set_file_pointer(
-    handle: Handle,
+    handle: HANDLE,
     distance_to_move: i32,           // low 32 bits
     distance_to_move_high: *mut i32, // high 32 bits (in/out, optional)
     move_method: u32,
@@ -114,8 +114,8 @@ pub unsafe fn set_file_pointer(
 ///
 /// # Returns
 /// On success, returns a valid Windows file handle (which must be closed with `CloseHandle` when no longer needed).
-/// On failure, returns `Handle::INVALID`.
-pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u32) -> Handle {
+/// On failure, returns `HANDLE::INVALID`.
+pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u32) -> HANDLE {
     tracing::debug!(
         path = win_path,
         access = desired_access,
@@ -147,7 +147,7 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
                 disp = creation_disposition,
                 "CreateFile: unknown creation disposition"
             );
-            return Handle::INVALID;
+            return HANDLE::INVALID;
         }
     }
 
@@ -156,14 +156,14 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
 
     let c_path = match std::ffi::CString::new(linux_path.to_string_lossy().as_bytes()) {
         Ok(s) => s,
-        Err(_) => return Handle::INVALID,
+        Err(_) => return HANDLE::INVALID,
     };
 
     let mode: libc::mode_t = 0o644;
     let fd = unsafe { libc::open(c_path.as_ptr(), flags, mode as libc::c_uint) };
     if fd < 0 {
         tracing::debug!(path = %linux_path.display(), errno = std::io::Error::last_os_error().raw_os_error(), "CreateFile: open failed");
-        return Handle::INVALID;
+        return HANDLE::INVALID;
     }
 
     let h = handle_table().insert(HandleEntry::File(fd));
@@ -194,7 +194,7 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
 /// (threads, events, processes, mutexes, semaphores, heaps, registry keys, and FindFirstFile find data).
 /// It does not support closing of window handles, which are not tracked in the handle table.
 #[allow(non_snake_case)]
-pub fn close_handle(handle: Handle) -> BOOL {
+pub fn close_handle(handle: HANDLE) -> BOOL {
     match handle_table().remove(handle) {
         Some(HandleEntry::Thread(_)) => BOOL::TRUE,
         Some(HandleEntry::Event(_)) => BOOL::TRUE,
@@ -255,7 +255,7 @@ pub fn delete_file(win_path: &str) -> BOOL {
 ///
 /// # Returns
 /// `TRUE` if the buffers were successfully flushed, or `FALSE` if an error occurred (e.g. invalid handle).
-pub fn flush_file_buffers(handle: Handle) -> BOOL {
+pub fn flush_file_buffers(handle: HANDLE) -> BOOL {
     match handle_table().get_fd(handle) {
         Some(fd) => {
             if unsafe { libc::fsync(fd) } == 0 {
@@ -280,7 +280,7 @@ pub fn flush_file_buffers(handle: Handle) -> BOOL {
 ///
 /// # Returns
 /// The size of the file in bytes, or `None` if the handle is invalid or an error occurs.
-pub fn get_file_size(handle: Handle) -> Option<u64> {
+pub fn get_file_size(handle: HANDLE) -> Option<u64> {
     let fd = handle_to_fd(handle)?;
 
     let mut stat: libc::stat = unsafe { std::mem::zeroed() };
@@ -310,7 +310,7 @@ pub fn get_file_size(handle: Handle) -> Option<u64> {
 /// - Overlapped/asynchronous I/O is not implemented (`_overlapped` is ignored).
 /// - This implementation does not set `GetLastError` on failure.
 pub unsafe fn read_file(
-    handle: Handle,
+    handle: HANDLE,
     buffer: *mut u8,
     bytes_to_read: u32,
     bytes_read: *mut u32,
@@ -342,11 +342,11 @@ pub unsafe fn read_file(
 /// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
 ///
 /// # Returns
-/// A search handle that can be used with `FindNextFile` and `FindClose`, or `Handle::INVALID` if no
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `HANDLE::INVALID` if no
 /// matching files were found or an error occurred.
-pub unsafe fn find_first_file_a(file_path: &str, find_data: *mut Win32FindDataA) -> Handle {
+pub unsafe fn find_first_file_a(file_path: &str, find_data: *mut Win32FindDataA) -> HANDLE {
     if find_data.is_null() {
-        return Handle::INVALID;
+        return HANDLE::INVALID;
     }
 
     let (dir_part, pattern) = split_find_path(file_path);
@@ -354,7 +354,7 @@ pub unsafe fn find_first_file_a(file_path: &str, find_data: *mut Win32FindDataA)
     let linux_dir = translate_find_dir(dir_part);
     let entries = collect_find_entries(&linux_dir, pattern);
     if entries.is_empty() {
-        return Handle::INVALID;
+        return HANDLE::INVALID;
     }
 
     // Write the first entry.
@@ -381,11 +381,11 @@ pub unsafe fn find_first_file_a(file_path: &str, find_data: *mut Win32FindDataA)
 /// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
 ///
 /// # Returns
-/// A search handle that can be used with `FindNextFile` and `FindClose`, or `Handle::INVALID` if no
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `HANDLE::INVALID` if no
 /// matching files were found or an error occurred.
-pub unsafe fn find_first_file_w(file_path: &str, find_data: *mut Win32FindDataW) -> Handle {
+pub unsafe fn find_first_file_w(file_path: &str, find_data: *mut Win32FindDataW) -> HANDLE {
     if find_data.is_null() {
-        return Handle::INVALID;
+        return HANDLE::INVALID;
     }
 
     let (dir_part, pattern) = split_find_path(file_path);
@@ -393,7 +393,7 @@ pub unsafe fn find_first_file_w(file_path: &str, find_data: *mut Win32FindDataW)
     let linux_dir = translate_find_dir(dir_part);
     let entries = collect_find_entries(&linux_dir, pattern);
     if entries.is_empty() {
-        return Handle::INVALID;
+        return HANDLE::INVALID;
     }
 
     // Write the first entry.
@@ -423,7 +423,7 @@ pub unsafe fn find_first_file_w(file_path: &str, find_data: *mut Win32FindDataW)
 /// `BOOL::TRUE` if the next matching file was found and `find_data` was updated,
 /// or `BOOL::FALSE` if no more matching files were found or an error occurred.
 #[unsafe(no_mangle)]
-pub unsafe fn find_next_file_a(handle: Handle, find_data: *mut Win32FindDataA) -> BOOL {
+pub unsafe fn find_next_file_a(handle: HANDLE, find_data: *mut Win32FindDataA) -> BOOL {
     if find_data.is_null() {
         return BOOL::FALSE;
     }
@@ -458,7 +458,7 @@ pub unsafe fn find_next_file_a(handle: Handle, find_data: *mut Win32FindDataA) -
 /// `BOOL::TRUE` if the next matching file was found and `find_data` was updated,
 /// or `BOOL::FALSE` if no more matching files were found or an error occurred.
 #[unsafe(no_mangle)]
-pub unsafe fn find_next_file_w(handle: Handle, find_data: *mut Win32FindDataW) -> BOOL {
+pub unsafe fn find_next_file_w(handle: HANDLE, find_data: *mut Win32FindDataW) -> BOOL {
     if find_data.is_null() {
         return BOOL::FALSE;
     }
@@ -682,7 +682,7 @@ mod tests {
         path
     }
 
-    fn create_test_file_handle() -> (PathBuf, Handle) {
+    fn create_test_file_handle() -> (PathBuf, HANDLE) {
         let path = unique_temp_file_path();
         let raw = create_file(
             path.to_str()
@@ -690,11 +690,11 @@ mod tests {
             GENERIC_READ | GENERIC_WRITE,
             CREATE_ALWAYS,
         );
-        assert_ne!(raw, Handle::INVALID);
+        assert_ne!(raw, HANDLE::INVALID);
         (path, raw)
     }
 
-    fn cleanup_test_file(path: &PathBuf, handle: Handle) {
+    fn cleanup_test_file(path: &PathBuf, handle: HANDLE) {
         if let Some(fd) = handle_to_fd(handle) {
             unsafe { libc::close(fd) };
         }
@@ -730,7 +730,7 @@ mod tests {
     #[test]
     fn set_file_pointer_invalid_handle_returns_invalid_set_file_pointer() {
         let pos =
-            unsafe { set_file_pointer(Handle::INVALID, 0, core::ptr::null_mut(), FILE_BEGIN) };
+            unsafe { set_file_pointer(HANDLE::INVALID, 0, core::ptr::null_mut(), FILE_BEGIN) };
         assert_eq!(pos, INVALID_SET_FILE_POINTER);
     }
 

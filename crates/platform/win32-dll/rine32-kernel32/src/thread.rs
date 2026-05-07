@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use rine_common_kernel32::thread as common_thread;
 use rine_types::errors::BOOL;
-use rine_types::handles::Handle;
+use rine_types::handles::HANDLE;
 use rine_types::threading;
 
 #[repr(C)]
@@ -116,7 +116,7 @@ pub unsafe extern "stdcall" fn CreateThread(
     parameter: usize,
     creation_flags: u32,
     thread_id_out: *mut u32,
-) -> Handle {
+) -> HANDLE {
     let thread_id_out = unsafe { thread_id_out.as_mut() };
     common_thread::create_thread(
         start_address,
@@ -252,7 +252,7 @@ pub unsafe extern "stdcall" fn Sleep(milliseconds: u32) {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetCurrentThread() -> Handle {
+pub unsafe extern "stdcall" fn GetCurrentThread() -> HANDLE {
     common_thread::current_thread()
 }
 
@@ -301,7 +301,7 @@ pub unsafe extern "stdcall" fn GetCurrentThreadId() -> u32 {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetExitCodeThread(
-    thread_handle: Handle,
+    thread_handle: HANDLE,
     exit_code_out: *mut u32,
 ) -> BOOL {
     let exit_code_out = unsafe { exit_code_out.as_mut() };
@@ -323,7 +323,7 @@ pub unsafe extern "stdcall" fn GetExitCodeThread(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn WaitForSingleObject(handle: Handle, timeout_ms: u32) -> u32 {
+pub unsafe extern "stdcall" fn WaitForSingleObject(handle: HANDLE, timeout_ms: u32) -> u32 {
     let duration = Duration::from_millis(timeout_ms as u64);
     common_thread::wait_for_single_object(handle, duration)
 }
@@ -354,7 +354,7 @@ pub unsafe extern "stdcall" fn WaitForSingleObject(handle: Handle, timeout_ms: u
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn WaitForMultipleObjects(
     count: u32,
-    handles_ptr: *const Handle,
+    handles_ptr: *const HANDLE,
     wait_all: BOOL,
     timeout_ms: u32,
 ) -> u32 {

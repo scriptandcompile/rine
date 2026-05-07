@@ -3,8 +3,8 @@
 //! GetExitCodeProcess.
 
 use rine_common_kernel32 as common;
-use rine_types::errors::{ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER, BOOL};
-use rine_types::handles::Handle;
+use rine_types::errors::{BOOL, ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER};
+use rine_types::handles::HANDLE;
 use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
 use rine_types::strings::{LPCSTR, LPCWSTR, read_cstr, read_wstr};
 
@@ -575,7 +575,7 @@ pub unsafe extern "win64" fn GetCurrentProcessId() -> u32 {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetCurrentProcess() -> Handle {
+pub unsafe extern "win64" fn GetCurrentProcess() -> HANDLE {
     common::process::get_current_process()
 }
 
@@ -613,7 +613,7 @@ pub unsafe extern "win64" fn GetCurrentProcess() -> Handle {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetExitCodeProcess(process: Handle, exit_code: *mut u32) -> BOOL {
+pub unsafe extern "win64" fn GetExitCodeProcess(process: HANDLE, exit_code: *mut u32) -> BOOL {
     if exit_code.is_null() {
         common::process::set_last_error(ERROR_INVALID_PARAMETER);
         return BOOL::FALSE;
@@ -644,21 +644,21 @@ mod tests {
     #[test]
     fn current_process_pseudo_handle() {
         let h = unsafe { GetCurrentProcess() };
-        assert_eq!(h, Handle::from_raw(-1));
+        assert_eq!(h, HANDLE::from_raw(-1));
     }
 
     // ── GetExitCodeProcess with null pointer ─────────────────────
 
     #[test]
     fn exit_code_null_ptr_returns_false() {
-        let result = unsafe { GetExitCodeProcess(Handle::from_raw(0x9999), std::ptr::null_mut()) };
+        let result = unsafe { GetExitCodeProcess(HANDLE::from_raw(0x9999), std::ptr::null_mut()) };
         assert_eq!(result, BOOL::FALSE);
     }
 
     #[test]
     fn exit_code_invalid_handle_returns_false() {
         let mut code: u32 = 0;
-        let result = unsafe { GetExitCodeProcess(Handle::from_raw(0x9999), &mut code) };
+        let result = unsafe { GetExitCodeProcess(HANDLE::from_raw(0x9999), &mut code) };
         assert_eq!(result, BOOL::FALSE);
     }
 }

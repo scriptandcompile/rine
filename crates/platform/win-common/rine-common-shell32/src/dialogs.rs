@@ -1,6 +1,6 @@
 use rine_types::os::get_version;
 use rine_types::windows::HWND;
-use rine_types::{errors::BOOL, handles::Handle};
+use rine_types::{errors::BOOL, handles::HANDLE};
 
 use tracing::{info, warn};
 
@@ -88,7 +88,7 @@ pub fn shell_about(
     _hwnd: HWND,
     app_text: Option<&str>,
     other_stuff: Option<&str>,
-    _icon: Handle,
+    _icon: HANDLE,
 ) -> BOOL {
     let Some(app_text) = app_text else {
         warn!("ShellAboutA failed: szApp is NULL");

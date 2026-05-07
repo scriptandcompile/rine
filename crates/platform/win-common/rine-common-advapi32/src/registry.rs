@@ -4,7 +4,7 @@
 use rine_types::errors::{
     ERROR_FILE_NOT_FOUND, ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER, ERROR_SUCCESS,
 };
-use rine_types::handles::{Handle, HandleEntry, handle_table};
+use rine_types::handles::{HANDLE, HandleEntry, handle_table};
 use rine_types::registry::{
     self, RegistryKeyState, RegistryValue, is_predefined_key, registry_store,
 };
@@ -15,7 +15,7 @@ fn resolve_key(hkey: isize) -> Option<(isize, String)> {
     if is_predefined_key(hkey) {
         return Some((hkey, String::new()));
     }
-    let handle = Handle::from_raw(hkey);
+    let handle = HANDLE::from_raw(hkey);
     handle_table().with_registry_key(handle, |state| (state.root, state.path.clone()))
 }
 
@@ -334,7 +334,7 @@ pub unsafe fn reg_close_key(hkey: isize) -> u32 {
         return ERROR_SUCCESS;
     }
 
-    let handle = Handle::from_raw(hkey);
+    let handle = HANDLE::from_raw(hkey);
     match handle_table().remove(handle) {
         Some(HandleEntry::RegistryKey(_)) => ERROR_SUCCESS,
         Some(other) => {

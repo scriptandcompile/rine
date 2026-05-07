@@ -3,7 +3,7 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
 use rine_types::errors::BOOL;
-use rine_types::handles::{Handle, HandleEntry, handle_table};
+use rine_types::handles::{HANDLE, HandleEntry, handle_table};
 use rine_types::threading::{
     self, INFINITE, STILL_ACTIVE, TLS_OUT_OF_INDEXES, ThreadWaitable, WaitStatus, Waitable,
 };
@@ -46,13 +46,13 @@ pub fn create_thread<F>(
     creation_flags: u32,
     thread_id_out: Option<&mut u32>,
     run_start: F,
-) -> Handle
+) -> HANDLE
 where
     F: FnOnce(usize, usize) -> u32 + Send + 'static,
 {
     if start_address == 0 {
         warn!("CreateThread: null start address");
-        return Handle::NULL;
+        return HANDLE::NULL;
     }
 
     if creation_flags & CREATE_SUSPENDED != 0 {
@@ -107,7 +107,7 @@ where
         Err(e) => {
             warn!("CreateThread: spawn failed: {e}");
             handle_table().remove(h);
-            Handle::NULL
+            HANDLE::NULL
         }
     }
 }
@@ -230,8 +230,8 @@ pub fn sleep(duration: Duration) {
 ///   the internal handle table.
 /// - APIs expecting a queryable thread handle may still reject this pseudo-
 ///   handle instead of treating it as `GetCurrentThread()`.
-pub fn current_thread() -> Handle {
-    Handle::from_raw(-2)
+pub fn current_thread() -> HANDLE {
+    HANDLE::from_raw(-2)
 }
 
 /// Get the current thread's ID.
@@ -273,7 +273,7 @@ pub fn current_thread_id() -> u32 {
 /// - No explicit access-right checks are enforced against per-handle granted
 ///   permissions.
 /// - Pseudo-handle semantics (`GetCurrentThread`) are not normalized here.
-pub fn get_exit_code_thread(handle: Handle, exit_code_out: Option<&mut u32>) -> BOOL {
+pub fn get_exit_code_thread(handle: HANDLE, exit_code_out: Option<&mut u32>) -> BOOL {
     let Some(exit_code_out) = exit_code_out else {
         return BOOL::FALSE;
     };
@@ -299,7 +299,7 @@ pub fn get_exit_code_thread(handle: Handle, exit_code_out: Option<&mut u32>) -> 
 ///
 /// # Returns
 /// `WAIT_OBJECT_0` if the handle was signalled, `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
-pub fn wait_for_single_object(handle: Handle, duration: Duration) -> u32 {
+pub fn wait_for_single_object(handle: HANDLE, duration: Duration) -> u32 {
     match handle_table().get_waitable(handle) {
         Some(waitable) => {
             let timeout_ms = if duration == Duration::from_millis(INFINITE as u64) {
@@ -336,7 +336,7 @@ pub fn wait_for_single_object(handle: Handle, duration: Duration) -> u32 {
 /// `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
 /// If `wait_all` is `BOOL::TRUE`, returns `WAIT_OBJECT_0` if all handles are signalled,
 /// `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
-pub fn wait_for_multiple_objects(handles: &[Handle], wait_all: bool, duration: Duration) -> u32 {
+pub fn wait_for_multiple_objects(handles: &[HANDLE], wait_all: bool, duration: Duration) -> u32 {
     if handles.is_empty() || handles.len() > 64 {
         return WaitStatus::WAIT_FAILED.0;
     }

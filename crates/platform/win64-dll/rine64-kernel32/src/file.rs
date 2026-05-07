@@ -3,7 +3,7 @@
 
 use rine_common_kernel32 as common;
 use rine_types::errors::BOOL;
-use rine_types::handles::{HFile, Handle, INVALID_FILE_SIZE, Win32FindDataA, Win32FindDataW};
+use rine_types::handles::{HANDLE, HFile, INVALID_FILE_SIZE, Win32FindDataA, Win32FindDataW};
 use rine_types::strings::{LPCSTR, LPCWSTR};
 
 /// CreateFileA — open or create a file (ANSI path).
@@ -39,10 +39,10 @@ pub unsafe extern "win64" fn CreateFileA(
     _security_attributes: usize,
     creation_disposition: u32,
     _flags_and_attributes: u32,
-    _template_file: Handle,
-) -> Handle {
+    _template_file: HANDLE,
+) -> HANDLE {
     if file_name.is_null() {
-        return Handle::NULL;
+        return HANDLE::NULL;
     }
 
     let c_str = unsafe { file_name.read_string().unwrap_or_default() };
@@ -84,10 +84,10 @@ pub unsafe extern "win64" fn CreateFileW(
     _security_attributes: usize,
     creation_disposition: u32,
     _flags_and_attributes: u32,
-    _template_file: Handle,
-) -> Handle {
+    _template_file: HANDLE,
+) -> HANDLE {
     if file_name.is_null() {
-        return Handle::NULL;
+        return HANDLE::NULL;
     }
 
     let wide_file_name = unsafe { file_name.read_string().unwrap_or_default() };
@@ -171,7 +171,7 @@ pub unsafe extern "win64" fn DeleteFileA(file_name: LPCSTR) -> BOOL {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn ReadFile(
-    file: Handle,
+    file: HANDLE,
     buffer: *mut u8,
     bytes_to_read: u32,
     bytes_read: *mut u32,
@@ -207,7 +207,7 @@ pub unsafe extern "win64" fn ReadFile(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn WriteFile(
-    file: Handle,
+    file: HANDLE,
     buffer: *const u8,
     bytes_to_write: u32,
     bytes_written: *mut u32,
@@ -232,7 +232,7 @@ pub unsafe extern "win64" fn WriteFile(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn FlushFileBuffers(file: Handle) -> BOOL {
+pub unsafe extern "win64" fn FlushFileBuffers(file: HANDLE) -> BOOL {
     common::file::flush_file_buffers(file)
 }
 
@@ -250,7 +250,7 @@ pub unsafe extern "win64" fn FlushFileBuffers(file: Handle) -> BOOL {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn CloseHandle(object: Handle) -> BOOL {
+pub unsafe extern "win64" fn CloseHandle(object: HANDLE) -> BOOL {
     rine_types::dev_notify!(on_handle_closed(object.as_raw() as i64));
 
     common::file::close_handle(object)
@@ -276,7 +276,7 @@ pub unsafe extern "win64" fn CloseHandle(object: Handle) -> BOOL {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetFileSize(file: Handle, file_size_high: *mut u32) -> u32 {
+pub unsafe extern "win64" fn GetFileSize(file: HANDLE, file_size_high: *mut u32) -> u32 {
     let Some(size) = common::file::get_file_size(file) else {
         return INVALID_FILE_SIZE;
     };
@@ -312,7 +312,7 @@ pub unsafe extern "win64" fn GetFileSize(file: Handle, file_size_high: *mut u32)
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SetFilePointer(
-    file: Handle,
+    file: HANDLE,
     distance_to_move: i32,           // low 32 bits
     distance_to_move_high: *mut i32, // high 32 bits (in/out, optional)
     move_method: u32,
@@ -337,7 +337,7 @@ pub unsafe extern "win64" fn SetFilePointer(
 /// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
 ///
 /// # Returns
-/// A search handle that can be used with `FindNextFile` and `FindClose`, or `Handle::INVALID` if no
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `HANDLE::INVALID` if no
 /// matching files were found or an error occurred.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
@@ -345,14 +345,14 @@ pub unsafe extern "win64" fn SetFilePointer(
 pub unsafe extern "win64" fn FindFirstFileA(
     file_name: LPCSTR,
     find_data: *mut Win32FindDataA,
-) -> Handle {
+) -> HANDLE {
     if file_name.is_null() {
-        return Handle::INVALID;
+        return HANDLE::INVALID;
     }
 
     unsafe {
         let Some(path_str) = file_name.read_string() else {
-            return Handle::INVALID;
+            return HANDLE::INVALID;
         };
 
         common::file::find_first_file_a(&path_str, find_data)
@@ -370,7 +370,7 @@ pub unsafe extern "win64" fn FindFirstFileA(
 /// The caller is responsible for calling `FindClose` with the returned handle when the search is finished.
 ///
 /// # Returns
-/// A search handle that can be used with `FindNextFile` and `FindClose`, or `Handle::INVALID` if no
+/// A search handle that can be used with `FindNextFile` and `FindClose`, or `HANDLE::INVALID` if no
 /// matching files were found or an error occurred.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
@@ -378,13 +378,13 @@ pub unsafe extern "win64" fn FindFirstFileA(
 pub unsafe extern "win64" fn FindFirstFileW(
     file_name: LPCWSTR,
     find_data: *mut Win32FindDataW,
-) -> Handle {
+) -> HANDLE {
     if file_name.is_null() {
-        return Handle::INVALID;
+        return HANDLE::INVALID;
     }
     unsafe {
         let Some(path_str) = file_name.read_string() else {
-            return Handle::INVALID;
+            return HANDLE::INVALID;
         };
 
         common::file::find_first_file_w(&path_str, find_data)
@@ -412,7 +412,7 @@ pub unsafe extern "win64" fn FindFirstFileW(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindNextFileA(
-    find_file: Handle,
+    find_file: HANDLE,
     find_data: *mut Win32FindDataA,
 ) -> BOOL {
     if find_data.is_null() {
@@ -439,7 +439,7 @@ pub unsafe extern "win64" fn FindNextFileA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindNextFileW(
-    find_file: Handle,
+    find_file: HANDLE,
     find_data: *mut Win32FindDataW,
 ) -> BOOL {
     if find_data.is_null() {
@@ -466,7 +466,7 @@ pub unsafe extern "win64" fn FindNextFileW(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn FindClose(find_file: Handle) -> BOOL {
+pub unsafe extern "win64" fn FindClose(find_file: HANDLE) -> BOOL {
     unsafe { CloseHandle(find_file) }
 }
 

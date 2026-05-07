@@ -5,7 +5,7 @@
 
 use rine_common_kernel32 as common;
 use rine_types::errors::BOOL;
-use rine_types::handles::Handle;
+use rine_types::handles::HANDLE;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::sync::LPCriticalSection;
 use tracing::{debug, warn};
@@ -167,7 +167,7 @@ pub unsafe extern "stdcall" fn CreateEventA(
     manual_reset: BOOL,
     initial_state: BOOL,
     _name: LPCSTR,
-) -> Handle {
+) -> HANDLE {
     let h = common::sync::create_event(manual_reset, initial_state);
 
     debug!(?h, "CreateEventA");
@@ -208,7 +208,7 @@ pub unsafe extern "stdcall" fn CreateEventW(
     manual_reset: BOOL,
     initial_state: BOOL,
     _name: LPCWSTR,
-) -> Handle {
+) -> HANDLE {
     let h = common::sync::create_event(manual_reset, initial_state);
 
     debug!(?h, "CreateEventW");
@@ -241,7 +241,7 @@ pub unsafe extern "stdcall" fn CreateEventW(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn SetEvent(event_handle: Handle) -> BOOL {
+pub unsafe extern "stdcall" fn SetEvent(event_handle: HANDLE) -> BOOL {
     common::sync::set_event(event_handle)
 }
 
@@ -261,7 +261,7 @@ pub unsafe extern "stdcall" fn SetEvent(event_handle: Handle) -> BOOL {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn ResetEvent(event_handle: Handle) -> BOOL {
+pub unsafe extern "stdcall" fn ResetEvent(event_handle: HANDLE) -> BOOL {
     common::sync::reset_event(event_handle)
 }
 
@@ -288,7 +288,7 @@ pub unsafe extern "stdcall" fn CreateMutexA(
     _security_attrs: usize,
     initial_owner: BOOL,
     _name: LPCSTR,
-) -> Handle {
+) -> HANDLE {
     let name_str = unsafe { _name.read_string() };
     let (handle, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
 
@@ -321,7 +321,7 @@ pub unsafe extern "stdcall" fn CreateMutexW(
     _security_attrs: usize,
     initial_owner: BOOL,
     _name: LPCWSTR,
-) -> Handle {
+) -> HANDLE {
     let name_str = unsafe { _name.read_string() };
     let (handle, detail) = common::sync::create_mutex(initial_owner, name_str.clone());
 
@@ -349,7 +349,7 @@ pub unsafe extern "stdcall" fn CreateMutexW(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn ReleaseMutex(mutex_handle: Handle) -> BOOL {
+pub unsafe extern "stdcall" fn ReleaseMutex(mutex_handle: HANDLE) -> BOOL {
     unsafe { common::sync::release_mutex(mutex_handle) }
 }
 
@@ -379,9 +379,9 @@ pub unsafe extern "stdcall" fn CreateSemaphoreA(
     initial_count: i32,
     maximum_count: i32,
     _name: LPCSTR,
-) -> Handle {
+) -> HANDLE {
     if maximum_count <= 0 || initial_count < 0 || initial_count > maximum_count {
-        return Handle::NULL;
+        return HANDLE::NULL;
     }
 
     let handle = common::sync::create_semaphore(initial_count, maximum_count);
@@ -422,9 +422,9 @@ pub unsafe extern "stdcall" fn CreateSemaphoreW(
     initial_count: i32,
     maximum_count: i32,
     _name: LPCWSTR,
-) -> Handle {
+) -> HANDLE {
     if maximum_count <= 0 || initial_count < 0 || initial_count > maximum_count {
-        return Handle::NULL;
+        return HANDLE::NULL;
     }
 
     let handle = common::sync::create_semaphore(initial_count, maximum_count);
@@ -467,7 +467,7 @@ pub unsafe extern "stdcall" fn CreateSemaphoreW(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ReleaseSemaphore(
-    semaphore_handle: Handle,
+    semaphore_handle: HANDLE,
     release_count: i32,
     previous_count: *mut i32,
 ) -> BOOL {
@@ -556,7 +556,7 @@ mod tests {
     fn create_event_and_set_reset() {
         unsafe {
             let h = CreateEventA(0, BOOL::TRUE, BOOL::FALSE, LPCSTR::NULL);
-            assert_ne!(h, Handle::NULL);
+            assert_ne!(h, HANDLE::NULL);
 
             assert!(SetEvent(h).is_true());
             // Event is signaled, wait should succeed.
@@ -574,7 +574,7 @@ mod tests {
     fn create_event_w_initially_signaled() {
         unsafe {
             let h = CreateEventW(0, BOOL::FALSE, BOOL::TRUE, LPCWSTR::NULL);
-            assert_ne!(h, Handle::NULL);
+            assert_ne!(h, HANDLE::NULL);
             let w = handle_table().get_waitable(h).unwrap();
             // Auto-reset, initially signaled — first wait succeeds, second times out.
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
@@ -585,8 +585,8 @@ mod tests {
     #[test]
     fn set_event_invalid_handle_returns_false() {
         unsafe {
-            assert!(!SetEvent(Handle::from_raw(0xDEAD)).is_true());
-            assert!(!ResetEvent(Handle::from_raw(0xDEAD)).is_true());
+            assert!(!SetEvent(HANDLE::from_raw(0xDEAD)).is_true());
+            assert!(!ResetEvent(HANDLE::from_raw(0xDEAD)).is_true());
         }
     }
 
@@ -596,7 +596,7 @@ mod tests {
     fn create_mutex_unowned_and_wait() {
         unsafe {
             let h = CreateMutexA(0, BOOL::FALSE, LPCSTR::NULL);
-            assert_ne!(h, Handle::NULL);
+            assert_ne!(h, HANDLE::NULL);
 
             let w = handle_table().get_waitable(h).unwrap();
             // Unowned mutex should be immediately acquirable.
@@ -608,7 +608,7 @@ mod tests {
     fn create_mutex_initially_owned() {
         unsafe {
             let h = CreateMutexA(0, BOOL::TRUE, LPCSTR::NULL);
-            assert_ne!(h, Handle::NULL);
+            assert_ne!(h, HANDLE::NULL);
 
             // Same thread can recursively acquire.
             let w = handle_table().get_waitable(h).unwrap();
@@ -620,7 +620,7 @@ mod tests {
     fn create_mutex_w_variant_works() {
         unsafe {
             let h = CreateMutexW(0, BOOL::FALSE, LPCWSTR::NULL);
-            assert_ne!(h, Handle::NULL);
+            assert_ne!(h, HANDLE::NULL);
         }
     }
 
@@ -645,7 +645,7 @@ mod tests {
     #[test]
     fn release_mutex_invalid_handle_fails() {
         unsafe {
-            assert!(!ReleaseMutex(Handle::from_raw(0xDEAD)).is_true());
+            assert!(!ReleaseMutex(HANDLE::from_raw(0xDEAD)).is_true());
         }
     }
 
@@ -707,7 +707,7 @@ mod tests {
     fn create_semaphore_valid_params() {
         unsafe {
             let h = CreateSemaphoreA(0, 2, 5, LPCSTR::NULL);
-            assert_ne!(h, Handle::NULL);
+            assert_ne!(h, HANDLE::NULL);
         }
     }
 
@@ -715,7 +715,7 @@ mod tests {
     fn create_semaphore_w_variant_works() {
         unsafe {
             let h = CreateSemaphoreW(0, 1, 10, LPCWSTR::NULL);
-            assert_ne!(h, Handle::NULL);
+            assert_ne!(h, HANDLE::NULL);
         }
     }
 
@@ -723,11 +723,11 @@ mod tests {
     fn create_semaphore_invalid_params_returns_null() {
         unsafe {
             // max_count <= 0
-            assert_eq!(CreateSemaphoreA(0, 0, 0, LPCSTR::NULL), Handle::NULL);
+            assert_eq!(CreateSemaphoreA(0, 0, 0, LPCSTR::NULL), HANDLE::NULL);
             // initial_count < 0
-            assert_eq!(CreateSemaphoreA(0, -1, 5, LPCSTR::NULL), Handle::NULL);
+            assert_eq!(CreateSemaphoreA(0, -1, 5, LPCSTR::NULL), HANDLE::NULL);
             // initial_count > max_count
-            assert_eq!(CreateSemaphoreA(0, 6, 5, LPCSTR::NULL), Handle::NULL);
+            assert_eq!(CreateSemaphoreA(0, 6, 5, LPCSTR::NULL), HANDLE::NULL);
         }
     }
 
@@ -780,7 +780,7 @@ mod tests {
     #[test]
     fn release_semaphore_invalid_handle_fails() {
         unsafe {
-            assert!(!ReleaseSemaphore(Handle::from_raw(0xDEAD), 1, ptr::null_mut()).is_true());
+            assert!(!ReleaseSemaphore(HANDLE::from_raw(0xDEAD), 1, ptr::null_mut()).is_true());
         }
     }
 

@@ -1,6 +1,6 @@
 use rine_common_shell32::dialogs as common;
 
-use rine_types::handles::Handle;
+use rine_types::handles::HANDLE;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::HWND;
 
@@ -28,7 +28,7 @@ pub unsafe extern "stdcall" fn ShellAboutA(
     _hwnd: HWND,
     _sz_app: LPCSTR,
     _sz_other_stuff: LPCSTR,
-    _h_icon: Handle,
+    _h_icon: HANDLE,
 ) -> i32 {
     let app_text = if _sz_app.is_null() {
         None
@@ -70,7 +70,7 @@ pub unsafe extern "stdcall" fn ShellAboutW(
     _hwnd: HWND,
     _sz_app: LPCWSTR,
     _sz_other_stuff: LPCWSTR,
-    _h_icon: Handle,
+    _h_icon: HANDLE,
 ) -> i32 {
     let app_text = if _sz_app.is_null() {
         None

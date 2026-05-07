@@ -1,6 +1,6 @@
 use rine_types::errors::NtStatus;
 use rine_types::handles::{
-    GENERIC_READ, GENERIC_WRITE, Handle, HandleEntry, handle_table, handle_to_fd,
+    GENERIC_READ, GENERIC_WRITE, HANDLE, HandleEntry, handle_table, handle_to_fd,
 };
 use rine_types::os::IoStatusBlock;
 
@@ -28,8 +28,8 @@ use rine_types::os::IoStatusBlock;
 /// It simply logs a warning and returns 0 bytes read.
 #[allow(clippy::too_many_arguments)]
 pub unsafe fn nt_read_file(
-    handle: Handle,
-    _event: Handle,
+    handle: HANDLE,
+    _event: HANDLE,
     _apc_routine: usize,
     _apc_context: usize,
     io_status_block: *mut IoStatusBlock,
@@ -94,8 +94,8 @@ pub unsafe fn nt_read_file(
 /// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
 #[allow(clippy::too_many_arguments)]
 pub unsafe fn nt_write_file(
-    file_handle: Handle,
-    _event: Handle,
+    file_handle: HANDLE,
+    _event: HANDLE,
     _apc_routine: usize,
     _apc_context: usize,
     io_status_block: *mut IoStatusBlock,
@@ -156,7 +156,7 @@ pub unsafe fn nt_write_file(
 /// Many NT-specific features (EaBuffer, AllocationSize, etc.) are ignored.
 #[allow(clippy::too_many_arguments)]
 pub unsafe fn nt_create_file(
-    file_handle: *mut Handle,
+    file_handle: *mut HANDLE,
     desired_access: u32,      // ACCESS_MASK
     object_attributes: usize, // POBJECT_ATTRIBUTES (opaque for now)
     io_status_block: *mut IoStatusBlock,
@@ -248,7 +248,7 @@ pub unsafe fn nt_create_file(
 ///
 /// # Returns
 /// STATUS_SUCCESS (0) on success, or an appropriate NTSTATUS error code on failure.
-pub unsafe fn nt_close(handle: Handle) -> u32 {
+pub unsafe fn nt_close(handle: HANDLE) -> u32 {
     match handle_table().remove(handle) {
         Some(HandleEntry::File(fd)) => {
             unsafe { libc::close(fd) };
@@ -297,7 +297,7 @@ const FILE_STANDARD_INFORMATION: u32 = 5;
 /// Currently supports `FileStandardInformation` (class 5): returns file size, link count, etc.
 /// While, other classes return NOT_IMPLEMENTED.
 pub unsafe fn nt_query_information_file(
-    file_handle: Handle,
+    file_handle: HANDLE,
     io_status_block: *mut IoStatusBlock,
     file_information: *mut u8,
     _length: u32,

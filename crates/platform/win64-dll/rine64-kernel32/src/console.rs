@@ -3,7 +3,7 @@
 use rine_common_kernel32 as common;
 
 use rine_types::errors::BOOL;
-use rine_types::handles::Handle;
+use rine_types::handles::HANDLE;
 use rine_types::strings::{read_cstr_counted, read_wstr_counted};
 
 /// Get a standard handle (stdin, stdout, stderr) as a raw handle value.
@@ -20,7 +20,7 @@ use rine_types::strings::{read_cstr_counted, read_wstr_counted};
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetStdHandle(nstd_handle: u32) -> Handle {
+pub unsafe extern "win64" fn GetStdHandle(nstd_handle: u32) -> HANDLE {
     unsafe { common::console::get_std_handle(nstd_handle) }
 }
 
@@ -43,7 +43,7 @@ pub unsafe extern "win64" fn GetStdHandle(nstd_handle: u32) -> Handle {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn WriteConsoleA(
-    console_output: Handle,
+    console_output: HANDLE,
     buffer: *const u8,
     chars_to_write: u32,
     chars_written: *mut u32,
@@ -80,7 +80,7 @@ pub unsafe extern "win64" fn WriteConsoleA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn WriteConsoleW(
-    console_output: Handle,
+    console_output: HANDLE,
     buffer: *const u16,
     chars_to_write: u32,
     chars_written: *mut u32,

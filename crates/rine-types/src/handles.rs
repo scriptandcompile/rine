@@ -44,7 +44,70 @@ pub struct HeapState {
 /// negative).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct Handle(isize);
+pub struct HANDLE(isize);
+
+/// Well-known pseudo-handle returned by `GetStdHandle`.
+pub const STD_INPUT_HANDLE: u32 = 0xFFFF_FFF6; // (DWORD)-10
+pub const STD_OUTPUT_HANDLE: u32 = 0xFFFF_FFF5; // (DWORD)-11
+pub const STD_ERROR_HANDLE: u32 = 0xFFFF_FFF4; // (DWORD)-12
+
+impl HANDLE {
+    /// The null handle (`NULL`).
+    ///
+    /// Note that `NULL` is a valid handle value that represents "no object", while `INVALID_HANDLE_VALUE` indicates an error.
+    pub const NULL: Self = Self(0);
+
+    /// The invalid handle sentinel (`INVALID_HANDLE_VALUE`).
+    ///
+    /// Note that `INVALID_HANDLE_VALUE` (−1) indicates an error, while `NULL` (0) is a valid handle value that represents "no object".
+    pub const INVALID: Self = Self(-1);
+
+    /// Create a `Handle` from a raw `isize` value, for use in the Windows ABI.
+    #[inline]
+    pub const fn from_raw(value: isize) -> Self {
+        Self(value)
+    }
+
+    /// Get the raw `isize` value of this handle, for use in the Windows ABI.
+    #[inline]
+    pub const fn as_raw(self) -> isize {
+        self.0
+    }
+
+    /// Check if this handle is `NULL` (0), which is a valid but non-functional handle.
+    #[inline]
+    pub const fn is_null(self) -> bool {
+        self.0 == 0
+    }
+
+    /// Check if this handle is `INVALID_HANDLE_VALUE` (−1), which indicates an error.
+    #[inline]
+    pub const fn is_invalid(self) -> bool {
+        self.0 == -1
+    }
+
+    /// Helper to check if a handle is valid (not NULL and not INVALID_HANDLE_VALUE)
+    ///
+    /// In Windows conventions, valid handles are positive integers (or zero for NULL),
+    /// while negative values indicate errors.  
+    ///
+    /// This method returns true for valid handles and false for NULL or INVALID_HANDLE_VALUE.
+    ///
+    /// In Windows conventions:
+    /// - Handle(0) = NULL (valid but represents no object)
+    /// - Handle(-1) = INVALID_HANDLE_VALUE (indicates failure)
+    /// - Valid handles are positive integers >= 1
+    #[inline]
+    pub const fn is_valid(self) -> bool {
+        self.0 > 0
+    }
+}
+
+impl fmt::Debug for HANDLE {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "HANDLE({:#x})", self.0)
+    }
+}
 
 /// A handle to a file from `OpenFile`, not `CreateFile`.
 /// `HFILE` is a legacy API file handle instead of a `HANDLE`.
@@ -106,82 +169,19 @@ impl HFile {
 /// This the base address of the module in memory.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct HInstance(Handle);
+pub struct HInstance(HANDLE);
 
 impl HInstance {
-    pub const NULL: Self = Self(Handle::NULL);
+    pub const NULL: Self = Self(HANDLE::NULL);
 }
 
 /// A handle to a menu (from `CreateMenu` and related functions).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct HMenu(Handle);
+pub struct HMenu(HANDLE);
 
 impl HMenu {
-    pub const NULL: Self = Self(Handle::NULL);
-}
-
-/// Well-known pseudo-handle returned by `GetStdHandle`.
-pub const STD_INPUT_HANDLE: u32 = 0xFFFF_FFF6; // (DWORD)-10
-pub const STD_OUTPUT_HANDLE: u32 = 0xFFFF_FFF5; // (DWORD)-11
-pub const STD_ERROR_HANDLE: u32 = 0xFFFF_FFF4; // (DWORD)-12
-
-impl Handle {
-    /// The null handle (`NULL`).
-    ///
-    /// Note that `NULL` is a valid handle value that represents "no object", while `INVALID_HANDLE_VALUE` indicates an error.
-    pub const NULL: Self = Self(0);
-
-    /// The invalid handle sentinel (`INVALID_HANDLE_VALUE`).
-    ///
-    /// Note that `INVALID_HANDLE_VALUE` (−1) indicates an error, while `NULL` (0) is a valid handle value that represents "no object".
-    pub const INVALID: Self = Self(-1);
-
-    /// Create a `Handle` from a raw `isize` value, for use in the Windows ABI.
-    #[inline]
-    pub const fn from_raw(value: isize) -> Self {
-        Self(value)
-    }
-
-    /// Get the raw `isize` value of this handle, for use in the Windows ABI.
-    #[inline]
-    pub const fn as_raw(self) -> isize {
-        self.0
-    }
-
-    /// Check if this handle is `NULL` (0), which is a valid but non-functional handle.
-    #[inline]
-    pub const fn is_null(self) -> bool {
-        self.0 == 0
-    }
-
-    /// Check if this handle is `INVALID_HANDLE_VALUE` (−1), which indicates an error.
-    #[inline]
-    pub const fn is_invalid(self) -> bool {
-        self.0 == -1
-    }
-
-    /// Helper to check if a handle is valid (not NULL and not INVALID_HANDLE_VALUE)
-    ///
-    /// In Windows conventions, valid handles are positive integers (or zero for NULL),
-    /// while negative values indicate errors.  
-    ///
-    /// This method returns true for valid handles and false for NULL or INVALID_HANDLE_VALUE.
-    ///
-    /// In Windows conventions:
-    /// - Handle(0) = NULL (valid but represents no object)
-    /// - Handle(-1) = INVALID_HANDLE_VALUE (indicates failure)
-    /// - Valid handles are positive integers >= 1
-    #[inline]
-    pub const fn is_valid(self) -> bool {
-        self.0 > 0
-    }
-}
-
-impl fmt::Debug for Handle {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "HANDLE({:#x})", self.0)
-    }
+    pub const NULL: Self = Self(HANDLE::NULL);
 }
 
 /// An HMODULE value (base address of a loaded module).
@@ -333,22 +333,22 @@ impl HandleTable {
     }
 
     /// Insert a new resource and return its HANDLE.
-    pub fn insert(&self, entry: HandleEntry) -> Handle {
+    pub fn insert(&self, entry: HandleEntry) -> HANDLE {
         let mut inner = self.inner.lock().unwrap();
         let id = inner.next_id;
         inner.next_id += 1;
         inner.map.insert(id, entry);
-        Handle::from_raw(id)
+        HANDLE::from_raw(id)
     }
 
     /// Remove a handle from the table, returning the entry if it existed.
-    pub fn remove(&self, h: Handle) -> Option<HandleEntry> {
+    pub fn remove(&self, h: HANDLE) -> Option<HandleEntry> {
         let mut inner = self.inner.lock().unwrap();
         inner.map.remove(&h.as_raw())
     }
 
     /// Get the Linux fd for a handle, if it points to a file.
-    pub fn get_fd(&self, h: Handle) -> Option<i32> {
+    pub fn get_fd(&self, h: HANDLE) -> Option<i32> {
         let inner = self.inner.lock().unwrap();
         match inner.map.get(&h.as_raw()) {
             Some(HandleEntry::File(fd)) => Some(*fd),
@@ -358,7 +358,7 @@ impl HandleTable {
 
     /// Run a closure with mutable access to the find-data state behind a handle.
     /// Returns `None` if the handle doesn't exist or isn't a FindData handle.
-    pub fn with_find_data<F, R>(&self, h: Handle, f: F) -> Option<R>
+    pub fn with_find_data<F, R>(&self, h: HANDLE, f: F) -> Option<R>
     where
         F: FnOnce(&mut FindDataState) -> R,
     {
@@ -371,7 +371,7 @@ impl HandleTable {
 
     /// Run a closure with access to the heap state behind a handle.
     /// Returns `None` if the handle doesn't exist or isn't a Heap handle.
-    pub fn with_heap<F, R>(&self, h: Handle, f: F) -> Option<R>
+    pub fn with_heap<F, R>(&self, h: HANDLE, f: F) -> Option<R>
     where
         F: FnOnce(&HeapState) -> R,
     {
@@ -384,7 +384,7 @@ impl HandleTable {
 
     /// Run a closure with access to the registry key state behind a handle.
     /// Returns `None` if the handle doesn't exist or isn't a RegistryKey handle.
-    pub fn with_registry_key<F, R>(&self, h: Handle, f: F) -> Option<R>
+    pub fn with_registry_key<F, R>(&self, h: HANDLE, f: F) -> Option<R>
     where
         F: FnOnce(&RegistryKeyState) -> R,
     {
@@ -397,7 +397,7 @@ impl HandleTable {
 
     /// Get the HWND for a window handle.
     /// Returns `None` if the handle doesn't exist or isn't a Window handle.
-    pub fn get_hwnd(&self, h: Handle) -> Option<HWND> {
+    pub fn get_hwnd(&self, h: HANDLE) -> Option<HWND> {
         let inner = self.inner.lock().unwrap();
         match inner.map.get(&h.as_raw()) {
             Some(HandleEntry::Window(hwnd)) => Some(*hwnd),
@@ -408,7 +408,7 @@ impl HandleTable {
     /// Get a cloneable waitable object for `WaitForSingleObject` etc.
     /// The returned `Waitable` is Arc-backed so it can be waited on
     /// without holding the table lock.
-    pub fn get_waitable(&self, h: Handle) -> Option<Waitable> {
+    pub fn get_waitable(&self, h: HANDLE) -> Option<Waitable> {
         let inner = self.inner.lock().unwrap();
         match inner.map.get(&h.as_raw()) {
             Some(HandleEntry::Thread(t)) => Some(Waitable::Thread(t.clone())),
@@ -421,7 +421,7 @@ impl HandleTable {
     }
 
     /// Read a thread's exit code (returns [`STILL_ACTIVE`](crate::threading::STILL_ACTIVE) while running).
-    pub fn get_thread_exit_code(&self, h: Handle) -> Option<u32> {
+    pub fn get_thread_exit_code(&self, h: HANDLE) -> Option<u32> {
         let inner = self.inner.lock().unwrap();
         match inner.map.get(&h.as_raw()) {
             Some(HandleEntry::Thread(t)) => {
@@ -448,15 +448,15 @@ pub fn handle_table() -> &'static HandleTable {
 pub const HANDLE_FD_BASE: isize = 0x1000;
 
 /// Encode a Linux file descriptor as a Windows HANDLE.
-pub fn fd_to_handle(fd: i32) -> Handle {
-    Handle::from_raw(fd as isize + HANDLE_FD_BASE)
+pub fn fd_to_handle(fd: i32) -> HANDLE {
+    HANDLE::from_raw(fd as isize + HANDLE_FD_BASE)
 }
 
 /// Decode a HANDLE back to a Linux fd.
 ///
 /// Tries the handle table first; falls back to the arithmetic
 /// encoding for backwards compatibility.
-pub fn handle_to_fd(h: Handle) -> Option<i32> {
+pub fn handle_to_fd(h: HANDLE) -> Option<i32> {
     // Try table first.
     if let Some(fd) = handle_table().get_fd(h) {
         return Some(fd);
@@ -719,8 +719,8 @@ mod tests {
 
     #[test]
     fn invalid_handle() {
-        assert!(Handle::INVALID.is_invalid());
-        assert!(!Handle::NULL.is_invalid());
+        assert!(HANDLE::INVALID.is_invalid());
+        assert!(!HANDLE::NULL.is_invalid());
     }
 
     #[test]

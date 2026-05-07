@@ -2,7 +2,7 @@
 //! NtQueryInformationFile.
 
 use rine_common_ntdll::file as common;
-use rine_types::handles::Handle;
+use rine_types::handles::HANDLE;
 use rine_types::os::IoStatusBlock;
 
 /// Read data from a file identified by a HANDLE.
@@ -31,8 +31,8 @@ use rine_types::os::IoStatusBlock;
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtReadFile(
-    file_handle: Handle,
-    _event: Handle,
+    file_handle: HANDLE,
+    _event: HANDLE,
     _apc_routine: usize,
     _apc_context: usize,
     io_status_block: *mut IoStatusBlock,
@@ -79,8 +79,8 @@ pub unsafe extern "stdcall" fn NtReadFile(
 #[allow(non_snake_case, clippy::too_many_arguments)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtWriteFile(
-    file_handle: Handle,
-    _event: Handle,
+    file_handle: HANDLE,
+    _event: HANDLE,
     _apc_routine: usize,
     _apc_context: usize,
     io_status_block: *mut IoStatusBlock,
@@ -133,7 +133,7 @@ pub unsafe extern "stdcall" fn NtWriteFile(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtCreateFile(
-    file_handle: *mut Handle,
+    file_handle: *mut HANDLE,
     desired_access: u32,      // ACCESS_MASK
     object_attributes: usize, // POBJECT_ATTRIBUTES (opaque for now)
     io_status_block: *mut IoStatusBlock,
@@ -176,7 +176,7 @@ pub unsafe extern "stdcall" fn NtCreateFile(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn NtClose(object_handle: Handle) -> u32 {
+pub unsafe extern "stdcall" fn NtClose(object_handle: HANDLE) -> u32 {
     unsafe { common::nt_close(object_handle) }
 }
 
@@ -203,7 +203,7 @@ pub unsafe extern "stdcall" fn NtClose(object_handle: Handle) -> u32 {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn NtQueryInformationFile(
-    file_handle: Handle,
+    file_handle: HANDLE,
     io_status_block: *mut IoStatusBlock,
     file_information: *mut u8,
     _length: u32,
