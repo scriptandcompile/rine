@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T20:05:14.010036+00:00",
+  "generatedAt": "2026-05-07T05:37:08.856237+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2230,7 +2230,7 @@
     },
     {
       "name": "shell32.dll",
-      "functionCount": 3,
+      "functionCount": 5,
       "functions": [
         {
           "name": "DragAcceptFiles",
@@ -2242,6 +2242,32 @@
           "x86": {
             "status": "implemented",
             "symbol": "window::DragAcceptFiles",
+            "source": "shell32 - window.rs"
+          }
+        },
+        {
+          "name": "DragQueryFileA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window::DragQueryFileA",
+            "source": "shell32 - window.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window::DragQueryFileA",
+            "source": "shell32 - window.rs"
+          }
+        },
+        {
+          "name": "DragQueryFileW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window::DragQueryFileW",
+            "source": "shell32 - window.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window::DragQueryFileW",
             "source": "shell32 - window.rs"
           }
         },
@@ -3009,15 +3035,15 @@
     }
   ],
   "totals": {
-    "functions": 227,
+    "functions": 229,
     "x64": {
-      "implemented": 91,
+      "implemented": 93,
       "partial": 94,
       "stubbed": 42,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 91,
+      "implemented": 93,
       "partial": 94,
       "stubbed": 42,
       "unimplemented": 0

@@ -171,6 +171,30 @@ impl LPSTR {
     }
 }
 
+/// Win32-style null-terminated string pointers, used in many APIs for output strings.
+/// 'LPWSTR' stands for "Long Pointer to Wide String", a historical Windows convention.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct LPWSTR(*mut u16);
+
+impl LPWSTR {
+    /// A null pointer representing an empty string.
+    pub const NULL: Self = Self(core::ptr::null_mut());
+
+    /// Check if the pointer is null.
+    ///
+    /// # Returns
+    /// `true` if the pointer is null, `false` otherwise.
+    pub const fn is_null(self) -> bool {
+        self.0.is_null()
+    }
+
+    /// Get the raw pointer value.
+    pub fn as_mut_ptr(self) -> *mut u16 {
+        self.0
+    }
+}
+
 /// Win32-style null-terminated wide string pointers, used in many APIs for input and output strings.
 /// 'LPCWSTR' stands for "Long Pointer to Constant Wide String", a historical Windows convention for UTF-16 strings.
 #[repr(C)]
