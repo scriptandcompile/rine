@@ -1,6 +1,6 @@
 //! Window class registration — shared logic for RegisterClass(Ex)A/W.
 
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::strings::{read_cstr, read_wstr};
 use rine_types::windows::*;
 
@@ -197,11 +197,11 @@ fn register_class(name: String, class: WindowClass) -> ATOM {
 /// * `name` - The name of the window class to unregister.
 ///
 /// # Returns
-/// * `WinBool::TRUE` if the class was successfully unregistered, `WinBool::FALSE` if the class was not found.
-pub fn unregister_class(name: &str) -> WinBool {
+/// * `BOOL::TRUE` if the class was successfully unregistered, `BOOL::FALSE` if the class was not found.
+pub fn unregister_class(name: &str) -> BOOL {
     if WINDOW_CLASS_REGISTRY.unregister(name) {
-        WinBool::TRUE
+        BOOL::TRUE
     } else {
-        WinBool::FALSE
+        BOOL::FALSE
     }
 }

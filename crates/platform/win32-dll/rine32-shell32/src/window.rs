@@ -1,6 +1,6 @@
 use rine_common_shell32::window as common;
 
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::strings::{LPSTR, LPWSTR};
 use rine_types::windows::HDROP;
 use rine_types::windows::Hwnd;
@@ -19,7 +19,7 @@ use rine_types::windows::Hwnd;
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn DragAcceptFiles(hwnd: Hwnd, f_accept: WinBool) {
+pub unsafe extern "stdcall" fn DragAcceptFiles(hwnd: Hwnd, f_accept: BOOL) {
     common::drag_accept_files(hwnd, f_accept);
 }
 

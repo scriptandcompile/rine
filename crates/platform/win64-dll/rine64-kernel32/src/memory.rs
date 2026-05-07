@@ -1,7 +1,7 @@
 //! kernel32 memory functions: Heap API and VirtualAlloc/VirtualFree/VirtualProtect/VirtualQuery.
 
 use rine_common_kernel32 as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::Handle;
 
 /// Get the default process heap handle.
@@ -69,7 +69,7 @@ pub unsafe extern "win64" fn HeapCreate(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn HeapDestroy(heap_handle: Handle) -> WinBool {
+pub unsafe extern "win64" fn HeapDestroy(heap_handle: Handle) -> BOOL {
     rine_types::dev_notify!(on_handle_closed(heap_handle.as_raw() as i64));
 
     common::memory::heap_destroy(heap_handle)
@@ -132,9 +132,9 @@ pub unsafe extern "win64" fn HeapAlloc(heap_handle: Handle, flags: u32, size: us
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn HeapFree(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> WinBool {
+pub unsafe extern "win64" fn HeapFree(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> BOOL {
     if ptr.is_null() {
-        return WinBool::TRUE;
+        return BOOL::TRUE;
     }
 
     unsafe { common::memory::heap_free(heap_handle, _flags, ptr) }
@@ -280,7 +280,7 @@ pub unsafe extern "win64" fn VirtualFree(
     address: *mut u8,
     _size: usize,
     free_type: u32,
-) -> WinBool {
+) -> BOOL {
     unsafe { common::memory::virtual_free(address, _size, free_type) }
 }
 
@@ -331,7 +331,7 @@ pub unsafe extern "win64" fn VirtualProtect(
     size: usize,
     new_protect: u32,
     old_protect: *mut u32,
-) -> WinBool {
+) -> BOOL {
     unsafe { common::memory::virtual_protect(address, size, new_protect, old_protect) }
 }
 

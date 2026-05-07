@@ -1,5 +1,5 @@
 use rine_common_user32 as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::HMenu;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::*;
@@ -157,7 +157,7 @@ pub unsafe extern "stdcall" fn CreateWindowExW(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn DestroyWindow(hwnd: Hwnd) -> WinBool {
+pub unsafe extern "stdcall" fn DestroyWindow(hwnd: Hwnd) -> BOOL {
     unsafe {
         common::destroy_window(hwnd, |proc_fn, h, msg, wp, lp| {
             let f: extern "stdcall" fn(Hwnd, u32, usize, isize) -> isize =
@@ -189,7 +189,7 @@ pub unsafe extern "stdcall" fn DestroyWindow(hwnd: Hwnd) -> WinBool {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn ShowWindow(hwnd: Hwnd, cmd_show: i32) -> WinBool {
+pub unsafe extern "stdcall" fn ShowWindow(hwnd: Hwnd, cmd_show: i32) -> BOOL {
     common::show_window(hwnd, cmd_show)
 }
 
@@ -206,10 +206,10 @@ pub unsafe extern "stdcall" fn ShowWindow(hwnd: Hwnd, cmd_show: i32) -> WinBool 
 /// accessed from multiple threads.
 ///
 /// # Returns
-/// `WinBool::TRUE` always (UpdateWindow is a notification, not a query).
+/// `BOOL::TRUE` always (UpdateWindow is a notification, not a query).
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn UpdateWindow(hwnd: Hwnd) -> WinBool {
+pub unsafe extern "stdcall" fn UpdateWindow(hwnd: Hwnd) -> BOOL {
     common::update_window(hwnd)
 }

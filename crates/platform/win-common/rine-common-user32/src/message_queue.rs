@@ -2,7 +2,7 @@
 
 use std::sync::OnceLock;
 
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::windows::*;
 
 use crate::backend::pump_backend_messages;
@@ -255,16 +255,16 @@ pub fn def_window_proc(_hwnd: Hwnd, _msg: u32, _w_param: usize, _l_param: isize)
 /// `Msg` structure that contains message information retrieved from the thread's message queue by `GetMessage` or `PeekMessage`.
 ///
 /// # Returns
-/// `WinBool::TRUE` if the message is intended for the dialog box and has been processed by this function.
-/// `WinBool::FALSE` if the message is not intended for the dialog box and has not been processed by this function.
+/// `BOOL::TRUE` if the message is intended for the dialog box and has been processed by this function.
+/// `BOOL::FALSE` if the message is not intended for the dialog box and has not been processed by this function.
 ///
 /// # Notes
-/// Currently this function does not perform any actual dialog message processing and simply returns `WinBool::FALSE` for all messages.
-pub unsafe fn is_dialog_message(hdlg: Hwnd, msg: *const Msg) -> WinBool {
+/// Currently this function does not perform any actual dialog message processing and simply returns `BOOL::FALSE` for all messages.
+pub unsafe fn is_dialog_message(hdlg: Hwnd, msg: *const Msg) -> BOOL {
     debug_log(format!(
         "IsDialogMessage hdlg={:#x} msg={:#06x}",
         hdlg.as_raw(),
         if msg.is_null() { 0 } else { (*msg).message }
     ));
-    WinBool::FALSE
+    BOOL::FALSE
 }

@@ -1,4 +1,4 @@
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::strings::{LPSTR, LPWSTR};
 use rine_types::windows::{DropFiles, HDROP, Hwnd, WINDOW_MANAGER, window_style_ex};
 
@@ -16,7 +16,7 @@ const DRAGQUERYFILE_COUNT: u32 = 0xFFFF_FFFF;
 /// # Notes
 /// This updates the tracked extended style bit (`WS_EX_ACCEPTFILES`) for
 /// windows known to the current runtime.
-pub fn drag_accept_files(hwnd: Hwnd, accept: WinBool) {
+pub fn drag_accept_files(hwnd: Hwnd, accept: BOOL) {
     let _ = WINDOW_MANAGER.update_window(hwnd, |state| {
         if accept.is_true() {
             state.ex_style |= window_style_ex::WS_EX_ACCEPTFILES;

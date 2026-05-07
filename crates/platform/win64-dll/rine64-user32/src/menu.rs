@@ -1,5 +1,5 @@
 use rine_common_user32::menu as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::HMenu;
 use rine_types::windows::Hwnd;
 
@@ -128,12 +128,11 @@ pub unsafe extern "win64" fn GetSystemMenu(_handle_window: Hwnd) -> HMenu {
 /// The caller must also ensure that the menu structure is properly initialized and that the specified item is within bounds.
 ///
 /// # Returns
-/// A `WinBool` indicating whether the operation was successful.
-/// Returns `WinBool::TRUE` if the menu item was successfully enabled, disabled, or grayed out, and `WinBool::FALSE` if the operation
+/// Returns `BOOL::TRUE` if the menu item was successfully enabled, disabled, or grayed out, and `BOOL::FALSE` if the operation
 /// failed (for example, if the specified menu item was invalid).
 ///
 /// # Notes
-/// This function is currently a stub and returns `WinBool::FALSE` as a placeholder.
+/// This function is currently a stub and returns `BOOL::FALSE` as a placeholder.
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
@@ -141,6 +140,6 @@ pub unsafe extern "win64" fn EnableMenuItem(
     _handle_menu: HMenu,
     _id_enable_item: u32,
     _enable: u32,
-) -> WinBool {
+) -> BOOL {
     common::enable_menu_item(_handle_menu, _id_enable_item, _enable)
 }

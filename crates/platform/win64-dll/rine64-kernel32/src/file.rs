@@ -2,7 +2,7 @@
 //! GetFileSize, SetFilePointer, FindFirstFileA/W, FindNextFileA/W, FindClose.
 
 use rine_common_kernel32 as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::{HFile, Handle, INVALID_FILE_SIZE, Win32FindDataA, Win32FindDataW};
 use rine_types::strings::{LPCSTR, LPCWSTR};
 
@@ -106,13 +106,13 @@ pub unsafe extern "win64" fn CreateFileW(
 /// The caller must ensure that the file path is valid and that the file can be deleted.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn DeleteFileW(file_name: LPCWSTR) -> WinBool {
+pub unsafe extern "win64" fn DeleteFileW(file_name: LPCWSTR) -> BOOL {
     if file_name.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     let wide_file_name = unsafe { file_name.read_string().unwrap_or_default() };
@@ -130,13 +130,13 @@ pub unsafe extern "win64" fn DeleteFileW(file_name: LPCWSTR) -> WinBool {
 /// The caller must ensure that the file path is valid and that the file can be deleted.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn DeleteFileA(file_name: LPCSTR) -> WinBool {
+pub unsafe extern "win64" fn DeleteFileA(file_name: LPCSTR) -> BOOL {
     if file_name.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     let c_str = unsafe { file_name.read_string().unwrap_or_default() };
@@ -161,7 +161,7 @@ pub unsafe extern "win64" fn DeleteFileA(file_name: LPCSTR) -> WinBool {
 /// but asynchronous I/O is not supported so it will be ignored.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure.
 ///
 /// # Notes
 /// Missing implementation features:
@@ -176,7 +176,7 @@ pub unsafe extern "win64" fn ReadFile(
     bytes_to_read: u32,
     bytes_read: *mut u32,
     _overlapped: *mut core::ffi::c_void,
-) -> WinBool {
+) -> BOOL {
     unsafe { common::file::read_file(file, buffer, bytes_to_read, bytes_read, _overlapped) }
 }
 
@@ -197,7 +197,7 @@ pub unsafe extern "win64" fn ReadFile(
 /// but asynchronous I/O is not supported so it will be ignored.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure.
 ///
 /// # Notes
 /// Missing implementation features:
@@ -212,7 +212,7 @@ pub unsafe extern "win64" fn WriteFile(
     bytes_to_write: u32,
     bytes_written: *mut u32,
     _overlapped: *mut core::ffi::c_void,
-) -> WinBool {
+) -> BOOL {
     unsafe { common::file::write_file(file, buffer, bytes_to_write, bytes_written, _overlapped) }
 }
 
@@ -225,14 +225,14 @@ pub unsafe extern "win64" fn WriteFile(
 /// `file` must be a valid file handle returned by `CreateFile`.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure.
 ///
 /// # Note
 /// This implementation does not support flushing of non-file handles (e.g. pipes, consoles).
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn FlushFileBuffers(file: Handle) -> WinBool {
+pub unsafe extern "win64" fn FlushFileBuffers(file: Handle) -> BOOL {
     common::file::flush_file_buffers(file)
 }
 
@@ -246,11 +246,11 @@ pub unsafe extern "win64" fn FlushFileBuffers(file: Handle) -> WinBool {
 /// After this call, `object` must not be used again.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure.
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn CloseHandle(object: Handle) -> WinBool {
+pub unsafe extern "win64" fn CloseHandle(object: Handle) -> BOOL {
     rine_types::dev_notify!(on_handle_closed(object.as_raw() as i64));
 
     common::file::close_handle(object)
@@ -406,17 +406,17 @@ pub unsafe extern "win64" fn FindFirstFileW(
 /// The caller is responsible for calling `FindClose` with the search handle when the search is finished.
 ///
 /// # Returns
-/// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
-/// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+/// `BOOL::TRUE` if the next matching file was found and `find_data` was updated,
+/// or `BOOL::FALSE` if no more matching files were found or an error occurred.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindNextFileA(
     find_file: Handle,
     find_data: *mut Win32FindDataA,
-) -> WinBool {
+) -> BOOL {
     if find_data.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     unsafe { common::file::find_next_file_a(find_file, find_data) }
@@ -433,17 +433,17 @@ pub unsafe extern "win64" fn FindNextFileA(
 /// The caller is responsible for calling `FindClose` with the search handle when the search is finished.
 ///
 /// # Returns
-/// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
-/// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+/// `BOOL::TRUE` if the next matching file was found and `find_data` was updated,
+/// or `BOOL::FALSE` if no more matching files were found or an error occurred.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn FindNextFileW(
     find_file: Handle,
     find_data: *mut Win32FindDataW,
-) -> WinBool {
+) -> BOOL {
     if find_data.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     unsafe { common::file::find_next_file_w(find_file, find_data) }
@@ -459,14 +459,14 @@ pub unsafe extern "win64" fn FindNextFileW(
 /// * After this call, `find_file` must not be used again.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure.
 ///
 /// # Note
-/// This implementation does not set the error code and will currently always return `WinBool::TRUE` at the moment.
+/// This implementation does not set the error code and will currently always return `BOOL::TRUE` at the moment.
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn FindClose(find_file: Handle) -> WinBool {
+pub unsafe extern "win64" fn FindClose(find_file: Handle) -> BOOL {
     unsafe { CloseHandle(find_file) }
 }
 

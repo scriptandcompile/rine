@@ -1,5 +1,5 @@
 use rine_common_kernel32 as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::os::{OsVersionInfoA, OsVersionInfoW};
 
 /// Gets a packed `u32` encoding the OS version.
@@ -12,7 +12,7 @@ use rine_types::os::{OsVersionInfoA, OsVersionInfoW};
 /// global version info has been initialised before entry.
 ///
 /// # Returns
-/// Returns the version as a packed `u32` on success, or `WinBool::FALSE` (0) on failure.
+/// Returns the version as a packed `u32` on success, or `BOOL::FALSE` (0) on failure.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
@@ -30,11 +30,11 @@ pub unsafe extern "stdcall" fn GetVersion() -> u32 {
 /// `OSVERSIONINFOEXW` struct, and must not be null.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` (0) on failure.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` (0) on failure.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetVersionExW(info: *mut OsVersionInfoW) -> WinBool {
+pub unsafe extern "stdcall" fn GetVersionExW(info: *mut OsVersionInfoW) -> BOOL {
     unsafe { common::version::get_version_ex_w(info) }
 }
 
@@ -48,10 +48,10 @@ pub unsafe extern "stdcall" fn GetVersionExW(info: *mut OsVersionInfoW) -> WinBo
 /// `OSVERSIONINFOEXA` struct, and must not be null.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` (0) on failure.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` (0) on failure.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetVersionExA(info: *mut OsVersionInfoA) -> WinBool {
+pub unsafe extern "stdcall" fn GetVersionExA(info: *mut OsVersionInfoA) -> BOOL {
     unsafe { common::version::get_version_ex_a(info) }
 }

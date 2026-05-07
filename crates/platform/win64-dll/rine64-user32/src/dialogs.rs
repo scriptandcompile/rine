@@ -1,6 +1,6 @@
 use rine_common_user32::dialogs as common;
 
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::HInstance;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::{Hwnd, LPARAM, LRESULT, WPARAM};
@@ -16,7 +16,7 @@ use rine_types::windows::{Hwnd, LPARAM, LRESULT, WPARAM};
 /// `_hDlg` must be a valid handle to a dialog box, `_nIDDlgItem` must be a valid control identifier within that dialog box.
 ///
 /// # Returns
-/// If the function succeeds, return `WinBool::TRUE`. If the function fails, return `WinBool::FALSE`.
+/// If the function succeeds, return `BOOL::TRUE`. If the function fails, return `BOOL::FALSE`.
 ///
 /// # Notes
 /// The `SetDlgItemTextA` function sends a `WM_SETTEXT` message to the specified control.
@@ -29,7 +29,7 @@ pub unsafe extern "win64" fn SetDlgItemTextA(
     _hDlg: Hwnd,
     _nIDDlgItem: i32,
     _lpString: LPCSTR,
-) -> WinBool {
+) -> BOOL {
     let text = unsafe { _lpString.read_string().unwrap_or_default() };
 
     common::set_dlg_item_text(_hDlg, _nIDDlgItem, &text)
@@ -46,7 +46,7 @@ pub unsafe extern "win64" fn SetDlgItemTextA(
 /// `_hDlg` must be a valid handle to a dialog box, `_nIDDlgItem` must be a valid control identifier within that dialog box.
 ///
 /// # Returns
-/// If the function succeeds, return `WinBool::TRUE`. If the function fails, return `WinBool::FALSE`.
+/// If the function succeeds, return `BOOL::TRUE`. If the function fails, return `BOOL::FALSE`.
 ///
 /// # Notes
 /// The `SetDlgItemTextW` function sends a `WM_SETTEXT` message to the specified control.
@@ -59,7 +59,7 @@ pub unsafe extern "win64" fn SetDlgItemTextW(
     _hDlg: Hwnd,
     _nIDDlgItem: i32,
     _lpString: LPCWSTR,
-) -> WinBool {
+) -> BOOL {
     let text = unsafe { _lpString.read_string().unwrap_or_default() };
 
     common::set_dlg_item_text(_hDlg, _nIDDlgItem, &text)
@@ -86,7 +86,7 @@ pub unsafe extern "win64" fn SetDlgItemTextW(
 ///   The dialog box procedure must be a valid pointer to a function that processes messages sent to a modal or modeless dialog box.
 ///   The return value of the dialog box procedure depends on the message being processed.
 ///   For most messages, the dialog box procedure should return `0` if it processes the message, and a nonzero value if it does not process the message.
-///   For the `WM_INITDIALOG` message, the dialog box procedure should return `WinBool::TRUE` if it initializes the dialog box, and `WinBool::FALSE`
+///   For the `WM_INITDIALOG` message, the dialog box procedure should return `BOOL::TRUE` if it initializes the dialog box, and `BOOL::FALSE`
 ///   if it does not initialize the dialog box.
 /// `_init_param` must be a valid value to pass to the dialog box in the `lParam` parameter of the `WM_INITDIALOG` message.
 ///
@@ -134,7 +134,7 @@ pub unsafe extern "win64" fn CreateDialogParamA(
 ///   The dialog box procedure must be a valid pointer to a function that processes messages sent to a modal or modeless dialog box.
 ///   The return value of the dialog box procedure depends on the message being processed.
 ///   For most messages, the dialog box procedure should return `0` if it processes the message, and a nonzero value if it does not process the message.
-///   For the `WM_INITDIALOG` message, the dialog box procedure should return `WinBool::TRUE` if it initializes the dialog box, and `WinBool::FALSE`
+///   For the `WM_INITDIALOG` message, the dialog box procedure should return `BOOL::TRUE` if it initializes the dialog box, and `BOOL::FALSE`
 ///   if it does not initialize the dialog box.
 /// `_init_param` must be a valid value to pass to the dialog box in the `lParam` parameter of the `WM_INITDIALOG` message.
 ///
@@ -341,8 +341,8 @@ pub unsafe extern "win64" fn GetDlgItemTextW(
 ///   of the `WM_COMMAND` message when the dialog box is closed.
 ///
 /// # Returns
-/// If the function succeeds, the return value is `WinBool::TRUE`.
-/// If the function fails, the return value is `WinBool::FALSE`.
+/// If the function succeeds, the return value is `BOOL::TRUE`.
+/// If the function fails, the return value is `BOOL::FALSE`.
 /// On failure, to get extended error information, call `GetLastError`.
 ///
 /// # Notes
@@ -351,6 +351,6 @@ pub unsafe extern "win64" fn GetDlgItemTextW(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn EndDialog(_hdlg: Hwnd, _result: isize) -> WinBool {
+pub unsafe extern "win64" fn EndDialog(_hdlg: Hwnd, _result: isize) -> BOOL {
     common::end_dialog(_hdlg, _result)
 }

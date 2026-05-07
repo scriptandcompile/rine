@@ -1,5 +1,5 @@
 use rine_common_user32::cursor as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::Point;
 
@@ -124,17 +124,17 @@ pub unsafe extern "stdcall" fn SetCursor(_cursor: u32) -> u32 {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetCursorPos(_lppt: *mut Point) -> WinBool {
+pub unsafe extern "stdcall" fn GetCursorPos(_lppt: *mut Point) -> BOOL {
     warn!("GetCursorPos is not implemented yet. Returning None as a placeholder.");
 
     let result = common::get_cursor_pos();
 
     if result.is_none() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     (*_lppt).x = result.unwrap().0;
     (*_lppt).y = result.unwrap().1;
 
-    WinBool::TRUE
+    BOOL::TRUE
 }

@@ -1,4 +1,4 @@
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::HInstance;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::{Hwnd, LPARAM, LRESULT, WPARAM};
@@ -16,17 +16,17 @@ use tracing::warn;
 /// `_hdlg` must be a valid handle to a dialog box, `_dlg_item_id` must be a valid control identifier within that dialog box.
 ///
 /// # Returns
-/// If the function succeeds, return `WinBool::TRUE`. If the function fails, return `WinBool::FALSE`.
+/// If the function succeeds, return `BOOL::TRUE`. If the function fails, return `BOOL::FALSE`.
 ///
 /// # Notes
 /// Sends a `WM_SETTEXT` message to the specified control.
 /// This function Does not support setting the text of a combo box or list box control.
 /// To set the text of these controls, use the `CB_SETLBTEXT` or `LB_SETLBTEXT` message, respectively.
-pub fn set_dlg_item_text(_hdlg: Hwnd, _dlg_item_id: i32, _text: &str) -> WinBool {
+pub fn set_dlg_item_text(_hdlg: Hwnd, _dlg_item_id: i32, _text: &str) -> BOOL {
     warn!(
         "SetDlgItemTextA/W is not implemented yet. This is a stub implementation that always returns FALSE."
     );
-    WinBool::FALSE
+    BOOL::FALSE
 }
 
 /// Dialog proc is a pointer to a function that processes messages sent to a modal or modeless dialog box.
@@ -46,8 +46,8 @@ pub fn set_dlg_item_text(_hdlg: Hwnd, _dlg_item_id: i32, _text: &str) -> WinBool
 /// The dialog box procedure must return a value of type `isize`.
 /// The return value depends on the message being processed.
 /// For most messages, the dialog box procedure should return `0` if it processes the message, and a nonzero value if it does not process the message.
-/// For the `WM_INITDIALOG` message, the dialog box procedure should return `WinBool::TRUE` if it initializes the dialog box,
-/// and `WinBool::FALSE` if it does not initialize the dialog box.
+/// For the `WM_INITDIALOG` message, the dialog box procedure should return `BOOL::TRUE` if it initializes the dialog box,
+/// and `BOOL::FALSE` if it does not initialize the dialog box.
 #[cfg(target_pointer_width = "32")]
 pub type DLGPROC = *const unsafe extern "stdcall" fn(
     unnamed_param1: Hwnd,
@@ -73,8 +73,8 @@ pub type DLGPROC = *const unsafe extern "stdcall" fn(
 /// The dialog box procedure must return a value of type `isize`.
 /// The return value depends on the message being processed.
 /// For most messages, the dialog box procedure should return `0` if it processes the message, and a nonzero value if it does not process the message.
-/// For the `WM_INITDIALOG` message, the dialog box procedure should return `WinBool::TRUE` if it initializes the dialog box,
-/// and `WinBool::FALSE` if it does not initialize the dialog box.
+/// For the `WM_INITDIALOG` message, the dialog box procedure should return `BOOL::TRUE` if it initializes the dialog box,
+/// and `BOOL::FALSE` if it does not initialize the dialog box.
 #[cfg(not(target_pointer_width = "32"))]
 pub type DLGPROC = *const unsafe extern "win64" fn(
     unnamed_param1: Hwnd,
@@ -264,16 +264,16 @@ pub fn get_dialog_item_text_w(
 ///   of the `WM_COMMAND` message when the dialog box is closed.
 ///
 /// # Returns
-/// If the function succeeds, the return value is `WinBool::TRUE`.
-/// If the function fails, the return value is `WinBool::FALSE`.
+/// If the function succeeds, the return value is `BOOL::TRUE`.
+/// If the function fails, the return value is `BOOL::FALSE`.
 /// On failure, to get extended error information, call `GetLastError`.
 ///
 /// # Notes
 /// The current implementation is a stub and always returns `FALSE`.
 /// We currently do not set the value of `GetLastError` on failure.
-pub fn end_dialog(_hdlg: Hwnd, _result: isize) -> WinBool {
+pub fn end_dialog(_hdlg: Hwnd, _result: isize) -> BOOL {
     warn!(
         "EndDialog is not implemented yet. This is a stub implementation that always returns FALSE."
     );
-    WinBool::FALSE
+    BOOL::FALSE
 }

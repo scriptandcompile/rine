@@ -1,5 +1,5 @@
 use rine_common_user32 as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::HMenu;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::*;
@@ -148,7 +148,7 @@ pub unsafe extern "win64" fn CreateWindowExW(
 /// The caller is responsible for eventually destroying the created window to avoid resource leaks.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` if the HWND was not found.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND was not found.
 ///
 /// # Notes
 /// On error the `GetLastError` code should be set to indicate the reason for failure, such as
@@ -157,7 +157,7 @@ pub unsafe extern "win64" fn CreateWindowExW(
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn DestroyWindow(hwnd: Hwnd) -> WinBool {
+pub unsafe extern "win64" fn DestroyWindow(hwnd: Hwnd) -> BOOL {
     unsafe {
         common::destroy_window(hwnd, |proc_fn: usize, h, msg, wp, lp| {
             let f: extern "win64" fn(Hwnd, u32, usize, isize) -> isize =
@@ -179,9 +179,9 @@ pub unsafe extern "win64" fn DestroyWindow(hwnd: Hwnd) -> WinBool {
 /// as this would lead to undefined behavior.
 ///
 /// # Returns
-/// The return value is the result of the `ShowWindow` operation, which is `WinBool::TRUE` if the window was
-/// previously visible and `WinBool::FALSE` if it was hidden.
-/// On error (e.g. if the window handle is invalid), the function returns `WinBool::FALSE`, which is the same as the
+/// The return value is the result of the `ShowWindow` operation, which is `BOOL::TRUE` if the window was
+/// previously visible and `BOOL::FALSE` if it was hidden.
+/// On error (e.g. if the window handle is invalid), the function returns `BOOL::FALSE`, which is the same as the
 /// return value for a window that was hidden.
 ///
 /// # Notes
@@ -189,7 +189,7 @@ pub unsafe extern "win64" fn DestroyWindow(hwnd: Hwnd) -> WinBool {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn ShowWindow(hwnd: Hwnd, cmd_show: i32) -> WinBool {
+pub unsafe extern "win64" fn ShowWindow(hwnd: Hwnd, cmd_show: i32) -> BOOL {
     common::show_window(hwnd, cmd_show)
 }
 
@@ -206,10 +206,10 @@ pub unsafe extern "win64" fn ShowWindow(hwnd: Hwnd, cmd_show: i32) -> WinBool {
 /// accessed from multiple threads.
 ///
 /// # Returns
-/// `WinBool::TRUE` always (UpdateWindow is a notification, not a query).
+/// `BOOL::TRUE` always (UpdateWindow is a notification, not a query).
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn UpdateWindow(hwnd: Hwnd) -> WinBool {
+pub unsafe extern "win64" fn UpdateWindow(hwnd: Hwnd) -> BOOL {
     common::update_window(hwnd)
 }

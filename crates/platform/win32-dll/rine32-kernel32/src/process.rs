@@ -1,5 +1,5 @@
 use rine_common_kernel32 as common;
-use rine_types::errors::{ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER, WinBool};
+use rine_types::errors::{BOOL, ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER};
 use rine_types::handles::Handle;
 use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
 use rine_types::strings::{LPCSTR, LPCWSTR, read_cstr, read_wstr};
@@ -154,8 +154,8 @@ pub unsafe extern "stdcall" fn GetProcAddress() -> u32 {
 /// potential resource leaks if the module is not properly freed when it is no longer needed.
 ///
 /// # Returns
-/// If the function succeeds, the return value is `WinBool::TRUE`.
-/// If the function fails, the return value is `WinBool::FALSE`.
+/// If the function succeeds, the return value is `BOOL::TRUE`.
+/// If the function fails, the return value is `BOOL::FALSE`.
 /// To get extended error information, call `GetLastError`.
 ///
 /// # Notes
@@ -167,7 +167,7 @@ pub unsafe extern "stdcall" fn GetProcAddress() -> u32 {
 #[allow(non_snake_case)]
 #[rine_dlls::stubbed]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn FreeLibrary(_module: u32) -> WinBool {
+pub unsafe extern "stdcall" fn FreeLibrary(_module: u32) -> BOOL {
     common::process::free_library(_module)
 }
 
@@ -223,7 +223,7 @@ pub unsafe extern "stdcall" fn CreateProcessA(
     _current_directory: LPCSTR,            // [rsp+0x40]
     _startup_info: *const StartupInfoA,    // [rsp+0x48]
     process_info: *mut ProcessInformation, // [rsp+0x50]
-) -> WinBool {
+) -> BOOL {
     let app = unsafe { application_name.read_string() }.unwrap_or_default();
     let cmd = unsafe { read_cstr(command_line) }.unwrap_or_default();
 
@@ -233,7 +233,7 @@ pub unsafe extern "stdcall" fn CreateProcessA(
         let tokens = common::process::split_cmd_line(&cmd);
         if tokens.is_empty() {
             warn!("CreateProcessA: no executable specified");
-            return WinBool::FALSE;
+            return BOOL::FALSE;
         }
         (tokens[0].clone(), tokens[1..].to_vec())
     };
@@ -299,7 +299,7 @@ pub unsafe extern "stdcall" fn CreateProcessW(
     _current_directory: LPCWSTR,           // [rsp+0x40]
     _startup_info: *const StartupInfoW,    // [rsp+0x48]
     process_info: *mut ProcessInformation, // [rsp+0x50]
-) -> WinBool {
+) -> BOOL {
     let app = unsafe { application_name.read_string() }.unwrap_or_default();
     let cmd = unsafe { read_wstr(command_line.cast_const()) }.unwrap_or_default();
 
@@ -309,7 +309,7 @@ pub unsafe extern "stdcall" fn CreateProcessW(
         let tokens = common::process::split_cmd_line(&cmd);
         if tokens.is_empty() {
             warn!("CreateProcessW: no executable specified");
-            return WinBool::FALSE;
+            return BOOL::FALSE;
         }
         (tokens[0].clone(), tokens[1..].to_vec())
     };
@@ -584,13 +584,13 @@ pub unsafe extern "stdcall" fn SetLastError(error_code: u32) {
 /// The caller must also ensure that the `exit_code` pointer is valid and points to a writable memory location.
 ///
 /// # Returns
-/// If the function succeeds, the return value is `WinBool::TRUE`.
-/// If the function fails, the return value is `WinBool::FALSE`.
+/// If the function succeeds, the return value is `BOOL::TRUE`.
+/// If the function fails, the return value is `BOOL::FALSE`.
 ///
 /// # Notes
 /// We do not currently handle the error case where the handle does not have the
 /// PROCESS_QUERY_INFORMATION or PROCESS_QUERY_LIMITED_INFORMATION access right, and instead just
-/// return `WinBool::FALSE` with ERROR_INVALID_HANDLE.
+/// return `BOOL::FALSE` with ERROR_INVALID_HANDLE.
 ///
 /// We also do not currently distinguish all invalid-handle sub-cases with
 /// finer-grained Win32 error codes.
@@ -602,18 +602,18 @@ pub unsafe extern "stdcall" fn SetLastError(error_code: u32) {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetExitCodeProcess(process: Handle, exit_code: *mut u32) -> WinBool {
+pub unsafe extern "stdcall" fn GetExitCodeProcess(process: Handle, exit_code: *mut u32) -> BOOL {
     if exit_code.is_null() {
         common::process::set_last_error(ERROR_INVALID_PARAMETER);
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     if let Some(code) = common::process::get_exit_code_process(process) {
         unsafe { *exit_code = code };
-        return WinBool::TRUE;
+        return BOOL::TRUE;
     };
 
     common::process::set_last_error(ERROR_INVALID_HANDLE);
     warn!(handle = ?process.as_raw(), "GetExitCodeProcess: invalid handle");
-    WinBool::FALSE
+    BOOL::FALSE
 }

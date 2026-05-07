@@ -4,7 +4,7 @@
 
 use rine_common_kernel32 as common;
 
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 
 /// Get the value of an environment variable.
@@ -88,7 +88,7 @@ pub unsafe extern "win64" fn GetEnvironmentVariableW(
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn SetEnvironmentVariableA(name: LPCSTR, value: LPCSTR) -> WinBool {
+pub unsafe extern "win64" fn SetEnvironmentVariableA(name: LPCSTR, value: LPCSTR) -> BOOL {
     unsafe { common::environment::set_environment_variable_a(name, value) }
 }
 
@@ -109,7 +109,7 @@ pub unsafe extern "win64" fn SetEnvironmentVariableA(name: LPCSTR, value: LPCSTR
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn SetEnvironmentVariableW(name: LPCWSTR, value: LPCWSTR) -> WinBool {
+pub unsafe extern "win64" fn SetEnvironmentVariableW(name: LPCWSTR, value: LPCWSTR) -> BOOL {
     unsafe { common::environment::set_environment_variable_w(name, value) }
 }
 
@@ -228,9 +228,9 @@ pub unsafe extern "win64" fn GetEnvironmentStringsW() -> *mut u16 {
 /// # Arguments
 /// * `_block`: A pointer to the environment block returned by the GetEnvironmentStringsA function. This parameter must not be NULL.
 ///   Currently, this implementation does not actually free any memory, as the environment block is stored in a static variable
-///   and is intended to live for the duration of the program. This stub currently always returns `WinBool::TRUE` and does not perform
+///   and is intended to live for the duration of the program. This stub currently always returns `BOOL::TRUE` and does not perform
 ///   any error checking, but in a more complete implementation, it should check if the provided pointer matches the one stored in
-///   `ENV_BLOCK_W` and return `WinBool::FALSE` if it does not, or if the pointer is NULL.
+///   `ENV_BLOCK_W` and return `BOOL::FALSE` if it does not, or if the pointer is NULL.
 ///
 /// # Safety
 /// * `_block` must be a valid pointer returned by GetEnvironmentStringsA and must not be NULL.
@@ -246,7 +246,7 @@ pub unsafe extern "win64" fn GetEnvironmentStringsW() -> *mut u16 {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn FreeEnvironmentStringsA(block: *mut u8) -> WinBool {
+pub unsafe extern "win64" fn FreeEnvironmentStringsA(block: *mut u8) -> BOOL {
     unsafe { common::environment::free_environment_strings_a(block) }
 }
 
@@ -255,9 +255,9 @@ pub unsafe extern "win64" fn FreeEnvironmentStringsA(block: *mut u8) -> WinBool 
 /// # Arguments
 /// * `_block`: A pointer to the environment block returned by the GetEnvironmentStringsW function. This parameter must not be NULL.
 ///   Currently, this implementation does not actually free any memory, as the environment block is stored in a static variable
-///   and is intended to live for the duration of the program. This stub currently always returns `WinBool::TRUE` and does not perform
+///   and is intended to live for the duration of the program. This stub currently always returns `BOOL::TRUE` and does not perform
 ///   any error checking, but in a more complete implementation, it should check if the provided pointer matches the one stored in
-///   `ENV_BLOCK_W` and return `WinBool::FALSE` if it does not, or if the pointer is NULL.
+///   `ENV_BLOCK_W` and return `BOOL::FALSE` if it does not, or if the pointer is NULL.
 ///
 /// # Safety
 /// * `_block` must be a valid pointer returned by GetEnvironmentStringsW and must not be NULL.
@@ -271,6 +271,6 @@ pub unsafe extern "win64" fn FreeEnvironmentStringsA(block: *mut u8) -> WinBool 
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn FreeEnvironmentStringsW(block: *mut u16) -> WinBool {
+pub unsafe extern "win64" fn FreeEnvironmentStringsW(block: *mut u16) -> BOOL {
     unsafe { common::environment::free_environment_strings_w(block) }
 }

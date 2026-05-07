@@ -1,5 +1,5 @@
 use rine_common_gdi32 as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::Rect;
 
@@ -34,12 +34,12 @@ pub unsafe extern "stdcall" fn CreateCompatibleDC(_hdc: usize) -> usize {
 /// This function will fail if any of the DC's selected objects are still selected in any DC (including itself).
 ///
 /// # Returns
-/// Returns `WinBool::TRUE` if the DC was successfully deleted,
-/// or `WinBool::FALSE` if the handle was invalid or if any selected objects are still in use.///
+/// Returns `BOOL::TRUE` if the DC was successfully deleted,
+/// or `BOOL::FALSE` if the handle was invalid or if any selected objects are still in use.///
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn DeleteDC(hdc: usize) -> WinBool {
+pub unsafe extern "stdcall" fn DeleteDC(hdc: usize) -> BOOL {
     unsafe { common::delete_dc(hdc) }
 }
 
@@ -172,12 +172,12 @@ pub unsafe extern "stdcall" fn SelectObject(hdc: usize, object: usize) -> usize 
 /// The caller is also responsible for ensuring that the object handle is not used after it has been deleted to avoid undefined behavior.
 ///
 /// # Returns
-/// The function will return `WinBool::FALSE` if the object is currently selected into any device context (DC), including the one it was
+/// The function will return `BOOL::FALSE` if the object is currently selected into any device context (DC), including the one it was
 /// created with, to prevent resource leaks and undefined behavior.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn DeleteObject(object: usize) -> WinBool {
+pub unsafe extern "stdcall" fn DeleteObject(object: usize) -> BOOL {
     unsafe { common::delete_object(object) }
 }
 
@@ -220,7 +220,7 @@ pub unsafe extern "stdcall" fn DeleteObject(object: usize) -> WinBool {
 /// The caller is responsible for checking the return value to determine if the operation succeeded or failed.
 ///
 /// # Returns
-/// The function returns `WinBool::TRUE` if the operation succeeded, or `WinBool::FALSE` if it failed.
+/// The function returns `BOOL::TRUE` if the operation succeeded, or `BOOL::FALSE` if it failed.
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
@@ -234,7 +234,7 @@ pub unsafe extern "stdcall" fn BitBlt(
     x_src: i32,
     y_src: i32,
     rop: u32,
-) -> WinBool {
+) -> BOOL {
     let dest_rect = Rect {
         left: x_dest,
         top: y_dest,
@@ -269,7 +269,7 @@ pub unsafe extern "stdcall" fn BitBlt(
 /// The function will fail if the buffer is invalid or if the device context does not have a bitmap selected into it.
 ///
 /// # Returns
-/// Returns `WinBool::TRUE` if the function succeeds, or `WinBool::FALSE` if it fails.
+/// Returns `BOOL::TRUE` if the function succeeds, or `BOOL::FALSE` if it fails.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
@@ -279,10 +279,10 @@ pub unsafe extern "stdcall" fn TextOutA(
     y: i32,
     text: LPCSTR,
     count: i32,
-) -> WinBool {
+) -> BOOL {
     unsafe {
         let Some(text) = text.read_string_counted(count) else {
-            return WinBool::FALSE;
+            return BOOL::FALSE;
         };
 
         common::ops::text_out(hdc, x, y, &text)
@@ -307,7 +307,7 @@ pub unsafe extern "stdcall" fn TextOutA(
 /// The function will fail if the buffer is invalid or if the device context does not have a bitmap selected into it.
 ///
 /// # Returns
-/// Returns `WinBool::TRUE` if the function succeeds, or `WinBool::FALSE` if it fails.
+/// Returns `BOOL::TRUE` if the function succeeds, or `BOOL::FALSE` if it fails.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
@@ -317,10 +317,10 @@ pub unsafe extern "stdcall" fn TextOutW(
     y: i32,
     text: LPCWSTR,
     count: i32,
-) -> WinBool {
+) -> BOOL {
     unsafe {
         let Some(text) = text.read_string_counted(count) else {
-            return WinBool::FALSE;
+            return BOOL::FALSE;
         };
 
         common::ops::text_out(hdc, x, y, &text)

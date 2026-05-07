@@ -4,7 +4,7 @@
 //! but also includes the Windows API entry points and some handle table integration.
 
 use rine_common_kernel32 as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::Handle;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::sync::LPCriticalSection;
@@ -43,22 +43,22 @@ pub unsafe extern "stdcall" fn InitializeCriticalSection(cs: LPCriticalSection) 
 /// `DeleteCriticalSection` when no longer needed.
 ///
 /// # Returns
-/// If the critical section was successfully initialized, the function returns `WinBool::TRUE`.
-/// If the `cs` pointer is null, the function returns `WinBool::FALSE` and does not perform any initialization.
+/// If the critical section was successfully initialized, the function returns `BOOL::TRUE`.
+/// If the `cs` pointer is null, the function returns `BOOL::FALSE` and does not perform any initialization.
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn InitializeCriticalSectionAndSpinCount(
     cs: LPCriticalSection,
     _spin_count: u32,
-) -> WinBool {
+) -> BOOL {
     if cs.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     unsafe { common::sync::init_critical_section(cs) };
 
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// Enter a critical section by locking the underlying mutex.
@@ -91,12 +91,12 @@ pub unsafe extern "stdcall" fn EnterCriticalSection(cs: LPCriticalSection) {
 /// The caller is responsible for ensuring that the CRITICAL_SECTION is properly initialized before calling this function.
 ///
 /// # Returns
-/// Returns `WinBool::TRUE` if the lock was successfully acquired, or `WinBool::FALSE`
+/// Returns `BOOL::TRUE` if the lock was successfully acquired, or `BOOL::FALSE`
 /// if the critical section is already owned by another thread or if an error occurred (e.g. invalid pointer).
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: LPCriticalSection) -> WinBool {
+pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: LPCriticalSection) -> BOOL {
     unsafe { common::sync::try_enter_critical_section(cs) }
 }
 
@@ -111,8 +111,8 @@ pub unsafe extern "stdcall" fn TryEnterCriticalSection(cs: LPCriticalSection) ->
 /// If `cs` is null, this function does nothing and returns immediately.
 ///
 /// # Returns
-/// If the critical section was successfully left, the function returns `WinBool::TRUE`.
-/// If the `cs` pointer is null, the function returns `WinBool::FALSE` and does not perform any operation.
+/// If the critical section was successfully left, the function returns `BOOL::TRUE`.
+/// If the `cs` pointer is null, the function returns `BOOL::FALSE` and does not perform any operation.
 ///
 /// # Notes
 /// Missing implementation features:
@@ -147,9 +147,9 @@ pub unsafe extern "stdcall" fn DeleteCriticalSection(cs: LPCriticalSection) {
 ///
 /// # Arguments
 /// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
-/// * `manual_reset` - If `WinBool::TRUE`, the event is a manual-reset event that remains signaled until explicitly reset.
-///   If `WinBool::FALSE`, it is an auto-reset event that automatically resets to non-signaled after releasing a single waiting thread.
-/// * `initial_state` - If `WinBool::TRUE`, the event is initially signaled; if `WinBool::FALSE`, it is initially non-signaled.
+/// * `manual_reset` - If `BOOL::TRUE`, the event is a manual-reset event that remains signaled until explicitly reset.
+///   If `BOOL::FALSE`, it is an auto-reset event that automatically resets to non-signaled after releasing a single waiting thread.
+/// * `initial_state` - If `BOOL::TRUE`, the event is initially signaled; if `BOOL::FALSE`, it is initially non-signaled.
 /// * `_name` - Currently ignored, as named events are not implemented, but it is still read for dev notification purposes.
 ///
 /// # Safety
@@ -164,8 +164,8 @@ pub unsafe extern "stdcall" fn DeleteCriticalSection(cs: LPCriticalSection) {
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateEventA(
     _security_attrs: usize,
-    manual_reset: WinBool,
-    initial_state: WinBool,
+    manual_reset: BOOL,
+    initial_state: BOOL,
     _name: LPCSTR,
 ) -> Handle {
     let h = common::sync::create_event(manual_reset, initial_state);
@@ -188,9 +188,9 @@ pub unsafe extern "stdcall" fn CreateEventA(
 ///
 /// # Arguments
 /// * `_security_attrs` - Currently ignored, as we do not implement any access control features.
-/// * `manual_reset` - If `WinBool::TRUE`, the event is a manual-reset event that remains signaled until explicitly reset.
-///   If `WinBool::FALSE`, it is an auto-reset event that automatically resets to non-signaled after releasing a single waiting thread.
-/// * `initial_state` - If `WinBool::TRUE`, the event is initially signaled; if `WinBool::FALSE`, it is initially non-signaled.
+/// * `manual_reset` - If `BOOL::TRUE`, the event is a manual-reset event that remains signaled until explicitly reset.
+///   If `BOOL::FALSE`, it is an auto-reset event that automatically resets to non-signaled after releasing a single waiting thread.
+/// * `initial_state` - If `BOOL::TRUE`, the event is initially signaled; if `BOOL::FALSE`, it is initially non-signaled.
 /// * `_name` - Currently ignored, as named events are not implemented, but it is still read for dev notification purposes.
 ///
 /// # Safety
@@ -205,8 +205,8 @@ pub unsafe extern "stdcall" fn CreateEventA(
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateEventW(
     _security_attrs: usize,
-    manual_reset: WinBool,
-    initial_state: WinBool,
+    manual_reset: BOOL,
+    initial_state: BOOL,
     _name: LPCWSTR,
 ) -> Handle {
     let h = common::sync::create_event(manual_reset, initial_state);
@@ -235,13 +235,13 @@ pub unsafe extern "stdcall" fn CreateEventW(
 /// caller has appropriate access rights to set it.
 ///
 /// # Returns
-/// Setting an event with an invalid handle will result in failure and return `WinBool::FALSE`.
-/// If the event is successfully set to the signaled state, the function returns `WinBool::TRUE`
+/// Setting an event with an invalid handle will result in failure and return `BOOL::FALSE`.
+/// If the event is successfully set to the signaled state, the function returns `BOOL::TRUE`
 /// and any waiting threads are released according to the event's reset mode (manual or auto).
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn SetEvent(event_handle: Handle) -> WinBool {
+pub unsafe extern "stdcall" fn SetEvent(event_handle: Handle) -> BOOL {
     common::sync::set_event(event_handle)
 }
 
@@ -255,13 +255,13 @@ pub unsafe extern "stdcall" fn SetEvent(event_handle: Handle) -> WinBool {
 /// appropriate access rights to reset it.
 ///
 /// # Returns
-/// Resetting an event with an invalid handle will result in failure and return `WinBool::FALSE`.
-/// If the event is successfully reset to the non-signaled state, the function returns `WinBool::TRUE`
+/// Resetting an event with an invalid handle will result in failure and return `BOOL::FALSE`.
+/// If the event is successfully reset to the non-signaled state, the function returns `BOOL::TRUE`
 /// and any threads that wait on it will block until it is set again.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn ResetEvent(event_handle: Handle) -> WinBool {
+pub unsafe extern "stdcall" fn ResetEvent(event_handle: Handle) -> BOOL {
     common::sync::reset_event(event_handle)
 }
 
@@ -286,7 +286,7 @@ pub unsafe extern "stdcall" fn ResetEvent(event_handle: Handle) -> WinBool {
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateMutexA(
     _security_attrs: usize,
-    initial_owner: WinBool,
+    initial_owner: BOOL,
     _name: LPCSTR,
 ) -> Handle {
     let name_str = unsafe { _name.read_string() };
@@ -319,7 +319,7 @@ pub unsafe extern "stdcall" fn CreateMutexA(
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateMutexW(
     _security_attrs: usize,
-    initial_owner: WinBool,
+    initial_owner: BOOL,
     _name: LPCWSTR,
 ) -> Handle {
     let name_str = unsafe { _name.read_string() };
@@ -339,17 +339,17 @@ pub unsafe extern "stdcall" fn CreateMutexW(
 ///
 /// # Safety
 /// The caller must ensure that `mutex_handle` is a valid handle to a mutex object that the caller currently owns.
-/// Releasing a mutex that is not owned by the caller, or using an invalid handle, will result in failure and return `WinBool::FALSE`.
+/// Releasing a mutex that is not owned by the caller, or using an invalid handle, will result in failure and return `BOOL::FALSE`.
 ///
 /// # Returns
-/// If the mutex is successfully released, the function returns `WinBool::TRUE` and any waiting threads
+/// If the mutex is successfully released, the function returns `BOOL::TRUE` and any waiting threads
 /// are unblocked according to the mutex's behavior.
 /// If the mutex handle is invalid or the caller does not have ownership of the mutex,
-/// the function returns `WinBool::FALSE` and no action is taken.
+/// the function returns `BOOL::FALSE` and no action is taken.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn ReleaseMutex(mutex_handle: Handle) -> WinBool {
+pub unsafe extern "stdcall" fn ReleaseMutex(mutex_handle: Handle) -> BOOL {
     unsafe { common::sync::release_mutex(mutex_handle) }
 }
 
@@ -459,10 +459,10 @@ pub unsafe extern "stdcall" fn CreateSemaphoreW(
 /// or with parameters that would exceed the maximum count, will result in failure and return FALSE.
 ///
 /// # Returns
-/// If the semaphore is successfully released, the function returns `WinBool::TRUE` and any waiting threads
+/// If the semaphore is successfully released, the function returns `BOOL::TRUE` and any waiting threads
 /// are unblocked according to the semaphore's behavior.
 /// If the semaphore handle is invalid, the caller does not have appropriate access, or if releasing the
-/// semaphore would exceed its maximum count, the function returns `WinBool::FALSE` and no action is taken.
+/// semaphore would exceed its maximum count, the function returns `BOOL::FALSE` and no action is taken.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
@@ -470,10 +470,10 @@ pub unsafe extern "stdcall" fn ReleaseSemaphore(
     semaphore_handle: Handle,
     release_count: i32,
     previous_count: *mut i32,
-) -> WinBool {
+) -> BOOL {
     if release_count <= 0 {
         warn!(release_count, "ReleaseSemaphore: release_count must be > 0");
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     unsafe { common::sync::release_semaphore(semaphore_handle, release_count, previous_count) }
@@ -555,7 +555,7 @@ mod tests {
     #[test]
     fn create_event_and_set_reset() {
         unsafe {
-            let h = CreateEventA(0, WinBool::TRUE, WinBool::FALSE, LPCSTR::NULL);
+            let h = CreateEventA(0, BOOL::TRUE, BOOL::FALSE, LPCSTR::NULL);
             assert_ne!(h, Handle::NULL);
 
             assert!(SetEvent(h).is_true());
@@ -573,7 +573,7 @@ mod tests {
     #[test]
     fn create_event_w_initially_signaled() {
         unsafe {
-            let h = CreateEventW(0, WinBool::FALSE, WinBool::TRUE, LPCWSTR::NULL);
+            let h = CreateEventW(0, BOOL::FALSE, BOOL::TRUE, LPCWSTR::NULL);
             assert_ne!(h, Handle::NULL);
             let w = handle_table().get_waitable(h).unwrap();
             // Auto-reset, initially signaled — first wait succeeds, second times out.
@@ -595,7 +595,7 @@ mod tests {
     #[test]
     fn create_mutex_unowned_and_wait() {
         unsafe {
-            let h = CreateMutexA(0, WinBool::FALSE, LPCSTR::NULL);
+            let h = CreateMutexA(0, BOOL::FALSE, LPCSTR::NULL);
             assert_ne!(h, Handle::NULL);
 
             let w = handle_table().get_waitable(h).unwrap();
@@ -607,7 +607,7 @@ mod tests {
     #[test]
     fn create_mutex_initially_owned() {
         unsafe {
-            let h = CreateMutexA(0, WinBool::TRUE, LPCSTR::NULL);
+            let h = CreateMutexA(0, BOOL::TRUE, LPCSTR::NULL);
             assert_ne!(h, Handle::NULL);
 
             // Same thread can recursively acquire.
@@ -619,7 +619,7 @@ mod tests {
     #[test]
     fn create_mutex_w_variant_works() {
         unsafe {
-            let h = CreateMutexW(0, WinBool::FALSE, LPCWSTR::NULL);
+            let h = CreateMutexW(0, BOOL::FALSE, LPCWSTR::NULL);
             assert_ne!(h, Handle::NULL);
         }
     }
@@ -627,7 +627,7 @@ mod tests {
     #[test]
     fn release_mutex_by_owner_succeeds() {
         unsafe {
-            let h = CreateMutexA(0, WinBool::TRUE, LPCSTR::NULL);
+            let h = CreateMutexA(0, BOOL::TRUE, LPCSTR::NULL);
             assert!(ReleaseMutex(h).is_true());
         }
     }
@@ -636,7 +636,7 @@ mod tests {
     fn release_mutex_not_owned_fails() {
         unsafe {
             // Create unowned mutex.
-            let h = CreateMutexA(0, WinBool::FALSE, LPCSTR::NULL);
+            let h = CreateMutexA(0, BOOL::FALSE, LPCSTR::NULL);
             // Nobody owns it, releasing should fail.
             assert!(!ReleaseMutex(h).is_true());
         }
@@ -652,7 +652,7 @@ mod tests {
     #[test]
     fn mutex_recursive_release() {
         unsafe {
-            let h = CreateMutexA(0, WinBool::TRUE, LPCSTR::NULL);
+            let h = CreateMutexA(0, BOOL::TRUE, LPCSTR::NULL);
             // Recursive acquire.
             let w = handle_table().get_waitable(h).unwrap();
             assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0); // count = 2
@@ -671,7 +671,7 @@ mod tests {
         use std::sync::atomic::{AtomicBool, Ordering};
 
         unsafe {
-            let h = CreateMutexA(0, WinBool::TRUE, LPCSTR::NULL);
+            let h = CreateMutexA(0, BOOL::TRUE, LPCSTR::NULL);
             let released = Arc::new(AtomicBool::new(false));
             let released2 = Arc::clone(&released);
 

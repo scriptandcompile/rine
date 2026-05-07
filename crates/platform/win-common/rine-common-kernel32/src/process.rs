@@ -6,7 +6,7 @@ use std::process::Command;
 use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 
-use rine_types::errors::{ERROR_SUCCESS, WinBool};
+use rine_types::errors::{BOOL, ERROR_SUCCESS};
 use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::os::ProcessInformation;
 use rine_types::threading::{ProcessWaitable, STILL_ACTIVE};
@@ -75,7 +75,7 @@ pub fn cached_cmd_line() -> &'static CmdLineCache {
 /// The caller must ensure that the returned process and thread handles are eventually closed.
 ///
 /// # Returns
-/// WinBool::TRUE on success, WinBool::FALSE on failure (e.g. if the executable is not found or fails to launch).
+/// BOOL::TRUE on success, BOOL::FALSE on failure (e.g. if the executable is not found or fails to launch).
 ///
 /// # Notes
 /// This implementation is intentionally incomplete in a few areas:
@@ -97,10 +97,10 @@ pub unsafe fn create_process(
     args: &[String],
     env: Option<HashMap<String, String>>,
     proc_info: *mut ProcessInformation,
-) -> WinBool {
+) -> BOOL {
     if exe_path.is_empty() {
         warn!("CreateProcess: empty executable path");
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     let rine = rine_exe();
@@ -131,7 +131,7 @@ pub unsafe fn create_process(
         Ok(c) => c,
         Err(e) => {
             warn!(error = %e, "CreateProcess: spawn failed");
-            return WinBool::FALSE;
+            return BOOL::FALSE;
         }
     };
 
@@ -178,7 +178,7 @@ pub unsafe fn create_process(
     }
 
     debug!(pid, proc_handle = ?proc_handle, "child process created");
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// Gets the process ID of the calling process.
@@ -310,8 +310,8 @@ pub unsafe fn get_proc_address() -> u32 {
 /// potential resource leaks if the module is not properly freed when it is no longer needed.
 ///
 /// # Returns
-/// If the function succeeds, the return value is `WinBool::TRUE`.
-/// If the function fails, the return value is `WinBool::FALSE`.
+/// If the function succeeds, the return value is `BOOL::TRUE`.
+/// If the function fails, the return value is `BOOL::FALSE`.
 /// To get extended error information, call `GetLastError`.
 ///
 /// # Notes
@@ -320,13 +320,13 @@ pub unsafe fn get_proc_address() -> u32 {
 /// - No module reference-count decrement/unload is implemented.
 /// - No detach notifications (`DllMain` process/thread detach) are issued.
 /// - Failure paths do not set Win32-accurate `GetLastError` values.
-pub fn free_library(_module: u32) -> WinBool {
+pub fn free_library(_module: u32) -> BOOL {
     tracing::warn!(
         api = "FreeLibrary",
         dll = "kernel32",
         "FreeLibrary stub called"
     );
-    WinBool::FALSE
+    BOOL::FALSE
 }
 
 /// Gets the pseudo-handle for the current process, which is currently always -1 in our implementation.
@@ -365,13 +365,13 @@ pub fn get_current_process() -> Handle {
 /// The caller must also ensure that the `exit_code` pointer is valid and points to a writable memory location.
 ///
 /// # Returns
-/// If the function succeeds, the return value is nonzero `WinBool::TRUE`.
-/// If the function fails, the return value is zero `WinBool::FALSE`.
+/// If the function succeeds, the return value is nonzero `BOOL::TRUE`.
+/// If the function fails, the return value is zero `BOOL::FALSE`.
 ///
 /// # Notes
 /// We do not currently handle the error case where the handle does not have the
 /// PROCESS_QUERY_INFORMATION or PROCESS_QUERY_LIMITED_INFORMATION access right, and instead just
-/// return `WinBool::FALSE` with ERROR_INVALID_HANDLE.
+/// return `BOOL::FALSE` with ERROR_INVALID_HANDLE.
 ///
 /// We also do not currently distinguish all invalid-handle sub-cases with
 /// finer-grained Win32 error codes.
@@ -429,9 +429,8 @@ pub fn set_last_error(error_code: u32) {
 /// - No integration with structured exception handling dispatch exists.
 pub fn set_unhandled_exception_filter(_filter: usize, // LPTOP_LEVEL_EXCEPTION_FILTER
 ) -> usize {
-    let previous = read_shared_unhandled_exception_filter().unwrap_or_else(|| {
-        UNHANDLED_EXCEPTION_FILTER.load(Ordering::Acquire)
-    });
+    let previous = read_shared_unhandled_exception_filter()
+        .unwrap_or_else(|| UNHANDLED_EXCEPTION_FILTER.load(Ordering::Acquire));
 
     UNHANDLED_EXCEPTION_FILTER.store(_filter, Ordering::Release);
     write_shared_unhandled_exception_filter(_filter);
@@ -446,9 +445,8 @@ pub fn set_unhandled_exception_filter(_filter: usize, // LPTOP_LEVEL_EXCEPTION_F
 /// # Returns
 /// `Some(filter_return_value)` if a filter is installed, otherwise `None`.
 pub fn invoke_unhandled_exception_filter(exception_pointers: usize) -> Option<i32> {
-    let filter = read_shared_unhandled_exception_filter().unwrap_or_else(|| {
-        UNHANDLED_EXCEPTION_FILTER.load(Ordering::Acquire)
-    });
+    let filter = read_shared_unhandled_exception_filter()
+        .unwrap_or_else(|| UNHANDLED_EXCEPTION_FILTER.load(Ordering::Acquire));
     if filter == 0 {
         return None;
     }

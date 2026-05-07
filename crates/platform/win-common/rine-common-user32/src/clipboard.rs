@@ -1,4 +1,4 @@
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::windows::Hwnd;
 
 use tracing::warn;
@@ -87,11 +87,11 @@ impl TryFrom<u32> for ClipboardFormat {
 /// * `_format` - The clipboard format to check for availability.
 ///
 /// # Returns
-/// * `WinBool::TRUE` if the specified clipboard format is available, `WinBool::FALSE` otherwise.
-pub fn is_clipboard_format_available(_format: ClipboardFormat) -> WinBool {
+/// * `BOOL::TRUE` if the specified clipboard format is available, `BOOL::FALSE` otherwise.
+pub fn is_clipboard_format_available(_format: ClipboardFormat) -> BOOL {
     warn!("is_clipboard_format_available is not implemented yet, returning false for all formats");
 
-    WinBool::FALSE
+    BOOL::FALSE
 }
 
 /// Opens the clipboard for examination and prevents other applications from modifying the clipboard content.
@@ -102,33 +102,33 @@ pub fn is_clipboard_format_available(_format: ClipboardFormat) -> WinBool {
 ///
 /// # Safety
 /// The caller must ensure that the clipboard is properly closed after use by calling `CloseClipboard`.
-/// Currently, this function is not implemented and will return `WinBool::FALSE` for all calls.
+/// Currently, this function is not implemented and will return `BOOL::FALSE` for all calls.
 ///
 /// # Returns
-/// * `WinBool::TRUE` if the clipboard was opened successfully, `WinBool::FALSE` otherwise.
+/// * `BOOL::TRUE` if the clipboard was opened successfully, `BOOL::FALSE` otherwise.
 ///
 /// # Notes
-/// This function is currently not implemented and will return `WinBool::FALSE` for all calls.
-pub fn open_clipboard(_hwnd: Hwnd) -> WinBool {
+/// This function is currently not implemented and will return `BOOL::FALSE` for all calls.
+pub fn open_clipboard(_hwnd: Hwnd) -> BOOL {
     warn!("OpenClipboard is not implemented yet, returning false");
 
-    WinBool::FALSE
+    BOOL::FALSE
 }
 
 /// Closes the clipboard.
 ///
 /// # Safety
 /// The caller must ensure that the clipboard is currently open before calling this function.
-/// Currently, this function is not implemented and will return `WinBool::FALSE` for all calls.
+/// Currently, this function is not implemented and will return `BOOL::FALSE` for all calls.
 ///
 /// # Returns
-/// * `WinBool::TRUE` if the clipboard was closed successfully, `WinBool::FALSE` otherwise.
+/// * `BOOL::TRUE` if the clipboard was closed successfully, `BOOL::FALSE` otherwise.
 ///
 /// # Notes
-/// This function is currently not implemented and will return `WinBool::FALSE` for all calls
+/// This function is currently not implemented and will return `BOOL::FALSE` for all calls
 /// This function should write an error to `GetLastError()` if the clipboard is not open, but this is not yet implemented.
-pub fn close_clipboard() -> WinBool {
+pub fn close_clipboard() -> BOOL {
     warn!("CloseClipboard is not implemented yet, returning false");
 
-    WinBool::FALSE
+    BOOL::FALSE
 }

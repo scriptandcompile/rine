@@ -2,7 +2,7 @@ use std::alloc::Layout;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::{Handle, HandleEntry, HeapState, handle_table};
 
 pub const HEAP_ZERO_MEMORY: u32 = 0x00000008;
@@ -139,9 +139,9 @@ pub fn heap_alloc(heap_handle: Handle, flags: u32, size: usize) -> *mut u8 {
 /// * Missing implementation features:
 ///   * `_flags` semantics are ignored.
 ///   * No Win32-accurate `GetLastError` mapping is provided on failure.
-pub unsafe fn heap_free(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> WinBool {
+pub unsafe fn heap_free(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> BOOL {
     if ptr.is_null() {
-        return WinBool::TRUE;
+        return BOOL::TRUE;
     }
 
     let removed = handle_table().with_heap(heap_handle, |state| {
@@ -154,9 +154,9 @@ pub unsafe fn heap_free(heap_handle: Handle, _flags: u32, ptr: *mut u8) -> WinBo
                 unsafe { std::alloc::dealloc(ptr, layout) };
             }
             rine_types::dev_notify!(on_memory_freed(ptr as u64, size as u64, "HeapFree"));
-            WinBool::TRUE
+            BOOL::TRUE
         }
-        _ => WinBool::FALSE,
+        _ => BOOL::FALSE,
     }
 }
 
@@ -249,10 +249,10 @@ pub unsafe fn heap_realloc(
 ///
 /// # Note
 /// The default process heap cannot be destroyed, and attempting to do so will fail.
-pub fn heap_destroy(heap_handle: Handle) -> WinBool {
+pub fn heap_destroy(heap_handle: Handle) -> BOOL {
     // Don't allow destroying the default process heap.
     if heap_handle == *DEFAULT_HEAP {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     match handle_table().remove(heap_handle) {
@@ -265,18 +265,18 @@ pub fn heap_destroy(heap_handle: Handle) -> WinBool {
                 }
                 rine_types::dev_notify!(on_memory_freed(addr as u64, size as u64, "HeapDestroy"));
             }
-            WinBool::TRUE
+            BOOL::TRUE
         }
         Some(HandleEntry::Window(_)) => {
             // Window handles should not be destroyed via HeapDestroy.
-            WinBool::FALSE
+            BOOL::FALSE
         }
         Some(other) => {
             // Put it back — wasn't a heap handle.
             handle_table().insert(other);
-            WinBool::FALSE
+            BOOL::FALSE
         }
-        None => WinBool::FALSE,
+        None => BOOL::FALSE,
     }
 }
 
@@ -459,9 +459,9 @@ pub unsafe fn virtual_alloc(
 /// If the function succeeds, the return value is `TRUE`.
 /// If the function fails, the return value is `FALSE`, and extended error information should
 /// be (but currently cannot be) obtained by calling GetLastError.
-pub unsafe fn virtual_free(address: *mut u8, _size: usize, free_type: u32) -> WinBool {
+pub unsafe fn virtual_free(address: *mut u8, _size: usize, free_type: u32) -> BOOL {
     if address.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     // MEM_RELEASE: release the entire region (size must be 0 on Windows,
@@ -469,7 +469,7 @@ pub unsafe fn virtual_free(address: *mut u8, _size: usize, free_type: u32) -> Wi
     if free_type & MEM_RELEASE != 0 {
         let region_size = match VIRTUAL_REGIONS.lock().unwrap().remove(&(address as usize)) {
             Some(s) => s,
-            None => return WinBool::FALSE,
+            None => return BOOL::FALSE,
         };
 
         let result = unsafe { libc::munmap(address.cast(), region_size) };
@@ -481,9 +481,9 @@ pub unsafe fn virtual_free(address: *mut u8, _size: usize, free_type: u32) -> Wi
             ));
         }
         return if result == 0 {
-            WinBool::TRUE
+            BOOL::TRUE
         } else {
-            WinBool::FALSE
+            BOOL::FALSE
         };
     }
 
@@ -493,7 +493,7 @@ pub unsafe fn virtual_free(address: *mut u8, _size: usize, free_type: u32) -> Wi
     if rounded > 0 {
         unsafe { libc::madvise(address.cast(), rounded, libc::MADV_DONTNEED) };
     }
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// Query information about a range of pages in the virtual address space of the calling process.
@@ -570,7 +570,7 @@ pub unsafe fn virtual_protect(
     size: usize,
     new_protect: u32,
     old_protect: *mut u32,
-) -> WinBool {
+) -> BOOL {
     if !old_protect.is_null() {
         unsafe { *old_protect = new_protect };
     }
@@ -578,9 +578,9 @@ pub unsafe fn virtual_protect(
     let prot = win_protect_to_linux(new_protect);
     let result = unsafe { libc::mprotect(address.cast(), size, prot) };
     if result == 0 {
-        WinBool::TRUE
+        BOOL::TRUE
     } else {
-        WinBool::FALSE
+        BOOL::FALSE
     }
 }
 

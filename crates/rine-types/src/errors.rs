@@ -37,9 +37,9 @@ impl core::fmt::Debug for NtStatus {
 /// guarantees FALSE == 0; any non-zero value is truthy).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct WinBool(pub i32);
+pub struct BOOL(pub i32);
 
-impl WinBool {
+impl BOOL {
     pub const FALSE: Self = Self(0);
     pub const TRUE: Self = Self(1);
 
@@ -60,7 +60,7 @@ impl WinBool {
     }
 }
 
-impl core::fmt::Debug for WinBool {
+impl core::fmt::Debug for BOOL {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self.0 {
             0 => f.write_str("FALSE"),

@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::strings::{LPCSTR, LPCWSTR, write_cstr, write_wstr};
 
 /// Thin wrapper so a raw pointer can live in a `static OnceLock`.
@@ -87,23 +87,23 @@ pub unsafe fn get_environment_strings_w() -> *mut u16 {
 /// because the environment block is intentionally process-lifetime cached.
 ///
 /// # Returns
-/// If `block` is null, the return value is `WinBool::FALSE`.
-/// If `block` is a pointer previously returned by `get_environment_strings`, the return value is `WinBool::TRUE`.
-/// If `block` is a non-null pointer not returned by `get_environment_strings`, the return value is `WinBool::FALSE`.
+/// If `block` is null, the return value is `BOOL::FALSE`.
+/// If `block` is a pointer previously returned by `get_environment_strings`, the return value is `BOOL::TRUE`.
+/// If `block` is a non-null pointer not returned by `get_environment_strings`, the return value is `BOOL::FALSE`.
 /// Currently, this implementation does not set GetLastError on failure.
-pub unsafe fn free_environment_strings_a(block: *mut u8) -> WinBool {
+pub unsafe fn free_environment_strings_a(block: *mut u8) -> BOOL {
     if block.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     let Some(cached) = ENV_BLOCK_W.get() else {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     };
 
     if cached.0 as *mut u8 == block {
-        WinBool::TRUE
+        BOOL::TRUE
     } else {
-        WinBool::FALSE
+        BOOL::FALSE
     }
 }
 
@@ -120,26 +120,26 @@ pub unsafe fn free_environment_strings_a(block: *mut u8) -> WinBool {
 /// because the environment block is intentionally process-lifetime cached.
 ///
 /// # Returns
-/// If `block` is null, the return value is `WinBool::FALSE`.
-/// If `block` is a pointer previously returned by `get_environment_strings_w`, the return value is `WinBool::TRUE`.
-/// If `block` is a non-null pointer not returned by `get_environment_strings_w`, the return value is `WinBool::FALSE`.
+/// If `block` is null, the return value is `BOOL::FALSE`.
+/// If `block` is a pointer previously returned by `get_environment_strings_w`, the return value is `BOOL::TRUE`.
+/// If `block` is a non-null pointer not returned by `get_environment_strings_w`, the return value is `BOOL::FALSE`.
 /// Currently, this implementation does not set GetLastError on failure.
 ///
 /// # Notes
 /// This function currently does not set `GetLastError` on failure.
-pub unsafe fn free_environment_strings_w(block: *mut u16) -> WinBool {
+pub unsafe fn free_environment_strings_w(block: *mut u16) -> BOOL {
     if block.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     let Some(cached) = ENV_BLOCK_W.get() else {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     };
 
     if cached.0 == block {
-        WinBool::TRUE
+        BOOL::TRUE
     } else {
-        WinBool::FALSE
+        BOOL::FALSE
     }
 }
 
@@ -225,15 +225,15 @@ pub unsafe fn get_environment_variable_w(name: LPCWSTR, buffer: *mut u16, size: 
 /// # Returns
 /// If the function succeeds, the return value is TRUE.
 /// If the function fails, the return value is FALSE.
-pub unsafe fn set_environment_variable_a(name: LPCSTR, value: LPCSTR) -> WinBool {
+pub unsafe fn set_environment_variable_a(name: LPCSTR, value: LPCSTR) -> BOOL {
     let var_name = match name.read_string() {
         Some(n) => n,
-        None => return WinBool::FALSE,
+        None => return BOOL::FALSE,
     };
 
     let var_value = value.read_string();
     rine_types::environment::set_var(&var_name, var_value.as_deref());
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// Set the value of an environment variable.
@@ -252,15 +252,15 @@ pub unsafe fn set_environment_variable_a(name: LPCSTR, value: LPCSTR) -> WinBool
 /// # Returns
 /// If the function succeeds, the return value is TRUE.
 /// If the function fails, the return value is FALSE.
-pub unsafe fn set_environment_variable_w(name: LPCWSTR, value: LPCWSTR) -> WinBool {
+pub unsafe fn set_environment_variable_w(name: LPCWSTR, value: LPCWSTR) -> BOOL {
     let var_name = match name.read_string() {
         Some(n) => n,
-        None => return WinBool::FALSE,
+        None => return BOOL::FALSE,
     };
 
     let var_value = value.read_string();
     rine_types::environment::set_var(&var_name, var_value.as_deref());
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// Expand environment-variable strings and replaces them with the values defined for the current user.

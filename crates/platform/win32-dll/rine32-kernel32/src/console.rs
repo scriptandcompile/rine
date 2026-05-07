@@ -1,6 +1,6 @@
 use rine_common_kernel32 as common;
 
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::Handle;
 use rine_types::strings::{read_cstr_counted, read_wstr_counted};
 
@@ -46,10 +46,10 @@ pub unsafe extern "stdcall" fn WriteConsoleA(
     chars_to_write: u32,
     chars_written: *mut u32,
     _reserved: *const core::ffi::c_void,
-) -> WinBool {
+) -> BOOL {
     unsafe {
         let Some(text) = read_cstr_counted(buffer, chars_to_write as i32) else {
-            return WinBool::FALSE;
+            return BOOL::FALSE;
         };
 
         common::console::write_console(console_output, &text, chars_written)
@@ -80,10 +80,10 @@ pub unsafe extern "stdcall" fn WriteConsoleW(
     chars_to_write: u32,
     chars_written: *mut u32,
     _reserved: *const core::ffi::c_void,
-) -> WinBool {
+) -> BOOL {
     unsafe {
         let Some(text) = read_wstr_counted(buffer, chars_to_write as i32) else {
-            return WinBool::FALSE;
+            return BOOL::FALSE;
         };
 
         common::console::write_console(console_output, &text, chars_written)

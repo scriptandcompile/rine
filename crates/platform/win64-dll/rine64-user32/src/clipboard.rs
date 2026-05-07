@@ -1,5 +1,5 @@
 use rine_common_user32::clipboard as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::windows::Hwnd;
 
 use tracing::warn;
@@ -13,19 +13,19 @@ use tracing::warn;
 /// the `_format` parameter must be a valid clipboard format, otherwise the behavior is undefined.
 ///
 /// # Returns
-/// * `WinBool::TRUE` if the specified clipboard format is available, `WinBool::FALSE` otherwise.
+/// * `BOOL::TRUE` if the specified clipboard format is available, `BOOL::FALSE` otherwise.
 ///
 /// # Notes
-/// This function is currently not implemented and will return `WinBool::FALSE` for all formats.
+/// This function is currently not implemented and will return `BOOL::FALSE` for all formats.
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub extern "win64" fn IsClipboardFormatAvailable(_format: u32) -> WinBool {
+pub extern "win64" fn IsClipboardFormatAvailable(_format: u32) -> BOOL {
     if let Ok(format) = common::ClipboardFormat::try_from(_format) {
         common::is_clipboard_format_available(format)
     } else {
         warn!("Invalid clipboard format: {}, returning false", _format);
-        WinBool::FALSE
+        BOOL::FALSE
     }
 }
 
@@ -37,17 +37,17 @@ pub extern "win64" fn IsClipboardFormatAvailable(_format: u32) -> WinBool {
 ///
 /// # Safety
 /// The caller must ensure that the clipboard is properly closed after use by calling `CloseClipboard`.
-/// Currently, this function is not implemented and will return `WinBool::FALSE` for all calls.
+/// Currently, this function is not implemented and will return `BOOL::FALSE` for all calls.
 ///
 /// # Returns
-/// * `WinBool::TRUE` if the clipboard was opened successfully, `WinBool::FALSE` otherwise.
+/// * `BOOL::TRUE` if the clipboard was opened successfully, `BOOL::FALSE` otherwise.
 ///
 /// # Notes
-/// This function is currently not implemented and will return `WinBool::FALSE` for all calls.
+/// This function is currently not implemented and will return `BOOL::FALSE` for all calls.
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub extern "win64" fn OpenClipboard(_hwnd: Hwnd) -> WinBool {
+pub extern "win64" fn OpenClipboard(_hwnd: Hwnd) -> BOOL {
     common::open_clipboard(_hwnd)
 }
 
@@ -55,17 +55,17 @@ pub extern "win64" fn OpenClipboard(_hwnd: Hwnd) -> WinBool {
 ///
 /// # Safety
 /// The caller must ensure that the clipboard is currently open before calling this function.
-/// Currently, this function is not implemented and will return `WinBool::FALSE` for all calls.
+/// Currently, this function is not implemented and will return `BOOL::FALSE` for all calls.
 ///
 /// # Returns
-/// * `WinBool::TRUE` if the clipboard was closed successfully, `WinBool::FALSE` otherwise.
+/// * `BOOL::TRUE` if the clipboard was closed successfully, `BOOL::FALSE` otherwise.
 ///
 /// # Notes
-/// This function is currently not implemented and will return `WinBool::FALSE` for all calls
+/// This function is currently not implemented and will return `BOOL::FALSE` for all calls
 /// This function should write an error to `GetLastError()` if the clipboard is not open, but this is not yet implemented.
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub extern "win64" fn CloseClipboard() -> WinBool {
+pub extern "win64" fn CloseClipboard() -> BOOL {
     common::close_clipboard()
 }

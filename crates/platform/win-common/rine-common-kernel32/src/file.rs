@@ -1,5 +1,5 @@
 use rine_types::{
-    errors::WinBool,
+    errors::BOOL,
     handles::{
         CREATE_ALWAYS, CREATE_NEW, FILE_BEGIN, FILE_CURRENT, FILE_END, FindDataState, GENERIC_READ,
         GENERIC_WRITE, HFile, Handle, HandleEntry, INVALID_SET_FILE_POINTER, OPEN_ALWAYS,
@@ -32,20 +32,20 @@ pub unsafe fn write_file(
     bytes_to_write: u32,
     bytes_written: *mut u32,
     _overlapped: *mut core::ffi::c_void,
-) -> WinBool {
+) -> BOOL {
     let Some(fd) = handle_to_fd(handle) else {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     };
 
     let written = unsafe { libc::write(fd, buffer.cast(), bytes_to_write as usize) };
     if written < 0 {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     if !bytes_written.is_null() {
         unsafe { *bytes_written = written as u32 };
     }
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// SetFilePointer — move the file pointer for a file handle.
@@ -186,7 +186,7 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
 /// After this call, `handle` must not be used again.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure.
 ///
 /// # Note
 /// This implementation only supports closing of file handles.
@@ -194,32 +194,32 @@ pub fn create_file(win_path: &str, desired_access: u32, creation_disposition: u3
 /// (threads, events, processes, mutexes, semaphores, heaps, registry keys, and FindFirstFile find data).
 /// It does not support closing of window handles, which are not tracked in the handle table.
 #[allow(non_snake_case)]
-pub fn close_handle(handle: Handle) -> WinBool {
+pub fn close_handle(handle: Handle) -> BOOL {
     match handle_table().remove(handle) {
-        Some(HandleEntry::Thread(_)) => WinBool::TRUE,
-        Some(HandleEntry::Event(_)) => WinBool::TRUE,
-        Some(HandleEntry::Process(_)) => WinBool::TRUE,
-        Some(HandleEntry::Mutex(_)) => WinBool::TRUE,
-        Some(HandleEntry::Semaphore(_)) => WinBool::TRUE,
-        Some(HandleEntry::Heap(_)) => WinBool::TRUE,
-        Some(HandleEntry::RegistryKey(_)) => WinBool::TRUE,
-        Some(HandleEntry::FindData(_)) => WinBool::TRUE,
+        Some(HandleEntry::Thread(_)) => BOOL::TRUE,
+        Some(HandleEntry::Event(_)) => BOOL::TRUE,
+        Some(HandleEntry::Process(_)) => BOOL::TRUE,
+        Some(HandleEntry::Mutex(_)) => BOOL::TRUE,
+        Some(HandleEntry::Semaphore(_)) => BOOL::TRUE,
+        Some(HandleEntry::Heap(_)) => BOOL::TRUE,
+        Some(HandleEntry::RegistryKey(_)) => BOOL::TRUE,
+        Some(HandleEntry::FindData(_)) => BOOL::TRUE,
         Some(HandleEntry::File(object)) => {
             let Some(fd) = std_handle_to_fd(object as u32) else {
-                return WinBool::FALSE;
+                return BOOL::FALSE;
             };
 
             // 'fd' should be the linux file descriptor.
             // If it's a standard stream, we don't actually want to close it.
             if fd == libc::STDERR_FILENO || fd == libc::STDOUT_FILENO || fd == libc::STDIN_FILENO {
-                WinBool::TRUE
+                BOOL::TRUE
             } else {
                 unsafe { libc::close(fd) };
-                WinBool::TRUE
+                BOOL::TRUE
             }
         }
-        Some(HandleEntry::Window(_)) => WinBool::FALSE,
-        None => WinBool::FALSE,
+        Some(HandleEntry::Window(_)) => BOOL::FALSE,
+        None => BOOL::FALSE,
     }
 }
 
@@ -229,21 +229,21 @@ pub fn close_handle(handle: Handle) -> WinBool {
 /// * `win_path`: Windows-style file path (e.g. `C:\foo\bar.txt`).
 ///
 /// # Returns
-/// `WinBool::TRUE` if the file was successfully deleted, `WinBool::FALSE` if an error occurred (e.g. file not found).
-pub fn delete_file(win_path: &str) -> WinBool {
+/// `BOOL::TRUE` if the file was successfully deleted, `BOOL::FALSE` if an error occurred (e.g. file not found).
+pub fn delete_file(win_path: &str) -> BOOL {
     tracing::debug!(path = win_path, "DeleteFile");
 
     let linux_path = translate_win_path(win_path);
     let c_path = match std::ffi::CString::new(linux_path.to_string_lossy().as_bytes()) {
         Ok(s) => s,
-        Err(_) => return WinBool::FALSE,
+        Err(_) => return BOOL::FALSE,
     };
 
     match unsafe { libc::unlink(c_path.as_ptr()) } {
-        0 => WinBool::TRUE,
+        0 => BOOL::TRUE,
         _ => {
             tracing::debug!(path = %linux_path.display(), errno = std::io::Error::last_os_error().raw_os_error(), "DeleteFile: unlink failed");
-            WinBool::FALSE
+            BOOL::FALSE
         }
     }
 }
@@ -255,16 +255,16 @@ pub fn delete_file(win_path: &str) -> WinBool {
 ///
 /// # Returns
 /// `TRUE` if the buffers were successfully flushed, or `FALSE` if an error occurred (e.g. invalid handle).
-pub fn flush_file_buffers(handle: Handle) -> WinBool {
+pub fn flush_file_buffers(handle: Handle) -> BOOL {
     match handle_table().get_fd(handle) {
         Some(fd) => {
             if unsafe { libc::fsync(fd) } == 0 {
-                WinBool::TRUE
+                BOOL::TRUE
             } else {
-                WinBool::FALSE
+                BOOL::FALSE
             }
         }
-        _ => WinBool::FALSE,
+        _ => BOOL::FALSE,
     }
 }
 
@@ -315,20 +315,20 @@ pub unsafe fn read_file(
     bytes_to_read: u32,
     bytes_read: *mut u32,
     _overlapped: *mut core::ffi::c_void,
-) -> WinBool {
+) -> BOOL {
     let Some(fd) = handle_to_fd(handle) else {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     };
 
     let read = unsafe { libc::read(fd, buffer.cast(), bytes_to_read as usize) };
     if read < 0 {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     if !bytes_read.is_null() {
         unsafe { *bytes_read = read as u32 };
     }
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// Begin searching for files matching a pattern (ANSI).
@@ -420,12 +420,12 @@ pub unsafe fn find_first_file_w(file_path: &str, find_data: *mut Win32FindDataW)
 /// The caller is responsible for calling `FindClose` with the search handle when the search is finished.
 ///
 /// # Returns
-/// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
-/// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+/// `BOOL::TRUE` if the next matching file was found and `find_data` was updated,
+/// or `BOOL::FALSE` if no more matching files were found or an error occurred.
 #[unsafe(no_mangle)]
-pub unsafe fn find_next_file_a(handle: Handle, find_data: *mut Win32FindDataA) -> WinBool {
+pub unsafe fn find_next_file_a(handle: Handle, find_data: *mut Win32FindDataA) -> BOOL {
     if find_data.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     let result = handle_table().with_find_data(handle, |state| {
@@ -439,8 +439,8 @@ pub unsafe fn find_next_file_a(handle: Handle, find_data: *mut Win32FindDataA) -
     });
 
     match result {
-        Some(true) => WinBool::TRUE,
-        _ => WinBool::FALSE,
+        Some(true) => BOOL::TRUE,
+        _ => BOOL::FALSE,
     }
 }
 
@@ -455,12 +455,12 @@ pub unsafe fn find_next_file_a(handle: Handle, find_data: *mut Win32FindDataA) -
 /// The caller is responsible for calling `FindClose` with the search handle when the search is finished.
 ///
 /// # Returns
-/// `WinBool::TRUE` if the next matching file was found and `find_data` was updated,
-/// or `WinBool::FALSE` if no more matching files were found or an error occurred.
+/// `BOOL::TRUE` if the next matching file was found and `find_data` was updated,
+/// or `BOOL::FALSE` if no more matching files were found or an error occurred.
 #[unsafe(no_mangle)]
-pub unsafe fn find_next_file_w(handle: Handle, find_data: *mut Win32FindDataW) -> WinBool {
+pub unsafe fn find_next_file_w(handle: Handle, find_data: *mut Win32FindDataW) -> BOOL {
     if find_data.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     let result = handle_table().with_find_data(handle, |state| {
@@ -474,8 +474,8 @@ pub unsafe fn find_next_file_w(handle: Handle, find_data: *mut Win32FindDataW) -
     });
 
     match result {
-        Some(true) => WinBool::TRUE,
-        _ => WinBool::FALSE,
+        Some(true) => BOOL::TRUE,
+        _ => BOOL::FALSE,
     }
 }
 

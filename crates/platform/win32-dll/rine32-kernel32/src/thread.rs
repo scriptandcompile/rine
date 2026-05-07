@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use rine_common_kernel32::thread as common_thread;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::Handle;
 use rine_types::threading;
 
@@ -158,11 +158,11 @@ pub unsafe extern "stdcall" fn TlsAlloc() -> u32 {
 /// The caller is responsible for ensuring that no threads are currently using the TLS index before freeing it.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure (e.g., invalid index).
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure (e.g., invalid index).
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn TlsFree(tls_index: u32) -> WinBool {
+pub unsafe extern "stdcall" fn TlsFree(tls_index: u32) -> BOOL {
     common_thread::tls_free(tls_index)
 }
 
@@ -203,7 +203,7 @@ pub unsafe extern "stdcall" fn TlsGetValue(tls_index: u32) -> usize {
 /// across threads, as appropriate for the application's logic.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure (e.g., invalid index).
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure (e.g., invalid index).
 ///
 /// # Notes
 /// Missing implementation features:
@@ -211,7 +211,7 @@ pub unsafe extern "stdcall" fn TlsGetValue(tls_index: u32) -> usize {
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn TlsSetValue(tls_index: u32, value: usize) -> WinBool {
+pub unsafe extern "stdcall" fn TlsSetValue(tls_index: u32, value: usize) -> BOOL {
     common_thread::tls_set_value(tls_index, value)
 }
 
@@ -287,8 +287,8 @@ pub unsafe extern "stdcall" fn GetCurrentThreadId() -> u32 {
 /// active (in which case it will be set to `STILL_ACTIVE`).
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, with the thread's exit code written to `exit_code_out` if it is not null.
-/// `WinBool::FALSE` on failure (e.g., invalid handle).
+/// `BOOL::TRUE` on success, with the thread's exit code written to `exit_code_out` if it is not null.
+/// `BOOL::FALSE` on failure (e.g., invalid handle).
 ///
 /// # Notes
 /// Missing implementation features:
@@ -303,7 +303,7 @@ pub unsafe extern "stdcall" fn GetCurrentThreadId() -> u32 {
 pub unsafe extern "stdcall" fn GetExitCodeThread(
     thread_handle: Handle,
     exit_code_out: *mut u32,
-) -> WinBool {
+) -> BOOL {
     let exit_code_out = unsafe { exit_code_out.as_mut() };
     common_thread::get_exit_code_thread(thread_handle, exit_code_out)
 }
@@ -334,8 +334,8 @@ pub unsafe extern "stdcall" fn WaitForSingleObject(handle: Handle, timeout_ms: u
 /// * `count`: The number of handles in the array pointed to by `handles_ptr`.
 /// * `handles_ptr`: Pointer to an array of handles to wait on, which can be thread handles, process handles,
 ///   or synchronization object handles.
-/// * `wait_all`: If `WinBool::TRUE`, the function returns when all handles are signalled;
-///   if `WinBool::FALSE`, it returns when any one handle is signalled.
+/// * `wait_all`: If `BOOL::TRUE`, the function returns when all handles are signalled;
+///   if `BOOL::FALSE`, it returns when any one handle is signalled.
 /// * `timeout_ms`: The timeout in milliseconds to wait, or `INFINITE` (0xFFFFFFFF) to wait indefinitely.
 ///
 /// # Safety
@@ -345,9 +345,9 @@ pub unsafe extern "stdcall" fn WaitForSingleObject(handle: Handle, timeout_ms: u
 /// and that the function may return before the timeout elapses if the specified condition is met (e.g., a handle is signalled).
 ///
 /// # Returns
-/// If `wait_all` is `WinBool::FALSE`, returns `WAIT_OBJECT_0 + i` if the handle at index `i` is signalled,
+/// If `wait_all` is `BOOL::FALSE`, returns `WAIT_OBJECT_0 + i` if the handle at index `i` is signalled,
 /// `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
-/// If `wait_all` is `WinBool::TRUE`, returns `WAIT_OBJECT_0` if all handles are signalled,
+/// If `wait_all` is `BOOL::TRUE`, returns `WAIT_OBJECT_0` if all handles are signalled,
 /// `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
@@ -355,7 +355,7 @@ pub unsafe extern "stdcall" fn WaitForSingleObject(handle: Handle, timeout_ms: u
 pub unsafe extern "stdcall" fn WaitForMultipleObjects(
     count: u32,
     handles_ptr: *const Handle,
-    wait_all: WinBool,
+    wait_all: BOOL,
     timeout_ms: u32,
 ) -> u32 {
     if handles_ptr.is_null() {

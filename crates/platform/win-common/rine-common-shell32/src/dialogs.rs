@@ -1,6 +1,6 @@
 use rine_types::os::get_version;
 use rine_types::windows::Hwnd;
-use rine_types::{errors::WinBool, handles::Handle};
+use rine_types::{errors::BOOL, handles::Handle};
 
 use tracing::{info, warn};
 
@@ -89,10 +89,10 @@ pub fn shell_about(
     app_text: Option<&str>,
     other_stuff: Option<&str>,
     _icon: Handle,
-) -> WinBool {
+) -> BOOL {
     let Some(app_text) = app_text else {
         warn!("ShellAboutA failed: szApp is NULL");
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     };
 
     let formatting = shell_about_text_formatting();
@@ -107,7 +107,7 @@ pub fn shell_about(
         "ShellAboutA layout resolved"
     );
 
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::windows::Rect;
 
 use crate::objects::{Bitmap, Brush, DeviceContext, GdiObject, Pen};
@@ -59,12 +59,12 @@ pub unsafe fn create_compatible_dc(_hdc: usize) -> usize {
 /// This function will fail if any of the DC's selected objects are still selected in any DC (including itself).
 ///
 /// # Returns
-/// Returns `WinBool::TRUE` if the DC was successfully deleted,
-/// or `WinBool::FALSE` if the handle was invalid or if any selected objects are still in use.
-pub unsafe fn delete_dc(hdc: usize) -> WinBool {
+/// Returns `BOOL::TRUE` if the DC was successfully deleted,
+/// or `BOOL::FALSE` if the handle was invalid or if any selected objects are still in use.
+pub unsafe fn delete_dc(hdc: usize) -> BOOL {
     let mut state = gdi_state().lock().unwrap();
     let Some(dc) = state.dcs.remove(&hdc) else {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     };
 
     for object in dc.owned_objects {
@@ -77,7 +77,7 @@ pub unsafe fn delete_dc(hdc: usize) -> WinBool {
     }
 
     rine_types::dev_notify!(on_handle_closed(hdc as i64));
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// Creates a bitmap compatible with the device that is associated with the specified device context (DC).
@@ -258,12 +258,12 @@ pub unsafe fn select_object(hdc: usize, object: usize) -> usize {
 /// The caller is also responsible for ensuring that the object handle is not used after it has been deleted to avoid undefined behavior.
 ///
 /// # Returns
-/// The function will return `WinBool::FALSE` if the object is currently selected into any device context (DC), including the one it was
+/// The function will return `BOOL::FALSE` if the object is currently selected into any device context (DC), including the one it was
 /// created with, to prevent resource leaks and undefined behavior.
-pub unsafe fn delete_object(object: usize) -> WinBool {
+pub unsafe fn delete_object(object: usize) -> BOOL {
     let mut state = gdi_state().lock().unwrap();
     if object_selected_by_any_dc(&state, object) {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     if let Some(gdi_object) = state.objects.remove(&object) {
@@ -271,9 +271,9 @@ pub unsafe fn delete_object(object: usize) -> WinBool {
             notify_bitmap_free(bitmap);
         }
         rine_types::dev_notify!(on_handle_closed(object as i64));
-        WinBool::TRUE
+        BOOL::TRUE
     } else {
-        WinBool::FALSE
+        BOOL::FALSE
     }
 }
 
@@ -316,32 +316,32 @@ pub unsafe fn delete_object(object: usize) -> WinBool {
 /// The caller is responsible for checking the return value to determine if the operation succeeded or failed.
 ///
 /// # Returns
-/// The function returns `WinBool::TRUE` if the operation succeeded, or `WinBool::FALSE` if it failed.
+/// The function returns `BOOL::TRUE` if the operation succeeded, or `BOOL::FALSE` if it failed.
 pub unsafe fn bit_blt(
     hdc_dest: usize,
     dest_rect: Rect,
     hdc_src: usize,
     src_rect: Rect,
     rop: u32,
-) -> WinBool {
+) -> BOOL {
     let width = dest_rect.right.saturating_sub(dest_rect.left);
     let height = dest_rect.bottom.saturating_sub(dest_rect.top);
     let src_width = src_rect.right.saturating_sub(src_rect.left);
     let src_height = src_rect.bottom.saturating_sub(src_rect.top);
 
     if width <= 0 || height <= 0 || rop != SRCCOPY {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     if src_width != width || src_height != height {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     let mut state = gdi_state().lock().unwrap();
 
     let src_bitmap = match with_selected_bitmap_mut(&mut state, hdc_src, |bmp| bmp.clone()) {
         Some(bitmap) => bitmap,
-        None => return WinBool::FALSE,
+        None => return BOOL::FALSE,
     };
 
     let Some(result) = with_selected_bitmap_mut(&mut state, hdc_dest, |dest| {
@@ -363,9 +363,9 @@ pub unsafe fn bit_blt(
             }
         }
 
-        WinBool::TRUE
+        BOOL::TRUE
     }) else {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     };
 
     result
@@ -384,15 +384,15 @@ pub unsafe fn bit_blt(
 /// to avoid unexpected results.
 ///
 /// # Returns
-/// Returns `WinBool::TRUE` if the text was successfully drawn,
-/// or `WinBool::FALSE` if the `hdc` was invalid or if no bitmap was selected into the DC.
-pub fn text_out(hdc: usize, x: i32, y: i32, text: &str) -> WinBool {
+/// Returns `BOOL::TRUE` if the text was successfully drawn,
+/// or `BOOL::FALSE` if the `hdc` was invalid or if no bitmap was selected into the DC.
+pub fn text_out(hdc: usize, x: i32, y: i32, text: &str) -> BOOL {
     let mut state = gdi_state().lock().unwrap();
     if with_selected_bitmap_mut(&mut state, hdc, |bitmap| draw_text(bitmap, x, y, text)).is_none() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 #[cfg(test)]
@@ -417,7 +417,7 @@ mod tests {
             assert_ne!(select_object(dst_dc, dst_bitmap), 0);
 
             let hello = "Hello";
-            assert_eq!(text_out(src_dc, 0, 0, hello), WinBool::TRUE);
+            assert_eq!(text_out(src_dc, 0, 0, hello), BOOL::TRUE);
             assert_eq!(
                 bit_blt(
                     dst_dc,
@@ -436,7 +436,7 @@ mod tests {
                     },
                     SRCCOPY,
                 ),
-                WinBool::TRUE
+                BOOL::TRUE
             );
 
             let state = gdi_state().lock().unwrap();
@@ -451,8 +451,8 @@ mod tests {
             drop(state);
 
             assert_eq!(src_pixels, dst_pixels);
-            assert_eq!(delete_dc(src_dc), WinBool::TRUE);
-            assert_eq!(delete_dc(dst_dc), WinBool::TRUE);
+            assert_eq!(delete_dc(src_dc), BOOL::TRUE);
+            assert_eq!(delete_dc(dst_dc), BOOL::TRUE);
         }
     }
 
@@ -462,9 +462,9 @@ mod tests {
             let dc = create_compatible_dc(0);
             let bitmap = create_compatible_bitmap(dc, 4, 4);
             assert_ne!(select_object(dc, bitmap), 0);
-            assert_eq!(delete_object(bitmap), WinBool::FALSE);
-            assert_eq!(delete_dc(dc), WinBool::TRUE);
-            assert_eq!(delete_object(bitmap), WinBool::TRUE);
+            assert_eq!(delete_object(bitmap), BOOL::FALSE);
+            assert_eq!(delete_dc(dc), BOOL::TRUE);
+            assert_eq!(delete_object(bitmap), BOOL::TRUE);
         }
     }
 }

@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::threading::{
     self, INFINITE, STILL_ACTIVE, TLS_OUT_OF_INDEXES, ThreadWaitable, WaitStatus, Waitable,
@@ -143,13 +143,13 @@ pub fn tls_alloc() -> u32 {
 /// The caller is responsible for ensuring that no threads are currently using the TLS index before freeing it.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure (e.g., invalid index).
-pub fn tls_free(tls_index: u32) -> WinBool {
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure (e.g., invalid index).
+pub fn tls_free(tls_index: u32) -> BOOL {
     if threading::tls_free(tls_index) {
         rine_types::dev_notify!(on_tls_freed(tls_index));
-        WinBool::TRUE
+        BOOL::TRUE
     } else {
-        WinBool::FALSE
+        BOOL::FALSE
     }
 }
 
@@ -187,16 +187,16 @@ pub fn tls_get_value(tls_index: u32) -> usize {
 /// across threads, as appropriate for the application's logic.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` on failure (e.g., invalid index).
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure (e.g., invalid index).
 ///
 /// # Notes
 /// Missing implementation features:
 /// - No Win32-accurate `GetLastError` mapping is provided for invalid TLS index failures.
-pub fn tls_set_value(tls_index: u32, value: usize) -> WinBool {
+pub fn tls_set_value(tls_index: u32, value: usize) -> BOOL {
     if threading::tls_set_value(tls_index, value) {
-        WinBool::TRUE
+        BOOL::TRUE
     } else {
-        WinBool::FALSE
+        BOOL::FALSE
     }
 }
 
@@ -263,8 +263,8 @@ pub fn current_thread_id() -> u32 {
 /// active (in which case it will be set to `STILL_ACTIVE`).
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, with the thread's exit code written to `exit_code_out` if it is not null.
-/// `WinBool::FALSE` on failure (e.g., invalid handle).
+/// `BOOL::TRUE` on success, with the thread's exit code written to `exit_code_out` if it is not null.
+/// `BOOL::FALSE` on failure (e.g., invalid handle).
 ///
 /// # Notes
 /// Missing implementation features:
@@ -273,17 +273,17 @@ pub fn current_thread_id() -> u32 {
 /// - No explicit access-right checks are enforced against per-handle granted
 ///   permissions.
 /// - Pseudo-handle semantics (`GetCurrentThread`) are not normalized here.
-pub fn get_exit_code_thread(handle: Handle, exit_code_out: Option<&mut u32>) -> WinBool {
+pub fn get_exit_code_thread(handle: Handle, exit_code_out: Option<&mut u32>) -> BOOL {
     let Some(exit_code_out) = exit_code_out else {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     };
 
     match handle_table().get_thread_exit_code(handle) {
         Some(code) => {
             *exit_code_out = code;
-            WinBool::TRUE
+            BOOL::TRUE
         }
-        None => WinBool::FALSE,
+        None => BOOL::FALSE,
     }
 }
 
@@ -321,8 +321,8 @@ pub fn wait_for_single_object(handle: Handle, duration: Duration) -> u32 {
 /// # Arguments
 /// * `handles`: A slice of handles to wait on, which can be thread handles, process handles,
 ///   or synchronization object handles.
-/// * `wait_all`: If `WinBool::TRUE`, the function returns when all handles are signalled;
-///   if `WinBool::FALSE`, it returns when any one handle is signalled.
+/// * `wait_all`: If `BOOL::TRUE`, the function returns when all handles are signalled;
+///   if `BOOL::FALSE`, it returns when any one handle is signalled.
 /// * `duration`: The timeout duration to wait, or `INFINITE` (0xFFFFFFFF) to wait indefinitely.
 ///
 /// # Safety
@@ -332,9 +332,9 @@ pub fn wait_for_single_object(handle: Handle, duration: Duration) -> u32 {
 /// and that the function may return before the timeout elapses if the specified condition is met (e.g., a handle is signalled).
 ///
 /// # Returns
-/// If `wait_all` is `WinBool::FALSE`, returns `WAIT_OBJECT_0 + i` if the handle at index `i` is signalled,
+/// If `wait_all` is `BOOL::FALSE`, returns `WAIT_OBJECT_0 + i` if the handle at index `i` is signalled,
 /// `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
-/// If `wait_all` is `WinBool::TRUE`, returns `WAIT_OBJECT_0` if all handles are signalled,
+/// If `wait_all` is `BOOL::TRUE`, returns `WAIT_OBJECT_0` if all handles are signalled,
 /// `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
 pub fn wait_for_multiple_objects(handles: &[Handle], wait_all: bool, duration: Duration) -> u32 {
     if handles.is_empty() || handles.len() > 64 {

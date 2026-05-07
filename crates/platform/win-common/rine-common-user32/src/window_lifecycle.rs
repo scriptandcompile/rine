@@ -1,7 +1,7 @@
 //! Window lifecycle — shared logic for CreateWindowEx, DestroyWindow, ShowWindow, UpdateWindow.
 
 use rine_types::windows::*;
-use rine_types::{errors::WinBool, strings::json_escape};
+use rine_types::{errors::BOOL, strings::json_escape};
 
 use crate::backend::{
     create_native_window, destroy_native_window, request_native_redraw, set_native_visibility,
@@ -91,9 +91,9 @@ pub fn create_window(
 pub unsafe fn destroy_window(
     hwnd: Hwnd,
     call_wnd_proc: impl Fn(usize, Hwnd, u32, usize, isize) -> isize,
-) -> WinBool {
+) -> BOOL {
     let Some(state) = WINDOW_MANAGER.get_window(hwnd) else {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     };
 
     // Deliver WM_DESTROY synchronously while the window state is still valid.
@@ -104,16 +104,16 @@ pub unsafe fn destroy_window(
 
     if WINDOW_MANAGER.destroy_window(hwnd) {
         rine_types::dev_notify!(on_handle_closed(hwnd.as_raw() as i64));
-        WinBool::TRUE
+        BOOL::TRUE
     } else {
-        WinBool::FALSE
+        BOOL::FALSE
     }
 }
 
 /// Show or hide a window according to `cmd_show` (SW_* constants).
 ///
-/// Returns `WinBool::TRUE` if the window was previously visible, `WinBool::FALSE` otherwise.
-pub fn show_window(hwnd: Hwnd, cmd_show: i32) -> WinBool {
+/// Returns `BOOL::TRUE` if the window was previously visible, `BOOL::FALSE` otherwise.
+pub fn show_window(hwnd: Hwnd, cmd_show: i32) -> BOOL {
     let was_visible = WINDOW_MANAGER
         .get_window(hwnd)
         .map(|state| state.visible)
@@ -146,11 +146,7 @@ pub fn show_window(hwnd: Hwnd, cmd_show: i32) -> WinBool {
         });
     });
 
-    if was_visible {
-        WinBool::TRUE
-    } else {
-        WinBool::FALSE
-    }
+    if was_visible { BOOL::TRUE } else { BOOL::FALSE }
 }
 
 /// Request a WM_PAINT for the given window.
@@ -166,8 +162,8 @@ pub fn show_window(hwnd: Hwnd, cmd_show: i32) -> WinBool {
 /// accessed from multiple threads.
 ///
 /// # Returns
-/// `WinBool::TRUE` always (UpdateWindow is a notification, not a query).
-pub fn update_window(hwnd: Hwnd) -> WinBool {
+/// `BOOL::TRUE` always (UpdateWindow is a notification, not a query).
+pub fn update_window(hwnd: Hwnd) -> BOOL {
     request_native_redraw(hwnd);
 
     THREAD_MESSAGE_QUEUE.with(|queue| {
@@ -181,5 +177,5 @@ pub fn update_window(hwnd: Hwnd) -> WinBool {
         });
     });
 
-    WinBool::TRUE
+    BOOL::TRUE
 }

@@ -1,4 +1,4 @@
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::HMenu;
 use rine_types::windows::Hwnd;
 
@@ -129,13 +129,12 @@ pub fn get_system_menu(_handle_window: Hwnd, _revert: bool) -> Option<HMenu> {
 /// The caller must also ensure that the menu structure is properly initialized and that the specified item is within bounds.
 ///
 /// # Returns
-/// A `WinBool` indicating whether the operation was successful.
-/// Returns `WinBool::TRUE` if the menu item was successfully enabled, disabled, or grayed out, and `WinBool::FALSE` if the operation
+/// Returns `BOOL::TRUE` if the menu item was successfully enabled, disabled, or grayed out, and `BOOL::FALSE` if the operation
 /// failed (for example, if the specified menu item was invalid).
 ///
 /// # Notes
-/// This function is currently a stub and returns `WinBool::FALSE` as a placeholder.
-pub fn enable_menu_item(_handle_menu: HMenu, _id_enable_item: u32, _enable: u32) -> WinBool {
-    warn!("enable_menu_item is not implemented yet. Returning WinBool::FALSE as a placeholder.");
-    WinBool::FALSE
+/// This function is currently a stub and returns `BOOL::FALSE` as a placeholder.
+pub fn enable_menu_item(_handle_menu: HMenu, _id_enable_item: u32, _enable: u32) -> BOOL {
+    warn!("enable_menu_item is not implemented yet. Returning BOOL::FALSE as a placeholder.");
+    BOOL::FALSE
 }

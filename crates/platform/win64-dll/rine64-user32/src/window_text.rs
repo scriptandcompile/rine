@@ -1,5 +1,5 @@
 use rine_common_user32 as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::*;
 
@@ -14,14 +14,14 @@ use rine_types::windows::*;
 /// * The function assumes the caller has the right to modify the window's title.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` if the HWND is not found.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found.
 ///
 /// # Notes
 /// Currently, this function does not perform any access checks on the window handle (HWND).
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn SetWindowTextA(hwnd: Hwnd, text: LPCSTR) -> WinBool {
+pub unsafe extern "win64" fn SetWindowTextA(hwnd: Hwnd, text: LPCSTR) -> BOOL {
     common::set_window_text(hwnd, text.read_string().unwrap_or_default())
 }
 
@@ -36,14 +36,14 @@ pub unsafe extern "win64" fn SetWindowTextA(hwnd: Hwnd, text: LPCSTR) -> WinBool
 /// * The function assumes the caller has the right to modify the window's title.
 ///
 /// # Returns
-/// `WinBool::TRUE` on success, `WinBool::FALSE` if the HWND is not found.
+/// `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found.
 ///
 /// # Notes
 /// Currently, this function does not perform any access checks on the window handle (HWND).
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn SetWindowTextW(hwnd: Hwnd, text: LPCWSTR) -> WinBool {
+pub unsafe extern "win64" fn SetWindowTextW(hwnd: Hwnd, text: LPCWSTR) -> BOOL {
     common::set_window_text(hwnd, text.read_string().unwrap_or_default())
 }
 

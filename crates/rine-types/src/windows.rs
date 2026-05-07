@@ -7,7 +7,7 @@ use core::fmt;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::errors::WinBool;
+use crate::errors::BOOL;
 
 // ---------------------------------------------------------------------------
 // Window Handle (HWND)
@@ -436,8 +436,8 @@ pub struct Point {
 pub struct DropFiles {
     pub p_files: u32,
     pub pt: Point,
-    pub f_nc: WinBool,
-    pub f_wide: WinBool,
+    pub f_nc: BOOL,
+    pub f_wide: BOOL,
 }
 
 // ---------------------------------------------------------------------------

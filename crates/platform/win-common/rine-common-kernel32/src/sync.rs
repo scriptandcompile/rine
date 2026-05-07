@@ -1,7 +1,7 @@
 use std::ptr;
 use std::sync::{Arc, Condvar, Mutex};
 
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::handles::{Handle, HandleEntry, handle_table};
 use rine_types::sync::{CriticalSection, LPCriticalSection};
 use rine_types::threading::{
@@ -72,24 +72,24 @@ pub unsafe fn enter_critical_section(cs: LPCriticalSection) {
 /// The caller is responsible for ensuring that the CRITICAL_SECTION is properly initialized before calling this function.
 ///
 /// # Returns
-/// Returns `WinBool::TRUE` if the lock was successfully acquired, or `WinBool::FALSE`
+/// Returns `BOOL::TRUE` if the lock was successfully acquired, or `BOOL::FALSE`
 /// if the critical section is already owned by another thread or if an error occurred (e.g. invalid pointer).
-pub unsafe fn try_enter_critical_section(cs: LPCriticalSection) -> WinBool {
+pub unsafe fn try_enter_critical_section(cs: LPCriticalSection) -> BOOL {
     if cs.is_null() {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     unsafe {
         let mutex = (*cs).get_mutex();
 
         if mutex.is_null() {
-            return WinBool::FALSE;
+            return BOOL::FALSE;
         }
 
         if libc::pthread_mutex_trylock(mutex) == 0 {
-            WinBool::TRUE
+            BOOL::TRUE
         } else {
-            WinBool::FALSE
+            BOOL::FALSE
         }
     }
 }
@@ -105,8 +105,8 @@ pub unsafe fn try_enter_critical_section(cs: LPCriticalSection) -> WinBool {
 /// If `cs` is null, this function does nothing and returns immediately.
 ///
 /// # Returns
-/// If the critical section was successfully left, the function returns `WinBool::TRUE`.
-/// If the `cs` pointer is null, the function returns `WinBool::FALSE` and does not perform any operation.
+/// If the critical section was successfully left, the function returns `BOOL::TRUE`.
+/// If the `cs` pointer is null, the function returns `BOOL::FALSE` and does not perform any operation.
 ///
 /// # Notes
 /// Missing implementation features:
@@ -167,25 +167,25 @@ pub unsafe fn delete_critical_section(cs: LPCriticalSection) {
 ///
 /// # Safety
 /// The caller must ensure that `handle` is a valid handle to a mutex object that the caller currently owns.
-/// Releasing a mutex that is not owned by the caller, or using an invalid handle, will result in failure and return `WinBool::FALSE`.
+/// Releasing a mutex that is not owned by the caller, or using an invalid handle, will result in failure and return `BOOL::FALSE`.
 ///
 /// # Returns
-/// If the mutex is successfully released, the function returns `WinBool::TRUE` and any waiting threads
+/// If the mutex is successfully released, the function returns `BOOL::TRUE` and any waiting threads
 /// are unblocked according to the mutex's behavior.
 /// If the mutex handle is invalid or the caller does not have ownership of the mutex,
-/// the function returns `WinBool::FALSE` and no action is taken.
+/// the function returns `BOOL::FALSE` and no action is taken.
 #[inline]
-pub unsafe fn release_mutex(handle: Handle) -> WinBool {
+pub unsafe fn release_mutex(handle: Handle) -> BOOL {
     let waitable = match handle_table().get_waitable(handle) {
         Some(Waitable::Mutex(m)) => m,
-        _ => return WinBool::FALSE,
+        _ => return BOOL::FALSE,
     };
 
     let thread_id = std::thread::current().id();
     let mut state = waitable.inner.state.lock().unwrap();
 
     if state.owner != Some(thread_id) {
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     state.count -= 1;
@@ -194,7 +194,7 @@ pub unsafe fn release_mutex(handle: Handle) -> WinBool {
         waitable.inner.condvar.notify_one();
     }
 
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// Creates a synchronization event.
@@ -211,12 +211,12 @@ pub unsafe fn release_mutex(handle: Handle) -> WinBool {
 /// # Examples
 /// ```
 /// use rine_common_kernel32::sync::create_event;
-/// use rine_types::errors::WinBool;
+/// use rine_types::errors::BOOL;
 ///
-/// let manual_reset_event = create_event(WinBool::TRUE, WinBool::FALSE);
-/// let auto_reset_event = create_event(WinBool::FALSE, WinBool::TRUE);
+/// let manual_reset_event = create_event(BOOL::TRUE, BOOL::FALSE);
+/// let auto_reset_event = create_event(BOOL::FALSE, BOOL::TRUE);
 /// ```
-pub fn create_event(manual_reset: WinBool, initial_state: WinBool) -> Handle {
+pub fn create_event(manual_reset: BOOL, initial_state: BOOL) -> Handle {
     let waitable = EventWaitable {
         inner: Arc::new(EventInner {
             signaled: Mutex::new(initial_state.is_true()),
@@ -237,13 +237,13 @@ pub fn create_event(manual_reset: WinBool, initial_state: WinBool) -> Handle {
 /// caller has appropriate access rights to set it.
 ///
 /// # Returns
-/// Setting an event with an invalid handle will result in failure and return `WinBool::FALSE`.
-/// If the event is successfully set to the signaled state, the function returns `WinBool::TRUE`
+/// Setting an event with an invalid handle will result in failure and return `BOOL::FALSE`.
+/// If the event is successfully set to the signaled state, the function returns `BOOL::TRUE`
 /// and any waiting threads are released according to the event's reset mode (manual or auto).
-pub fn set_event(event_handle: Handle) -> WinBool {
+pub fn set_event(event_handle: Handle) -> BOOL {
     let waitable = match handle_table().get_waitable(event_handle) {
         Some(Waitable::Event(e)) => e,
-        _ => return WinBool::FALSE,
+        _ => return BOOL::FALSE,
     };
 
     let mut signaled = waitable.inner.signaled.lock().unwrap();
@@ -255,7 +255,7 @@ pub fn set_event(event_handle: Handle) -> WinBool {
         waitable.inner.condvar.notify_one();
     }
 
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// Reset an event to the non-signaled state, causing threads that wait on it to block until it is set again.
@@ -268,19 +268,19 @@ pub fn set_event(event_handle: Handle) -> WinBool {
 /// appropriate access rights to reset it.
 ///
 /// # Returns
-/// Resetting an event with an invalid handle will result in failure and return `WinBool::FALSE`.
-/// If the event is successfully reset to the non-signaled state, the function returns `WinBool::TRUE`
+/// Resetting an event with an invalid handle will result in failure and return `BOOL::FALSE`.
+/// If the event is successfully reset to the non-signaled state, the function returns `BOOL::TRUE`
 /// and any threads that wait on it will block until it is set again.
-pub fn reset_event(event_handle: Handle) -> WinBool {
+pub fn reset_event(event_handle: Handle) -> BOOL {
     let waitable = match handle_table().get_waitable(event_handle) {
         Some(Waitable::Event(e)) => e,
-        _ => return WinBool::FALSE,
+        _ => return BOOL::FALSE,
     };
 
     let mut signaled = waitable.inner.signaled.lock().unwrap();
     *signaled = false;
 
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 /// Creates a named or unnamed mutex.
@@ -295,15 +295,15 @@ pub fn reset_event(event_handle: Handle) -> WinBool {
 /// # Examples
 /// ```
 /// use rine_common_kernel32::sync::create_mutex;
-/// use rine_types::errors::WinBool;
+/// use rine_types::errors::BOOL;
 ///
-/// let (unnamed_mutex, desc) = create_mutex(WinBool::FALSE, None);
+/// let (unnamed_mutex, desc) = create_mutex(BOOL::FALSE, None);
 /// assert_eq!(desc, "(unnamed)");
 ///
-/// let (named_mutex, desc) = create_mutex(WinBool::TRUE, Some("MyMutex".to_string()));
+/// let (named_mutex, desc) = create_mutex(BOOL::TRUE, Some("MyMutex".to_string()));
 /// assert_eq!(desc, "MyMutex (initially-owned)");
 /// ```
-pub fn create_mutex(initial_owner: WinBool, name: Option<String>) -> (Handle, String) {
+pub fn create_mutex(initial_owner: BOOL, name: Option<String>) -> (Handle, String) {
     let (owner, count) = if initial_owner.is_true() {
         (Some(std::thread::current().id()), 1)
     } else {
@@ -393,20 +393,20 @@ pub fn create_semaphore(initial_count: i32, maximum_count: i32) -> Handle {
 /// or with parameters that would exceed the maximum count, will result in failure and return FALSE.
 ///
 /// # Returns
-/// If the semaphore is successfully released, the function returns `WinBool::TRUE` and any waiting threads
+/// If the semaphore is successfully released, the function returns `BOOL::TRUE` and any waiting threads
 /// are unblocked according to the semaphore's behavior.
 /// If the semaphore handle is invalid, the caller does not have appropriate access, or if releasing the
-/// semaphore would exceed its maximum count, the function returns `WinBool::FALSE` and no action is taken.
+/// semaphore would exceed its maximum count, the function returns `BOOL::FALSE` and no action is taken.
 pub unsafe fn release_semaphore(
     handle: Handle,
     release_count: i32,
     previous_count: *mut i32,
-) -> WinBool {
+) -> BOOL {
     let waitable = match handle_table().get_waitable(handle) {
         Some(Waitable::Semaphore(s)) => s,
         _ => {
             warn!(handle = handle.as_raw(), "ReleaseSemaphore: invalid handle");
-            return WinBool::FALSE;
+            return BOOL::FALSE;
         }
     };
 
@@ -420,7 +420,7 @@ pub unsafe fn release_semaphore(
             max = waitable.inner.max_count,
             "ReleaseSemaphore: would exceed maximum count"
         );
-        return WinBool::FALSE;
+        return BOOL::FALSE;
     }
 
     if !previous_count.is_null() {
@@ -434,86 +434,86 @@ pub unsafe fn release_semaphore(
         waitable.inner.condvar.notify_one();
     }
 
-    WinBool::TRUE
+    BOOL::TRUE
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rine_types::errors::WinBool;
+    use rine_types::errors::BOOL;
 
     #[test]
     fn create_event_auto_reset() {
-        let h = create_event(WinBool::FALSE, WinBool::FALSE);
+        let h = create_event(BOOL::FALSE, BOOL::FALSE);
         assert!(h.is_valid());
     }
 
     #[test]
     fn create_event_manual_reset() {
-        let h = create_event(WinBool::TRUE, WinBool::FALSE);
+        let h = create_event(BOOL::TRUE, BOOL::FALSE);
         assert!(h.is_valid());
     }
 
     #[test]
     fn create_event_initial_signaled() {
-        let h = create_event(WinBool::FALSE, WinBool::TRUE);
+        let h = create_event(BOOL::FALSE, BOOL::TRUE);
         assert!(h.is_valid());
     }
 
     #[test]
     fn create_event_initial_not_signaled() {
-        let h = create_event(WinBool::FALSE, WinBool::FALSE);
+        let h = create_event(BOOL::FALSE, BOOL::FALSE);
         assert!(h.is_valid());
     }
 
     #[test]
     fn create_event_different_parameters() {
-        let h1 = create_event(WinBool::FALSE, WinBool::FALSE);
-        let h2 = create_event(WinBool::FALSE, WinBool::FALSE);
+        let h1 = create_event(BOOL::FALSE, BOOL::FALSE);
+        let h2 = create_event(BOOL::FALSE, BOOL::FALSE);
         assert!(h1.is_valid());
         assert!(h2.is_valid());
     }
 
     #[test]
     fn create_event_manual_vs_auto() {
-        let h1 = create_event(WinBool::FALSE, WinBool::FALSE);
-        let h2 = create_event(WinBool::TRUE, WinBool::FALSE);
+        let h1 = create_event(BOOL::FALSE, BOOL::FALSE);
+        let h2 = create_event(BOOL::TRUE, BOOL::FALSE);
         assert!(h1.is_valid());
         assert!(h2.is_valid());
     }
 
     #[test]
     fn create_mutex_unnamed_auto() {
-        let (h, desc) = create_mutex(WinBool::FALSE, None);
+        let (h, desc) = create_mutex(BOOL::FALSE, None);
         assert!(h.is_valid());
         assert!(desc.contains("(unnamed)"));
     }
 
     #[test]
     fn create_mutex_unnamed_initial_owned() {
-        let (h, desc) = create_mutex(WinBool::TRUE, None);
+        let (h, desc) = create_mutex(BOOL::TRUE, None);
         assert!(h.is_valid());
         assert!(desc.contains("(unnamed") && desc.contains("initially-owned"));
     }
 
     #[test]
     fn create_mutex_named() {
-        let (h, desc) = create_mutex(WinBool::FALSE, Some("TestMutex".to_string()));
+        let (h, desc) = create_mutex(BOOL::FALSE, Some("TestMutex".to_string()));
         assert!(h.is_valid());
         assert_eq!(desc, "TestMutex");
     }
 
     #[test]
     fn create_mutex_named_initial_owned() {
-        let (h, desc) = create_mutex(WinBool::TRUE, Some("OwnedMutex".to_string()));
+        let (h, desc) = create_mutex(BOOL::TRUE, Some("OwnedMutex".to_string()));
         assert!(h.is_valid());
         assert_eq!(desc, "OwnedMutex (initially-owned)");
     }
 
     #[test]
     fn create_mutex_different_parameters() {
-        let (h1, desc1) = create_mutex(WinBool::FALSE, None);
-        let (h2, desc2) = create_mutex(WinBool::FALSE, Some("Test".to_string()));
+        let (h1, desc1) = create_mutex(BOOL::FALSE, None);
+        let (h2, desc2) = create_mutex(BOOL::FALSE, Some("Test".to_string()));
         assert!(h1.is_valid());
         assert!(h2.is_valid());
         assert_eq!(desc1, "(unnamed)");
@@ -522,11 +522,11 @@ mod tests {
 
     #[test]
     fn create_mutex_initial_state() {
-        let (h, desc) = create_mutex(WinBool::TRUE, Some("Test".to_string()));
+        let (h, desc) = create_mutex(BOOL::TRUE, Some("Test".to_string()));
         assert!(h.is_valid());
         assert!(desc.contains("initially-owned"));
 
-        let (h2, desc2) = create_mutex(WinBool::FALSE, Some("Test2".to_string()));
+        let (h2, desc2) = create_mutex(BOOL::FALSE, Some("Test2".to_string()));
         assert!(h2.is_valid());
         assert!(!desc2.contains("initially-owned"));
     }
@@ -537,7 +537,7 @@ mod tests {
         let mut descs = Vec::new();
 
         for i in 0..5 {
-            let (h, desc) = create_mutex(WinBool::FALSE, Some(format!("Mutex{}", i)));
+            let (h, desc) = create_mutex(BOOL::FALSE, Some(format!("Mutex{}", i)));
             handles.push(h);
             descs.push(desc);
         }

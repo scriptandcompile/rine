@@ -1,5 +1,5 @@
 use rine_common_user32::class_registration as common;
-use rine_types::errors::WinBool;
+use rine_types::errors::BOOL;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::*;
 
@@ -115,14 +115,14 @@ pub unsafe extern "stdcall" fn RegisterClassExW(wc: *const WndClassExW) -> ATOM 
 /// # Safety
 /// * The caller must ensure that `class_name` is a valid pointer to a null-terminated string.
 /// * The caller must ensure that the class name corresponds to a registered class, or that it is
-///   safe to attempt to unregister a non-existent class (which will simply fail and return `WinBool::FALSE`).
+///   safe to attempt to unregister a non-existent class (which will simply fail and return `BOOL::FALSE`).
 ///
 /// # Returns
-/// `WinBool::TRUE` if the class was found and unregistered, `WinBool::FALSE` if the class was not found.
+/// `BOOL::TRUE` if the class was found and unregistered, `BOOL::FALSE` if the class was not found.
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn UnregisterClassA(class_name: LPCSTR, _h_instance: usize) -> WinBool {
+pub unsafe extern "stdcall" fn UnregisterClassA(class_name: LPCSTR, _h_instance: usize) -> BOOL {
     let name = class_name.read_string().unwrap_or_default();
     common::unregister_class(&name)
 }
@@ -137,17 +137,17 @@ pub unsafe extern "stdcall" fn UnregisterClassA(class_name: LPCSTR, _h_instance:
 /// # Safety
 /// * The caller must ensure that `class_name` is a valid pointer to a null-terminated string.
 /// * The caller must ensure that the class name corresponds to a registered class, or that it is
-///   safe to attempt to unregister a non-existent class (which will simply fail and return `WinBool::FALSE`).
+///   safe to attempt to unregister a non-existent class (which will simply fail and return `BOOL::FALSE`).
 ///
 /// # Returns
-/// `WinBool::TRUE` if the class was found and unregistered, `WinBool::FALSE` if the class was not found.
+/// `BOOL::TRUE` if the class was found and unregistered, `BOOL::FALSE` if the class was not found.
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn UnregisterClassW(
     class_name: LPCWSTR,
     _h_instance: usize,
-) -> WinBool {
+) -> BOOL {
     let name = class_name.read_string().unwrap_or_default();
     common::unregister_class(&name)
 }
