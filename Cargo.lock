@@ -3751,6 +3751,7 @@ dependencies = [
 name = "rine-common-shell32"
 version = "0.1.3"
 dependencies = [
+ "libc",
  "rine-types",
  "tracing",
 ]
