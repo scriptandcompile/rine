@@ -3,7 +3,7 @@
 
 use rine_common_kernel32 as common;
 use rine_types::errors::BOOL;
-use rine_types::handles::{HANDLE, HFile, INVALID_FILE_SIZE, Win32FindDataA, Win32FindDataW};
+use rine_types::handles::{HANDLE, HFILE, INVALID_FILE_SIZE, Win32FindDataA, Win32FindDataW};
 use rine_types::strings::{LPCSTR, LPCWSTR};
 
 /// CreateFileA — open or create a file (ANSI path).
@@ -483,7 +483,7 @@ pub unsafe extern "win64" fn FindClose(find_file: HANDLE) -> BOOL {
 /// The caller must ensure that the file path is valid and that the access mode is appropriate.
 ///
 /// # Returns
-/// A file handle on success, or `HFile::NULL` on failure.
+/// A file handle on success, or `HFILE::NULL` on failure.
 ///
 /// # Notes
 /// The _lopen/_lclose APIs are legacy and not commonly used.
@@ -492,7 +492,7 @@ pub unsafe extern "win64" fn FindClose(find_file: HANDLE) -> BOOL {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn _lopen(_lppathname: LPCSTR, _ireadwrite: i32) -> HFile {
+pub unsafe extern "win64" fn _lopen(_lppathname: LPCSTR, _ireadwrite: i32) -> HFILE {
     common::file::_lopen(_lppathname, _ireadwrite)
 }
 
@@ -515,7 +515,7 @@ pub unsafe extern "win64" fn _lopen(_lppathname: LPCSTR, _ireadwrite: i32) -> HF
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn _lclose(hfile: HFile) -> HFile {
+pub unsafe extern "win64" fn _lclose(hfile: HFILE) -> HFILE {
     common::file::_lclose(hfile)
 }
 
@@ -542,7 +542,7 @@ pub unsafe extern "win64" fn _lclose(hfile: HFile) -> HFile {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _lread(
-    _hfile: HFile,
+    _hfile: HFILE,
     _buffer: *mut core::ffi::c_void,
     _count: u32,
 ) -> i32 {
@@ -572,7 +572,7 @@ pub unsafe extern "win64" fn _lread(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn _lwrite(
-    _hfile: HFile,
+    _hfile: HFILE,
     _buffer: *const core::ffi::c_void,
     _count: u32,
 ) -> i32 {
@@ -602,7 +602,7 @@ pub unsafe extern "win64" fn _lwrite(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn _llseek(_hfile: HFile, _offset: i64, _origin: u32) -> i64 {
+pub unsafe extern "win64" fn _llseek(_hfile: HFILE, _offset: i64, _origin: u32) -> i64 {
     common::file::_llseek(_hfile, _offset, _origin)
 }
 
@@ -621,8 +621,8 @@ pub unsafe extern "win64" fn _llseek(_hfile: HFile, _offset: i64, _origin: u32) 
 /// * `_iattribute` must be a valid file attribute flag value (0, 1, 2, or 4).
 ///
 /// # Returns
-/// A file handle on success, or `HFile::INVALID` on failure.
-/// Currently always returns `HFile::INVALID` since we don't support this legacy API.
+/// A file handle on success, or `HFILE::INVALID` on failure.
+/// Currently always returns `HFILE::INVALID` since we don't support this legacy API.
 ///
 /// # Notes
 /// The _lopen/_lclose APIs are legacy and not commonly used.
@@ -631,6 +631,6 @@ pub unsafe extern "win64" fn _llseek(_hfile: HFile, _offset: i64, _origin: u32) 
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn _lcreat(_lppathname: LPCSTR, _iattribute: i32) -> HFile {
+pub unsafe extern "win64" fn _lcreat(_lppathname: LPCSTR, _iattribute: i32) -> HFILE {
     common::file::_lcreat(_lppathname, _iattribute)
 }

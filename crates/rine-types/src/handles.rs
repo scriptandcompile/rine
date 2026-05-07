@@ -113,9 +113,9 @@ impl fmt::Debug for HANDLE {
 /// `HFILE` is a legacy API file handle instead of a `HANDLE`.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct HFile(i32);
+pub struct HFILE(i32);
 
-impl HFile {
+impl HFILE {
     /// The invalid HFILE sentinel (`HFILE_ERROR`), returned by `OpenFile` on error.
     pub const INVALID: Self = Self(-1);
 
@@ -166,7 +166,7 @@ impl HFile {
 }
 
 /// A handle to an instance/module (from `LoadLibrary` and related functions).
-/// This the base address of the module in memory.
+/// This is the base address of the module in memory.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct HInstance(HANDLE);

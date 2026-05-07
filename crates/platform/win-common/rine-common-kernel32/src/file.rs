@@ -2,7 +2,7 @@ use rine_types::{
     errors::BOOL,
     handles::{
         CREATE_ALWAYS, CREATE_NEW, FILE_BEGIN, FILE_CURRENT, FILE_END, FindDataState, GENERIC_READ,
-        GENERIC_WRITE, HANDLE, HFile, HandleEntry, INVALID_SET_FILE_POINTER, OPEN_ALWAYS,
+        GENERIC_WRITE, HANDLE, HFILE, HandleEntry, INVALID_SET_FILE_POINTER, OPEN_ALWAYS,
         OPEN_EXISTING, TRUNCATE_EXISTING, Win32FindDataA, Win32FindDataW, collect_find_entries,
         handle_table, handle_to_fd, split_find_path, std_handle_to_fd,
     },
@@ -486,16 +486,16 @@ pub unsafe fn find_next_file_w(handle: HANDLE, find_data: *mut Win32FindDataW) -
 /// * `_ireadwrite` - Access mode (0 for read-only, 1 for write-only, 2 for read/write).
 ///
 /// # Returns
-/// A file handle on success, or `HFile::NULL` on failure.
+/// A file handle on success, or `HFILE::NULL` on failure.
 ///
 /// # Notes
 /// The _lopen/_lclose APIs are legacy and not commonly used.
 /// This is a stub implementation that doesn't actually track or open these handles,
 /// but it allows the DLLs to link successfully if they reference _lopen.
-pub fn _lopen(_lppathname: LPCSTR, _ireadwrite: i32) -> HFile {
+pub fn _lopen(_lppathname: LPCSTR, _ireadwrite: i32) -> HFILE {
     // We don't support the legacy _lopen API, but we need to provide a stub implementation to link successfully.
-    // Just return a non-error value (HFile::NULL is the error value for _lopen, so we return something else to indicate success).
-    HFile::NULL
+    // Just return a non-error value (HFILE::NULL is the error value for _lopen, so we return something else to indicate success).
+    HFILE::NULL
 }
 
 /// Close a file handle from the legacy _lclose API.
@@ -510,7 +510,7 @@ pub fn _lopen(_lppathname: LPCSTR, _ireadwrite: i32) -> HFile {
 /// The _lopen/_lclose APIs are legacy and not commonly used.
 /// This is a stub implementation that doesn't actually track or close these handles,
 /// but it allows the DLLs to link successfully if they reference _lclose.
-pub fn _lclose(hfile: HFile) -> HFile {
+pub fn _lclose(hfile: HFILE) -> HFILE {
     // HFile is a 16-bit API handle type used by legacy file I/O APIs like _lopen/_lclose.
     // We don't support those APIs, but we need to provide a stub implementation to link successfully.
     // Just return the input value, which is what the Windows implementation does on success.
@@ -531,11 +531,11 @@ pub fn _lclose(hfile: HFile) -> HFile {
 /// The _lopen/_lclose APIs are legacy and not commonly used.
 /// This is a stub implementation that doesn't actually track or read from these handles,
 /// but it allows the DLLs to link successfully if they reference _lread.
-pub fn _lread(_hfile: HFile, _buffer: *mut core::ffi::c_void, _count: u32) -> i32 {
+pub fn _lread(_hfile: HFILE, _buffer: *mut core::ffi::c_void, _count: u32) -> i32 {
     // Stub implementation for legacy _lread API.
     // This API is not commonly used and we don't need it for our purposes, but we provide a stub to link successfully.
     // Just return an error code to indicate failure.
-    HFile::INVALID.as_raw()
+    HFILE::INVALID.as_raw()
 }
 
 /// Write to a file handle using the legacy _lwrite API.
@@ -552,11 +552,11 @@ pub fn _lread(_hfile: HFile, _buffer: *mut core::ffi::c_void, _count: u32) -> i3
 /// The _lopen/_lclose APIs are legacy and not commonly used.
 /// This is a stub implementation that doesn't actually track or write to these handles,
 /// but it allows the DLLs to link successfully if they reference _lwrite.
-pub fn _lwrite(_hfile: HFile, _buffer: *const core::ffi::c_void, _count: u32) -> i32 {
+pub fn _lwrite(_hfile: HFILE, _buffer: *const core::ffi::c_void, _count: u32) -> i32 {
     // Stub implementation for legacy _lwrite API.
     // This API is not commonly used and we don't need it for our purposes, but we provide a stub to link successfully.
     // Just return an error code to indicate failure.
-    HFile::INVALID.as_raw()
+    HFILE::INVALID.as_raw()
 }
 
 /// Move the file pointer for a file handle using the legacy _llseek API.
@@ -574,11 +574,11 @@ pub fn _lwrite(_hfile: HFile, _buffer: *const core::ffi::c_void, _count: u32) ->
 /// The _lopen/_lclose APIs are legacy and not commonly used.
 /// This is a stub implementation that doesn't actually track or move these handles,
 /// This function does not currently report an error through `GetLastError`.
-pub fn _llseek(_hfile: HFile, _offset: i64, _origin: u32) -> i64 {
+pub fn _llseek(_hfile: HFILE, _offset: i64, _origin: u32) -> i64 {
     // Stub implementation for legacy _llseek API.
     // This API is not commonly used and we don't need it for our purposes, but we provide a stub to link successfully.
     // Just return an error code to indicate failure.
-    HFile::INVALID.as_raw() as i64
+    HFILE::INVALID.as_raw() as i64
 }
 
 /// Create a file handle using the legacy _lcreat API.
@@ -596,18 +596,18 @@ pub fn _llseek(_hfile: HFile, _offset: i64, _origin: u32) -> i64 {
 /// * `_iattribute` must be a valid file attribute flag value (0, 1, 2, or 4).
 ///
 /// # Returns
-/// A file handle on success, or `HFile::INVALID` on failure.
-/// Currently always returns `HFile::INVALID` since we don't support this legacy API.
+/// A file handle on success, or `HFILE::INVALID` on failure.
+/// Currently always returns `HFILE::INVALID` since we don't support this legacy API.
 ///
 /// # Notes
 /// The _lopen/_lclose APIs are legacy and not commonly used.
 /// This is a stub implementation that doesn't actually track or create these handles,
 /// but it allows the DLLs to link successfully if they reference _lcreat.
-pub fn _lcreat(_lppathname: LPCSTR, _iattribute: i32) -> HFile {
+pub fn _lcreat(_lppathname: LPCSTR, _iattribute: i32) -> HFILE {
     // Stub implementation for legacy _lcreat API.
     // This API is not commonly used and we don't need it for our purposes, but we provide a stub to link successfully.
     // Just return an error code to indicate failure.
-    HFile::INVALID
+    HFILE::INVALID
 }
 
 // ---------------------------------------------------------------------------
