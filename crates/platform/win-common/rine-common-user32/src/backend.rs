@@ -56,9 +56,9 @@ struct WinitBackend {
 }
 
 struct WinitBackendState {
-    windows: HashMap<Hwnd, Window>,
-    reverse: HashMap<WindowId, Hwnd>,
-    pending_windows: HashMap<Hwnd, PendingWindow>,
+    windows: HashMap<HWND, Window>,
+    reverse: HashMap<WindowId, HWND>,
+    pending_windows: HashMap<HWND, PendingWindow>,
     ready_for_windows: bool,
 }
 
@@ -91,7 +91,7 @@ impl WinitBackend {
         }
     }
 
-    fn create_window(&mut self, hwnd: Hwnd, state: &WindowState) -> Result<(), String> {
+    fn create_window(&mut self, hwnd: HWND, state: &WindowState) -> Result<(), String> {
         self.state.pending_windows.insert(
             hwnd,
             PendingWindow {
@@ -102,7 +102,7 @@ impl WinitBackend {
         Ok(())
     }
 
-    fn destroy_window(&mut self, hwnd: Hwnd) {
+    fn destroy_window(&mut self, hwnd: HWND) {
         self.state.pending_windows.remove(&hwnd);
         if let Some(window) = self.state.windows.remove(&hwnd) {
             self.state.reverse.remove(&window.id());
@@ -110,13 +110,13 @@ impl WinitBackend {
         }
     }
 
-    fn set_visible(&self, hwnd: Hwnd, visible: bool) {
+    fn set_visible(&self, hwnd: HWND, visible: bool) {
         if let Some(window) = self.state.windows.get(&hwnd) {
             window.set_visible(visible);
         }
     }
 
-    fn set_title(&mut self, hwnd: Hwnd, title: &str) {
+    fn set_title(&mut self, hwnd: HWND, title: &str) {
         if let Some(window) = self.state.windows.get(&hwnd) {
             window.set_title(title);
         }
@@ -125,7 +125,7 @@ impl WinitBackend {
         }
     }
 
-    fn request_redraw(&mut self, hwnd: Hwnd) {
+    fn request_redraw(&mut self, hwnd: HWND) {
         if let Some(window) = self.state.windows.get(&hwnd) {
             window.request_redraw();
         }
@@ -151,7 +151,7 @@ impl WinitBackendState {
     fn create_window(
         &mut self,
         event_loop: &ActiveEventLoop,
-        hwnd: Hwnd,
+        hwnd: HWND,
         state: &WindowState,
     ) -> Result<(), String> {
         let width = state.rect.right.saturating_sub(state.rect.left).max(1) as f64;
@@ -357,7 +357,7 @@ impl HostedBackend {
         }
     }
 
-    fn create_window(&self, hwnd: Hwnd, state: &WindowState) {
+    fn create_window(&self, hwnd: HWND, state: &WindowState) {
         self.send(HostWindowCommand::CreateWindow {
             runtime_hwnd: hwnd.as_raw() as u64,
             title: state.title.clone(),
@@ -368,27 +368,27 @@ impl HostedBackend {
         });
     }
 
-    fn destroy_window(&self, hwnd: Hwnd) {
+    fn destroy_window(&self, hwnd: HWND) {
         self.send(HostWindowCommand::DestroyWindow {
             runtime_hwnd: hwnd.as_raw() as u64,
         });
     }
 
-    fn set_visible(&self, hwnd: Hwnd, visible: bool) {
+    fn set_visible(&self, hwnd: HWND, visible: bool) {
         self.send(HostWindowCommand::SetVisible {
             runtime_hwnd: hwnd.as_raw() as u64,
             visible,
         });
     }
 
-    fn set_title(&self, hwnd: Hwnd, title: &str) {
+    fn set_title(&self, hwnd: HWND, title: &str) {
         self.send(HostWindowCommand::SetTitle {
             runtime_hwnd: hwnd.as_raw() as u64,
             title: title.to_owned(),
         });
     }
 
-    fn request_redraw(&self, hwnd: Hwnd) {
+    fn request_redraw(&self, hwnd: HWND) {
         self.send(HostWindowCommand::RequestRedraw {
             runtime_hwnd: hwnd.as_raw() as u64,
         });
@@ -400,7 +400,7 @@ impl HostedBackend {
             match event {
                 HostWindowEvent::Created { .. } => {}
                 HostWindowEvent::CloseRequested { runtime_hwnd } => out.push(Msg {
-                    hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                    hwnd: HWND::from_raw(runtime_hwnd as usize),
                     message: window_message::WM_CLOSE,
                     w_param: 0,
                     l_param: 0,
@@ -408,7 +408,7 @@ impl HostedBackend {
                     pt: Point::default(),
                 }),
                 HostWindowEvent::Destroyed { runtime_hwnd } => out.push(Msg {
-                    hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                    hwnd: HWND::from_raw(runtime_hwnd as usize),
                     message: window_message::WM_DESTROY,
                     w_param: 0,
                     l_param: 0,
@@ -420,7 +420,7 @@ impl HostedBackend {
                     width,
                     height,
                 } => out.push(Msg {
-                    hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                    hwnd: HWND::from_raw(runtime_hwnd as usize),
                     message: window_message::WM_SIZE,
                     w_param: 0,
                     l_param: ((height as isize) << 16) | ((width as isize) & 0xFFFF),
@@ -431,7 +431,7 @@ impl HostedBackend {
                     let x_word = (x as i16) as u16 as usize;
                     let y_word = (y as i16) as u16 as usize;
                     out.push(Msg {
-                        hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                        hwnd: HWND::from_raw(runtime_hwnd as usize),
                         message: window_message::WM_MOVE,
                         w_param: 0,
                         l_param: ((y_word << 16) | x_word) as isize,
@@ -443,7 +443,7 @@ impl HostedBackend {
                     runtime_hwnd,
                     focused,
                 } => out.push(Msg {
-                    hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                    hwnd: HWND::from_raw(runtime_hwnd as usize),
                     message: if focused {
                         window_message::WM_SETFOCUS
                     } else {
@@ -455,7 +455,7 @@ impl HostedBackend {
                     pt: Point::default(),
                 }),
                 HostWindowEvent::RedrawRequested { runtime_hwnd } => out.push(Msg {
-                    hwnd: Hwnd::from_raw(runtime_hwnd as usize),
+                    hwnd: HWND::from_raw(runtime_hwnd as usize),
                     message: window_message::WM_PAINT,
                     w_param: 0,
                     l_param: 0,
@@ -538,7 +538,7 @@ fn with_backend<R>(f: impl FnOnce(&mut Backend) -> R) -> Option<R> {
     })
 }
 
-pub fn create_native_window(hwnd: Hwnd, state: &WindowState) {
+pub fn create_native_window(hwnd: HWND, state: &WindowState) {
     let _ = with_backend(|backend| match backend {
         Backend::Local(local) => local.create_window(hwnd, state),
         Backend::Hosted(hosted) => {
@@ -548,28 +548,28 @@ pub fn create_native_window(hwnd: Hwnd, state: &WindowState) {
     });
 }
 
-pub fn destroy_native_window(hwnd: Hwnd) {
+pub fn destroy_native_window(hwnd: HWND) {
     let _ = with_backend(|backend| match backend {
         Backend::Local(local) => local.destroy_window(hwnd),
         Backend::Hosted(hosted) => hosted.destroy_window(hwnd),
     });
 }
 
-pub fn set_native_visibility(hwnd: Hwnd, visible: bool) {
+pub fn set_native_visibility(hwnd: HWND, visible: bool) {
     let _ = with_backend(|backend| match backend {
         Backend::Local(local) => local.set_visible(hwnd, visible),
         Backend::Hosted(hosted) => hosted.set_visible(hwnd, visible),
     });
 }
 
-pub fn set_native_title(hwnd: Hwnd, title: &str) {
+pub fn set_native_title(hwnd: HWND, title: &str) {
     let _ = with_backend(|backend| match backend {
         Backend::Local(local) => local.set_title(hwnd, title),
         Backend::Hosted(hosted) => hosted.set_title(hwnd, title),
     });
 }
 
-pub fn request_native_redraw(hwnd: Hwnd) {
+pub fn request_native_redraw(hwnd: HWND) {
     let _ = with_backend(|backend| match backend {
         Backend::Local(local) => local.request_redraw(hwnd),
         Backend::Hosted(hosted) => hosted.request_redraw(hwnd),

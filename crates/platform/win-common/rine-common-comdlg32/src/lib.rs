@@ -5,7 +5,7 @@ pub mod pick;
 pub mod save;
 pub mod telemetry;
 
-use rine_types::windows::Hwnd;
+use rine_types::windows::HWND;
 
 use std::ffi::{c_char, c_void};
 //use std::sync::OnceLock;
@@ -21,7 +21,7 @@ pub use telemetry::{DialogOpenFields, DialogResultFields};
 #[repr(C)]
 pub struct OpenFileNameA {
     pub lStructSize: u32,
-    pub hwndOwner: Hwnd,
+    pub hwndOwner: HWND,
     pub hInstance: usize,
     pub lpstrFilter: *const c_char,
     pub lpstrCustomFilter: *mut c_char,
@@ -49,7 +49,7 @@ pub struct OpenFileNameA {
 #[repr(C)]
 pub struct OpenFileNameW {
     pub lStructSize: u32,
-    pub hwndOwner: Hwnd,
+    pub hwndOwner: HWND,
     pub hInstance: usize,
     pub lpstrFilter: *const u16,
     pub lpstrCustomFilter: *mut u16,

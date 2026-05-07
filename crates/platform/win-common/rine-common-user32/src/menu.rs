@@ -1,6 +1,6 @@
 use rine_types::errors::BOOL;
 use rine_types::handles::HMenu;
-use rine_types::windows::Hwnd;
+use rine_types::windows::HWND;
 
 use tracing::warn;
 
@@ -81,7 +81,7 @@ pub fn get_sub_menu(_handle_menu: HMenu, _position: u32) -> Option<HMenu> {
 ///
 /// # Notes
 /// This function is currently a stub and returns `None` as a placeholder.
-pub fn get_menu(_handle_window: Hwnd) -> Option<HMenu> {
+pub fn get_menu(_handle_window: HWND) -> Option<HMenu> {
     warn!("get_menu is not implemented yet. Returning None as a placeholder.");
     None
 }
@@ -105,7 +105,7 @@ pub fn get_menu(_handle_window: Hwnd) -> Option<HMenu> {
 ///
 /// # Notes
 /// This function is currently a stub and returns `None` as a placeholder.
-pub fn get_system_menu(_handle_window: Hwnd, _revert: bool) -> Option<HMenu> {
+pub fn get_system_menu(_handle_window: HWND, _revert: bool) -> Option<HMenu> {
     warn!("get_system_menu is not implemented yet. Returning None as a placeholder.");
     None
 }

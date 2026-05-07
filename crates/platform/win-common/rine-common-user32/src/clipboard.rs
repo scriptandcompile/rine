@@ -1,5 +1,5 @@
 use rine_types::errors::BOOL;
-use rine_types::windows::Hwnd;
+use rine_types::windows::HWND;
 
 use tracing::warn;
 
@@ -109,7 +109,7 @@ pub fn is_clipboard_format_available(_format: ClipboardFormat) -> BOOL {
 ///
 /// # Notes
 /// This function is currently not implemented and will return `BOOL::FALSE` for all calls.
-pub fn open_clipboard(_hwnd: Hwnd) -> BOOL {
+pub fn open_clipboard(_hwnd: HWND) -> BOOL {
     warn!("OpenClipboard is not implemented yet, returning false");
 
     BOOL::FALSE

@@ -1,5 +1,5 @@
 use rine_common_user32::menu as common;
-use rine_types::{errors::BOOL, handles::HMenu, windows::Hwnd};
+use rine_types::{errors::BOOL, handles::HMenu, windows::HWND};
 
 /// Checks or unchecks a menu item, returning the previous state of the item.
 ///
@@ -77,7 +77,7 @@ pub unsafe extern "stdcall" fn GetSubMenu(_handle_menu: HMenu, _position: u32) -
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetMenu(_handle_window: Hwnd) -> HMenu {
+pub unsafe extern "stdcall" fn GetMenu(_handle_window: HWND) -> HMenu {
     common::get_menu(_handle_window).unwrap_or(HMenu::NULL)
 }
 
@@ -103,7 +103,7 @@ pub unsafe extern "stdcall" fn GetMenu(_handle_window: Hwnd) -> HMenu {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetSystemMenu(_handle_window: Hwnd) -> HMenu {
+pub unsafe extern "stdcall" fn GetSystemMenu(_handle_window: HWND) -> HMenu {
     common::get_system_menu(_handle_window, false).unwrap_or(HMenu::NULL)
 }
 

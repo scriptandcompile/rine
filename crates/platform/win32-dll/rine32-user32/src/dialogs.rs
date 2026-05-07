@@ -3,7 +3,7 @@ use rine_common_user32::dialogs as common;
 use rine_types::errors::BOOL;
 use rine_types::handles::HInstance;
 use rine_types::strings::{LPCSTR, LPCWSTR};
-use rine_types::windows::{Hwnd, LPARAM, LRESULT, WPARAM};
+use rine_types::windows::{HWND, LPARAM, LRESULT, WPARAM};
 
 /// Sets the title or text of a control in a dialog box.
 ///
@@ -26,7 +26,7 @@ use rine_types::windows::{Hwnd, LPARAM, LRESULT, WPARAM};
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetDlgItemTextA(
-    _hDlg: Hwnd,
+    _hDlg: HWND,
     _nIDDlgItem: i32,
     _lpString: LPCSTR,
 ) -> BOOL {
@@ -56,7 +56,7 @@ pub unsafe extern "stdcall" fn SetDlgItemTextA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetDlgItemTextW(
-    _hDlg: Hwnd,
+    _hDlg: HWND,
     _nIDDlgItem: i32,
     _lpString: LPCWSTR,
 ) -> BOOL {
@@ -72,7 +72,7 @@ pub unsafe extern "stdcall" fn SetDlgItemTextW(
 /// * `_template` - A pointer to a null-terminated string that specifies the dialog box template.
 ///   Alternatively, this parameter can be an integer value that specifies the dialog box template.
 ///   In this case, the parameter must be cast to `LPCSTR` or `LPCWSTR` and the `MAKEINTRESOURCE` macro must be used to create the value.
-/// * `_parent` - A handle to the window that owns the dialog box. If this parameter is `Hwnd::NULL`, the dialog box has no owner window.
+/// * `_parent` - A handle to the window that owns the dialog box. If this parameter is `HWND::NULL`, the dialog box has no owner window.
 /// * `_dialog_proc` - A pointer to a dialog box procedure that processes messages sent to the dialog box.
 /// * `_init_param` - The value to pass to the dialog box in the `lParam` parameter of the `WM_INITDIALOG` message.
 ///   This parameter can be used to pass any value to the dialog box, such as a pointer to a data structure that contains
@@ -81,7 +81,7 @@ pub unsafe extern "stdcall" fn SetDlgItemTextW(
 /// # Safety
 /// `_hinstance` must be a valid handle to a module.
 /// `_template` must be a valid dialog box template.
-/// `_parent` must be a valid handle to a window or `Hwnd::NULL`.
+/// `_parent` must be a valid handle to a window or `HWND::NULL`.
 /// `_dialog_proc` must be NULL or a valid pointer to a dialog box procedure.
 ///   The dialog box procedure must be a valid pointer to a function that processes messages sent to a modal or modeless dialog box.
 ///   The return value of the dialog box procedure depends on the message being processed.
@@ -92,11 +92,11 @@ pub unsafe extern "stdcall" fn SetDlgItemTextW(
 ///
 /// # Returns
 /// If the function succeeds, the return value is a handle to the dialog box.
-/// If the function fails, the return value is `Hwnd::NULL`.
+/// If the function fails, the return value is `HWND::NULL`.
 /// To get extended error information, call `GetLastError`.
 ///
 /// # Notes
-/// The current implementation is a stub and always returns `Hwnd::NULL`.
+/// The current implementation is a stub and always returns `HWND::NULL`.
 /// We currently do not set the value of `GetLastError` on failure.
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
@@ -104,10 +104,10 @@ pub unsafe extern "stdcall" fn SetDlgItemTextW(
 pub unsafe extern "stdcall" fn CreateDialogParamA(
     _hinstance: HInstance,
     _template: LPCSTR,
-    _parent: Hwnd,
+    _parent: HWND,
     _dlgproc: common::DLGPROC,
     _init_param: LPARAM,
-) -> Hwnd {
+) -> HWND {
     let _template = unsafe { _template.read_string().unwrap_or_default() };
 
     common::create_dialog_param(_hinstance, &_template, _parent, _dlgproc, _init_param)
@@ -120,7 +120,7 @@ pub unsafe extern "stdcall" fn CreateDialogParamA(
 /// * `_template` - A pointer to a null-terminated string that specifies the dialog box template.
 ///   Alternatively, this parameter can be an integer value that specifies the dialog box template.
 ///   In this case, the parameter must be cast to `LPCSTR` or `LPCWSTR` and the `MAKEINTRESOURCE` macro must be used to create the value.
-/// * `_parent` - A handle to the window that owns the dialog box. If this parameter is `Hwnd::NULL`, the dialog box has no owner window.
+/// * `_parent` - A handle to the window that owns the dialog box. If this parameter is `HWND::NULL`, the dialog box has no owner window.
 /// * `_dialog_proc` - A pointer to a dialog box procedure that processes messages sent to the dialog box.
 /// * `_init_param` - The value to pass to the dialog box in the `lParam` parameter of the `WM_INITDIALOG` message.
 ///   This parameter can be used to pass any value to the dialog box, such as a pointer to a data structure that contains
@@ -129,7 +129,7 @@ pub unsafe extern "stdcall" fn CreateDialogParamA(
 /// # Safety
 /// `_hinstance` must be a valid handle to a module.
 /// `_template` must be a valid dialog box template.
-/// `_parent` must be a valid handle to a window or `Hwnd::NULL`.
+/// `_parent` must be a valid handle to a window or `HWND::NULL`.
 /// `_dialog_proc` must be NULL or a valid pointer to a dialog box procedure.
 ///   The dialog box procedure must be a valid pointer to a function that processes messages sent to a modal or modeless dialog box.
 ///   The return value of the dialog box procedure depends on the message being processed.
@@ -140,11 +140,11 @@ pub unsafe extern "stdcall" fn CreateDialogParamA(
 ///
 /// # Returns
 /// If the function succeeds, the return value is a handle to the dialog box.
-/// If the function fails, the return value is `Hwnd::NULL`.
+/// If the function fails, the return value is `HWND::NULL`.
 /// To get extended error information, call `GetLastError`.
 ///
 /// # Notes
-/// The current implementation is a stub and always returns `Hwnd::NULL`.
+/// The current implementation is a stub and always returns `HWND::NULL`.
 /// We currently do not set the value of `GetLastError` on failure.
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
@@ -152,10 +152,10 @@ pub unsafe extern "stdcall" fn CreateDialogParamA(
 pub unsafe extern "stdcall" fn CreateDialogParamW(
     _hinstance: HInstance,
     _template: LPCWSTR,
-    _parent: Hwnd,
+    _parent: HWND,
     _dlgproc: common::DLGPROC,
     _init_param: LPARAM,
-) -> Hwnd {
+) -> HWND {
     let _template = unsafe { _template.read_string().unwrap_or_default() };
 
     common::create_dialog_param(_hinstance, &_template, _parent, _dlgproc, _init_param)
@@ -188,7 +188,7 @@ pub unsafe extern "stdcall" fn CreateDialogParamW(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SendDlgItemMessageA(
-    _hdlg: Hwnd,
+    _hdlg: HWND,
     _dlg_item_id: i32,
     _message: u32,
     _wparam: WPARAM,
@@ -224,7 +224,7 @@ pub unsafe extern "stdcall" fn SendDlgItemMessageA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SendDlgItemMessageW(
-    _hdlg: Hwnd,
+    _hdlg: HWND,
     _dlg_item_id: i32,
     _message: u32,
     _wparam: WPARAM,
@@ -254,7 +254,7 @@ pub unsafe extern "stdcall" fn SendDlgItemMessageW(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GetDlgCtrlID(_hwnd: Hwnd) -> i32 {
+pub unsafe extern "stdcall" fn GetDlgCtrlID(_hwnd: HWND) -> i32 {
     common::get_dialog_control_id(_hwnd)
 }
 
@@ -285,7 +285,7 @@ pub unsafe extern "stdcall" fn GetDlgCtrlID(_hwnd: Hwnd) -> i32 {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetDlgItemTextA(
-    _hdlg: Hwnd,
+    _hdlg: HWND,
     _dlg_item_id: i32,
     _buffer: LPCSTR,
     _max_text_length: i32,
@@ -320,7 +320,7 @@ pub unsafe extern "stdcall" fn GetDlgItemTextA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetDlgItemTextW(
-    _hdlg: Hwnd,
+    _hdlg: HWND,
     _dlg_item_id: i32,
     _buffer: LPCWSTR,
     _max_text_length: i32,
@@ -351,6 +351,6 @@ pub unsafe extern "stdcall" fn GetDlgItemTextW(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn EndDialog(_hdlg: Hwnd, _result: isize) -> BOOL {
+pub unsafe extern "stdcall" fn EndDialog(_hdlg: HWND, _result: isize) -> BOOL {
     common::end_dialog(_hdlg, _result)
 }

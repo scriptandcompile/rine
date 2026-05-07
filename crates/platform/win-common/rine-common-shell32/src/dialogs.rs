@@ -1,5 +1,5 @@
 use rine_types::os::get_version;
-use rine_types::windows::Hwnd;
+use rine_types::windows::HWND;
 use rine_types::{errors::BOOL, handles::Handle};
 
 use tracing::{info, warn};
@@ -73,7 +73,7 @@ fn build_shell_about_layout(
 /// Displays a ShellAbout dialog box (ANSI variant).
 ///
 /// # Arguments
-/// * `_hwnd` - Parent window handle. Can be `Hwnd::NULL`.
+/// * `_hwnd` - Parent window handle. Can be `HWND::NULL`.
 /// * `app_text` - Application text used for title and Microsoft line formatting.
 /// * `other_stuff` - Optional extra text shown in the lower dialog body.
 /// * `_icon` - Optional icon handle.
@@ -85,7 +85,7 @@ fn build_shell_about_layout(
 /// This implementation applies the documented text-layout split between
 /// Windows 2000/XP/Server 2003 and Windows Vista/Server 2008+.
 pub fn shell_about(
-    _hwnd: Hwnd,
+    _hwnd: HWND,
     app_text: Option<&str>,
     other_stuff: Option<&str>,
     _icon: Handle,

@@ -16,18 +16,18 @@ pub fn create_window(
     title: String,
     style: u32,
     rect: Rect,
-    parent: Hwnd,
-) -> Hwnd {
+    parent: HWND,
+) -> HWND {
     let escaped_class_name = json_escape(&class_name);
     let escaped_title = json_escape(&title);
 
     let class = match WINDOW_CLASS_REGISTRY.get(&class_name) {
         Some(c) => c,
-        None => return Hwnd::NULL,
+        None => return HWND::NULL,
     };
 
     let state = WindowState {
-        hwnd: Hwnd::NULL,
+        hwnd: HWND::NULL,
         class_name: class_name.clone(),
         title: title.clone(),
         style,
@@ -89,8 +89,8 @@ pub fn create_window(
 ///
 /// Returns 1 on success, 0 if the HWND was not found.
 pub unsafe fn destroy_window(
-    hwnd: Hwnd,
-    call_wnd_proc: impl Fn(usize, Hwnd, u32, usize, isize) -> isize,
+    hwnd: HWND,
+    call_wnd_proc: impl Fn(usize, HWND, u32, usize, isize) -> isize,
 ) -> BOOL {
     let Some(state) = WINDOW_MANAGER.get_window(hwnd) else {
         return BOOL::FALSE;
@@ -113,7 +113,7 @@ pub unsafe fn destroy_window(
 /// Show or hide a window according to `cmd_show` (SW_* constants).
 ///
 /// Returns `BOOL::TRUE` if the window was previously visible, `BOOL::FALSE` otherwise.
-pub fn show_window(hwnd: Hwnd, cmd_show: i32) -> BOOL {
+pub fn show_window(hwnd: HWND, cmd_show: i32) -> BOOL {
     let was_visible = WINDOW_MANAGER
         .get_window(hwnd)
         .map(|state| state.visible)
@@ -163,7 +163,7 @@ pub fn show_window(hwnd: Hwnd, cmd_show: i32) -> BOOL {
 ///
 /// # Returns
 /// `BOOL::TRUE` always (UpdateWindow is a notification, not a query).
-pub fn update_window(hwnd: Hwnd) -> BOOL {
+pub fn update_window(hwnd: HWND) -> BOOL {
     request_native_redraw(hwnd);
 
     THREAD_MESSAGE_QUEUE.with(|queue| {

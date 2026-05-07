@@ -1,7 +1,7 @@
 use rine_types::errors::BOOL;
 use rine_types::handles::HInstance;
 use rine_types::strings::{LPCSTR, LPCWSTR};
-use rine_types::windows::{Hwnd, LPARAM, LRESULT, WPARAM};
+use rine_types::windows::{HWND, LPARAM, LRESULT, WPARAM};
 
 use tracing::warn;
 
@@ -22,7 +22,7 @@ use tracing::warn;
 /// Sends a `WM_SETTEXT` message to the specified control.
 /// This function Does not support setting the text of a combo box or list box control.
 /// To set the text of these controls, use the `CB_SETLBTEXT` or `LB_SETLBTEXT` message, respectively.
-pub fn set_dlg_item_text(_hdlg: Hwnd, _dlg_item_id: i32, _text: &str) -> BOOL {
+pub fn set_dlg_item_text(_hdlg: HWND, _dlg_item_id: i32, _text: &str) -> BOOL {
     warn!(
         "SetDlgItemTextA/W is not implemented yet. This is a stub implementation that always returns FALSE."
     );
@@ -50,7 +50,7 @@ pub fn set_dlg_item_text(_hdlg: Hwnd, _dlg_item_id: i32, _text: &str) -> BOOL {
 /// and `BOOL::FALSE` if it does not initialize the dialog box.
 #[cfg(target_pointer_width = "32")]
 pub type DLGPROC = *const unsafe extern "stdcall" fn(
-    unnamed_param1: Hwnd,
+    unnamed_param1: HWND,
     unnamed_param2: u32,
     unnamed_param3: WPARAM,
     unnamed_param4: LPARAM,
@@ -77,7 +77,7 @@ pub type DLGPROC = *const unsafe extern "stdcall" fn(
 /// and `BOOL::FALSE` if it does not initialize the dialog box.
 #[cfg(not(target_pointer_width = "32"))]
 pub type DLGPROC = *const unsafe extern "win64" fn(
-    unnamed_param1: Hwnd,
+    unnamed_param1: HWND,
     unnamed_param2: u32,
     unnamed_param3: WPARAM,
     unnamed_param4: LPARAM,
@@ -95,29 +95,29 @@ pub type DLGPROC = *const unsafe extern "win64" fn(
 /// # Safety
 /// `_hinstance` must be a valid handle to a module.
 /// `_template` must be a valid dialog box template.
-/// `_parent` must be a valid handle to a window or `Hwnd::NULL`.
+/// `_parent` must be a valid handle to a window or `HWND::NULL`.
 /// `_dialog_proc` must be a valid pointer to a dialog box procedure.
 /// `_init_param` must be a valid value to pass to the dialog box in the `lParam` parameter of the `WM_INITDIALOG` message.
 ///
 /// # Returns
 /// If the function succeeds, the return value is a handle to the dialog box.
-/// If the function fails, the return value is `Hwnd::NULL`.
+/// If the function fails, the return value is `HWND::NULL`.
 /// On failure, to get extended error information, call `GetLastError`.
 ///
 /// # Notes
-/// The current implementation is a stub and always returns `Hwnd::NULL`.
+/// The current implementation is a stub and always returns `HWND::NULL`.
 /// We currently do not set the value of `GetLastError` on failure.
 pub fn create_dialog_param(
     _hinstance: HInstance,
     _template: &str,
-    _parent: Hwnd,
+    _parent: HWND,
     _dialog_proc: DLGPROC,
     _init_param: LPARAM,
-) -> Hwnd {
+) -> HWND {
     warn!(
         "CreateDialogParam is not implemented yet. This is a stub implementation that always returns NULL."
     );
-    Hwnd::NULL
+    HWND::NULL
 }
 
 /// Sends a specified message to a control in a dialog box.
@@ -144,7 +144,7 @@ pub fn create_dialog_param(
 /// # Notes
 /// The current implementation is a stub and always returns `0`.
 pub fn send_dialog_item_message(
-    _hdlg: Hwnd,
+    _hdlg: HWND,
     _dlg_item_id: i32,
     _message: u32,
     _wparam: WPARAM,
@@ -174,7 +174,7 @@ pub fn send_dialog_item_message(
 /// # Notes
 /// The current implementation is a stub and always returns `0`.
 /// We currently do not set the value of `GetLastError` on failure.
-pub fn get_dialog_control_id(_hwnd: Hwnd) -> i32 {
+pub fn get_dialog_control_id(_hwnd: HWND) -> i32 {
     warn!(
         "GetDlgCtrlID is not implemented yet. This is a stub implementation that always returns 0."
     );
@@ -205,7 +205,7 @@ pub fn get_dialog_control_id(_hwnd: Hwnd) -> i32 {
 /// The current implementation is a stub and always returns `0`.
 /// We currently do not set the value of `GetLastError` on failure.
 pub fn get_dialog_item_text_a(
-    _hdlg: Hwnd,
+    _hdlg: HWND,
     _dlg_item_id: i32,
     _buffer: LPCSTR,
     _max_text_length: i32,
@@ -240,7 +240,7 @@ pub fn get_dialog_item_text_a(
 /// The current implementation is a stub and always returns `0`.
 /// We currently do not set the value of `GetLastError` on failure.
 pub fn get_dialog_item_text_w(
-    _hdlg: Hwnd,
+    _hdlg: HWND,
     _dlg_item_id: i32,
     _buffer: LPCWSTR,
     _max_text_length: i32,
@@ -271,7 +271,7 @@ pub fn get_dialog_item_text_w(
 /// # Notes
 /// The current implementation is a stub and always returns `FALSE`.
 /// We currently do not set the value of `GetLastError` on failure.
-pub fn end_dialog(_hdlg: Hwnd, _result: isize) -> BOOL {
+pub fn end_dialog(_hdlg: HWND, _result: isize) -> BOOL {
     warn!(
         "EndDialog is not implemented yet. This is a stub implementation that always returns FALSE."
     );

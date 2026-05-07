@@ -2,12 +2,12 @@ use rine_common_shell32::dialogs as common;
 
 use rine_types::handles::Handle;
 use rine_types::strings::{LPCSTR, LPCWSTR};
-use rine_types::windows::Hwnd;
+use rine_types::windows::HWND;
 
 /// Displays a ShellAbout dialog box.
 ///
 /// # Arguments
-/// * `_hwnd` - A handle to the parent window. This parameter can be `Hwnd::NULL`.
+/// * `_hwnd` - A handle to the parent window. This parameter can be `HWND::NULL`.
 /// * `_sz_app` - App/title text.
 /// * `_sz_other_stuff` - Optional extra text shown in the dialog body.
 /// * `_h_icon` - Optional icon handle.
@@ -25,7 +25,7 @@ use rine_types::windows::Hwnd;
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ShellAboutA(
-    _hwnd: Hwnd,
+    _hwnd: HWND,
     _sz_app: LPCSTR,
     _sz_other_stuff: LPCSTR,
     _h_icon: Handle,
@@ -48,7 +48,7 @@ pub unsafe extern "stdcall" fn ShellAboutA(
 /// Displays a ShellAbout dialog box.
 ///
 /// # Arguments
-/// * `_hwnd` - A handle to the parent window. This parameter can be `Hwnd::NULL`.
+/// * `_hwnd` - A handle to the parent window. This parameter can be `HWND::NULL`.
 /// * `_sz_app` - App/title text.
 /// * `_sz_other_stuff` - Optional extra text shown in the dialog body.
 /// * `_h_icon` - Optional icon handle.
@@ -67,7 +67,7 @@ pub unsafe extern "stdcall" fn ShellAboutA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ShellAboutW(
-    _hwnd: Hwnd,
+    _hwnd: HWND,
     _sz_app: LPCWSTR,
     _sz_other_stuff: LPCWSTR,
     _h_icon: Handle,

@@ -21,7 +21,7 @@ use rine_types::windows::*;
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn SetWindowTextA(hwnd: Hwnd, text: LPCSTR) -> BOOL {
+pub unsafe extern "win64" fn SetWindowTextA(hwnd: HWND, text: LPCSTR) -> BOOL {
     common::set_window_text(hwnd, text.read_string().unwrap_or_default())
 }
 
@@ -43,7 +43,7 @@ pub unsafe extern "win64" fn SetWindowTextA(hwnd: Hwnd, text: LPCSTR) -> BOOL {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn SetWindowTextW(hwnd: Hwnd, text: LPCWSTR) -> BOOL {
+pub unsafe extern "win64" fn SetWindowTextW(hwnd: HWND, text: LPCWSTR) -> BOOL {
     common::set_window_text(hwnd, text.read_string().unwrap_or_default())
 }
 
@@ -69,7 +69,7 @@ pub unsafe extern "win64" fn SetWindowTextW(hwnd: Hwnd, text: LPCWSTR) -> BOOL {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetWindowTextA(hwnd: Hwnd, buffer: *mut u8, max_count: i32) -> i32 {
+pub unsafe extern "win64" fn GetWindowTextA(hwnd: HWND, buffer: *mut u8, max_count: i32) -> i32 {
     unsafe { common::get_window_text_a(hwnd, buffer, max_count) }
 }
 
@@ -95,7 +95,7 @@ pub unsafe extern "win64" fn GetWindowTextA(hwnd: Hwnd, buffer: *mut u8, max_cou
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetWindowTextW(hwnd: Hwnd, buffer: *mut u16, max_count: i32) -> i32 {
+pub unsafe extern "win64" fn GetWindowTextW(hwnd: HWND, buffer: *mut u16, max_count: i32) -> i32 {
     unsafe { common::get_window_text_w(hwnd, buffer, max_count) }
 }
 
@@ -116,7 +116,7 @@ pub unsafe extern "win64" fn GetWindowTextW(hwnd: Hwnd, buffer: *mut u16, max_co
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetWindowTextLengthA(hwnd: Hwnd) -> i32 {
+pub unsafe extern "win64" fn GetWindowTextLengthA(hwnd: HWND) -> i32 {
     common::get_window_text_length(hwnd)
 }
 
@@ -137,6 +137,6 @@ pub unsafe extern "win64" fn GetWindowTextLengthA(hwnd: Hwnd) -> i32 {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetWindowTextLengthW(hwnd: Hwnd) -> i32 {
+pub unsafe extern "win64" fn GetWindowTextLengthW(hwnd: HWND) -> i32 {
     common::get_window_text_length(hwnd)
 }

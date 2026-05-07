@@ -50,7 +50,7 @@ fn debug_log(msg: impl AsRef<str>) {
 ///   pointer and queue-state failures.
 pub unsafe fn get_message(
     msg: *mut Msg,
-    _hwnd: Hwnd,
+    _hwnd: HWND,
     _msg_filter_min: u32,
     _msg_filter_max: u32,
 ) -> i32 {
@@ -90,7 +90,7 @@ pub unsafe fn get_message(
 /// `msg` must be a valid pointer to a `Msg`.
 pub unsafe fn peek_message(
     msg: *mut Msg,
-    _hwnd: Hwnd,
+    _hwnd: HWND,
     _msg_filter_min: u32,
     _msg_filter_max: u32,
     remove: u32,
@@ -153,7 +153,7 @@ pub unsafe fn translate_message(_msg: *const Msg) -> i32 {
 /// `msg` must be a valid pointer to a `Msg`.
 pub unsafe fn dispatch_message(
     msg: *const Msg,
-    call_wnd_proc: impl Fn(usize, Hwnd, u32, usize, isize) -> isize,
+    call_wnd_proc: impl Fn(usize, HWND, u32, usize, isize) -> isize,
 ) -> isize {
     if msg.is_null() {
         return 0;
@@ -195,7 +195,7 @@ pub fn post_quit_message(exit_code: i32) {
 /// PostMessage — post a message to the thread message queue without waiting.
 ///
 /// Returns 1 always.
-pub fn post_message(hwnd: Hwnd, msg: u32, w_param: usize, l_param: isize) -> i32 {
+pub fn post_message(hwnd: HWND, msg: u32, w_param: usize, l_param: isize) -> i32 {
     let message = Msg {
         hwnd,
         message: msg,
@@ -220,11 +220,11 @@ pub fn post_message(hwnd: Hwnd, msg: u32, w_param: usize, l_param: isize) -> i32
 /// # Safety
 /// None — all parameters are by value.
 pub unsafe fn send_message(
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg: u32,
     w_param: usize,
     l_param: isize,
-    call_wnd_proc: impl Fn(usize, Hwnd, u32, usize, isize) -> isize,
+    call_wnd_proc: impl Fn(usize, HWND, u32, usize, isize) -> isize,
 ) -> isize {
     if let Some(state) = WINDOW_MANAGER.get_window(hwnd) {
         call_wnd_proc(state.wnd_proc, hwnd, msg, w_param, l_param)
@@ -239,7 +239,7 @@ pub unsafe fn send_message(
 /// Missing implementation features:
 /// - No default message handling is implemented (non-client, keyboard, mouse, sizing, system commands).
 /// - No message-specific return semantics are implemented; this stub always returns 0.
-pub fn def_window_proc(_hwnd: Hwnd, _msg: u32, _w_param: usize, _l_param: isize) -> isize {
+pub fn def_window_proc(_hwnd: HWND, _msg: u32, _w_param: usize, _l_param: isize) -> isize {
     0
 }
 
@@ -260,7 +260,7 @@ pub fn def_window_proc(_hwnd: Hwnd, _msg: u32, _w_param: usize, _l_param: isize)
 ///
 /// # Notes
 /// Currently this function does not perform any actual dialog message processing and simply returns `BOOL::FALSE` for all messages.
-pub unsafe fn is_dialog_message(hdlg: Hwnd, msg: *const Msg) -> BOOL {
+pub unsafe fn is_dialog_message(hdlg: HWND, msg: *const Msg) -> BOOL {
     debug_log(format!(
         "IsDialogMessage hdlg={:#x} msg={:#06x}",
         hdlg.as_raw(),

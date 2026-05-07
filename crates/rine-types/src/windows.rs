@@ -16,9 +16,9 @@ use crate::errors::BOOL;
 /// A Windows window handle (HWND).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct Hwnd(usize);
+pub struct HWND(usize);
 
-impl Hwnd {
+impl HWND {
     pub const NULL: Self = Self(0);
 
     #[inline]
@@ -37,7 +37,7 @@ impl Hwnd {
     }
 }
 
-impl fmt::Debug for Hwnd {
+impl fmt::Debug for HWND {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "HWND({:#x})", self.0)
     }
@@ -414,7 +414,7 @@ pub type LRESULT = isize;
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct Msg {
-    pub hwnd: Hwnd,
+    pub hwnd: HWND,
     pub message: u32,
     pub w_param: WPARAM,
     pub l_param: LPARAM,
@@ -592,7 +592,7 @@ impl Default for WindowClassRegistry {
 #[derive(Debug, Clone)]
 pub struct WindowState {
     /// Window handle.
-    pub hwnd: Hwnd,
+    pub hwnd: HWND,
     /// Window class name.
     pub class_name: String,
     /// Window title.
@@ -606,7 +606,7 @@ pub struct WindowState {
     /// Client area rectangle.
     pub client_rect: Rect,
     /// Parent window handle.
-    pub parent: Hwnd,
+    pub parent: HWND,
     /// Whether the window is visible.
     pub visible: bool,
     /// Whether the window is enabled.
@@ -619,7 +619,7 @@ pub struct WindowState {
 
 /// Global window state manager.
 pub struct WindowManager {
-    windows: Mutex<HashMap<Hwnd, WindowState>>,
+    windows: Mutex<HashMap<HWND, WindowState>>,
     next_hwnd: Mutex<usize>,
 }
 
@@ -631,11 +631,11 @@ impl WindowManager {
         }
     }
 
-    pub fn create_window(&self, state: WindowState) -> Hwnd {
+    pub fn create_window(&self, state: WindowState) -> HWND {
         let mut windows = self.windows.lock().unwrap();
         let mut next_hwnd = self.next_hwnd.lock().unwrap();
 
-        let hwnd = Hwnd::from_raw(*next_hwnd);
+        let hwnd = HWND::from_raw(*next_hwnd);
         *next_hwnd += 1;
 
         let mut state = state;
@@ -645,12 +645,12 @@ impl WindowManager {
         hwnd
     }
 
-    pub fn get_window(&self, hwnd: Hwnd) -> Option<WindowState> {
+    pub fn get_window(&self, hwnd: HWND) -> Option<WindowState> {
         let windows = self.windows.lock().unwrap();
         windows.get(&hwnd).cloned()
     }
 
-    pub fn update_window<F>(&self, hwnd: Hwnd, f: F) -> bool
+    pub fn update_window<F>(&self, hwnd: HWND, f: F) -> bool
     where
         F: FnOnce(&mut WindowState),
     {
@@ -663,7 +663,7 @@ impl WindowManager {
         }
     }
 
-    pub fn destroy_window(&self, hwnd: Hwnd) -> bool {
+    pub fn destroy_window(&self, hwnd: HWND) -> bool {
         let mut windows = self.windows.lock().unwrap();
         windows.remove(&hwnd).is_some()
     }
@@ -784,13 +784,13 @@ mod tests {
 
     #[test]
     fn hwnd_null() {
-        assert!(Hwnd::NULL.is_null());
-        assert_eq!(Hwnd::NULL.as_raw(), 0);
+        assert!(HWND::NULL.is_null());
+        assert_eq!(HWND::NULL.as_raw(), 0);
     }
 
     #[test]
     fn hwnd_from_raw() {
-        let hwnd = Hwnd::from_raw(0x1234);
+        let hwnd = HWND::from_raw(0x1234);
         assert_eq!(hwnd.as_raw(), 0x1234);
         assert!(!hwnd.is_null());
     }
@@ -861,7 +861,7 @@ mod tests {
     fn window_manager_create_window() {
         let manager = WindowManager::new();
         let state = WindowState {
-            hwnd: Hwnd::NULL,
+            hwnd: HWND::NULL,
             class_name: "TestClass".into(),
             title: "Test Window".into(),
             style: window_style::WS_OVERLAPPEDWINDOW,
@@ -878,7 +878,7 @@ mod tests {
                 right: 400,
                 bottom: 300,
             },
-            parent: Hwnd::NULL,
+            parent: HWND::NULL,
             visible: true,
             enabled: true,
             wnd_proc: 0x3000,
@@ -898,14 +898,14 @@ mod tests {
     fn window_manager_update_window() {
         let manager = WindowManager::new();
         let state = WindowState {
-            hwnd: Hwnd::NULL,
+            hwnd: HWND::NULL,
             class_name: "TestClass".into(),
             title: "Original".into(),
             style: window_style::WS_OVERLAPPEDWINDOW,
             ex_style: 0,
             rect: Rect::default(),
             client_rect: Rect::default(),
-            parent: Hwnd::NULL,
+            parent: HWND::NULL,
             visible: false,
             enabled: true,
             wnd_proc: 0,
@@ -929,14 +929,14 @@ mod tests {
     fn window_manager_destroy_window() {
         let manager = WindowManager::new();
         let state = WindowState {
-            hwnd: Hwnd::NULL,
+            hwnd: HWND::NULL,
             class_name: "TestClass".into(),
             title: "Temp".into(),
             style: 0,
             ex_style: 0,
             rect: Rect::default(),
             client_rect: Rect::default(),
-            parent: Hwnd::NULL,
+            parent: HWND::NULL,
             visible: false,
             enabled: true,
             wnd_proc: 0,
@@ -957,7 +957,7 @@ mod tests {
     fn message_queue_post_and_peek() {
         let queue = MessageQueue::new();
         let msg = Msg {
-            hwnd: Hwnd::from_raw(0x1000),
+            hwnd: HWND::from_raw(0x1000),
             message: window_message::WM_PAINT,
             w_param: 0,
             l_param: 0,
@@ -968,7 +968,7 @@ mod tests {
         queue.post_message(msg);
 
         let mut retrieved = Msg {
-            hwnd: Hwnd::NULL,
+            hwnd: HWND::NULL,
             message: 0,
             w_param: 0,
             l_param: 0,
@@ -990,7 +990,7 @@ mod tests {
         queue.post_quit(42);
 
         let mut msg = Msg {
-            hwnd: Hwnd::NULL,
+            hwnd: HWND::NULL,
             message: 0,
             w_param: 0,
             l_param: 0,

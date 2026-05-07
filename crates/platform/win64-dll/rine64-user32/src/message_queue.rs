@@ -33,7 +33,7 @@ use rine_types::windows::*;
 #[allow(non_snake_case)]
 pub unsafe extern "win64" fn GetMessageA(
     msg: *mut Msg,
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg_filter_min: u32,
     msg_filter_max: u32,
 ) -> i32 {
@@ -71,7 +71,7 @@ pub unsafe extern "win64" fn GetMessageA(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetMessageW(
     msg: *mut Msg,
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg_filter_min: u32,
     msg_filter_max: u32,
 ) -> i32 {
@@ -118,7 +118,7 @@ pub unsafe extern "win64" fn GetMessageW(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn PeekMessageA(
     msg: *mut Msg,
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg_filter_min: u32,
     msg_filter_max: u32,
     remove: u32,
@@ -166,7 +166,7 @@ pub unsafe extern "win64" fn PeekMessageA(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn PeekMessageW(
     msg: *mut Msg,
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg_filter_min: u32,
     msg_filter_max: u32,
     remove: u32,
@@ -244,7 +244,7 @@ pub unsafe extern "win64" fn TranslateMessage(msg: *const Msg) -> i32 {
 pub unsafe extern "win64" fn DispatchMessageA(msg: *const Msg) -> isize {
     unsafe {
         common::dispatch_message(msg, |proc_fn, hwnd, m, wp, lp| {
-            let f: extern "win64" fn(Hwnd, u32, usize, isize) -> isize =
+            let f: extern "win64" fn(HWND, u32, usize, isize) -> isize =
                 std::mem::transmute(proc_fn);
             f(hwnd, m, wp, lp)
         })
@@ -291,7 +291,7 @@ pub unsafe extern "win64" fn DispatchMessageA(msg: *const Msg) -> isize {
 pub unsafe extern "win64" fn DispatchMessageW(msg: *const Msg) -> isize {
     unsafe {
         common::dispatch_message(msg, |proc_fn, hwnd, m, wp, lp| {
-            let f: extern "win64" fn(Hwnd, u32, usize, isize) -> isize =
+            let f: extern "win64" fn(HWND, u32, usize, isize) -> isize =
                 std::mem::transmute(proc_fn);
             f(hwnd, m, wp, lp)
         })
@@ -347,7 +347,7 @@ pub unsafe extern "win64" fn PostQuitMessage(exit_code: i32) {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn PostMessageA(
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg: u32,
     w_param: usize,
     l_param: isize,
@@ -384,7 +384,7 @@ pub unsafe extern "win64" fn PostMessageA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn PostMessageW(
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg: u32,
     w_param: usize,
     l_param: isize,
@@ -421,14 +421,14 @@ pub unsafe extern "win64" fn PostMessageW(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SendMessageA(
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg: u32,
     w_param: usize,
     l_param: isize,
 ) -> isize {
     unsafe {
         common::send_message(hwnd, msg, w_param, l_param, |proc_fn, h, m, wp, lp| {
-            let f: extern "win64" fn(Hwnd, u32, usize, isize) -> isize =
+            let f: extern "win64" fn(HWND, u32, usize, isize) -> isize =
                 std::mem::transmute(proc_fn);
             f(h, m, wp, lp)
         })
@@ -464,14 +464,14 @@ pub unsafe extern "win64" fn SendMessageA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn SendMessageW(
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg: u32,
     w_param: usize,
     l_param: isize,
 ) -> isize {
     unsafe {
         common::send_message(hwnd, msg, w_param, l_param, |proc_fn, h, m, wp, lp| {
-            let f: extern "win64" fn(Hwnd, u32, usize, isize) -> isize =
+            let f: extern "win64" fn(HWND, u32, usize, isize) -> isize =
                 std::mem::transmute(proc_fn);
             f(h, m, wp, lp)
         })
@@ -510,7 +510,7 @@ pub unsafe extern "win64" fn SendMessageW(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn DefWindowProcA(
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg: u32,
     w_param: usize,
     l_param: isize,
@@ -550,7 +550,7 @@ pub unsafe extern "win64" fn DefWindowProcA(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn DefWindowProcW(
-    hwnd: Hwnd,
+    hwnd: HWND,
     msg: u32,
     w_param: usize,
     l_param: isize,
@@ -578,6 +578,6 @@ pub unsafe extern "win64" fn DefWindowProcW(
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn IsDialogMessageA(hDlg: Hwnd, msg: *const Msg) -> BOOL {
+pub unsafe extern "win64" fn IsDialogMessageA(hDlg: HWND, msg: *const Msg) -> BOOL {
     unsafe { common::is_dialog_message(hDlg, msg) }
 }
