@@ -26,6 +26,24 @@ pub fn drag_accept_files(hwnd: HWND, accept: BOOL) {
     });
 }
 
+/// Releases a shell drag-and-drop handle.
+///
+/// # Arguments
+/// * `hdrop` - Handle identifying the dropped-file list.
+///
+/// # Safety
+/// `hdrop` must either be `HDROP::NULL` or a pointer allocated with a
+/// C-compatible allocator for drag-drop data.
+pub unsafe fn drag_finish(hdrop: HDROP) {
+    if hdrop.is_null() {
+        return;
+    }
+
+    unsafe {
+        libc::free(hdrop.as_raw() as *mut libc::c_void);
+    }
+}
+
 unsafe fn count_ansi_entries(mut cursor: *const u8) -> u32 {
     let mut count = 0u32;
     loop {

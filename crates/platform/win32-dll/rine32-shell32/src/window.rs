@@ -23,6 +23,20 @@ pub unsafe extern "stdcall" fn DragAcceptFiles(hwnd: HWND, f_accept: BOOL) {
     common::drag_accept_files(hwnd, f_accept);
 }
 
+/// Releases a shell drag-and-drop handle.
+///
+/// # Arguments
+/// * `hDrop` - Handle identifying the dropped-file list.
+///
+/// # Safety
+/// `hDrop` must either be null or a valid drag-drop handle allocated by shell32.
+#[rine_dlls::implemented]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn DragFinish(hDrop: HDROP) {
+    unsafe { common::drag_finish(hDrop) }
+}
+
 /// Queries file paths from an `HDROP` handle.
 ///
 /// # Arguments
