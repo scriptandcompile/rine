@@ -253,9 +253,9 @@ impl HMENU {
 /// An HMODULE value (base address of a loaded module).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct HModule(usize);
+pub struct HMODULE(usize);
 
-impl HModule {
+impl HMODULE {
     pub const NULL: Self = Self(0);
 
     #[inline]
@@ -274,7 +274,7 @@ impl HModule {
     }
 }
 
-impl fmt::Debug for HModule {
+impl fmt::Debug for HMODULE {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "HMODULE({:#x})", self.0)
     }
