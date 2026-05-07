@@ -1,6 +1,6 @@
 use rine_common_user32 as common;
 use rine_types::errors::BOOL;
-use rine_types::handles::HMenu;
+use rine_types::handles::HMENU;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::*;
 
@@ -16,7 +16,7 @@ use rine_types::windows::*;
 /// * `width`: Width of the window.
 /// * `height`: Height of the window.
 /// * `parent`: Handle of the parent window, or `HWND::NULL` for no parent.
-/// * `_menu`: Handle of the menu, or `HMenu::NULL` for no menu. Ignored.
+/// * `_menu`: Handle of the menu, or `HMENU::NULL` for no menu. Ignored.
 /// * `_instance`: Handle of the instance, or 0 for the current instance. Ignored.
 /// * `_param`: Pointer to window creation data. Ignored.
 ///
@@ -48,7 +48,7 @@ pub unsafe extern "win64" fn CreateWindowExA(
     width: i32,
     height: i32,
     parent: HWND,
-    _menu: HMenu,
+    _menu: HMENU,
     _instance: usize,
     _param: *mut u8,
 ) -> HWND {
@@ -79,7 +79,7 @@ pub unsafe extern "win64" fn CreateWindowExA(
 /// * `width`: Width of the window.
 /// * `height`: Height of the window.
 /// * `parent`: Handle of the parent window, or `HWND::NULL` for no parent.
-/// * `_menu`: Handle of the menu, or `HMenu::NULL` for no menu. Ignored.
+/// * `_menu`: Handle of the menu, or `HMENU::NULL` for no menu. Ignored.
 /// * `_instance`: Handle of the instance, or 0 for the current instance. Ignored.
 /// * `_param`: Pointer to window creation data. Ignored.
 ///
@@ -111,7 +111,7 @@ pub unsafe extern "win64" fn CreateWindowExW(
     width: i32,
     height: i32,
     parent: HWND,
-    _menu: HMenu,
+    _menu: HMENU,
     _instance: usize,
     _param: *mut u8,
 ) -> HWND {

@@ -1,5 +1,5 @@
 use rine_types::errors::BOOL;
-use rine_types::handles::HMenu;
+use rine_types::handles::HMENU;
 use rine_types::windows::HWND;
 
 use tracing::warn;
@@ -37,7 +37,7 @@ pub enum PreviousMenuState {
 ///
 /// # Notes
 /// This function is currently a stub and returns `PreviousMenuState::NotAMenuItem` as a placeholder.
-pub fn check_menu_item(_handle_menu: HMenu, _id_check_item: u32, _check: u32) -> PreviousMenuState {
+pub fn check_menu_item(_handle_menu: HMENU, _id_check_item: u32, _check: u32) -> PreviousMenuState {
     // Implementation goes here
     warn!("check_menu_item is not implemented yet. Returning NotAMenuItem as a placeholder.");
     PreviousMenuState::NotAMenuItem
@@ -54,12 +54,12 @@ pub fn check_menu_item(_handle_menu: HMenu, _id_check_item: u32, _check: u32) ->
 /// The caller must ensure that the menu structure is properly initialized and that the specified position is within bounds.
 ///
 /// # Returns
-/// An `Option<u32>` containing the handle to the submenu if the specified menu item has an associated submenu,
+/// An `Option<HMENU>` containing the handle to the submenu if the specified menu item has an associated submenu,
 /// or `None` if the menu item does not have a submenu or if the specified position is invalid.
 ///
 /// # Notes
 /// This function is currently a stub and returns `None` as a placeholder.
-pub fn get_sub_menu(_handle_menu: HMenu, _position: u32) -> Option<HMenu> {
+pub fn get_sub_menu(_handle_menu: HMENU, _position: u32) -> Option<HMENU> {
     // Implementation goes here
     warn!("get_sub_menu is not implemented yet. Returning None as a placeholder.");
     None
@@ -81,7 +81,7 @@ pub fn get_sub_menu(_handle_menu: HMenu, _position: u32) -> Option<HMenu> {
 ///
 /// # Notes
 /// This function is currently a stub and returns `None` as a placeholder.
-pub fn get_menu(_handle_window: HWND) -> Option<HMenu> {
+pub fn get_menu(_handle_window: HWND) -> Option<HMENU> {
     warn!("get_menu is not implemented yet. Returning None as a placeholder.");
     None
 }
@@ -99,13 +99,13 @@ pub fn get_menu(_handle_window: HWND) -> Option<HMenu> {
 /// The caller must ensure that the window structure is properly initialized.
 ///
 /// # Returns
-/// An `Option<HMenu>` containing the handle to the system menu if the specified window has a system menu and the handle is
+/// An `Option<HMENU>` containing the handle to the system menu if the specified window has a system menu and the handle is
 /// valid, or `None` if the window does not have a system menu or if the specified window handle is invalid.
 /// If the window is a child window, the return value is undefined.
 ///
 /// # Notes
 /// This function is currently a stub and returns `None` as a placeholder.
-pub fn get_system_menu(_handle_window: HWND, _revert: bool) -> Option<HMenu> {
+pub fn get_system_menu(_handle_window: HWND, _revert: bool) -> Option<HMENU> {
     warn!("get_system_menu is not implemented yet. Returning None as a placeholder.");
     None
 }
@@ -134,7 +134,7 @@ pub fn get_system_menu(_handle_window: HWND, _revert: bool) -> Option<HMenu> {
 ///
 /// # Notes
 /// This function is currently a stub and returns `BOOL::FALSE` as a placeholder.
-pub fn enable_menu_item(_handle_menu: HMenu, _id_enable_item: u32, _enable: u32) -> BOOL {
+pub fn enable_menu_item(_handle_menu: HMENU, _id_enable_item: u32, _enable: u32) -> BOOL {
     warn!("enable_menu_item is not implemented yet. Returning BOOL::FALSE as a placeholder.");
     BOOL::FALSE
 }

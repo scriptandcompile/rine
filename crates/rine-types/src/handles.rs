@@ -231,10 +231,23 @@ impl HINSTANCE {
 /// A handle to a menu (from `CreateMenu` and related functions).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct HMenu(HANDLE);
+pub struct HMENU(HANDLE);
 
-impl HMenu {
+impl HMENU {
+    /// The null menu handle (`NULL`).
     pub const NULL: Self = Self(HANDLE::NULL);
+
+    /// Check if this handle is `NULL` (0), which is a valid but non-functional handle.
+    ///
+    /// # Return
+    /// `true` if this handle is `NULL`, `false` otherwise.
+    ///
+    /// # Notes
+    /// `NULL` (0) is a valid handle value that represents "no object".  
+    /// There is no standard `INVALID` value for menus, so we only check for `NULL`.
+    pub const fn is_null(self) -> bool {
+        self.0.is_null()
+    }
 }
 
 /// An HMODULE value (base address of a loaded module).
