@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T06:15:45.694347+00:00",
+  "generatedAt": "2026-05-08T02:40:10.732650+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2230,7 +2230,7 @@
     },
     {
       "name": "shell32.dll",
-      "functionCount": 6,
+      "functionCount": 8,
       "functions": [
         {
           "name": "DragAcceptFiles",
@@ -2307,6 +2307,32 @@
           "x86": {
             "status": "partial",
             "symbol": "dialogs::ShellAboutW",
+            "source": "shell32 - dialogs.rs"
+          }
+        },
+        {
+          "name": "ShellExecuteA",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "dialogs::ShellExecuteA",
+            "source": "shell32 - dialogs.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "dialogs::ShellExecuteA",
+            "source": "shell32 - dialogs.rs"
+          }
+        },
+        {
+          "name": "ShellExecuteW",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "dialogs::ShellExecuteW",
+            "source": "shell32 - dialogs.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "dialogs::ShellExecuteW",
             "source": "shell32 - dialogs.rs"
           }
         }
@@ -3048,17 +3074,17 @@
     }
   ],
   "totals": {
-    "functions": 230,
+    "functions": 232,
     "x64": {
       "implemented": 94,
       "partial": 94,
-      "stubbed": 42,
+      "stubbed": 44,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 94,
       "partial": 94,
-      "stubbed": 42,
+      "stubbed": 44,
       "unimplemented": 0
     }
   }

@@ -1,4 +1,5 @@
 use rine_types::os::get_version;
+use rine_types::handles::HINSTANCE;
 use rine_types::windows::HWND;
 use rine_types::{errors::BOOL, handles::HANDLE};
 
@@ -108,6 +109,48 @@ pub fn shell_about(
     );
 
     BOOL::TRUE
+}
+
+/// Executes a shell operation on a file or object.
+///
+/// # Arguments
+/// * `_hwnd` - Optional owner window handle.
+/// * operation - Optional operation verb (for example, "open" or "print").
+/// * file - Target file/object path.
+/// * parameters - Optional command-line parameters.
+/// * directory - Optional working directory.
+/// * show_cmd - Window show command.
+///
+/// # Return
+/// Returns an `HINSTANCE`-typed result where values `<= 32` represent failure.
+///
+/// # Notes
+/// This is currently a stub and does not launch processes. It reports
+/// arguments for diagnostics and returns a failure code placeholder.
+pub fn shell_execute(
+    _hwnd: HWND,
+    operation: Option<&str>,
+    file: Option<&str>,
+    parameters: Option<&str>,
+    directory: Option<&str>,
+    show_cmd: i32,
+) -> HINSTANCE {
+    let Some(file) = file else {
+        warn!("ShellExecute failed: lpFile is NULL");
+        return HINSTANCE::from_raw(0);
+    };
+
+    warn!(
+        operation = operation.unwrap_or(""),
+        file,
+        parameters = parameters.unwrap_or(""),
+        directory = directory.unwrap_or(""),
+        show_cmd,
+        "ShellExecute stub called"
+    );
+
+    // 31 (SE_ERR_NOASSOC) is a common ShellExecute failure code.
+    HINSTANCE::from_raw(31)
 }
 
 #[cfg(test)]
