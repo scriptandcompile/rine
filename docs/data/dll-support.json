@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-08T02:40:10.732650+00:00",
+  "generatedAt": "2026-05-10T19:21:43.465211+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 98,
+      "functionCount": 99,
       "functions": [
         {
           "name": "CloseHandle",
@@ -1133,6 +1133,19 @@
             "status": "stubbed",
             "symbol": "process::LoadLibraryW",
             "source": "kernel32 - process.rs"
+          }
+        },
+        {
+          "name": "LocalAlloc",
+          "x64": {
+            "status": "partial",
+            "symbol": "memory::LocalAlloc",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "memory::LocalAlloc",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -3074,16 +3087,16 @@
     }
   ],
   "totals": {
-    "functions": 232,
+    "functions": 233,
     "x64": {
       "implemented": 94,
-      "partial": 94,
+      "partial": 95,
       "stubbed": 44,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 94,
-      "partial": 94,
+      "partial": 95,
       "stubbed": 44,
       "unimplemented": 0
     }
