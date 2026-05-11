@@ -493,6 +493,60 @@ pub unsafe extern "win64" fn GlobalFree(hmem: HLOCAL) -> HLOCAL {
     unsafe { common::memory::global_free(hmem) }
 }
 
+/// Lock a local memory object and return a pointer to the first byte of the memory block.
+///
+/// # Arguments
+/// * `hmem` - A handle to the local memory object. This handle is returned by `LocalAlloc`.
+///   If this parameter is `NULL`, the function returns `NULL`.
+///
+/// # Safety
+/// The caller must ensure that `hmem` is a valid handle returned by `LocalAlloc`, and that it has not already been freed.
+/// Locking an invalid handle or a handle that has already been freed results in undefined behavior.
+/// Additionally, the caller must ensure that the memory being accessed through the returned pointer is not currently in use by any
+/// other part of the program, and that it is properly synchronized if accessed from multiple threads.
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to the first byte of the memory block associated with the handle.
+/// If the function fails, the return value is `NULL`, and extended error information should be (but currently cannot)
+/// obtained by calling `GetLastError`.
+///
+/// # Notes
+/// This function is a simplified implementation of the Windows API `LocalLock` that only supports locking memory allocated from the default process heap,
+/// and does not support all of the flags or behaviors of the Windows API.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn LocalLock(hmem: HLOCAL) -> *mut u8 {
+    unsafe { common::memory::local_lock(hmem) }
+}
+
+/// Lock a global memory object and return a pointer to the first byte of the memory block.
+///
+/// # Arguments
+/// * `hmem` - A handle to the global memory object. This handle is returned by `GlobalAlloc`.
+///   If this parameter is `NULL`, the function returns `NULL`.
+///
+/// # Safety
+/// The caller must ensure that `hmem` is a valid handle returned by `GlobalAlloc`, and that it has not already been freed.
+/// Locking an invalid handle or a handle that has already been freed results in undefined behavior.
+/// Additionally, the caller must ensure that the memory being accessed through the returned pointer is not currently in use by any
+/// other part of the program, and that it is properly synchronized if accessed from multiple threads.
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to the first byte of the memory block associated with the handle.
+/// If the function fails, the return value is `NULL`, and extended error information should be (but currently cannot)
+/// obtained by calling `GetLastError`.
+///
+/// # Notes
+/// This function is a simplified implementation of the Windows API `GlobalLock` that only supports locking memory allocated from the default process heap,
+/// and does not support all of the flags or behaviors of the Windows API.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn GlobalLock(hmem: HLOCAL) -> *mut u8 {
+    unsafe { common::memory::global_lock(hmem) }
+}
+
 // ===========================================================================
 // Tests
 // ===========================================================================
