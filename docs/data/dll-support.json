@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-10T19:21:43.465211+00:00",
+  "generatedAt": "2026-05-10T19:40:14.805039+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 99,
+      "functionCount": 100,
       "functions": [
         {
           "name": "CloseHandle",
@@ -990,6 +990,19 @@
             "status": "implemented",
             "symbol": "version::GetVersionExW",
             "source": "kernel32 - version.rs"
+          }
+        },
+        {
+          "name": "GlobalAlloc",
+          "x64": {
+            "status": "partial",
+            "symbol": "memory::GlobalAlloc",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "memory::GlobalAlloc",
+            "source": "kernel32 - memory.rs"
           }
         },
         {
@@ -3087,16 +3100,16 @@
     }
   ],
   "totals": {
-    "functions": 233,
+    "functions": 234,
     "x64": {
       "implemented": 94,
-      "partial": 95,
+      "partial": 96,
       "stubbed": 44,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 94,
-      "partial": 95,
+      "partial": 96,
       "stubbed": 44,
       "unimplemented": 0
     }

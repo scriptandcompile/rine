@@ -1,7 +1,7 @@
 use rine_common_shell32::dialogs as common;
 
-use rine_types::handles::HINSTANCE;
 use rine_types::handles::HANDLE;
+use rine_types::handles::HINSTANCE;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::HWND;
 

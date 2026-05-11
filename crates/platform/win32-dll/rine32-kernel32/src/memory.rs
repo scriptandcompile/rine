@@ -402,3 +402,46 @@ pub unsafe extern "stdcall" fn VirtualQuery(
 pub unsafe extern "stdcall" fn LocalAlloc(_uflags: u32, size: usize) -> HLOCAL {
     unsafe { common::memory::local_alloc(_uflags, size) }
 }
+
+/// Allocates a block of memory from the default process heap.
+///
+/// # Arguments
+/// * `uflags` - Allocation options. Supported flags:
+///   - `GHND` (0x0042): Combines `GMEM_MOVEABLE` and `GMEM_ZEROINIT`.
+///   - `GMEM_FIXED` (0x0000): Allocates fixed memory.
+///     The return value is a pointer to the allocated memory block.
+///     This value is not a handle and cannot be used with `GlobalLock`.
+///   - `GMEM_MOVEABLE` (0x0002): Allocates movable memory.
+///     Movable memory is allocated as a global handle that can be locked and unlocked to obtain a pointer to the memory.
+///     The return value is a handle to the allocated memory block.
+///     To translate a movable memory handle to a pointer, use `GlobalLock`.
+///   - `GMEM_ZEROINIT` (0x0040): Initializes memory to zero.
+///   - `GPTR` (0x0040): Combines `GMEM_FIXED` and `GMEM_ZEROINIT`.
+/// * `size` - The number of bytes to allocate.
+///   If this parameter is zero, the function allocates the minimum possible size (1 byte).
+///
+/// # Safety
+/// The caller is responsible for ensuring that the allocated memory is freed using `GlobalFree` when it is no longer needed.
+/// Failure to do so may result in memory leaks or other undefined behavior. Additionally, the caller must ensure that the `uflags`
+/// parameter is set to a valid combination of flags, as invalid combinations may result in undefined behavior.
+/// For example, `GMEM_MOVEABLE` cannot be combined with `GMEM_FIXED`.
+///
+/// # Returns
+/// If the function succeeds, the return value is a pointer to the allocated memory block if `GMEM_FIXED` is specified,
+/// or a handle to the allocated memory block if `GMEM_MOVEABLE` is specified.
+/// If the function fails, the return value is `NULL`, and extended error information should be (but currently cannot)
+/// obtained by calling `GetLastError`.
+///
+/// # Notes
+/// The default process heap cannot be destroyed, and attempting to do so will fail,
+/// but this function can still be used to allocate memory from the default heap.
+/// This function is a simplified implementation of the Windows API `GlobalAlloc` that only supports allocation from the default process heap,
+/// and does not support all of the flags or behaviors of the Windows API. It is provided for compatibility with code that uses `GlobalAlloc`,
+/// but for new code or code that requires more advanced heap management features,
+/// it is recommended to use `HeapAlloc` with the default heap handle instead.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GlobalAlloc(_uflags: u32, size: usize) -> HLOCAL {
+    unsafe { common::memory::global_alloc(_uflags, size) }
+}

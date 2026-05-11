@@ -1,5 +1,5 @@
-use rine_types::os::get_version;
 use rine_types::handles::HINSTANCE;
+use rine_types::os::get_version;
 use rine_types::windows::HWND;
 use rine_types::{errors::BOOL, handles::HANDLE};
 
