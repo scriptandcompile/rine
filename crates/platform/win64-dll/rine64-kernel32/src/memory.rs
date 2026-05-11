@@ -451,6 +451,48 @@ pub unsafe extern "win64" fn GlobalAlloc(_uflags: u32, size: usize) -> HLOCAL {
     unsafe { common::memory::global_alloc(_uflags, size) }
 }
 
+/// Frees the specified local memory object and invalidates its handle.
+///
+/// # Arguments
+/// * `hmem` - A handle to the local memory object. This handle is returned by `LocalAlloc`.
+///   If this parameter is `NULL`, the function does nothing and returns `NULL`.
+///
+/// # Safety
+/// The caller must ensure that `hmem` is a valid handle returned by `LocalAlloc`, and that it has not already been freed.
+/// Freeing an invalid handle or a handle that has already been freed results in undefined behavior.
+/// Additionally, the caller must ensure that the memory being freed is not currently in use by any other part of the program.
+///
+/// # Returns
+/// If the function succeeds, the return value is `NULL`. If the function fails, the return value is the handle passed in `hmem`,
+/// and extended error information should be (but currently cannot) obtained by calling `GetLastError`.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn LocalFree(hmem: HLOCAL) -> HLOCAL {
+    unsafe { common::memory::local_free(hmem) }
+}
+
+/// Frees the specified global memory object and invalidates its handle.
+///
+/// # Arguments
+/// * `hmem` - A handle to the global memory object. This handle is returned by `GlobalAlloc`.
+///   If this parameter is `NULL`, the function does nothing and returns `NULL`.
+///
+/// # Safety
+/// The caller must ensure that `hmem` is a valid handle returned by `GlobalAlloc`, and that it has not already been freed.
+/// Freeing an invalid handle or a handle that has already been freed results in undefined behavior.
+/// Additionally, the caller must ensure that the memory being freed is not currently in use by any other part of the program.
+///
+/// # Returns
+/// If the function succeeds, the return value is `NULL`. If the function fails, the return value is the handle passed in `hmem`,
+/// and extended error information should be (but currently cannot) obtained by calling `GetLastError`.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn GlobalFree(hmem: HLOCAL) -> HLOCAL {
+    unsafe { common::memory::global_free(hmem) }
+}
+
 // ===========================================================================
 // Tests
 // ===========================================================================
