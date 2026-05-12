@@ -226,6 +226,45 @@ pub unsafe extern "win64" fn GetCommandLineW() -> *const u16 {
     common::process::cached_cmd_line().wide.as_ptr()
 }
 
+/// Retrieve startup information for the current process.
+///
+/// # Arguments
+/// * `startup_info` - A pointer to a `STARTUPINFOA` structure that receives the
+///   process startup information.
+///
+/// # Safety
+/// `startup_info` must be null or point to writable memory for one
+/// `STARTUPINFOA` structure.
+///
+/// # Notes
+/// This currently provides a minimal structure fill (`cb` and zero defaults).
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn GetStartupInfoA(startup_info: *mut StartupInfoA) {
+    unsafe { common::process::get_startup_info_a(startup_info) }
+}
+
+/// Retrieve startup information for the current process (wide).
+///
+/// # Arguments
+/// * `startup_info` - A pointer to a `STARTUPINFOW` structure that receives the
+///   process startup information.
+///
+/// # Safety
+/// `startup_info` must be null or point to writable memory for one
+/// `STARTUPINFOW` structure.
+///
+/// # Notes
+/// This currently provides a minimal structure fill plus standard-handle
+/// propagation.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn GetStartupInfoW(startup_info: *mut StartupInfoW) {
+    unsafe { common::process::get_startup_info_w(startup_info) }
+}
+
 /// Retrieve the base address of a loaded module.
 ///
 /// # Arguments

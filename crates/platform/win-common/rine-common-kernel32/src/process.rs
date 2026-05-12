@@ -7,8 +7,10 @@ use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 
 use rine_types::errors::{BOOL, ERROR_SUCCESS};
-use rine_types::handles::{HANDLE, HandleEntry, handle_table};
-use rine_types::os::ProcessInformation;
+use rine_types::handles::{
+    HANDLE, HandleEntry, STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, handle_table,
+};
+use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
 use rine_types::threading::{ProcessWaitable, STILL_ACTIVE};
 
 use tracing::{debug, warn};
@@ -24,6 +26,7 @@ static UNHANDLED_EXCEPTION_FILTER: AtomicUsize = AtomicUsize::new(0);
 static FAULT_HANDLER_GUARD: Mutex<()> = Mutex::new(());
 
 const UNHANDLED_EXCEPTION_FILTER_ENV: &[u8] = b"RINE_UNHANDLED_EXCEPTION_FILTER_PTR\0";
+const STARTF_USESTDHANDLES: u32 = 0x0000_0100;
 
 const FATAL_SIGNALS: [i32; 5] = [
     libc::SIGSEGV,
@@ -60,6 +63,88 @@ pub fn cached_cmd_line() -> &'static CmdLineCache {
 
         CmdLineCache { ansi, wide }
     })
+}
+
+/// Get startup information for the current process (ANSI).
+///
+/// # Arguments
+/// * `startup_info` - Pointer to a `STARTUPINFOA` structure to receive startup
+///   information.
+///
+/// # Safety
+/// `startup_info` must be null or point to writable memory for one
+/// `StartupInfoA` value.
+///
+/// # Return
+/// This function does not return a value.
+///
+/// # Notes
+/// The structure is zero-initialized and `cb` is set to the structure size.
+/// Standard input/output/error handles are populated when available and
+/// `STARTF_USESTDHANDLES` is set.
+/// Additional startup semantics (desktop/title/show-window propagation) are not
+/// currently modeled.
+pub unsafe fn get_startup_info_a(startup_info: *mut StartupInfoA) {
+    if startup_info.is_null() {
+        return;
+    }
+
+    let std_input = unsafe { crate::console::get_std_handle(STD_INPUT_HANDLE) };
+    let std_output = unsafe { crate::console::get_std_handle(STD_OUTPUT_HANDLE) };
+    let std_error = unsafe { crate::console::get_std_handle(STD_ERROR_HANDLE) };
+
+    unsafe {
+        std::ptr::write_bytes(startup_info, 0, 1);
+        (*startup_info).cb = std::mem::size_of::<StartupInfoA>() as u32;
+
+        if std_input.is_valid() && std_output.is_valid() && std_error.is_valid() {
+            (*startup_info).flags |= STARTF_USESTDHANDLES;
+            (*startup_info).std_input = std_input;
+            (*startup_info).std_output = std_output;
+            (*startup_info).std_error = std_error;
+        }
+    }
+}
+
+/// Get startup information for the current process (wide).
+///
+/// # Arguments
+/// * `startup_info` - Pointer to a `STARTUPINFOW` structure to receive startup
+///   information.
+///
+/// # Safety
+/// `startup_info` must be null or point to writable memory for one
+/// `StartupInfoW` value.
+///
+/// # Return
+/// This function does not return a value.
+///
+/// # Notes
+/// The structure is zero-initialized and `cb` is set to the structure size.
+/// Standard input/output/error handles are populated when available and
+/// `STARTF_USESTDHANDLES` is set.
+/// Additional startup semantics (desktop/title/show-window propagation) are not
+/// currently modeled.
+pub unsafe fn get_startup_info_w(startup_info: *mut StartupInfoW) {
+    if startup_info.is_null() {
+        return;
+    }
+
+    let std_input = unsafe { crate::console::get_std_handle(STD_INPUT_HANDLE) };
+    let std_output = unsafe { crate::console::get_std_handle(STD_OUTPUT_HANDLE) };
+    let std_error = unsafe { crate::console::get_std_handle(STD_ERROR_HANDLE) };
+
+    unsafe {
+        std::ptr::write_bytes(startup_info, 0, 1);
+        (*startup_info).cb = std::mem::size_of::<StartupInfoW>() as u32;
+
+        if std_input.is_valid() && std_output.is_valid() && std_error.is_valid() {
+            (*startup_info).flags |= STARTF_USESTDHANDLES;
+            (*startup_info).std_input = std_input;
+            (*startup_info).std_output = std_output;
+            (*startup_info).std_error = std_error;
+        }
+    }
 }
 
 /// Create a child process.
