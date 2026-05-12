@@ -547,6 +547,63 @@ pub unsafe extern "win64" fn GlobalLock(hmem: HLOCAL) -> *mut u8 {
     unsafe { common::memory::global_lock(hmem) }
 }
 
+/// Unlock a local memory object.
+///
+/// # Arguments
+/// * `hmem` - A handle to the local memory object. This handle is returned by `LocalAlloc`.
+///   If this parameter is `NULL`, the function does nothing and returns `TRUE`.
+///
+/// # Safety
+/// The caller must ensure that `hmem` is a valid handle returned by `LocalAlloc`, and that it has not already been freed.
+/// Unlocking an invalid handle or a handle that has already been freed results in undefined behavior.
+/// Additionally, the caller must ensure that the memory being accessed through the handle is not
+/// currently in use by any other part of the program, and that it is properly synchronized if accessed from multiple threads.
+/// Finally, the caller must ensure that the function is not called concurrently from multiple threads with the same handle,
+/// as this may also result in undefined behavior.
+///
+/// # Returns
+/// If the function succeeds, the return value is `TRUE`.
+/// If the function fails, the return value is `FALSE`, and extended error information should be (but currently cannot)
+/// obtained by calling `GetLastError`.
+///
+/// # Notes
+/// Since our `LocalAlloc` implementation doesn't actually support movable memory, there's nothing to do here, and the function always succeeds.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn LocalUnlock(_hmem: HLOCAL) -> BOOL {
+    // Since our LocalAlloc implementation doesn't actually support movable memory, there's nothing to do here.
+    BOOL::TRUE
+}
+
+/// Unlock a global memory object.
+///
+/// # Arguments
+/// * `hmem` - A handle to the global memory object. This handle is returned by `GlobalAlloc`.
+///   If this parameter is `NULL`, the function does nothing and returns `TRUE`.
+///
+/// # Safety
+/// The caller must ensure that `hmem` is a valid handle returned by `GlobalAlloc`, and that it has not already been freed.
+/// Unlocking an invalid handle or a handle that has already been freed results in undefined behavior.
+/// Additionally, the caller must ensure that the memory being accessed through the handle is not
+/// currently in use by any other part of the program, and that it is properly synchronized if accessed from multiple threads.
+/// Finally, the caller must ensure that the function is not called concurrently from multiple threads with the same handle,
+/// as this may also result in undefined behavior.
+///
+/// # Returns
+/// If the function succeeds, the return value is `TRUE`.
+/// If the function fails, the return value is `FALSE`, and extended error information should be (but currently cannot)
+/// obtained by calling `GetLastError`.
+///
+/// # Notes
+/// Since our `GlobalAlloc` implementation doesn't actually support movable memory, there's nothing to do here, and the function always succeeds.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn GlobalUnlock(hmem: HLOCAL) -> BOOL {
+    unsafe { LocalUnlock(hmem) }
+}
+
 // ===========================================================================
 // Tests
 // ===========================================================================
