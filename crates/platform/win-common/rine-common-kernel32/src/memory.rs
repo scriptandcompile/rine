@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
 use rine_types::errors::BOOL;
-use rine_types::handles::{HANDLE, HLOCAL, HandleEntry, HeapState, handle_table};
+use rine_types::handles::{HANDLE, HGLOBAL, HLOCAL, HandleEntry, HeapState, handle_table};
 
 pub const HEAP_ZERO_MEMORY: u32 = 0x00000008;
 
@@ -681,8 +681,8 @@ pub unsafe fn local_alloc(_uflags: u32, size: usize) -> HLOCAL {
 /// and does not support all of the flags or behaviors of the Windows API. It is provided for compatibility with code that uses `GlobalAlloc`,
 /// but for new code or code that requires more advanced heap management features,
 /// it is recommended to use `HeapAlloc` with the default heap handle instead.
-pub unsafe fn global_alloc(_uflags: u32, size: usize) -> HLOCAL {
-    HLOCAL::from_raw(heap_alloc(*DEFAULT_HEAP, HEAP_ZERO_MEMORY, size) as isize)
+pub unsafe fn global_alloc(_uflags: u32, size: usize) -> HGLOBAL {
+    HGLOBAL::from_raw(heap_alloc(*DEFAULT_HEAP, HEAP_ZERO_MEMORY, size) as isize)
 }
 
 /// Frees the specified local memory object and invalidates its handle.
@@ -726,8 +726,8 @@ pub unsafe fn local_free(hmem: HLOCAL) -> HLOCAL {
 /// # Returns
 /// If the function succeeds, the return value is `NULL`. If the function fails, the return value is the handle passed in `hmem`,
 /// and extended error information should be (but currently cannot) obtained by calling `GetLastError`.
-pub unsafe fn global_free(hmem: HLOCAL) -> HLOCAL {
-    local_free(hmem)
+pub unsafe fn global_free(hmem: HGLOBAL) -> HGLOBAL {
+    local_free(hmem.into()).into()
 }
 
 /// Lock a local memory object and return a pointer to the first byte of the memory block.
@@ -779,8 +779,8 @@ pub unsafe fn local_lock(hmem: HLOCAL) -> *mut u8 {
 /// # Notes
 /// This function is a simplified implementation of the Windows API `GlobalLock` that only supports locking memory allocated from the default process heap,
 /// and does not support all of the flags or behaviors of the Windows API.
-pub unsafe fn global_lock(hmem: HLOCAL) -> *mut u8 {
-    local_lock(hmem)
+pub unsafe fn global_lock(hmem: HGLOBAL) -> *mut u8 {
+    local_lock(hmem.into())
 }
 
 /// Unlock a local memory object.
@@ -830,8 +830,72 @@ pub unsafe fn local_unlock(_hmem: HLOCAL) -> BOOL {
 ///
 /// # Notes
 /// Since our `GlobalAlloc` implementation doesn't actually support movable memory, there's nothing to do here, and the function always succeeds.
-pub unsafe fn global_unlock(hmem: HLOCAL) -> BOOL {
-    local_unlock(hmem)
+pub unsafe fn global_unlock(hmem: HGLOBAL) -> BOOL {
+    local_unlock(hmem.into())
+}
+
+/// Reallocates a local memory object.
+///
+/// # Arguments
+/// * `hmem` - A handle to the local memory object. This handle is returned by `LocalAlloc`.
+/// * `new_size` - The new size of the memory block, in bytes.
+///   If this parameter is zero, the function allocates the minimum possible size (1 byte).
+/// * `flags` - The reallocation flags.
+///   If `LMEM_MOVEABLE` is specified, the function allocates a new block of memory,
+///   copies the data from the old block to the new block, frees the old block, and returns a handle to the new block.
+///   If `LMEM_MOVEABLE` is not specified, the function attempts to resize the existing block in place, and returns the same handle on success.
+///
+/// # Safety
+/// The caller must ensure that `hmem` is a valid handle returned by `LocalAlloc`, and that it has not already been freed.
+/// Reallocating an invalid handle or a handle that has already been freed results in undefined behavior.
+/// Additionally, the caller must ensure that the memory being accessed through the handle is not currently in use by any other
+/// part of the program, and that it is properly synchronized if accessed from multiple threads.
+///
+/// # Returns
+/// If the function succeeds, the return value is a handle to the reallocated memory block.
+/// If the function fails, the return value is `NULL`, and extended error information should be (but currently cannot)
+/// obtained by calling `GetLastError`.
+///
+/// # Notes
+/// Since our `LocalAlloc` implementation doesn't actually support movable memory, we ignore the flags and just allocate a new block of memory,
+/// copy the data, and free the old block. This means that the function always returns a new handle, and the old handle is always freed,
+/// regardless of the flags.
+pub unsafe fn local_realloc(_hmem: HLOCAL, _new_size: usize, _flags: u32) -> HLOCAL {
+    // Since our `LocalAlloc` implementation doesn't actually support movable memory, we ignore the flags and just allocate a new block of memory.
+    local_free(_hmem);
+    local_alloc(0, _new_size)
+}
+
+/// Reallocates a global memory object.
+///
+/// # Arguments
+/// * `hmem` - A handle to the global memory object. This handle is returned by `GlobalAlloc`.
+/// * `new_size` - The new size of the memory block, in bytes.
+///   If this parameter is zero, the function allocates the minimum possible size (1 byte).
+/// * `flags` - The reallocation flags.
+///   If `LMEM_MOVEABLE` is specified, the function allocates a new block of memory,
+///   copies the data from the old block to the new block, frees the old block, and returns a handle to the new block.
+///   If `LMEM_MOVEABLE` is not specified, the function attempts to resize the existing block in place, and returns the same handle on success.
+///
+/// # Safety
+/// The caller must ensure that `hmem` is a valid handle returned by `GlobalAlloc`, and that it has not already been freed.
+/// Reallocating an invalid handle or a handle that has already been freed results in undefined behavior.
+/// Additionally, the caller must ensure that the memory being accessed through the handle is not currently in use by any other
+/// part of the program, and that it is properly synchronized if accessed from multiple threads.
+///
+/// # Returns
+/// If the function succeeds, the return value is a handle to the reallocated memory block.
+/// If the function fails, the return value is `NULL`, and extended error information should be (but currently cannot)
+/// obtained by calling `GetLastError`.
+///
+/// # Notes
+/// Since our `GlobalAlloc` implementation doesn't actually support movable memory, we ignore the flags and just allocate a new block of memory,
+/// copy the data, and free the old block. This means that the function always returns a new handle, and the old handle is always freed,
+/// regardless of the flags.
+pub unsafe fn global_realloc(_hmem: HGLOBAL, _new_size: usize, _flags: u32) -> HGLOBAL {
+    // Since our `GlobalAlloc` implementation doesn't actually support movable memory, we ignore the flags and just allocate a new block of memory.
+    global_free(_hmem);
+    global_alloc(0, _new_size)
 }
 
 #[cfg(test)]

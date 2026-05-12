@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-12T01:51:28.576033+00:00",
+  "generatedAt": "2026-05-12T07:31:51.625921+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 106,
+      "functionCount": 108,
       "functions": [
         {
           "name": "CloseHandle",
@@ -1032,6 +1032,19 @@
           }
         },
         {
+          "name": "GlobalReAlloc",
+          "x64": {
+            "status": "partial",
+            "symbol": "memory::GlobalReAlloc",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "memory::GlobalReAlloc",
+            "source": "kernel32 - memory.rs"
+          }
+        },
+        {
           "name": "GlobalUnlock",
           "x64": {
             "status": "stubbed",
@@ -1223,6 +1236,19 @@
           "x86": {
             "status": "partial",
             "symbol": "memory::LocalLock",
+            "source": "kernel32 - memory.rs"
+          }
+        },
+        {
+          "name": "LocalReAlloc",
+          "x64": {
+            "status": "partial",
+            "symbol": "memory::LocalReAlloc",
+            "source": "kernel32 - memory.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "memory::LocalReAlloc",
             "source": "kernel32 - memory.rs"
           }
         },
@@ -3178,16 +3204,16 @@
     }
   ],
   "totals": {
-    "functions": 240,
+    "functions": 242,
     "x64": {
       "implemented": 94,
-      "partial": 100,
+      "partial": 102,
       "stubbed": 46,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 94,
-      "partial": 100,
+      "partial": 102,
       "stubbed": 46,
       "unimplemented": 0
     }

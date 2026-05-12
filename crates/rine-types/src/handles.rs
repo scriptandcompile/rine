@@ -86,16 +86,16 @@ impl HANDLE {
         self.0 == -1
     }
 
-    /// Helper to check if a handle is valid (not NULL and not INVALID_HANDLE_VALUE)
+    /// Helper to check if a handle is valid (not `NULL` and not `INVALID_HANDLE_VALUE`)
     ///
-    /// In Windows conventions, valid handles are positive integers (or zero for NULL),
+    /// In Windows conventions, valid handles are positive integers (or zero for `NULL`),
     /// while negative values indicate errors.  
     ///
-    /// This method returns true for valid handles and false for NULL or INVALID_HANDLE_VALUE.
+    /// This method returns true for valid handles and false for `NULL` or `INVALID_HANDLE_VALUE`.
     ///
     /// In Windows conventions:
-    /// - Handle(0) = NULL (valid but represents no object)
-    /// - Handle(-1) = INVALID_HANDLE_VALUE (indicates failure)
+    /// - Handle(0) = `NULL` (valid but represents no object)
+    /// - Handle(-1) = `INVALID_HANDLE_VALUE` (indicates failure)
     /// - Valid handles are positive integers >= 1
     #[inline]
     pub const fn is_valid(self) -> bool {
@@ -151,16 +151,16 @@ impl HLOCAL {
         self.0.is_invalid()
     }
 
-    /// Helper to check if a handle is valid (not NULL and not INVALID_HANDLE_VALUE)
+    /// Helper to check if a handle is valid (not `NULL` and not `INVALID_HANDLE_VALUE`)
     ///
-    /// In Windows conventions, valid handles are positive integers (or zero for NULL),
+    /// In Windows conventions, valid handles are positive integers (or zero for `NULL`),
     /// while negative values indicate errors.  
     ///
-    /// This method returns true for valid handles and false for NULL or INVALID_HANDLE_VALUE.
+    /// This method returns true for valid handles and false for `NULL` or `INVALID_HANDLE_VALUE`.
     ///
     /// In Windows conventions:
-    /// - Handle(0) = NULL (valid but represents no object)
-    /// - Handle(-1) = INVALID_HANDLE_VALUE (indicates failure)
+    /// - Handle(0) = `NULL` (valid but represents no object)
+    /// - Handle(-1) = `INVALID_HANDLE_VALUE` (indicates failure)
     /// - Valid handles are positive integers >= 1
     #[inline]
     pub const fn is_valid(self) -> bool {
@@ -168,9 +168,88 @@ impl HLOCAL {
     }
 }
 
+impl From<HGLOBAL> for HLOCAL {
+    #[inline]
+    fn from(handle: HGLOBAL) -> Self {
+        Self(HANDLE::from_raw(handle.as_raw()))
+    }
+}
+
 impl fmt::Debug for HLOCAL {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "HLOCAL({:#x})", self.0.as_raw())
+    }
+}
+
+/// A Windows `HGLOBAL` value, stored as an `isize` to match the Windows ABI
+/// (where `HGLOBAL` is a pointer-sized signed value, and pseudo-handles are
+/// negative).
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct HGLOBAL(HANDLE);
+
+impl HGLOBAL {
+    /// The null handle (`NULL`).
+    ///
+    /// Note that `NULL` is a valid handle value that represents "no object", while `INVALID_HANDLE_VALUE` indicates an error.
+    pub const NULL: Self = Self(HANDLE::NULL);
+
+    /// The invalid handle sentinel (`INVALID_HANDLE_VALUE`).
+    ///
+    /// Note that `INVALID_HANDLE_VALUE` (−1) indicates an error, while `NULL` (0) is a valid handle value that represents "no object".
+    pub const INVALID: Self = Self(HANDLE::INVALID);
+
+    /// Create a `HGLOBAL` from a raw `isize` value, for use in the Windows ABI.
+    #[inline]
+    pub const fn from_raw(value: isize) -> Self {
+        Self(HANDLE::from_raw(value))
+    }
+
+    /// Get the raw `isize` value of this handle, for use in the Windows ABI.
+    #[inline]
+    pub const fn as_raw(self) -> isize {
+        self.0.as_raw()
+    }
+
+    /// Check if this handle is `NULL` (0), which is a valid but non-functional handle.
+    #[inline]
+    pub const fn is_null(self) -> bool {
+        self.0.is_null()
+    }
+
+    /// Check if this handle is `INVALID_HANDLE_VALUE` (−1), which indicates an error.
+    #[inline]
+    pub const fn is_invalid(self) -> bool {
+        self.0.is_invalid()
+    }
+
+    /// Helper to check if a handle is valid (not `NULL` and not `INVALID_HANDLE_VALUE`)
+    ///
+    /// In Windows conventions, valid handles are positive integers (or zero for `NULL`),
+    /// while negative values indicate errors.  
+    ///
+    /// This method returns true for valid handles and false for `NULL` or `INVALID_HANDLE_VALUE`.
+    ///
+    /// In Windows conventions:
+    /// - Handle(0) = `NULL` (valid but represents no object)
+    /// - Handle(-1) = `INVALID_HANDLE_VALUE` (indicates failure)
+    /// - Valid handles are positive integers >= 1
+    #[inline]
+    pub const fn is_valid(self) -> bool {
+        self.0.is_valid()
+    }
+}
+
+impl From<HLOCAL> for HGLOBAL {
+    #[inline]
+    fn from(handle: HLOCAL) -> Self {
+        Self(HANDLE::from_raw(handle.as_raw()))
+    }
+}
+
+impl fmt::Debug for HGLOBAL {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "HGLOBAL({:#x})", self.0.as_raw())
     }
 }
 

@@ -1,6 +1,6 @@
 use rine_common_kernel32 as common;
 use rine_types::errors::BOOL;
-use rine_types::handles::{HANDLE, HLOCAL};
+use rine_types::handles::{HANDLE, HGLOBAL, HLOCAL};
 
 /// Get the default process heap handle.
 ///
@@ -442,7 +442,7 @@ pub unsafe extern "stdcall" fn LocalAlloc(_uflags: u32, size: usize) -> HLOCAL {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GlobalAlloc(_uflags: u32, size: usize) -> HLOCAL {
+pub unsafe extern "stdcall" fn GlobalAlloc(_uflags: u32, size: usize) -> HGLOBAL {
     unsafe { common::memory::global_alloc(_uflags, size) }
 }
 
@@ -484,7 +484,7 @@ pub unsafe extern "stdcall" fn LocalFree(hmem: HLOCAL) -> HLOCAL {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GlobalFree(hmem: HLOCAL) -> HLOCAL {
+pub unsafe extern "stdcall" fn GlobalFree(hmem: HGLOBAL) -> HGLOBAL {
     unsafe { common::memory::global_free(hmem) }
 }
 
@@ -538,7 +538,7 @@ pub unsafe extern "stdcall" fn LocalLock(hmem: HLOCAL) -> *mut u8 {
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GlobalLock(hmem: HLOCAL) -> *mut u8 {
+pub unsafe extern "stdcall" fn GlobalLock(hmem: HGLOBAL) -> *mut u8 {
     unsafe { common::memory::global_lock(hmem) }
 }
 
@@ -595,6 +595,80 @@ pub unsafe extern "stdcall" fn LocalUnlock(_hmem: HLOCAL) -> BOOL {
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn GlobalUnlock(hmem: HLOCAL) -> BOOL {
-    unsafe { LocalUnlock(hmem) }
+pub unsafe extern "stdcall" fn GlobalUnlock(hmem: HGLOBAL) -> BOOL {
+    unsafe { LocalUnlock(hmem.into()) }
+}
+
+/// Reallocates a local memory object.
+///
+/// # Arguments
+/// * `hmem` - A handle to the local memory object. This handle is returned by `LocalAlloc`.
+/// * `new_size` - The new size of the memory block, in bytes.
+///   If this parameter is zero, the function allocates the minimum possible size (1 byte).
+/// * `flags` - The reallocation flags.
+///   If `LMEM_MOVEABLE` is specified, the function allocates a new block of memory,
+///   copies the data from the old block to the new block, frees the old block, and returns a handle to the new block.
+///   If `LMEM_MOVEABLE` is not specified, the function attempts to resize the existing block in place, and returns the same handle on success.
+///
+/// # Safety
+/// The caller must ensure that `hmem` is a valid handle returned by `LocalAlloc`, and that it has not already been freed.
+/// Reallocating an invalid handle or a handle that has already been freed results in undefined behavior.
+/// Additionally, the caller must ensure that the memory being accessed through the handle is not currently in use by any other
+/// part of the program, and that it is properly synchronized if accessed from multiple threads.
+///
+/// # Returns
+/// If the function succeeds, the return value is a handle to the reallocated memory block.
+/// If the function fails, the return value is `NULL`, and extended error information should be (but currently cannot)
+/// obtained by calling `GetLastError`.
+///
+/// # Notes
+/// Since our `LocalAlloc` implementation doesn't actually support movable memory, we ignore the flags and just allocate a new block of memory,
+/// copy the data, and free the old block. This means that the function always returns a new handle, and the old handle is always freed,
+/// regardless of the flags.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn LocalReAlloc(
+    _hmem: HLOCAL,
+    _new_size: usize,
+    _flags: u32,
+) -> HLOCAL {
+    unsafe { common::memory::local_realloc(_hmem, _new_size, _flags) }
+}
+
+/// Reallocates a global memory object.
+///
+/// # Arguments
+/// * `hmem` - A handle to the global memory object. This handle is returned by `GlobalAlloc`.
+/// * `new_size` - The new size of the memory block, in bytes.
+///   If this parameter is zero, the function allocates the minimum possible size (1 byte).
+/// * `flags` - The reallocation flags.
+///   If `LMEM_MOVEABLE` is specified, the function allocates a new block of memory,
+///   copies the data from the old block to the new block, frees the old block, and returns a handle to the new block.
+///   If `LMEM_MOVEABLE` is not specified, the function attempts to resize the existing block in place, and returns the same handle on success.
+///
+/// # Safety
+/// The caller must ensure that `hmem` is a valid handle returned by `GlobalAlloc`, and that it has not already been freed.
+/// Reallocating an invalid handle or a handle that has already been freed results in undefined behavior.
+/// Additionally, the caller must ensure that the memory being accessed through the handle is not currently in use by any other
+/// part of the program, and that it is properly synchronized if accessed from multiple threads.
+///
+/// # Returns
+/// If the function succeeds, the return value is a handle to the reallocated memory block.
+/// If the function fails, the return value is `NULL`, and extended error information should be (but currently cannot)
+/// obtained by calling `GetLastError`.
+///
+/// # Notes
+/// Since our `GlobalAlloc` implementation doesn't actually support movable memory, we ignore the flags and just allocate a new block of memory,
+/// copy the data, and free the old block. This means that the function always returns a new handle, and the old handle is always freed,
+/// regardless of the flags.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GlobalReAlloc(
+    _hmem: HGLOBAL,
+    _new_size: usize,
+    _flags: u32,
+) -> HGLOBAL {
+    unsafe { common::memory::global_realloc(_hmem, _new_size, _flags) }
 }
