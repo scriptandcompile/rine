@@ -102,7 +102,7 @@ rine32-ntdll = { path = "crates/platform/win32-dll/rine32-ntdll" }
 rine32-user32 = { path = "crates/platform/win32-dll/rine32-user32" }
 rine32-ws2_32 = { path = "crates/platform/win32-dll/rine32-ws2_32" }
 goblin = "0.10.5"
-nix = { version = "0.31.2", features = ["mman", "signal", "fs", "process"] }
+nix = { version = "0.31.3", features = ["mman", "signal", "fs", "process"] }
 libc = "0.2.186"
 clap = { version = "4.6.1", features = ["derive"] }
 serde = { version = "1.0.228", features = ["derive"] }
@@ -119,5 +119,5 @@ serial_test = "3.4.0"
 rfd = "0.17.2"
 winit = "0.30.13"
 chrono = "0.4.44"
-tauri = { version = "2.11.0", features = [] }
-tauri-build = { version = "2.6.0", features = [] }
+tauri = { version = "2.11.1", features = [] }
+tauri-build = { version = "2.6.1", features = [] }
