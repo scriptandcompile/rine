@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-13T01:27:22.401869+00:00",
+  "generatedAt": "2026-05-13T03:59:57.677949+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 112,
+      "functionCount": 113,
       "functions": [
         {
           "name": "CloseHandle",
@@ -782,6 +782,19 @@
             "status": "implemented",
             "symbol": "thread::GetCurrentThreadId",
             "source": "kernel32 - thread.rs"
+          }
+        },
+        {
+          "name": "GetDateFormatA",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "date_time::GetDateFormatA",
+            "source": "kernel32 - date_time.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "date_time::GetDateFormatA",
+            "source": "kernel32 - date_time.rs"
           }
         },
         {
@@ -3256,17 +3269,17 @@
     }
   ],
   "totals": {
-    "functions": 246,
+    "functions": 247,
     "x64": {
       "implemented": 95,
       "partial": 104,
-      "stubbed": 47,
+      "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 95,
       "partial": 104,
-      "stubbed": 47,
+      "stubbed": 48,
       "unimplemented": 0
     }
   }
