@@ -4,6 +4,7 @@ pub mod console;
 pub mod date_time;
 pub mod environment;
 pub mod file;
+pub mod locale;
 pub mod memory;
 pub mod process;
 pub mod strings;

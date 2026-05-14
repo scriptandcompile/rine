@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-13T03:59:57.677949+00:00",
+  "generatedAt": "2026-05-14T04:42:49.840472+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 113,
+      "functionCount": 114,
       "functions": [
         {
           "name": "CloseHandle",
@@ -912,6 +912,19 @@
             "status": "implemented",
             "symbol": "date_time::GetLocalTime",
             "source": "kernel32 - date_time.rs"
+          }
+        },
+        {
+          "name": "GetLocaleInfoA",
+          "x64": {
+            "status": "partial",
+            "symbol": "locale::GetLocaleInfoA",
+            "source": "kernel32 - locale.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "locale::GetLocaleInfoA",
+            "source": "kernel32 - locale.rs"
           }
         },
         {
@@ -3269,16 +3282,16 @@
     }
   ],
   "totals": {
-    "functions": 247,
+    "functions": 248,
     "x64": {
       "implemented": 95,
-      "partial": 104,
+      "partial": 105,
       "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 95,
-      "partial": 104,
+      "partial": 105,
       "stubbed": 48,
       "unimplemented": 0
     }
