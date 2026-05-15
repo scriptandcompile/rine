@@ -153,6 +153,16 @@ impl WindowsVersion {
     pub fn all() -> &'static [WindowsVersion] {
         &[Self::WinXP, Self::Win7, Self::Win10, Self::Win11]
     }
+
+    /// Short lowercase key used for filenames (e.g. `"win10"`).
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::WinXP => "winxp",
+            Self::Win7 => "win7",
+            Self::Win10 => "win10",
+            Self::Win11 => "win11",
+        }
+    }
 }
 
 impl std::fmt::Display for WindowsVersion {
@@ -259,6 +269,16 @@ pub fn config_path(exe_path: &Path) -> PathBuf {
         .join("apps")
         .join(app_hash(exe_path))
         .join("config.toml")
+}
+
+/// Return the path for the per-app, per-version registry JSON file.
+///
+/// Path: `~/.rine/apps/<app-hash>/registry-<version>.json`
+pub fn registry_path(exe_path: &Path, version: WindowsVersion) -> PathBuf {
+    rine_root()
+        .join("apps")
+        .join(app_hash(exe_path))
+        .join(format!("registry-{}.json", version.as_str()))
 }
 
 // ---------------------------------------------------------------------------

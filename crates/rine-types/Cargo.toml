@@ -7,13 +7,14 @@ description = "Shared Windows type definitions for rine"
 
 [features]
 serde = ["dep:serde"]
-config = ["serde", "dep:toml", "dep:thiserror"]
+config = ["serde", "dep:toml", "dep:thiserror", "dep:serde_json"]
 
 [dependencies]
 bitflags = { workspace = true }
 serde = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 libc = "0.2"
 
 [dev-dependencies]

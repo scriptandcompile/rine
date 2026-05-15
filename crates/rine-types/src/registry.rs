@@ -5,7 +5,7 @@
 //! are pre-populated with common values that Windows applications query.
 
 use std::collections::HashMap;
-use std::sync::{LazyLock, Mutex};
+use std::sync::{Mutex, OnceLock};
 
 // ---------------------------------------------------------------------------
 // Predefined HKEY constants (same values Windows uses)
@@ -56,6 +56,7 @@ pub const REG_QWORD: u32 = 11;
 
 /// A single registry value with its type tag and data.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum RegistryValue {
     /// `REG_SZ` — null-terminated string.
     String(std::string::String),
@@ -114,6 +115,7 @@ impl RegistryValue {
 
 /// A single registry key (analogous to a directory in the registry tree).
 #[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RegistryKey {
     /// Named values under this key.  The default value uses an empty
     /// string key `""`.
@@ -194,53 +196,26 @@ pub struct RegistryStore {
 
 impl RegistryStore {
     fn new() -> Self {
+        // Default fallback: minimal registry with basic keys.
+        // When config feature is enabled, init_registry_for_app should be called
+        // to load version-specific defaults from the JSON file.
         let mut roots = HashMap::new();
 
-        // Pre-populate with common keys that Windows apps query.
         let mut hklm = RegistryKey::new();
-        Self::populate_hklm(&mut hklm);
-
-        let mut hkcu = RegistryKey::new();
-        Self::populate_hkcu(&mut hkcu);
-
-        roots.insert(HKEY_LOCAL_MACHINE, hklm);
-        roots.insert(HKEY_CURRENT_USER, hkcu);
-        roots.insert(HKEY_CLASSES_ROOT, RegistryKey::new());
-        roots.insert(HKEY_USERS, RegistryKey::new());
-        roots.insert(HKEY_CURRENT_CONFIG, RegistryKey::new());
-
-        Self {
-            inner: Mutex::new(roots),
-        }
-    }
-
-    fn populate_hklm(root: &mut RegistryKey) {
-        // SOFTWARE\Microsoft\Windows NT\CurrentVersion
-        let cv = root.create_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion");
-        cv.set_value(
-            "ProductName".into(),
-            RegistryValue::String("Windows 10 Pro".into()),
-        );
-        cv.set_value("CurrentBuild".into(), RegistryValue::String("19045".into()));
-        cv.set_value(
-            "CurrentBuildNumber".into(),
-            RegistryValue::String("19045".into()),
-        );
-        cv.set_value("CurrentVersion".into(), RegistryValue::String("6.3".into()));
-        cv.set_value("CurrentMajorVersionNumber".into(), RegistryValue::Dword(10));
-        cv.set_value("CurrentMinorVersionNumber".into(), RegistryValue::Dword(0));
+        // Basic HKLM keys without version-specific data
+        let cv = hklm.create_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion");
         cv.set_value(
             "SystemRoot".into(),
             RegistryValue::String("C:\\Windows".into()),
         );
-
-        // SYSTEM\CurrentControlSet\Control\Nls\CodePage
-        let cp = root.create_subkey("SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage");
+        cv.set_value(
+            "ProductName".into(),
+            RegistryValue::String("Windows".into()),
+        );
+        let cp = hklm.create_subkey("SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage");
         cp.set_value("ACP".into(), RegistryValue::String("1252".into()));
         cp.set_value("OEMCP".into(), RegistryValue::String("437".into()));
-
-        // SOFTWARE\Microsoft\Windows\CurrentVersion
-        let wcv = root.create_subkey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion");
+        let wcv = hklm.create_subkey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion");
         wcv.set_value(
             "ProgramFilesDir".into(),
             RegistryValue::String("C:\\Program Files".into()),
@@ -249,11 +224,9 @@ impl RegistryStore {
             "CommonFilesDir".into(),
             RegistryValue::String("C:\\Program Files\\Common Files".into()),
         );
-    }
 
-    fn populate_hkcu(root: &mut RegistryKey) {
-        // Environment
-        let env = root.create_subkey("Environment");
+        let mut hkcu = RegistryKey::new();
+        let env = hkcu.create_subkey("Environment");
         env.set_value(
             "TEMP".into(),
             RegistryValue::ExpandString("%USERPROFILE%\\AppData\\Local\\Temp".into()),
@@ -262,9 +235,7 @@ impl RegistryStore {
             "TMP".into(),
             RegistryValue::ExpandString("%USERPROFILE%\\AppData\\Local\\Temp".into()),
         );
-
-        // Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
-        let sf = root
+        let sf = hkcu
             .create_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders");
         sf.set_value(
             "Desktop".into(),
@@ -282,6 +253,44 @@ impl RegistryStore {
             "Local AppData".into(),
             RegistryValue::String("C:\\Users\\user\\AppData\\Local".into()),
         );
+
+        roots.insert(HKEY_LOCAL_MACHINE, hklm);
+        roots.insert(HKEY_CURRENT_USER, hkcu);
+        roots.insert(HKEY_CLASSES_ROOT, RegistryKey::new());
+        roots.insert(HKEY_USERS, RegistryKey::new());
+        roots.insert(HKEY_CURRENT_CONFIG, RegistryKey::new());
+
+        Self {
+            inner: Mutex::new(roots),
+        }
+    }
+
+    #[cfg(feature = "config")]
+    fn new_for_version_data(ver: VersionDefaults) -> Self {
+        let mut roots = HashMap::new();
+
+        let mut hklm = RegistryKey::new();
+        populate_hklm(&mut hklm, ver);
+
+        let mut hkcu = RegistryKey::new();
+        populate_hkcu(&mut hkcu);
+
+        roots.insert(HKEY_LOCAL_MACHINE, hklm);
+        roots.insert(HKEY_CURRENT_USER, hkcu);
+        roots.insert(HKEY_CLASSES_ROOT, RegistryKey::new());
+        roots.insert(HKEY_USERS, RegistryKey::new());
+        roots.insert(HKEY_CURRENT_CONFIG, RegistryKey::new());
+
+        Self {
+            inner: Mutex::new(roots),
+        }
+    }
+
+    #[cfg(feature = "config")]
+    fn from_roots(roots: HashMap<isize, RegistryKey>) -> Self {
+        Self {
+            inner: Mutex::new(roots),
+        }
     }
 
     /// Run a closure with access to a root key.
@@ -303,11 +312,272 @@ impl RegistryStore {
     }
 }
 
-static REGISTRY_STORE: LazyLock<RegistryStore> = LazyLock::new(RegistryStore::new);
+// Version data used to populate the registry defaults.
+#[cfg(feature = "config")]
+struct VersionDefaults {
+    product_name: &'static str,
+    build: &'static str,
+    current_version: &'static str,
+    major: u32,
+    minor: u32,
+}
+
+#[cfg(feature = "config")]
+impl VersionDefaults {
+    const WIN_XP: Self = Self {
+        product_name: "Windows XP Professional",
+        build: "2600",
+        current_version: "5.1",
+        major: 5,
+        minor: 1,
+    };
+    const WIN7: Self = Self {
+        product_name: "Windows 7 Professional",
+        build: "7601",
+        current_version: "6.1",
+        major: 6,
+        minor: 1,
+    };
+    const WIN10: Self = Self {
+        product_name: "Windows 10 Pro",
+        build: "19045",
+        current_version: "6.3",
+        major: 10,
+        minor: 0,
+    };
+    const WIN11: Self = Self {
+        product_name: "Windows 11 Pro",
+        build: "22631",
+        current_version: "6.3",
+        major: 10,
+        minor: 0,
+    };
+}
+
+#[cfg(feature = "config")]
+fn populate_hklm(root: &mut RegistryKey, ver: VersionDefaults) {
+    // SOFTWARE\Microsoft\Windows NT\CurrentVersion
+    let cv = root.create_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion");
+    cv.set_value(
+        "ProductName".into(),
+        RegistryValue::String(ver.product_name.into()),
+    );
+    cv.set_value(
+        "CurrentBuild".into(),
+        RegistryValue::String(ver.build.into()),
+    );
+    cv.set_value(
+        "CurrentBuildNumber".into(),
+        RegistryValue::String(ver.build.into()),
+    );
+    cv.set_value(
+        "CurrentVersion".into(),
+        RegistryValue::String(ver.current_version.into()),
+    );
+    cv.set_value(
+        "CurrentMajorVersionNumber".into(),
+        RegistryValue::Dword(ver.major),
+    );
+    cv.set_value(
+        "CurrentMinorVersionNumber".into(),
+        RegistryValue::Dword(ver.minor),
+    );
+    cv.set_value(
+        "SystemRoot".into(),
+        RegistryValue::String("C:\\Windows".into()),
+    );
+
+    // SYSTEM\CurrentControlSet\Control\Nls\CodePage
+    let cp = root.create_subkey("SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage");
+    cp.set_value("ACP".into(), RegistryValue::String("1252".into()));
+    cp.set_value("OEMCP".into(), RegistryValue::String("437".into()));
+
+    // SOFTWARE\Microsoft\Windows\CurrentVersion
+    let wcv = root.create_subkey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion");
+    wcv.set_value(
+        "ProgramFilesDir".into(),
+        RegistryValue::String("C:\\Program Files".into()),
+    );
+    wcv.set_value(
+        "CommonFilesDir".into(),
+        RegistryValue::String("C:\\Program Files\\Common Files".into()),
+    );
+}
+
+#[cfg(feature = "config")]
+fn populate_hkcu(root: &mut RegistryKey) {
+    // Environment
+    let env = root.create_subkey("Environment");
+    env.set_value(
+        "TEMP".into(),
+        RegistryValue::ExpandString("%USERPROFILE%\\AppData\\Local\\Temp".into()),
+    );
+    env.set_value(
+        "TMP".into(),
+        RegistryValue::ExpandString("%USERPROFILE%\\AppData\\Local\\Temp".into()),
+    );
+
+    // Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+    let sf =
+        root.create_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders");
+    sf.set_value(
+        "Desktop".into(),
+        RegistryValue::String("C:\\Users\\user\\Desktop".into()),
+    );
+    sf.set_value(
+        "Personal".into(),
+        RegistryValue::String("C:\\Users\\user\\Documents".into()),
+    );
+    sf.set_value(
+        "AppData".into(),
+        RegistryValue::String("C:\\Users\\user\\AppData\\Roaming".into()),
+    );
+    sf.set_value(
+        "Local AppData".into(),
+        RegistryValue::String("C:\\Users\\user\\AppData\\Local".into()),
+    );
+}
+
+static REGISTRY_STORE: OnceLock<RegistryStore> = OnceLock::new();
 
 /// Access the process-wide registry store.
+///
+/// If [`init_registry_for_app`] was not called first, returns a store
+/// pre-populated with Win11 defaults.
 pub fn registry_store() -> &'static RegistryStore {
-    &REGISTRY_STORE
+    REGISTRY_STORE.get_or_init(RegistryStore::new)
+}
+
+// ---------------------------------------------------------------------------
+// Per-app, per-version registry persistence
+// ---------------------------------------------------------------------------
+
+/// JSON snapshot of all root keys, used for on-disk storage.
+#[cfg(feature = "config")]
+#[derive(serde::Serialize, serde::Deserialize, Default)]
+struct RegistryStoreSnapshot {
+    #[serde(default)]
+    hklm: RegistryKey,
+    #[serde(default)]
+    hkcu: RegistryKey,
+    #[serde(default)]
+    hkcr: RegistryKey,
+    #[serde(default)]
+    hku: RegistryKey,
+    #[serde(default)]
+    hkcc: RegistryKey,
+}
+
+#[cfg(feature = "config")]
+fn snapshot_to_store(snap: RegistryStoreSnapshot) -> RegistryStore {
+    let mut roots = HashMap::new();
+    roots.insert(HKEY_LOCAL_MACHINE, snap.hklm);
+    roots.insert(HKEY_CURRENT_USER, snap.hkcu);
+    roots.insert(HKEY_CLASSES_ROOT, snap.hkcr);
+    roots.insert(HKEY_USERS, snap.hku);
+    roots.insert(HKEY_CURRENT_CONFIG, snap.hkcc);
+    RegistryStore::from_roots(roots)
+}
+
+#[cfg(feature = "config")]
+fn store_to_snapshot(store: &RegistryStore) -> RegistryStoreSnapshot {
+    let inner = store.inner.lock().unwrap();
+    RegistryStoreSnapshot {
+        hklm: inner.get(&HKEY_LOCAL_MACHINE).cloned().unwrap_or_default(),
+        hkcu: inner.get(&HKEY_CURRENT_USER).cloned().unwrap_or_default(),
+        hkcr: inner.get(&HKEY_CLASSES_ROOT).cloned().unwrap_or_default(),
+        hku: inner.get(&HKEY_USERS).cloned().unwrap_or_default(),
+        hkcc: inner.get(&HKEY_CURRENT_CONFIG).cloned().unwrap_or_default(),
+    }
+}
+
+/// Initialise the process-wide registry store from the per-app JSON file.
+///
+/// Must be called before any registry access, ideally immediately after the
+/// app config is loaded. If the JSON file for this `(exe_path, version)` pair
+/// does not exist, a default registry for the given Windows version is written
+/// to disk and then loaded. Switching `version` in the config will therefore
+/// automatically produce a fresh default file for the new version.
+///
+/// # Arguments
+/// * `exe_path` - Path to the Windows executable being run.
+/// * `version` - The Windows version specified in the app config.
+#[cfg(feature = "config")]
+pub fn init_registry_for_app(exe_path: &std::path::Path, version: crate::config::WindowsVersion) {
+    use crate::config;
+
+    // If already initialised (e.g. called twice), do nothing.
+    if REGISTRY_STORE.get().is_some() {
+        return;
+    }
+
+    let path = config::registry_path(exe_path, version);
+
+    let store = if path.exists() {
+        match std::fs::read_to_string(&path)
+            .map_err(|e| e.to_string())
+            .and_then(|s| {
+                serde_json::from_str::<RegistryStoreSnapshot>(&s).map_err(|e| e.to_string())
+            }) {
+            Ok(snap) => snapshot_to_store(snap),
+            Err(e) => {
+                eprintln!(
+                    "rine: failed to parse registry file {}: {}, regenerating defaults",
+                    path.display(),
+                    e
+                );
+                build_default_store_and_save(version, &path)
+            }
+        }
+    } else {
+        build_default_store_and_save(version, &path)
+    };
+
+    let _ = REGISTRY_STORE.set(store);
+}
+
+#[cfg(feature = "config")]
+fn build_default_store_and_save(
+    version: crate::config::WindowsVersion,
+    path: &std::path::Path,
+) -> RegistryStore {
+    use crate::config::WindowsVersion;
+
+    let ver_data = match version {
+        WindowsVersion::WinXP => VersionDefaults::WIN_XP,
+        WindowsVersion::Win7 => VersionDefaults::WIN7,
+        WindowsVersion::Win10 => VersionDefaults::WIN10,
+        WindowsVersion::Win11 => VersionDefaults::WIN11,
+    };
+    let store = RegistryStore::new_for_version_data(ver_data);
+
+    // Save to disk so the user can inspect and customise the defaults.
+    let snap = store_to_snapshot(&store);
+    if let Some(parent) = path.parent()
+        && let Err(e) = std::fs::create_dir_all(parent)
+    {
+        eprintln!(
+            "rine: failed to create registry dir {}: {}",
+            parent.display(),
+            e
+        );
+        return store;
+    }
+    match serde_json::to_string_pretty(&snap) {
+        Ok(json) => {
+            if let Err(e) = std::fs::write(path, &json) {
+                eprintln!(
+                    "rine: failed to write registry file {}: {}",
+                    path.display(),
+                    e
+                );
+            }
+        }
+        Err(e) => {
+            eprintln!("rine: failed to serialise registry defaults: {}", e);
+        }
+    }
+    store
 }
 
 /// Check whether an `isize` is a predefined root handle.
