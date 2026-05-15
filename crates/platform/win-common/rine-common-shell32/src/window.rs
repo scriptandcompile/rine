@@ -224,3 +224,159 @@ pub unsafe fn drag_query_file(hdrop: HDROP, i_file: u32, buffer: DragQueryFileBu
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{DragQueryFileBuffer, drag_query_file};
+    use rine_types::errors::BOOL;
+    use rine_types::strings::{LPSTR, LPWSTR};
+    use rine_types::windows::{DropFiles, HDROP, Point};
+
+    #[repr(C)]
+    struct AnsiDropBlock<const N: usize> {
+        header: DropFiles,
+        files: [u8; N],
+    }
+
+    #[repr(C)]
+    struct WideDropBlock<const N: usize> {
+        header: DropFiles,
+        files: [u16; N],
+    }
+
+    fn hdrop_from_ref<T>(value: &T) -> HDROP {
+        HDROP::from_raw(value as *const T as usize)
+    }
+
+    #[test]
+    fn drag_query_file_ansi_count_length_and_copy() {
+        let block = AnsiDropBlock {
+            header: DropFiles {
+                p_files: std::mem::size_of::<DropFiles>() as u32,
+                pt: Point { x: 0, y: 0 },
+                f_nc: BOOL::FALSE,
+                f_wide: BOOL::FALSE,
+            },
+            files: *b"first.txt\0second.bin\0\0",
+        };
+
+        let hdrop = hdrop_from_ref(&block);
+
+        let count = unsafe {
+            drag_query_file(
+                hdrop,
+                0xFFFF_FFFF,
+                DragQueryFileBuffer::Ansi {
+                    lpsz_file: LPSTR::NULL,
+                    cch: 0,
+                },
+            )
+        };
+        assert_eq!(count, 2);
+
+        let second_len = unsafe {
+            drag_query_file(
+                hdrop,
+                1,
+                DragQueryFileBuffer::Ansi {
+                    lpsz_file: LPSTR::NULL,
+                    cch: 0,
+                },
+            )
+        };
+        assert_eq!(second_len, 10);
+
+        let mut out = [0u8; 7];
+        let copied_len = unsafe {
+            drag_query_file(
+                hdrop,
+                1,
+                DragQueryFileBuffer::Ansi {
+                    // LPSTR has no public constructor; repr(C) wrapper conversion is used in tests only.
+                    lpsz_file: std::mem::transmute::<*mut u8, LPSTR>(out.as_mut_ptr()),
+                    cch: out.len() as u32,
+                },
+            )
+        };
+        assert_eq!(copied_len, 10);
+        assert_eq!(&out[..6], b"second");
+        assert_eq!(out[6], 0);
+
+        let missing_len = unsafe {
+            drag_query_file(
+                hdrop,
+                3,
+                DragQueryFileBuffer::Ansi {
+                    lpsz_file: LPSTR::NULL,
+                    cch: 0,
+                },
+            )
+        };
+        assert_eq!(missing_len, 0);
+    }
+
+    #[test]
+    fn drag_query_file_wide_count_and_wide_copy() {
+        let block = WideDropBlock {
+            header: DropFiles {
+                p_files: std::mem::size_of::<DropFiles>() as u32,
+                pt: Point { x: 0, y: 0 },
+                f_nc: BOOL::FALSE,
+                f_wide: BOOL::TRUE,
+            },
+            files: [
+                b'w' as u16,
+                b'i' as u16,
+                b'd' as u16,
+                b'e' as u16,
+                b'.' as u16,
+                b't' as u16,
+                b'x' as u16,
+                b't' as u16,
+                0,
+                b'o' as u16,
+                b't' as u16,
+                b'h' as u16,
+                b'e' as u16,
+                b'r' as u16,
+                b'.' as u16,
+                b'l' as u16,
+                b'o' as u16,
+                b'g' as u16,
+                0,
+                0,
+            ],
+        };
+
+        let hdrop = hdrop_from_ref(&block);
+
+        let count = unsafe {
+            drag_query_file(
+                hdrop,
+                0xFFFF_FFFF,
+                DragQueryFileBuffer::Wide {
+                    lpsz_file: LPWSTR::NULL,
+                    cch: 0,
+                },
+            )
+        };
+        assert_eq!(count, 2);
+
+        let mut out = [0u16; 10];
+        let copied_len = unsafe {
+            drag_query_file(
+                hdrop,
+                0,
+                DragQueryFileBuffer::Wide {
+                    // LPWSTR has no public constructor; repr(C) wrapper conversion is used in tests only.
+                    lpsz_file: std::mem::transmute::<*mut u16, LPWSTR>(out.as_mut_ptr()),
+                    cch: out.len() as u32,
+                },
+            )
+        };
+        assert_eq!(copied_len, 8);
+        assert_eq!(out[0], b'w' as u16);
+        assert_eq!(out[7], b't' as u16);
+        assert_eq!(out[8], 0);
+    }
+}
