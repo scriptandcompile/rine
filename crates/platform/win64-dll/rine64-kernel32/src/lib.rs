@@ -5,6 +5,7 @@ pub mod file;
 pub mod locale;
 pub mod memory;
 pub mod process;
+pub mod profile;
 pub mod strings;
 pub mod sync;
 pub mod thread;

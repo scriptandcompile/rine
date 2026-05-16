@@ -641,6 +641,105 @@ pub struct RegistryKeyState {
 }
 
 // ---------------------------------------------------------------------------
+// win.ini / IniFileMapping helpers
+// ---------------------------------------------------------------------------
+
+/// Map a WIN.INI `[section]` name to the HKCU registry sub-key path used by
+/// the Win32 IniFileMapping mechanism.
+///
+/// Well-known sections follow the standard NT mapping table; unmapped sections
+/// fall back to `Software\rine\IniMappings\win.ini\<section>`.
+pub fn win_ini_section_to_reg_path(section: &str) -> String {
+    match section.to_ascii_lowercase().as_str() {
+        "windows" => {
+            "Software\\Microsoft\\Windows NT\\CurrentVersion\\Windows".to_string()
+        }
+        "desktop" => "Control Panel\\Desktop".to_string(),
+        "colors" => "Control Panel\\Colors".to_string(),
+        "fonts" => {
+            "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts".to_string()
+        }
+        "intl" => "Control Panel\\International".to_string(),
+        "ports" => {
+            "Software\\Microsoft\\Windows NT\\CurrentVersion\\Ports".to_string()
+        }
+        "devices" => {
+            "Software\\Microsoft\\Windows NT\\CurrentVersion\\Devices".to_string()
+        }
+        "printerports" => {
+            "Software\\Microsoft\\Windows NT\\CurrentVersion\\PrinterPorts".to_string()
+        }
+        other => format!("Software\\rine\\IniMappings\\win.ini\\{}", other),
+    }
+}
+
+/// Parse a simple WIN.INI-style file and seed the current-user registry with
+/// its contents using the IniFileMapping rules.
+///
+/// Lines of the form `key=value` under each `[section]` header are written to
+/// the registry path returned by [`win_ini_section_to_reg_path`].  Comments
+/// (`;` or `#` prefixed lines) and blank lines are ignored.  If `path` cannot
+/// be read the function returns silently.
+pub fn import_win_ini(path: &std::path::Path) {
+    let content = match std::fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+
+    let store = registry_store();
+    let mut current_section = String::new();
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with(';') || trimmed.starts_with('#') {
+            continue;
+        }
+        if trimmed.starts_with('[') {
+            if let Some(end) = trimmed.find(']') {
+                current_section = trimmed[1..end].trim().to_string();
+            }
+            continue;
+        }
+        if current_section.is_empty() {
+            continue;
+        }
+        if let Some(eq) = trimmed.find('=') {
+            let key = trimmed[..eq].trim();
+            let value = trimmed[eq + 1..].trim();
+            let reg_path = win_ini_section_to_reg_path(&current_section);
+            store.with_root_mut(HKEY_CURRENT_USER, |root| {
+                root.create_subkey(&reg_path)
+                    .set_value(key.to_string(), RegistryValue::String(value.to_string()));
+            });
+        }
+    }
+}
+
+/// Look for a drop-in `win.ini` for the given application and import it into
+/// the registry if found.
+///
+/// Search order:
+/// 1. `~/.rine/apps/<app_hash>/win.ini` (per-application)
+/// 2. `~/.rine/win.ini` (global)
+///
+/// This function is a no-op if neither file exists.
+#[cfg(feature = "config")]
+pub fn try_import_win_ini_for_app(exe_path: &std::path::Path) {
+    use crate::config::{app_hash, rine_root};
+
+    let root = rine_root();
+    let app_ini = root.join("apps").join(app_hash(exe_path)).join("win.ini");
+    if app_ini.exists() {
+        import_win_ini(&app_ini);
+        return;
+    }
+    let global_ini = root.join("win.ini");
+    if global_ini.exists() {
+        import_win_ini(&global_ini);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 

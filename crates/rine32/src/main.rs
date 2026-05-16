@@ -323,6 +323,7 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
     // Initialise the registry store from the per-app, per-version JSON file
     // (or write the version defaults if none exists yet).
     rine_types::registry::init_registry_for_app(exe_path, app_config.windows_version);
+    rine_types::registry::try_import_win_ini_for_app(exe_path);
 
     let parsed = ParsedPe::load(&resolved)?;
     if parsed.format != PeFormat::Pe32 {

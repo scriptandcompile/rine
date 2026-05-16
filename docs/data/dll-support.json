@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-14T04:42:49.840472+00:00",
+  "generatedAt": "2026-05-16T21:28:37.541828+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -340,7 +340,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 114,
+      "functionCount": 122,
       "functions": [
         {
           "name": "CloseHandle",
@@ -954,6 +954,32 @@
           }
         },
         {
+          "name": "GetPrivateProfileStringA",
+          "x64": {
+            "status": "partial",
+            "symbol": "profile::GetPrivateProfileStringA",
+            "source": "kernel32 - profile.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "profile::GetPrivateProfileStringA",
+            "source": "kernel32 - profile.rs"
+          }
+        },
+        {
+          "name": "GetPrivateProfileStringW",
+          "x64": {
+            "status": "partial",
+            "symbol": "profile::GetPrivateProfileStringW",
+            "source": "kernel32 - profile.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "profile::GetPrivateProfileStringW",
+            "source": "kernel32 - profile.rs"
+          }
+        },
+        {
           "name": "GetProcAddress",
           "x64": {
             "status": "stubbed",
@@ -977,6 +1003,32 @@
             "status": "implemented",
             "symbol": "memory::GetProcessHeap",
             "source": "kernel32 - memory.rs"
+          }
+        },
+        {
+          "name": "GetProfileStringA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "profile::GetProfileStringA",
+            "source": "kernel32 - profile.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "profile::GetProfileStringA",
+            "source": "kernel32 - profile.rs"
+          }
+        },
+        {
+          "name": "GetProfileStringW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "profile::GetProfileStringW",
+            "source": "kernel32 - profile.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "profile::GetProfileStringW",
+            "source": "kernel32 - profile.rs"
           }
         },
         {
@@ -1666,6 +1718,58 @@
             "status": "partial",
             "symbol": "file::WriteFile",
             "source": "kernel32 - file.rs"
+          }
+        },
+        {
+          "name": "WritePrivateProfileStringA",
+          "x64": {
+            "status": "partial",
+            "symbol": "profile::WritePrivateProfileStringA",
+            "source": "kernel32 - profile.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "profile::WritePrivateProfileStringA",
+            "source": "kernel32 - profile.rs"
+          }
+        },
+        {
+          "name": "WritePrivateProfileStringW",
+          "x64": {
+            "status": "partial",
+            "symbol": "profile::WritePrivateProfileStringW",
+            "source": "kernel32 - profile.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "profile::WritePrivateProfileStringW",
+            "source": "kernel32 - profile.rs"
+          }
+        },
+        {
+          "name": "WriteProfileStringA",
+          "x64": {
+            "status": "partial",
+            "symbol": "profile::WriteProfileStringA",
+            "source": "kernel32 - profile.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "profile::WriteProfileStringA",
+            "source": "kernel32 - profile.rs"
+          }
+        },
+        {
+          "name": "WriteProfileStringW",
+          "x64": {
+            "status": "partial",
+            "symbol": "profile::WriteProfileStringW",
+            "source": "kernel32 - profile.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "profile::WriteProfileStringW",
+            "source": "kernel32 - profile.rs"
           }
         },
         {
@@ -3282,16 +3386,16 @@
     }
   ],
   "totals": {
-    "functions": 248,
+    "functions": 256,
     "x64": {
-      "implemented": 95,
-      "partial": 105,
+      "implemented": 97,
+      "partial": 111,
       "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 95,
-      "partial": 105,
+      "implemented": 97,
+      "partial": 111,
       "stubbed": 48,
       "unimplemented": 0
     }

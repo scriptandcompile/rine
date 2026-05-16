@@ -421,6 +421,7 @@ pub fn run(
     // Initialise the registry store from the per-app, per-version JSON file
     // (or write the version defaults if none exists yet).
     rine_types::registry::init_registry_for_app(exe_path, app_config.windows_version);
+    rine_types::registry::try_import_win_ini_for_app(exe_path);
 
     // 1. Parse the PE file.
     let parsed = ParsedPe::load(exe_path)?;
