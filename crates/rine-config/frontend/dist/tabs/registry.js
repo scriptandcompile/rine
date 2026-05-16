@@ -2,19 +2,30 @@
 
 let registryData = null;
 let registryTree = {};
+let registryDataCacheKey = null;
 const REGISTRY_SAVE_DEBOUNCE_MS = 500;
 const pendingRegistrySaves = new Map();
 const pendingRegistryTimers = new Map();
 const activeRegistrySavePromises = new Set();
 const LOCKED_VALUE_TOOLTIP = "This value is locked to the selected Windows version default registry data. To use a different default Windows registry profile, change General -> Windows Version.";
 
+function clearRegistryViewState() {
+  clearPendingRegistrySaves();
+  registryData = null;
+  registryTree = {};
+  registryDataCacheKey = null;
+
+  const treeContainer = document.getElementById("registry-tree");
+  if (treeContainer) {
+    treeContainer.innerHTML = "";
+  }
+}
+
 function setupRegistryTab() {
   const winVersionSel = document.getElementById("win-version");
   if (winVersionSel) {
     winVersionSel.addEventListener("change", async () => {
-      clearPendingRegistrySaves();
-      registryData = null;
-      registryTree = {};
+      clearRegistryViewState();
 
       const registryPanel = document.getElementById("tab-registry");
       if (exePath && registryPanel && registryPanel.classList.contains("active")) {
@@ -27,10 +38,11 @@ function setupRegistryTab() {
   const registryTab = document.querySelector('.tab[data-tab="registry"]');
   if (registryTab) {
     registryTab.addEventListener("click", async () => {
+      const cacheKey = getRegistryDataCacheKey();
       if (!registryData && exePath) {
         await loadRegistryData();
-      } else if (registryData) {
-        renderRegistry();
+      } else if (registryData && registryDataCacheKey !== cacheKey) {
+        await loadRegistryData();
       }
     });
   }
@@ -50,6 +62,7 @@ async function loadRegistryData() {
       windowsVersion: getSelectedWindowsVersion(),
     });
     registryData = data;
+    registryDataCacheKey = getRegistryDataCacheKey();
     renderRegistry();
     showStatus("Registry loaded", false);
   } catch (err) {
@@ -292,6 +305,15 @@ function getSelectedWindowsVersion() {
   } catch (_err) {
     return null;
   }
+}
+
+function getRegistryDataCacheKey() {
+  if (!exePath) return null;
+
+  return JSON.stringify({
+    exePath,
+    windowsVersion: getSelectedWindowsVersion(),
+  });
 }
 
 function getDirectChildrenByClass(parent, className) {

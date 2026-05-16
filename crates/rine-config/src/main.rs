@@ -73,44 +73,41 @@ fn main() {
             if let Some(window) = app.get_webview_window("main") {
                 let drop_handle = app.handle().clone();
                 window.on_window_event(move |event| {
-                    match event {
-                        WindowEvent::DragDrop(DragDropEvent::Drop { paths, .. }) => {
-                            if let Some(config_path) = paths.iter().find(|p| is_config_toml_path(p)) {
-                                if let Err(err) = relaunch_rine_config_with_path(config_path) {
-                                    eprintln!(
-                                        "rine-config: failed to relaunch from dropped config file: {err}"
-                                    );
-                                    return;
-                                }
-                                drop_handle.exit(0);
+                    if let WindowEvent::DragDrop(DragDropEvent::Drop { paths, .. }) = event {
+                        if let Some(config_path) = paths.iter().find(|p| is_config_toml_path(p)) {
+                            if let Err(err) = relaunch_rine_config_with_path(config_path) {
+                                eprintln!(
+                                    "rine-config: failed to relaunch from dropped config file: {err}"
+                                );
+                                return;
+                            }
+                            drop_handle.exit(0);
+                            return;
+                        }
+
+                        if let Some(exe_path) = paths.iter().find(|p| is_exe_path(p)) {
+                            let should_relaunch = matches!(
+                                rfd::MessageDialog::new()
+                                    .set_title("Relaunch rine-config?")
+                                    .set_description(format!(
+                                        "Relaunch rine-config with this executable?\n\n{}",
+                                        exe_path.display()
+                                    ))
+                                    .set_buttons(rfd::MessageButtons::YesNo)
+                                    .set_level(rfd::MessageLevel::Info)
+                                    .show(),
+                                rfd::MessageDialogResult::Yes
+                            );
+                            if !should_relaunch {
                                 return;
                             }
 
-                            if let Some(exe_path) = paths.iter().find(|p| is_exe_path(p)) {
-                                let should_relaunch = matches!(
-                                    rfd::MessageDialog::new()
-                                        .set_title("Relaunch rine-config?")
-                                        .set_description(format!(
-                                            "Relaunch rine-config with this executable?\n\n{}",
-                                            exe_path.display()
-                                        ))
-                                        .set_buttons(rfd::MessageButtons::YesNo)
-                                        .set_level(rfd::MessageLevel::Info)
-                                        .show(),
-                                    rfd::MessageDialogResult::Yes
-                                );
-                                if !should_relaunch {
-                                    return;
-                                }
-
-                                if let Err(err) = relaunch_rine_config_with_exe(exe_path) {
-                                    eprintln!("rine-config: failed to relaunch from dropped file: {err}");
-                                    return;
-                                }
-                                drop_handle.exit(0);
+                            if let Err(err) = relaunch_rine_config_with_exe(exe_path) {
+                                eprintln!("rine-config: failed to relaunch from dropped file: {err}");
+                                return;
                             }
+                            drop_handle.exit(0);
                         }
-                        _ => {}
                     }
                 });
             }

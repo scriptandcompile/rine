@@ -14,6 +14,9 @@ async function openConfigTarget(path) {
     resetAutosaveState();
 
     const opened = await window.__TAURI__.core.invoke("open_config_target", { path });
+    if (typeof clearRegistryViewState === "function") {
+      clearRegistryViewState();
+    }
     config = opened.config;
     exePath = opened.exe_path;
     configPath = opened.config_path;
