@@ -33,6 +33,10 @@ fn open_config_target(path: String) -> Result<OpenedConfig, String> {
             .unwrap_or_else(|_| input.clone())
             .to_string_lossy()
             .into_owned();
+
+        // Initialize the registry for this exe and version (creates defaults if needed).
+        rine_types::registry::init_registry_for_app(&input, cfg.windows_version);
+
         return Ok(OpenedConfig {
             exe_path: Some(exe_path),
             config_path: cfg_path.to_string_lossy().into_owned(),
@@ -163,7 +167,15 @@ fn pick_folder(start_dir: Option<String>) -> Option<String> {
 }
 
 #[tauri::command]
-fn get_registry_export(_exe_path: String) -> Result<serde_json::Value, String> {
+fn get_registry_export(exe_path: String) -> Result<serde_json::Value, String> {
+    let exe_path = Path::new(&exe_path);
+
+    // Load config to determine Windows version for versioned registry defaults.
+    let config = lib::load_config(exe_path).map_err(|e| e.to_string())?;
+
+    // Initialize the registry for this app and version (loads file or creates defaults).
+    rine_types::registry::init_registry_for_app(exe_path, config.windows_version);
+
     let export = rine_types::registry::get_registry_export_for_ui();
     serde_json::to_value(&export).map_err(|e| format!("Failed to serialize registry: {e}"))
 }
@@ -188,8 +200,12 @@ fn update_registry_value(
 }
 
 fn main() {
-    // First non-flag argument is an open target path (.exe or config .toml).
-    let open_path = std::env::args().nth(1).filter(|arg| !arg.starts_with('-'));
+    // First supported file argument is an open target path (.exe or config .toml).
+    // Runtime/tooling flags may be prepended, so only accept known target types.
+    let open_path = std::env::args().skip(1).find(|arg| {
+        let path = Path::new(arg);
+        is_exe_path(path) || is_config_toml_path(path)
+    });
 
     tauri::Builder::default()
         .manage(OpenPath(Mutex::new(open_path)))
