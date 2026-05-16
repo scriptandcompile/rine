@@ -144,10 +144,7 @@ pub unsafe extern "stdcall" fn UnregisterClassA(class_name: LPCSTR, _h_instance:
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "stdcall" fn UnregisterClassW(
-    class_name: LPCWSTR,
-    _h_instance: usize,
-) -> BOOL {
+pub unsafe extern "stdcall" fn UnregisterClassW(class_name: LPCWSTR, _h_instance: usize) -> BOOL {
     let name = class_name.read_string().unwrap_or_default();
     common::unregister_class(&name)
 }
