@@ -512,16 +512,42 @@ fn store_to_snapshot(store: &RegistryStore) -> RegistryStoreSnapshot {
 /// * `version` - The Windows version specified in the app config.
 #[cfg(feature = "config")]
 pub fn init_registry_for_app(exe_path: &std::path::Path, version: crate::config::WindowsVersion) {
-    use crate::config;
-
     // If already initialised (e.g. called twice), do nothing.
     if REGISTRY_STORE.get().is_some() {
         return;
     }
 
+    let store = load_registry_store_for_app(exe_path, version);
+    let _ = REGISTRY_STORE.set(store);
+}
+
+/// Re-initialise the process-wide registry store for a different app/version.
+///
+/// Unlike [`init_registry_for_app`], this updates an already-initialised store.
+#[cfg(feature = "config")]
+pub fn reinit_registry_for_app(exe_path: &std::path::Path, version: crate::config::WindowsVersion) {
+    let store = load_registry_store_for_app(exe_path, version);
+
+    if let Some(existing) = REGISTRY_STORE.get() {
+        let mut existing_inner = existing.inner.lock().unwrap();
+        let new_roots = store.inner.into_inner().unwrap_or_else(|e| e.into_inner());
+        *existing_inner = new_roots;
+        return;
+    }
+
+    let _ = REGISTRY_STORE.set(store);
+}
+
+#[cfg(feature = "config")]
+fn load_registry_store_for_app(
+    exe_path: &std::path::Path,
+    version: crate::config::WindowsVersion,
+) -> RegistryStore {
+    use crate::config;
+
     let path = config::registry_path(exe_path, version);
 
-    let store = if path.exists() {
+    if path.exists() {
         match std::fs::read_to_string(&path)
             .map_err(|e| e.to_string())
             .and_then(|s| {
@@ -539,9 +565,7 @@ pub fn init_registry_for_app(exe_path: &std::path::Path, version: crate::config:
         }
     } else {
         build_default_store_and_save(version, &path)
-    };
-
-    let _ = REGISTRY_STORE.set(store);
+    }
 }
 
 #[cfg(feature = "config")]
@@ -683,6 +707,60 @@ pub fn get_registry_export_for_ui() -> RegistryExportUI {
         locked_paths: prefixed_locked,
     }
 }
+
+/// Get a single registry key snapshot for UI display by full key path.
+///
+/// The path should include a root name, for example:
+/// - `HKEY_LOCAL_MACHINE`
+/// - `HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft`
+#[cfg(feature = "config")]
+pub fn get_registry_key_for_ui(path: &str) -> Option<RegistryKeyUI> {
+    let (root_hkey, root_name, subpath) = parse_registry_ui_path(path)?;
+    let store = registry_store();
+
+    store.with_root(root_hkey, |root| {
+        if subpath.is_empty() {
+            return Some(registry_key_to_ui(root, root_name));
+        }
+
+        root.open_subkey(subpath)
+            .map(|key| registry_key_to_ui(key, path))
+    })?
+}
+
+#[cfg(feature = "config")]
+fn parse_registry_ui_path(path: &str) -> Option<(isize, &'static str, &str)> {
+    let trimmed = path.trim_matches('\\');
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let (root_part, subpath) = match trimmed.split_once('\\') {
+        Some((root, rest)) => (root, rest),
+        None => (trimmed, ""),
+    };
+
+    let root_hkey = match root_part.to_ascii_uppercase().as_str() {
+        "HKEY_LOCAL_MACHINE" | "HKLM" => HKEY_LOCAL_MACHINE,
+        "HKEY_CURRENT_USER" | "HKCU" => HKEY_CURRENT_USER,
+        "HKEY_CLASSES_ROOT" | "HKCR" => HKEY_CLASSES_ROOT,
+        "HKEY_USERS" | "HKU" => HKEY_USERS,
+        "HKEY_CURRENT_CONFIG" | "HKCC" => HKEY_CURRENT_CONFIG,
+        _ => return None,
+    };
+
+    let canonical_root = match root_hkey {
+        HKEY_LOCAL_MACHINE => "HKEY_LOCAL_MACHINE",
+        HKEY_CURRENT_USER => "HKEY_CURRENT_USER",
+        HKEY_CLASSES_ROOT => "HKEY_CLASSES_ROOT",
+        HKEY_USERS => "HKEY_USERS",
+        HKEY_CURRENT_CONFIG => "HKEY_CURRENT_CONFIG",
+        _ => return None,
+    };
+
+    Some((root_hkey, canonical_root, subpath))
+}
+
 /// Convert a RegistryKey to UI representation (non-recursive; only immediate contents).
 #[cfg(feature = "config")]
 fn registry_key_to_ui(key: &RegistryKey, path: &str) -> RegistryKeyUI {

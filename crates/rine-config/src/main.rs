@@ -167,17 +167,49 @@ fn pick_folder(start_dir: Option<String>) -> Option<String> {
 }
 
 #[tauri::command]
-fn get_registry_export(exe_path: String) -> Result<serde_json::Value, String> {
+fn get_registry_export(
+    exe_path: String,
+    windows_version: Option<WindowsVersion>,
+) -> Result<serde_json::Value, String> {
     let exe_path = Path::new(&exe_path);
 
-    // Load config to determine Windows version for versioned registry defaults.
-    let config = lib::load_config(exe_path).map_err(|e| e.to_string())?;
+    let version = resolve_registry_windows_version(exe_path, windows_version)?;
 
-    // Initialize the registry for this app and version (loads file or creates defaults).
-    rine_types::registry::init_registry_for_app(exe_path, config.windows_version);
+    // Ensure the process-wide registry reflects the selected Windows version.
+    rine_types::registry::reinit_registry_for_app(exe_path, version);
 
     let export = rine_types::registry::get_registry_export_for_ui();
     serde_json::to_value(&export).map_err(|e| format!("Failed to serialize registry: {e}"))
+}
+
+#[tauri::command]
+fn get_registry_key(
+    exe_path: String,
+    key_path: String,
+    windows_version: Option<WindowsVersion>,
+) -> Result<serde_json::Value, String> {
+    let exe_path = Path::new(&exe_path);
+
+    let version = resolve_registry_windows_version(exe_path, windows_version)?;
+
+    // Ensure the process-wide registry reflects the selected Windows version.
+    rine_types::registry::reinit_registry_for_app(exe_path, version);
+
+    let key = rine_types::registry::get_registry_key_for_ui(&key_path)
+        .ok_or_else(|| format!("Registry key not found: {key_path}"))?;
+    serde_json::to_value(&key).map_err(|e| format!("Failed to serialize registry key: {e}"))
+}
+
+fn resolve_registry_windows_version(
+    exe_path: &Path,
+    windows_version: Option<WindowsVersion>,
+) -> Result<WindowsVersion, String> {
+    if let Some(version) = windows_version {
+        return Ok(version);
+    }
+
+    let config = lib::load_config(exe_path).map_err(|e| e.to_string())?;
+    Ok(config.windows_version)
 }
 
 #[tauri::command]
@@ -314,6 +346,7 @@ fn main() {
             launch_exe,
             pick_folder,
             get_registry_export,
+            get_registry_key,
             update_registry_value,
         ])
         .run(tauri::generate_context!())
