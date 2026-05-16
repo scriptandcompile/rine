@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/rine-thumbnailer-core",
+    "crates/rine-thumbnailer-cli",
     "crates/rine",
     "crates/rine32",
     "crates/rine-dll-attrs",
@@ -42,6 +44,8 @@ members = [
     "crates/platform/win32-dll/rine32-ws2_32",
 ]
 default-members = [
+    "crates/rine-thumbnailer-core",
+    "crates/rine-thumbnailer-cli",
     "crates/rine",
     "crates/rine-dlls",
     "crates/rine-types",
@@ -66,6 +70,7 @@ edition = "2024"
 license = "MIT"
 
 [workspace.dependencies]
+rine-thumbnailer-core = { path = "crates/rine-thumbnailer-core" }
 rine-dll-attrs = { path = "crates/rine-dll-attrs" }
 rine-dll-build = { path = "crates/rine-dll-build" }
 rine-dlls = { path = "crates/rine-dlls" }
@@ -121,3 +126,5 @@ winit = "0.30.13"
 chrono = "0.4.44"
 tauri = { version = "2.11.1", features = [] }
 tauri-build = { version = "2.6.1", features = [] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+url = "2"

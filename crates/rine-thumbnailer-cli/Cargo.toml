@@ -1,0 +1,15 @@
+[package]
+name = "rine-thumbnailer-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Freedesktop thumbnailer CLI for Windows PE executables (GNOME/Nemo)"
+
+[[bin]]
+name = "rine-thumbnailer"
+path = "src/main.rs"
+
+[dependencies]
+rine-thumbnailer-core = { workspace = true }
+clap = { workspace = true }
+url = { workspace = true }

@@ -1,0 +1,11 @@
+[package]
+name = "rine-thumbnailer-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "PE icon extraction and PNG thumbnail generation for rine thumbnailer"
+
+[dependencies]
+goblin = { workspace = true }
+image = { workspace = true }
+thiserror = { workspace = true }

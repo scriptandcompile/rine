@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=/usr/bin/rine-thumbnailer
+Exec=/usr/bin/rine-thumbnailer %u %o %s
+MimeType=application/x-ms-dos-executable;application/x-msdownload;application/vnd.microsoft.portable-executable;application/x-dosexec;

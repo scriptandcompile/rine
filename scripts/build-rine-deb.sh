@@ -109,6 +109,9 @@ install -m 0755 "$REPO_ROOT/target/release/rine" "$BIN_RINE_NODEV"
 echo "==> Building release binaries for rine-dev package (current default behavior)"
 cargo build --release -p rine -p rine-dev -p rine-config
 
+echo "==> Building rine-thumbnailer"
+cargo build --release -p rine-thumbnailer-cli
+
 echo "==> Building 32-bit helper runtime"
 cargo build --release -p rine32 --target "$TARGET_32"
 
@@ -121,8 +124,10 @@ BIN_RINE_DEV_FEATURE="$REPO_ROOT/target/release/rine"
 BIN_RINE_DEV_DASH="$REPO_ROOT/target/release/rine-dev"
 BIN_RINE_CONFIG="$REPO_ROOT/target/release/rine-config"
 BIN_RINE32="$REPO_ROOT/target/$TARGET_32/release/rine32"
+BIN_THUMBNAILER="$REPO_ROOT/target/release/rine-thumbnailer"
+THUMBNAILER_DESCRIPTOR="$REPO_ROOT/packaging/thumbnailers/rine.thumbnailer"
 
-for bin in "$BIN_RINE_NODEV" "$BIN_RINE_DEV_FEATURE" "$BIN_RINE_DEV_DASH" "$BIN_RINE_CONFIG" "$BIN_RINE32"; do
+for bin in "$BIN_RINE_NODEV" "$BIN_RINE_DEV_FEATURE" "$BIN_RINE_DEV_DASH" "$BIN_RINE_CONFIG" "$BIN_RINE32" "$BIN_THUMBNAILER"; do
     if [[ ! -x "$bin" ]]; then
         echo "error: expected binary not found: $bin" >&2
         exit 1
@@ -158,6 +163,7 @@ write_desktop_and_mime_assets() {
     mkdir -p "$pkg_dir/usr/share/icons/hicolor/scalable/apps"
     mkdir -p "$pkg_dir/usr/share/icons/hicolor/256x256/apps"
     mkdir -p "$pkg_dir/usr/share/metainfo"
+    mkdir -p "$pkg_dir/usr/share/thumbnailers"
     mkdir -p "$pkg_dir/usr/share/kio/servicemenus"
 
     install -m 0644 "$BRAND_ICON_SOURCE" "$pkg_dir/usr/share/icons/hicolor/scalable/apps/rine.svg"
@@ -166,6 +172,7 @@ write_desktop_and_mime_assets() {
     install -m 0644 "$ICON_256_RINE_SOURCE" "$pkg_dir/usr/share/icons/hicolor/256x256/apps/rine.png"
     install -m 0644 "$ICON_256_RINE_SOURCE" "$pkg_dir/usr/share/icons/hicolor/256x256/apps/rine32.png"
     install -m 0644 "$ICON_256_RINE_SOURCE" "$pkg_dir/usr/share/icons/hicolor/256x256/apps/rine-config.png"
+    install -m 0644 "$THUMBNAILER_DESCRIPTOR" "$pkg_dir/usr/share/thumbnailers/rine.thumbnailer"
 
     if [[ "$include_rine_dev_bin" == "yes" ]]; then
         install -m 0644 "$BRAND_ICON_SOURCE" "$pkg_dir/usr/share/icons/hicolor/scalable/apps/rine-dev.svg"
@@ -406,11 +413,13 @@ build_package() {
         "$pkg_dir/usr/share/metainfo" \
         "$pkg_dir/usr/share/kio/servicemenus" \
         "$pkg_dir/usr/share/mime/packages" \
+        "$pkg_dir/usr/share/thumbnailers" \
         "$pkg_dir/usr/share/doc/$package_name"
 
     install -m 0755 "$rine_bin" "$pkg_dir/usr/lib/rine/bin/rine"
     install -m 0755 "$BIN_RINE_CONFIG" "$pkg_dir/usr/bin/rine-config"
     install -m 0755 "$BIN_RINE32" "$pkg_dir/usr/lib/rine/bin/rine32"
+    install -m 0755 "$BIN_THUMBNAILER" "$pkg_dir/usr/bin/rine-thumbnailer"
     install -m 0644 "$REPO_ROOT/README.md" "$pkg_dir/usr/share/doc/$package_name/README.md"
 
     for provider_lib in "${HOST_PROVIDER_LIBS[@]}"; do
