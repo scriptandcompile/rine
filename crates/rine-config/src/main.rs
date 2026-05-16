@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod registry_ui;
+
 use rine_config_lib::{self as lib, AppConfig, VersionOption, WindowsVersion};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
@@ -178,7 +180,7 @@ fn get_registry_export(
     // Ensure the process-wide registry reflects the selected Windows version.
     rine_types::registry::reinit_registry_for_app(exe_path, version);
 
-    let export = rine_types::registry::get_registry_export_for_ui();
+    let export = registry_ui::get_registry_export_for_ui();
     serde_json::to_value(&export).map_err(|e| format!("Failed to serialize registry: {e}"))
 }
 
@@ -195,7 +197,7 @@ fn get_registry_key(
     // Ensure the process-wide registry reflects the selected Windows version.
     rine_types::registry::reinit_registry_for_app(exe_path, version);
 
-    let key = rine_types::registry::get_registry_key_for_ui(&key_path)
+    let key = registry_ui::get_registry_key_for_ui(&key_path)
         .ok_or_else(|| format!("Registry key not found: {key_path}"))?;
     serde_json::to_value(&key).map_err(|e| format!("Failed to serialize registry key: {e}"))
 }
@@ -220,7 +222,7 @@ fn update_registry_value(
     _new_value: String,
 ) -> Result<(), String> {
     // Prevent modification of locked values
-    if rine_types::registry::is_locked_registry_value(&key_path, &value_name) {
+    if registry_ui::is_locked_registry_value(&key_path, &value_name) {
         return Err(
             "This registry value is locked to the Windows version and cannot be modified"
                 .to_string(),
