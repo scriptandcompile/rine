@@ -23,6 +23,7 @@
         <button class="tab" data-tab="dll">DLL</button>
         <button class="tab" data-tab="environment">Environment</button>
         <button class="tab" data-tab="registry">Registry</button>
+        <button class="tab" data-tab="winini">WIN.INI</button>
         <button class="tab" data-tab="runner">Runner</button>
         <span id="status-msg"></span>
       </nav>
@@ -95,6 +96,29 @@
         <div id="registry-tree" class="registry-tree"></div>
       </section>
 
+      <!-- WIN.INI Tab -->
+      <section id="tab-winini" class="tab-content">
+        <div class="winini-sections">
+          <div class="field winini-field">
+            <label for="global-win-ini">Global WIN.INI</label>
+            <p class="hint" id="global-win-ini-path"></p>
+            <textarea
+              id="global-win-ini"
+              rows="8"
+            ></textarea>
+          </div>
+
+          <div class="field winini-field">
+            <label for="app-win-ini">Per-App WIN.INI</label>
+            <p class="hint" id="app-win-ini-path"></p>
+            <textarea
+              id="app-win-ini"
+              rows="8"
+            ></textarea>
+          </div>
+        </div>
+      </section>
+
       <!-- Runner Tab -->
       <section id="tab-runner" class="tab-content">
         <div class="runner-toolbar">
@@ -116,6 +140,7 @@
   <script src="tabs/config.js"></script>
   <script src="tabs/general.js"></script>
   <script src="tabs/runner.js"></script>
+  <script src="tabs/win_ini.js"></script>
   <script src="tabs/registry.js"></script>
   <script src="app.js"></script>
 </body>

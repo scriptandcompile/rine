@@ -2,7 +2,7 @@ use crate::file_kind::{is_config_toml_path, is_exe_path};
 use crate::registry_ui;
 use rine_config_lib::{self as lib, AppConfig, VersionOption, WindowsVersion};
 use rine_types::registry::RegistryValue;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
@@ -285,6 +285,86 @@ pub fn update_registry_value(
     }
 
     rine_types::registry::save_registry_for_app(exe_path, version).map(|_| ())
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WinIniScope {
+    Global,
+    App,
+}
+
+#[derive(Serialize)]
+pub struct WinIniLoadResult {
+    path: String,
+    exists: bool,
+    content: String,
+}
+
+#[tauri::command]
+pub fn load_win_ini_text(
+    exe_path: Option<String>,
+    scope: WinIniScope,
+) -> Result<WinIniLoadResult, String> {
+    let path = resolve_win_ini_path(exe_path.as_deref(), scope)?;
+    let exists = path.exists();
+    let content = if exists {
+        std::fs::read_to_string(&path)
+            .map_err(|e| format!("failed to read {}: {e}", path.display()))?
+    } else {
+        String::new()
+    };
+
+    Ok(WinIniLoadResult {
+        path: path.to_string_lossy().into_owned(),
+        exists,
+        content,
+    })
+}
+
+#[tauri::command]
+pub fn save_win_ini_text(
+    exe_path: Option<String>,
+    scope: WinIniScope,
+    content: String,
+) -> Result<String, String> {
+    let path = resolve_win_ini_path(exe_path.as_deref(), scope)?;
+
+    if content.trim().is_empty() {
+        if path.exists() {
+            std::fs::remove_file(&path)
+                .map_err(|e| format!("failed to delete {}: {e}", path.display()))?;
+        }
+        return Ok(path.to_string_lossy().into_owned());
+    }
+
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("failed to create {}: {e}", parent.display()))?;
+    }
+
+    std::fs::write(&path, content)
+        .map_err(|e| format!("failed to write {}: {e}", path.display()))?;
+
+    Ok(path.to_string_lossy().into_owned())
+}
+
+fn resolve_win_ini_path(exe_path: Option<&str>, scope: WinIniScope) -> Result<PathBuf, String> {
+    let root = rine_types::config::rine_root();
+
+    match scope {
+        WinIniScope::Global => Ok(root.join("win.ini")),
+        WinIniScope::App => {
+            let exe = exe_path.ok_or_else(|| {
+                "An executable path is required for per-app WIN.INI operations".to_string()
+            })?;
+            let exe = Path::new(exe);
+            Ok(root
+                .join("apps")
+                .join(rine_types::config::app_hash(exe))
+                .join("win.ini"))
+        }
+    }
 }
 
 fn parse_registry_value(

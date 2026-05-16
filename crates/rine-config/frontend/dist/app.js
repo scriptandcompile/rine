@@ -32,6 +32,7 @@ async function init() {
   setupMenuListeners();
   setupGeneralTab();
   setupRunnerTab();
+  setupWinIniTab();
   setupRegistryTab();
 }
 
@@ -74,6 +75,14 @@ function setupMenuListeners() {
       const registrySaved = await flushPendingRegistrySaves();
       if (!registrySaved) {
         showStatus("Registry save failed; close canceled", true);
+        return;
+      }
+    }
+
+    if (typeof flushPendingWinIniSaves === "function") {
+      const winIniSaved = await flushPendingWinIniSaves();
+      if (!winIniSaved) {
+        showStatus("WIN.INI save failed; close canceled", true);
         return;
       }
     }

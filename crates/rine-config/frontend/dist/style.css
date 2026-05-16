@@ -443,6 +443,7 @@ input[type="checkbox"] {
 
 .registry-tree {
   flex: 1;
+  min-height: 280px;
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -450,6 +451,22 @@ input[type="checkbox"] {
   padding: 12px 0;
   font-family: var(--mono);
   font-size: 12px;
+}
+
+.winini-sections {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.winini-field textarea {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .registry-node {

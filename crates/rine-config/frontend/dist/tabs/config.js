@@ -17,6 +17,9 @@ async function openConfigTarget(path) {
     if (typeof clearRegistryViewState === "function") {
       clearRegistryViewState();
     }
+    if (typeof clearWinIniViewState === "function") {
+      clearWinIniViewState();
+    }
     config = opened.config;
     exePath = opened.exe_path;
     configPath = opened.config_path;

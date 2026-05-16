@@ -7,8 +7,9 @@ mod relaunch;
 
 use commands::{
     CloseApproval, OpenPath, get_config, get_config_path, get_exe_path, get_registry_export,
-    get_registry_key, get_windows_versions, launch_exe, open_config_target, pick_folder,
-    request_app_exit, save_config_cmd, save_config_file, set_menu_enabled, update_registry_value,
+    get_registry_key, get_windows_versions, launch_exe, load_win_ini_text, open_config_target,
+    pick_folder, request_app_exit, save_config_cmd, save_config_file, save_win_ini_text,
+    set_menu_enabled, update_registry_value,
 };
 use file_kind::{is_config_toml_path, is_exe_path};
 use relaunch::{
@@ -128,6 +129,8 @@ fn main() {
             get_registry_export,
             get_registry_key,
             update_registry_value,
+            load_win_ini_text,
+            save_win_ini_text,
             request_app_exit,
         ])
         .run(tauri::generate_context!())
