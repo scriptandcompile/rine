@@ -74,7 +74,11 @@ fn align4(n: usize) -> Option<usize> {
     n.checked_add(3).map(|v| v & !3)
 }
 
-fn decode_dib(data: &[u8], _expected_w: u32, _expected_h: u32) -> Result<RgbaImage, ThumbnailError> {
+fn decode_dib(
+    data: &[u8],
+    _expected_w: u32,
+    _expected_h: u32,
+) -> Result<RgbaImage, ThumbnailError> {
     if data.len() < BIH_SIZE {
         return Err(ThumbnailError::MalformedResource);
     }
@@ -115,7 +119,11 @@ fn decode_dib(data: &[u8], _expected_w: u32, _expected_h: u32) -> Result<RgbaIma
         32 => decode_dib_32(data, header_size, width, height),
         24 => decode_dib_24(data, header_size, width, height),
         8 => {
-            let palette_count = if clr_used == 0 { 256 } else { clr_used as usize };
+            let palette_count = if clr_used == 0 {
+                256
+            } else {
+                clr_used as usize
+            };
             decode_dib_8(data, header_size, width, height, palette_count)
         }
         4 => {
@@ -194,8 +202,7 @@ fn decode_dib_24(
     let pixels = &data[pixel_start..pixel_end];
 
     // AND mask immediately follows XOR data; 1bpp, stride = ceil(width/8) aligned to 4.
-    let mask_row_stride =
-        align4(width.div_ceil(8)).ok_or(ThumbnailError::MalformedResource)?;
+    let mask_row_stride = align4(width.div_ceil(8)).ok_or(ThumbnailError::MalformedResource)?;
     let mask_bytes = mask_row_stride * height;
     let mask_end = pixel_end
         .checked_add(mask_bytes)
@@ -258,10 +265,11 @@ fn decode_dib_8(
     }
     let pixels = &data[pixel_start..pixel_end];
 
-    let mask_row_stride =
-        align4(width.div_ceil(8)).ok_or(ThumbnailError::MalformedResource)?;
+    let mask_row_stride = align4(width.div_ceil(8)).ok_or(ThumbnailError::MalformedResource)?;
     let mask_bytes = mask_row_stride * height;
-    let mask_end = pixel_end.checked_add(mask_bytes).ok_or(ThumbnailError::MalformedResource)?;
+    let mask_end = pixel_end
+        .checked_add(mask_bytes)
+        .ok_or(ThumbnailError::MalformedResource)?;
     let mask = if mask_end <= data.len() {
         Some(&data[pixel_end..pixel_end + mask_bytes])
     } else {
@@ -324,10 +332,11 @@ fn decode_dib_4(
     }
     let pixels = &data[pixel_start..pixel_end];
 
-    let mask_row_stride =
-        align4(width.div_ceil(8)).ok_or(ThumbnailError::MalformedResource)?;
+    let mask_row_stride = align4(width.div_ceil(8)).ok_or(ThumbnailError::MalformedResource)?;
     let mask_bytes = mask_row_stride * height;
-    let mask_end = pixel_end.checked_add(mask_bytes).ok_or(ThumbnailError::MalformedResource)?;
+    let mask_end = pixel_end
+        .checked_add(mask_bytes)
+        .ok_or(ThumbnailError::MalformedResource)?;
     let mask = if mask_end <= data.len() {
         Some(&data[pixel_end..pixel_end + mask_bytes])
     } else {
@@ -341,7 +350,11 @@ fn decode_dib_4(
         let mask_row_start = src_row * mask_row_stride;
         for col in 0..width {
             let byte = pixels[row_start + col / 2];
-            let nibble = if col % 2 == 0 { (byte >> 4) & 0xF } else { byte & 0xF } as usize;
+            let nibble = if col % 2 == 0 {
+                (byte >> 4) & 0xF
+            } else {
+                byte & 0xF
+            } as usize;
             if nibble >= palette_count {
                 return Err(ThumbnailError::MalformedResource);
             }

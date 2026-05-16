@@ -1,7 +1,7 @@
 //! Integration-level tests that construct minimal synthetic PE binaries and
 //! exercise the full extraction pipeline.
 
-use crate::{generate_png_thumbnail_from_bytes, ThumbnailError};
+use crate::{ThumbnailError, generate_png_thumbnail_from_bytes};
 
 mod pe_builder;
 

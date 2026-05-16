@@ -1,0 +1,4 @@
+// Icon resource for hello_puts.exe — used to verify rine-thumbnailer
+// can extract and render the rine application icon from a real PE.
+#define IDI_APP 1
+IDI_APP ICON "../rine.ico"
