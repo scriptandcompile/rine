@@ -22,6 +22,7 @@
         <button class="tab" data-tab="filesystem">Filesystem</button>
         <button class="tab" data-tab="dll">DLL</button>
         <button class="tab" data-tab="environment">Environment</button>
+        <button class="tab" data-tab="registry">Registry</button>
         <button class="tab" data-tab="runner">Runner</button>
         <span id="status-msg"></span>
       </nav>
@@ -87,6 +88,14 @@
           <div id="env-list" class="kv-list"></div>
           <button id="add-env" class="btn-small">+ Add Variable</button>
         </div>
+      </section>
+
+      <!-- Registry Tab -->
+      <section id="tab-registry" class="tab-content">
+        <div class="registry-toolbar">
+          <button id="registry-reload" class="btn-small">Reload Registry</button>
+        </div>
+        <div id="registry-tree" class="registry-tree"></div>
       </section>
 
       <!-- Runner Tab -->

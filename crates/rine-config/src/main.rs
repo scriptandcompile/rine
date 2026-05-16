@@ -162,6 +162,31 @@ fn pick_folder(start_dir: Option<String>) -> Option<String> {
         .map(|p| p.to_string_lossy().into_owned())
 }
 
+#[tauri::command]
+fn get_registry_export(_exe_path: String) -> Result<serde_json::Value, String> {
+    let export = rine_types::registry::get_registry_export_for_ui();
+    serde_json::to_value(&export).map_err(|e| format!("Failed to serialize registry: {e}"))
+}
+
+#[tauri::command]
+fn update_registry_value(
+    _exe_path: String,
+    key_path: String,
+    value_name: String,
+    _new_value: String,
+) -> Result<(), String> {
+    // Prevent modification of locked values
+    if rine_types::registry::is_locked_registry_value(&key_path, &value_name) {
+        return Err(
+            "This registry value is locked to the Windows version and cannot be modified"
+                .to_string(),
+        );
+    }
+
+    // TODO: Implement value update and save to registry JSON
+    Err("Registry update not yet implemented".to_string())
+}
+
 fn main() {
     // First non-flag argument is an open target path (.exe or config .toml).
     let open_path = std::env::args().nth(1).filter(|arg| !arg.starts_with('-'));
@@ -272,6 +297,8 @@ fn main() {
             get_windows_versions,
             launch_exe,
             pick_folder,
+            get_registry_export,
+            update_registry_value,
         ])
         .run(tauri::generate_context!())
         .expect("error while running rine-config");

@@ -416,3 +416,167 @@ input[type="checkbox"] {
   margin-bottom: 12px;
   color: var(--text-muted);
 }
+
+/* Registry Tab */
+.registry-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.registry-toolbar label {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.registry-toolbar .select-wrap {
+  flex: 0 1 auto;
+}
+
+.registry-toolbar .select-wrap select {
+  min-width: 200px;
+}
+
+.registry-tree {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  padding: 12px 0;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.registry-node {
+  margin: 0;
+}
+
+.registry-key {
+  cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.registry-key:hover {
+  background: var(--bg-hover);
+}
+
+.registry-key.expanded::before {
+  content: "▼";
+  color: var(--accent);
+}
+
+.registry-key.collapsed::before {
+  content: "▶";
+  color: var(--text-muted);
+}
+
+.registry-key-name {
+  flex: 1;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.registry-key-children {
+  display: none;
+  margin-left: 16px;
+}
+
+.registry-key.expanded .registry-key-children {
+  display: block;
+}
+
+.registry-value {
+  padding: 4px 8px;
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  border-left: 3px solid transparent;
+  margin: 0 8px;
+}
+
+.registry-value:hover {
+  background: rgba(137, 180, 250, 0.08);
+  border-left-color: var(--accent);
+}
+
+.registry-value-name {
+  flex: 0 0 200px;
+  color: var(--text);
+  word-break: break-word;
+  padding-right: 8px;
+}
+
+.registry-value-name.default {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.registry-value-type {
+  flex: 0 0 100px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  text-align: center;
+  border-right: 1px solid var(--border);
+  padding-right: 8px;
+}
+
+.registry-value-data {
+  flex: 1;
+  color: var(--success);
+  word-break: break-all;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.registry-value-data input,
+.registry-value-data select {
+  flex: 1;
+  background: var(--bg-surface);
+  color: var(--success);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.registry-value-data input:focus,
+.registry-value-data select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.2);
+}
+
+.registry-lock-badge {
+  background: rgba(243, 139, 168, 0.2);
+  color: var(--danger);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--danger);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.registry-value.locked .registry-value-data input,
+.registry-value.locked .registry-value-data select {
+  opacity: 0.6;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
