@@ -36,9 +36,6 @@ async function init() {
 }
 
 function setupMenuListeners() {
-  // Listen for File > Save from native menu
-  listen("menu-save", () => saveConfig());
-
   // Listen for exe dropped onto window (from drag-and-drop or CLI startup via backend emit)
   listen("exe-path-dropped", async (event) => {
     const droppedPath = event && typeof event.payload === "string" ? event.payload : null;
@@ -68,7 +65,32 @@ function setupMenuListeners() {
     };
     populateForm();
     markDirty();
-    showStatus("Reset to defaults (not saved yet)", false);
+    showStatus("Reset to defaults", false);
+  });
+
+  // Flush pending autosave work before allowing the app to close.
+  listen("app-close-requested", async () => {
+    if (typeof flushPendingRegistrySaves === "function") {
+      const registrySaved = await flushPendingRegistrySaves();
+      if (!registrySaved) {
+        showStatus("Registry save failed; close canceled", true);
+        return;
+      }
+    }
+
+    if (typeof flushPendingAutosave === "function") {
+      const saved = await flushPendingAutosave();
+      if (!saved) {
+        showStatus("Save failed; close canceled", true);
+        return;
+      }
+    }
+
+    try {
+      await window.__TAURI__.core.invoke("request_app_exit");
+    } catch (err) {
+      showStatus("Failed to close app: " + err, true);
+    }
   });
 }
 

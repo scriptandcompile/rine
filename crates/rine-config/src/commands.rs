@@ -1,13 +1,17 @@
 use crate::file_kind::{is_config_toml_path, is_exe_path};
 use crate::registry_ui;
 use rine_config_lib::{self as lib, AppConfig, VersionOption, WindowsVersion};
+use rine_types::registry::RegistryValue;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 
 /// Holds the exe path passed as a CLI argument.
 pub struct OpenPath(pub Mutex<Option<String>>);
+
+/// Tracks whether the next close request should be allowed.
+pub struct CloseApproval(pub Mutex<bool>);
 
 #[tauri::command]
 pub fn get_exe_path(state: State<'_, OpenPath>) -> Option<String> {
@@ -68,6 +72,24 @@ pub fn set_menu_enabled(app: AppHandle, id: String, enabled: bool) -> Result<(),
             .set_enabled(enabled)
             .map_err(|e| e.to_string())?;
     }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn request_app_exit(
+    app: AppHandle,
+    close_approval: State<'_, CloseApproval>,
+) -> Result<(), String> {
+    if let Ok(mut approved) = close_approval.0.lock() {
+        *approved = true;
+    }
+
+    if let Some(window) = app.get_webview_window("main") {
+        window.close().map_err(|e| e.to_string())?;
+    } else {
+        app.exit(0);
+    }
+
     Ok(())
 }
 
@@ -213,11 +235,18 @@ fn resolve_registry_windows_version(
 
 #[tauri::command]
 pub fn update_registry_value(
-    _exe_path: String,
+    exe_path: String,
     key_path: String,
     value_name: String,
-    _new_value: String,
+    new_value: String,
+    windows_version: Option<WindowsVersion>,
 ) -> Result<(), String> {
+    let exe_path = Path::new(&exe_path);
+    let version = resolve_registry_windows_version(exe_path, windows_version)?;
+
+    // Ensure the process-wide registry reflects the selected Windows version.
+    rine_types::registry::reinit_registry_for_app(exe_path, version);
+
     // Prevent modification of locked values.
     if registry_ui::is_locked_registry_value(&key_path, &value_name) {
         return Err(
@@ -226,6 +255,98 @@ pub fn update_registry_value(
         );
     }
 
-    // TODO: Implement value update and save to registry JSON.
-    Err("Registry update not yet implemented".to_string())
+    let (root_hkey, _root_name, subpath) = registry_ui::parse_registry_ui_path(&key_path)
+        .ok_or_else(|| format!("Invalid registry key path: {key_path}"))?;
+
+    let existing_value = rine_types::registry::registry_store()
+        .with_root(root_hkey, |root| {
+            let key = if subpath.is_empty() {
+                Some(root)
+            } else {
+                root.open_subkey(subpath)
+            };
+            key.and_then(|k| k.get_value(&value_name)).cloned()
+        })
+        .flatten();
+
+    let parsed_value = parse_registry_value(existing_value.as_ref(), &new_value)?;
+
+    let updated = rine_types::registry::registry_store().with_root_mut(root_hkey, |root| {
+        let key = if subpath.is_empty() {
+            root
+        } else {
+            root.create_subkey(subpath)
+        };
+        key.set_value(value_name, parsed_value);
+    });
+
+    if updated.is_none() {
+        return Err(format!("Unsupported registry root in path: {key_path}"));
+    }
+
+    rine_types::registry::save_registry_for_app(exe_path, version).map(|_| ())
+}
+
+fn parse_registry_value(
+    existing: Option<&RegistryValue>,
+    input: &str,
+) -> Result<RegistryValue, String> {
+    let trimmed = input.trim();
+
+    match existing {
+        Some(RegistryValue::Dword(_)) => parse_u32(trimmed)
+            .map(RegistryValue::Dword)
+            .map_err(|e| format!("Invalid REG_DWORD value '{input}': {e}")),
+        Some(RegistryValue::Qword(_)) => parse_u64(trimmed)
+            .map(RegistryValue::Qword)
+            .map_err(|e| format!("Invalid REG_QWORD value '{input}': {e}")),
+        Some(RegistryValue::Binary(_)) => parse_binary(trimmed)
+            .map(RegistryValue::Binary)
+            .map_err(|e| format!("Invalid REG_BINARY value '{input}': {e}")),
+        Some(RegistryValue::MultiString(_)) => {
+            let values = if trimmed.is_empty() {
+                Vec::new()
+            } else {
+                trimmed
+                    .split(';')
+                    .map(|part| part.trim().to_string())
+                    .filter(|part| !part.is_empty())
+                    .collect()
+            };
+            Ok(RegistryValue::MultiString(values))
+        }
+        Some(RegistryValue::ExpandString(_)) => Ok(RegistryValue::ExpandString(input.to_string())),
+        Some(RegistryValue::String(_)) | None => Ok(RegistryValue::String(input.to_string())),
+    }
+}
+
+fn parse_u32(value: &str) -> Result<u32, String> {
+    if let Some(hex) = value
+        .strip_prefix("0x")
+        .or_else(|| value.strip_prefix("0X"))
+    {
+        return u32::from_str_radix(hex, 16).map_err(|e| e.to_string());
+    }
+    value.parse::<u32>().map_err(|e| e.to_string())
+}
+
+fn parse_u64(value: &str) -> Result<u64, String> {
+    if let Some(hex) = value
+        .strip_prefix("0x")
+        .or_else(|| value.strip_prefix("0X"))
+    {
+        return u64::from_str_radix(hex, 16).map_err(|e| e.to_string());
+    }
+    value.parse::<u64>().map_err(|e| e.to_string())
+}
+
+fn parse_binary(value: &str) -> Result<Vec<u8>, String> {
+    if value.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    value
+        .split_whitespace()
+        .map(|part| u8::from_str_radix(part, 16).map_err(|e| e.to_string()))
+        .collect()
 }

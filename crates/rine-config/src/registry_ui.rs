@@ -128,7 +128,7 @@ pub fn is_locked_registry_value(key_path: &str, value_name: &str) -> bool {
     })
 }
 
-fn parse_registry_ui_path(path: &str) -> Option<(isize, &'static str, &str)> {
+pub fn parse_registry_ui_path(path: &str) -> Option<(isize, &'static str, &str)> {
     let trimmed = path.trim_matches('\\');
     if trimmed.is_empty() {
         return None;

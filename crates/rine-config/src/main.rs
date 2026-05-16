@@ -6,9 +6,9 @@ mod registry_ui;
 mod relaunch;
 
 use commands::{
-    OpenPath, get_config, get_config_path, get_exe_path, get_registry_export, get_registry_key,
-    get_windows_versions, launch_exe, open_config_target, pick_folder, save_config_cmd,
-    save_config_file, set_menu_enabled, update_registry_value,
+    CloseApproval, OpenPath, get_config, get_config_path, get_exe_path, get_registry_export,
+    get_registry_key, get_windows_versions, launch_exe, open_config_target, pick_folder,
+    request_app_exit, save_config_cmd, save_config_file, set_menu_enabled, update_registry_value,
 };
 use file_kind::{is_config_toml_path, is_exe_path};
 use relaunch::{
@@ -29,13 +29,10 @@ fn main() {
 
     tauri::Builder::default()
         .manage(OpenPath(Mutex::new(open_path)))
+        .manage(CloseApproval(Mutex::new(false)))
         .setup(|app| {
             let open_item = MenuItemBuilder::with_id("open-configuration", "Open Configuration...")
                 .accelerator("CmdOrCtrl+O")
-                .build(app)?;
-            let save_item = MenuItemBuilder::with_id("save", "Save")
-                .accelerator("CmdOrCtrl+S")
-                .enabled(false)
                 .build(app)?;
             let reset_item = MenuItemBuilder::with_id("reset", "Reset to Defaults")
                 .enabled(false)
@@ -45,8 +42,6 @@ fn main() {
                 .build(app)?;
             let file_menu = SubmenuBuilder::new(app, "File")
                 .item(&open_item)
-                .separator()
-                .item(&save_item)
                 .separator()
                 .item(&reset_item)
                 .separator()
@@ -66,9 +61,6 @@ fn main() {
                         handle.exit(0);
                     }
                 }
-                "save" => {
-                    let _ = handle.emit("menu-save", ());
-                }
                 "reset" => {
                     let _ = handle.emit("menu-reset", ());
                 }
@@ -81,41 +73,44 @@ fn main() {
             if let Some(window) = app.get_webview_window("main") {
                 let drop_handle = app.handle().clone();
                 window.on_window_event(move |event| {
-                    if let WindowEvent::DragDrop(DragDropEvent::Drop { paths, .. }) = event {
-                        if let Some(config_path) = paths.iter().find(|p| is_config_toml_path(p)) {
-                            if let Err(err) = relaunch_rine_config_with_path(config_path) {
-                                eprintln!(
-                                    "rine-config: failed to relaunch from dropped config file: {err}"
+                    match event {
+                        WindowEvent::DragDrop(DragDropEvent::Drop { paths, .. }) => {
+                            if let Some(config_path) = paths.iter().find(|p| is_config_toml_path(p)) {
+                                if let Err(err) = relaunch_rine_config_with_path(config_path) {
+                                    eprintln!(
+                                        "rine-config: failed to relaunch from dropped config file: {err}"
+                                    );
+                                    return;
+                                }
+                                drop_handle.exit(0);
+                                return;
+                            }
+
+                            if let Some(exe_path) = paths.iter().find(|p| is_exe_path(p)) {
+                                let should_relaunch = matches!(
+                                    rfd::MessageDialog::new()
+                                        .set_title("Relaunch rine-config?")
+                                        .set_description(format!(
+                                            "Relaunch rine-config with this executable?\n\n{}",
+                                            exe_path.display()
+                                        ))
+                                        .set_buttons(rfd::MessageButtons::YesNo)
+                                        .set_level(rfd::MessageLevel::Info)
+                                        .show(),
+                                    rfd::MessageDialogResult::Yes
                                 );
-                                return;
-                            }
-                            drop_handle.exit(0);
-                            return;
-                        }
+                                if !should_relaunch {
+                                    return;
+                                }
 
-                        if let Some(exe_path) = paths.iter().find(|p| is_exe_path(p)) {
-                            let should_relaunch = matches!(
-                                rfd::MessageDialog::new()
-                                    .set_title("Relaunch rine-config?")
-                                    .set_description(format!(
-                                        "Relaunch rine-config with this executable?\n\n{}",
-                                        exe_path.display()
-                                    ))
-                                    .set_buttons(rfd::MessageButtons::YesNo)
-                                    .set_level(rfd::MessageLevel::Info)
-                                    .show(),
-                                rfd::MessageDialogResult::Yes
-                            );
-                            if !should_relaunch {
-                                return;
+                                if let Err(err) = relaunch_rine_config_with_exe(exe_path) {
+                                    eprintln!("rine-config: failed to relaunch from dropped file: {err}");
+                                    return;
+                                }
+                                drop_handle.exit(0);
                             }
-
-                            if let Err(err) = relaunch_rine_config_with_exe(exe_path) {
-                                eprintln!("rine-config: failed to relaunch from dropped file: {err}");
-                                return;
-                            }
-                            drop_handle.exit(0);
                         }
+                        _ => {}
                     }
                 });
             }
@@ -136,6 +131,7 @@ fn main() {
             get_registry_export,
             get_registry_key,
             update_registry_value,
+            request_app_exit,
         ])
         .run(tauri::generate_context!())
         .expect("error while running rine-config");

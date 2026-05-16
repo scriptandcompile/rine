@@ -2,15 +2,17 @@
 
 // State management functions
 function markDirty() {
-  if (dirty) return;
-  dirty = true;
-  window.__TAURI__.core.invoke("set_menu_enabled", { id: "save", enabled: true });
+  if (!dirty) {
+    dirty = true;
+  }
   window.__TAURI__.core.invoke("set_menu_enabled", { id: "reset", enabled: true });
+  if (typeof scheduleAutosave === "function") {
+    scheduleAutosave();
+  }
 }
 
 function markClean() {
   dirty = false;
-  window.__TAURI__.core.invoke("set_menu_enabled", { id: "save", enabled: false });
   window.__TAURI__.core.invoke("set_menu_enabled", { id: "reset", enabled: false });
 }
 

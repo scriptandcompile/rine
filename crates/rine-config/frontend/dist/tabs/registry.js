@@ -2,17 +2,17 @@
 
 let registryData = null;
 let registryTree = {};
+const REGISTRY_SAVE_DEBOUNCE_MS = 500;
+const pendingRegistrySaves = new Map();
+const pendingRegistryTimers = new Map();
+const activeRegistrySavePromises = new Set();
 const LOCKED_VALUE_TOOLTIP = "This value is locked to the selected Windows version default registry data. To use a different default Windows registry profile, change General -> Windows Version.";
 
 function setupRegistryTab() {
-  const registryReloadBtn = document.getElementById("registry-reload");
-  if (registryReloadBtn) {
-    registryReloadBtn.addEventListener("click", loadRegistryData);
-  }
-
   const winVersionSel = document.getElementById("win-version");
   if (winVersionSel) {
     winVersionSel.addEventListener("change", async () => {
+      clearPendingRegistrySaves();
       registryData = null;
       registryTree = {};
 
@@ -37,6 +37,8 @@ function setupRegistryTab() {
 }
 
 async function loadRegistryData() {
+  clearPendingRegistrySaves();
+
   if (!exePath) {
     showStatus("No executable selected", true);
     return;
@@ -174,10 +176,16 @@ function renderValue(valueData, container, lockedPaths) {
     badge.title = LOCKED_VALUE_TOOLTIP;
     dataSpan.appendChild(badge);
   } else {
-    input.addEventListener("change", () => {
-      markDirty();
-      // TODO: Save to registry
-    });
+    const keyPath = container.dataset.path;
+    const onValueEdited = (immediate) => {
+      scheduleRegistryValueSave({
+        keyPath,
+        valueName: valueData.name,
+        input,
+      }, immediate);
+    };
+    input.addEventListener("input", () => onValueEdited(false));
+    input.addEventListener("change", () => onValueEdited(true));
     dataSpan.appendChild(input);
   }
 
@@ -185,6 +193,88 @@ function renderValue(valueData, container, lockedPaths) {
   valueEl.appendChild(typeSpan);
   valueEl.appendChild(dataSpan);
   container.appendChild(valueEl);
+}
+
+function registrySaveId(keyPath, valueName) {
+  return `${keyPath}\\${valueName}`;
+}
+
+function scheduleRegistryValueSave(saveRequest, immediate) {
+  const saveId = registrySaveId(saveRequest.keyPath, saveRequest.valueName);
+  pendingRegistrySaves.set(saveId, saveRequest);
+
+  const existingTimer = pendingRegistryTimers.get(saveId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+  }
+
+  if (immediate) {
+    pendingRegistryTimers.delete(saveId);
+    void startRegistryValueSave(saveId);
+    return;
+  }
+
+  const timerId = setTimeout(() => {
+    pendingRegistryTimers.delete(saveId);
+    void startRegistryValueSave(saveId);
+  }, REGISTRY_SAVE_DEBOUNCE_MS);
+  pendingRegistryTimers.set(saveId, timerId);
+}
+
+function startRegistryValueSave(saveId) {
+  const promise = persistRegistryValue(saveId);
+  activeRegistrySavePromises.add(promise);
+  promise.finally(() => {
+    activeRegistrySavePromises.delete(promise);
+  });
+  return promise;
+}
+
+async function persistRegistryValue(saveId) {
+  const saveRequest = pendingRegistrySaves.get(saveId);
+  if (!saveRequest) {
+    return true;
+  }
+
+  const latestValue = saveRequest.input.value;
+  try {
+    await window.__TAURI__.core.invoke("update_registry_value", {
+      exePath,
+      keyPath: saveRequest.keyPath,
+      valueName: saveRequest.valueName,
+      newValue: latestValue,
+      windowsVersion: getSelectedWindowsVersion(),
+    });
+
+    const currentRequest = pendingRegistrySaves.get(saveId);
+    if (currentRequest === saveRequest && currentRequest.input.value === latestValue) {
+      pendingRegistrySaves.delete(saveId);
+    }
+    return true;
+  } catch (err) {
+    showStatus("Failed to save registry value: " + err, true);
+    return false;
+  }
+}
+
+function clearPendingRegistrySaves() {
+  for (const timerId of pendingRegistryTimers.values()) {
+    clearTimeout(timerId);
+  }
+  pendingRegistryTimers.clear();
+  pendingRegistrySaves.clear();
+}
+
+async function flushPendingRegistrySaves() {
+  for (const timerId of pendingRegistryTimers.values()) {
+    clearTimeout(timerId);
+  }
+  pendingRegistryTimers.clear();
+
+  const saveIds = Array.from(pendingRegistrySaves.keys());
+  const saveResults = await Promise.all(saveIds.map((saveId) => startRegistryValueSave(saveId)));
+  const inFlightResults = await Promise.all(Array.from(activeRegistrySavePromises));
+  return saveResults.every(Boolean) && inFlightResults.every(Boolean);
 }
 
 function getRegistryKeyLabel(fullPath) {

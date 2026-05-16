@@ -1,11 +1,18 @@
 // Configuration loading, saving, and state management
 
+const AUTOSAVE_DEBOUNCE_MS = 500;
+let autosaveTimer = null;
+let autosaveInFlight = false;
+let autosaveQueued = false;
+
 async function loadConfig(path) {
   return openConfigTarget(path);
 }
 
 async function openConfigTarget(path) {
   try {
+    resetAutosaveState();
+
     const opened = await window.__TAURI__.core.invoke("open_config_target", { path });
     config = opened.config;
     exePath = opened.exe_path;
@@ -117,10 +124,66 @@ async function saveConfig() {
       throw new Error("No configuration target selected");
     }
     markClean();
-    showStatus("Saved", false);
+    return true;
   } catch (err) {
     showStatus("Save failed: " + err, true);
+    return false;
   }
+}
+
+function scheduleAutosave() {
+  if (!config) return;
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer);
+  }
+  autosaveTimer = setTimeout(() => {
+    autosaveTimer = null;
+    void runAutosave();
+  }, AUTOSAVE_DEBOUNCE_MS);
+}
+
+async function runAutosave() {
+  if (autosaveInFlight) {
+    autosaveQueued = true;
+    return;
+  }
+
+  autosaveInFlight = true;
+  try {
+    await saveConfig();
+  } finally {
+    autosaveInFlight = false;
+    if (autosaveQueued) {
+      autosaveQueued = false;
+      await runAutosave();
+    }
+  }
+}
+
+function resetAutosaveState() {
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+  }
+  autosaveInFlight = false;
+  autosaveQueued = false;
+}
+
+async function flushPendingAutosave() {
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+  }
+
+  if (dirty) {
+    await runAutosave();
+  }
+
+  while (autosaveInFlight) {
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+
+  return !dirty;
 }
 
 function observeChanges() {

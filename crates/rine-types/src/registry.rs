@@ -612,6 +612,29 @@ fn build_default_store_and_save(
     store
 }
 
+/// Persist the current process-wide registry store for an app/version.
+///
+/// This writes to the same per-app, per-version registry JSON path used by
+/// [`init_registry_for_app`] and [`reinit_registry_for_app`].
+#[cfg(feature = "config")]
+pub fn save_registry_for_app(
+    exe_path: &std::path::Path,
+    version: crate::config::WindowsVersion,
+) -> Result<std::path::PathBuf, String> {
+    let path = crate::config::registry_path(exe_path, version);
+
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("failed to create {}: {e}", parent.display()))?;
+    }
+
+    let snap = store_to_snapshot(registry_store());
+    let json = serde_json::to_string_pretty(&snap)
+        .map_err(|e| format!("failed to serialize registry snapshot: {e}"))?;
+    std::fs::write(&path, json).map_err(|e| format!("failed to write {}: {e}", path.display()))?;
+    Ok(path)
+}
+
 /// Check whether an `isize` is a predefined root handle.
 pub fn is_predefined_key(hkey: isize) -> bool {
     matches!(
@@ -651,21 +674,13 @@ pub struct RegistryKeyState {
 /// fall back to `Software\rine\IniMappings\win.ini\<section>`.
 pub fn win_ini_section_to_reg_path(section: &str) -> String {
     match section.to_ascii_lowercase().as_str() {
-        "windows" => {
-            "Software\\Microsoft\\Windows NT\\CurrentVersion\\Windows".to_string()
-        }
+        "windows" => "Software\\Microsoft\\Windows NT\\CurrentVersion\\Windows".to_string(),
         "desktop" => "Control Panel\\Desktop".to_string(),
         "colors" => "Control Panel\\Colors".to_string(),
-        "fonts" => {
-            "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts".to_string()
-        }
+        "fonts" => "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts".to_string(),
         "intl" => "Control Panel\\International".to_string(),
-        "ports" => {
-            "Software\\Microsoft\\Windows NT\\CurrentVersion\\Ports".to_string()
-        }
-        "devices" => {
-            "Software\\Microsoft\\Windows NT\\CurrentVersion\\Devices".to_string()
-        }
+        "ports" => "Software\\Microsoft\\Windows NT\\CurrentVersion\\Ports".to_string(),
+        "devices" => "Software\\Microsoft\\Windows NT\\CurrentVersion\\Devices".to_string(),
         "printerports" => {
             "Software\\Microsoft\\Windows NT\\CurrentVersion\\PrinterPorts".to_string()
         }
