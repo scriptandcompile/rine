@@ -6,7 +6,7 @@ Project website: https://scriptandcompile.github.io/rine/
 
 rine translates Windows NT syscalls to Linux syscalls in userspace and provides Rust reimplementations of core Windows DLLs, allowing you to run Windows `.exe` files directly on Linux — no virtual machine, no CPU emulator, no Wine.
 
-> **Status:** v0.1.3 — early development. Console applications with basic I/O, threading, and synchronization work. GUI and networking support are planned and initial implementation are in the works. Current Goal: Load and run the Windows 95 version of notepad.exe.
+> **Status:** v0.1.4 — early development. Console applications with basic I/O, threading, and synchronization work. GUI and networking support are planned and initial implementations are in the works. Current Goal: Load and run the Windows 95 version of notepad.exe.
 
 ## How It Works
 
@@ -41,10 +41,11 @@ rine loads x86_64 PE binaries directly into memory, resolves their imports again
 
 ## Features
 
-- **PE Loading** — Parses and loads x64 PE executables using `goblin`, maps sections via `mmap`, applies base relocations, handles TLS
-- **DLL Plugin System** — 7 core Windows DLLs reimplemented in Rust as separate crates, each implementing the `DllPlugin` trait
+- **PE Loading** — Parses and loads x64/x86 PE executables using `goblin`, maps sections via `mmap`, applies base relocations, handles TLS
+- **DLL Plugin System** — 8 core Windows DLLs reimplemented in Rust as separate crates, each implementing the `DllPlugin` trait
 - **Per-App Configuration** — TOML configs with Windows version spoofing, drive mapping, DLL overrides, and environment injection
 - **Desktop Integration** — `binfmt_misc` registration, `.desktop` MIME types, and file manager context menus
+- **Desktop Thumbnailer** - Supports Exe/COM/MSI FreeDesktop compliant thumbnail extraction. KDE coming soon!
 - **Developer Dashboard** — Real-time Tauri 2 GUI (`--dev`) showing imports, handles, threads, and events
 - **Config Editor** — Tauri 2 GUI for editing per-app settings
 
@@ -292,11 +293,11 @@ Package install behavior:
 - [x] Import resolution and DLL plugin system
 - [x] Basic kernel32, ntdll, msvcrt (console I/O, threading, sync)
 - [x] Per-app configuration system
-- [x] Desktop integration (binfmt_misc, .desktop, context menus)
+- [x] Desktop integration (binfmt_misc, .desktop, context menus, thumbnailer)
 - [x] Developer dashboard (rine-dev)
 - [x] File I/O subsystem with path translation and drive mapping
 - [x] Full threading and TLS support
-- [ ] Registry emulation
+- [x] Registry emulation (With configuration UI support).
 - [ ] GUI subsystem (user32/gdi32 → X11/Wayland)
 - [ ] Networking (ws2_32 → POSIX sockets)
 - [ ] COM/OLE, DirectX, audio

@@ -18,6 +18,18 @@ HOST_PROVIDER_LIBS=(
     "librine64_ws2_32.so"
 )
 
+HOST_PROVIDER_PACKAGES=(
+    "rine64-kernel32"
+    "rine64-msvcrt"
+    "rine64-ntdll"
+    "rine64-advapi32"
+    "rine64-gdi32"
+    "rine64-comdlg32"
+    "rine64-shell32"
+    "rine64-user32"
+    "rine64-ws2_32"
+)
+
 TARGET32_PROVIDER_PACKAGES=(
     "rine32-kernel32"
     "rine32-msvcrt"
@@ -102,6 +114,11 @@ fi
 
 echo "==> Building release binaries for plain rine (dev feature disabled)"
 cargo build --release -p rine --no-default-features -p rine-config
+
+echo "==> Building x64 dynamic providers"
+for package in "${HOST_PROVIDER_PACKAGES[@]}"; do
+    cargo build --release -p "$package"
+done
 
 BIN_RINE_NODEV="$STAGING_DIR/rine-nodev"
 install -m 0755 "$REPO_ROOT/target/release/rine" "$BIN_RINE_NODEV"
