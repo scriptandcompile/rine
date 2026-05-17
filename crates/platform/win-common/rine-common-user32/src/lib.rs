@@ -16,6 +16,7 @@ pub mod dialogs;
 pub mod menu;
 pub mod message_queue;
 pub mod message_registration;
+pub mod sound;
 pub mod window_lifecycle;
 pub mod window_text;
 

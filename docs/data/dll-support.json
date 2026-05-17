@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-16T21:28:37.541828+00:00",
+  "generatedAt": "2026-05-17T20:47:08.896240+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 56,
+      "functionCount": 57,
       "functions": [
         {
           "name": "CheckMenuItem",
@@ -3045,6 +3045,19 @@
           }
         },
         {
+          "name": "MessageBeep",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "sound::MessageBeep",
+            "source": "user32 - sound.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "sound::MessageBeep",
+            "source": "user32 - sound.rs"
+          }
+        },
+        {
           "name": "OpenClipboard",
           "x64": {
             "status": "stubbed",
@@ -3386,17 +3399,17 @@
     }
   ],
   "totals": {
-    "functions": 256,
+    "functions": 257,
     "x64": {
       "implemented": 97,
       "partial": 111,
-      "stubbed": 48,
+      "stubbed": 49,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 97,
       "partial": 111,
-      "stubbed": 48,
+      "stubbed": 49,
       "unimplemented": 0
     }
   }
