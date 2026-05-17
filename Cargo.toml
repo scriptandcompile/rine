@@ -124,7 +124,7 @@ serial_test = "3.4.0"
 rfd = "0.17.2"
 winit = "0.30.13"
 chrono = "0.4.44"
-tauri = { version = "2.11.1", features = [] }
-tauri-build = { version = "2.6.1", features = [] }
+tauri = { version = "2.11.2", features = [] }
+tauri-build = { version = "2.6.2", features = [] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 url = "2"
