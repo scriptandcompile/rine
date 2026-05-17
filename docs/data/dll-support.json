@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T20:47:08.896240+00:00",
+  "generatedAt": "2026-05-17T21:25:38.422013+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,8 +2652,21 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 57,
+      "functionCount": 58,
       "functions": [
+        {
+          "name": "CharNextA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "char_navigation::CharNextA",
+            "source": "user32 - char_navigation.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "char_navigation::CharNextA",
+            "source": "user32 - char_navigation.rs"
+          }
+        },
         {
           "name": "CheckMenuItem",
           "x64": {
@@ -3399,15 +3412,15 @@
     }
   ],
   "totals": {
-    "functions": 257,
+    "functions": 258,
     "x64": {
-      "implemented": 97,
+      "implemented": 98,
       "partial": 111,
       "stubbed": 49,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 97,
+      "implemented": 98,
       "partial": 111,
       "stubbed": 49,
       "unimplemented": 0

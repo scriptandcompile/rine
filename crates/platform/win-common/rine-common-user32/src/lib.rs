@@ -9,6 +9,7 @@
 //! in a callback for wnd_proc invocations.
 
 pub mod backend;
+pub mod char_navigation;
 pub mod class_registration;
 pub mod clipboard;
 pub mod cursor;
@@ -21,6 +22,7 @@ pub mod window_lifecycle;
 pub mod window_text;
 
 pub use class_registration::unregister_class;
+pub use char_navigation::char_next_a;
 pub use message_queue::{
     def_window_proc, dispatch_message, get_message, is_dialog_message, peek_message, post_message,
     post_quit_message, send_message, translate_message,
