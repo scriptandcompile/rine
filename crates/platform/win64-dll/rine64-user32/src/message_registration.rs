@@ -18,9 +18,9 @@ use rine_types::strings::{LPCSTR, LPCWSTR};
 /// call GetLastError.
 ///
 /// # Notes
-/// Currently, this is a stub implementation that always returns 0.
-/// We do not set `GetLastError` yet.
-#[rine_dlls::stubbed]
+/// Missing implementation features:
+/// - We do not set `GetLastError` yet.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegisterWindowMessageA(lpString: LPCSTR) -> u32 {
@@ -50,9 +50,9 @@ pub unsafe extern "win64" fn RegisterWindowMessageA(lpString: LPCSTR) -> u32 {
 /// call GetLastError.
 ///
 /// # Notes
-/// Currently, this is a stub implementation that always returns 0.
-/// We do not set `GetLastError` yet.
-#[rine_dlls::stubbed]
+/// Missing implementation features:
+/// - We do not set `GetLastError` yet.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn RegisterWindowMessageW(lpString: LPCWSTR) -> u32 {

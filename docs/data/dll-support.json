@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T21:49:53.271786+00:00",
+  "generatedAt": "2026-05-17T22:53:58.652891+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -3216,12 +3216,12 @@
         {
           "name": "RegisterWindowMessageA",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "message_registration::RegisterWindowMessageA",
             "source": "user32 - message_registration.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "message_registration::RegisterWindowMessageA",
             "source": "user32 - message_registration.rs"
           }
@@ -3229,12 +3229,12 @@
         {
           "name": "RegisterWindowMessageW",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "message_registration::RegisterWindowMessageW",
             "source": "user32 - message_registration.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "message_registration::RegisterWindowMessageW",
             "source": "user32 - message_registration.rs"
           }
@@ -3428,14 +3428,14 @@
     "functions": 259,
     "x64": {
       "implemented": 99,
-      "partial": 111,
-      "stubbed": 49,
+      "partial": 113,
+      "stubbed": 47,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 99,
-      "partial": 111,
-      "stubbed": 49,
+      "partial": 113,
+      "stubbed": 47,
       "unimplemented": 0
     }
   }
