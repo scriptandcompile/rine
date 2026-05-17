@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T21:25:38.422013+00:00",
+  "generatedAt": "2026-05-17T21:49:53.271786+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 58,
+      "functionCount": 59,
       "functions": [
         {
           "name": "CharNextA",
@@ -2664,6 +2664,19 @@
           "x86": {
             "status": "implemented",
             "symbol": "char_navigation::CharNextA",
+            "source": "user32 - char_navigation.rs"
+          }
+        },
+        {
+          "name": "CharPrevA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "char_navigation::CharPrevA",
+            "source": "user32 - char_navigation.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "char_navigation::CharPrevA",
             "source": "user32 - char_navigation.rs"
           }
         },
@@ -3412,15 +3425,15 @@
     }
   ],
   "totals": {
-    "functions": 258,
+    "functions": 259,
     "x64": {
-      "implemented": 98,
+      "implemented": 99,
       "partial": 111,
       "stubbed": 49,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 98,
+      "implemented": 99,
       "partial": 111,
       "stubbed": 49,
       "unimplemented": 0
