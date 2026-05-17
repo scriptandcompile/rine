@@ -39,7 +39,12 @@ mod tests {
     use super::*;
 
     fn entry(width: u32, bit_count: u16, id: u16) -> GroupIconEntry {
-        GroupIconEntry { width, height: width, bit_count, id }
+        GroupIconEntry {
+            width,
+            height: width,
+            bit_count,
+            id,
+        }
     }
 
     #[test]

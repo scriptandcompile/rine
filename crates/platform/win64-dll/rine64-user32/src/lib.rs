@@ -2,8 +2,8 @@
 
 use rine_dlls::{DllPlugin, as_win_api};
 
-mod class_registration;
 mod char_navigation;
+mod class_registration;
 mod clipboard;
 mod cursor;
 mod dialogs;

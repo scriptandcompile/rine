@@ -52,8 +52,7 @@ pub fn build_pe_with_single_icon(
 
     // Resource section raw data: directory tree + raw data blobs
     let dir_tree_size = 160_usize;
-    let raw_section_content_size =
-        align_up(dir_tree_size + grp_size + ico_size, FILE_ALIGN);
+    let raw_section_content_size = align_up(dir_tree_size + grp_size + ico_size, FILE_ALIGN);
 
     // Layout in the PE file:
     //   MZ header (64 bytes, with e_lfanew at offset 60)
@@ -67,21 +66,26 @@ pub fn build_pe_with_single_icon(
     let opt_size = 224_usize;
     let num_sections = 1_usize;
     let section_header_size = num_sections * 40;
-    let headers_total =
-        align_up(dos_header_size + pe_sig_size + coff_size + opt_size + section_header_size, FILE_ALIGN);
+    let headers_total = align_up(
+        dos_header_size + pe_sig_size + coff_size + opt_size + section_header_size,
+        FILE_ALIGN,
+    );
 
     let section_raw_offset = headers_total;
     let section_virtual_address = SECTION_ALIGN; // first section at 0x1000
 
     let rsrc_rva = section_virtual_address as u32;
-    let image_size = align_up(section_virtual_address + raw_section_content_size, SECTION_ALIGN);
+    let image_size = align_up(
+        section_virtual_address + raw_section_content_size,
+        SECTION_ALIGN,
+    );
 
     // Build resource section bytes
     let mut rsrc = vec![0u8; raw_section_content_size];
 
     // Offsets within the resource directory tree:
     let off_root = 0_usize;
-    let off_entry_grp = off_root + 16;  // root has 0 named, 2 id entries
+    let off_entry_grp = off_root + 16; // root has 0 named, 2 id entries
     let off_entry_ico = off_entry_grp + 8;
     let off_l2_grp = off_entry_ico + 8; // = 32
     let off_l2_grp_entry = off_l2_grp + 16;
@@ -99,13 +103,23 @@ pub fn build_pe_with_single_icon(
     // Root directory: 0 named, 2 id entries
     write_res_dir(&mut rsrc, off_root, 0, 2);
     // Root entry: type RT_GROUP_ICON=14 → subdirectory flag | off_l2_grp
-    write_res_entry(&mut rsrc, off_entry_grp, 14, 0x8000_0000 | off_l2_grp as u32);
+    write_res_entry(
+        &mut rsrc,
+        off_entry_grp,
+        14,
+        0x8000_0000 | off_l2_grp as u32,
+    );
     // Root entry: type RT_ICON=3 → subdirectory flag | off_l2_ico
     write_res_entry(&mut rsrc, off_entry_ico, 3, 0x8000_0000 | off_l2_ico as u32);
 
     // L2 for group icon: 0 named, 1 id entry
     write_res_dir(&mut rsrc, off_l2_grp, 0, 1);
-    write_res_entry(&mut rsrc, off_l2_grp_entry, 1, 0x8000_0000 | off_l3_grp as u32);
+    write_res_entry(
+        &mut rsrc,
+        off_l2_grp_entry,
+        1,
+        0x8000_0000 | off_l3_grp as u32,
+    );
 
     // L3 for group icon: 0 named, 1 id entry (lang=0)
     write_res_dir(&mut rsrc, off_l3_grp, 0, 1);
@@ -113,7 +127,12 @@ pub fn build_pe_with_single_icon(
 
     // L2 for RT_ICON: 0 named, 1 id entry
     write_res_dir(&mut rsrc, off_l2_ico, 0, 1);
-    write_res_entry(&mut rsrc, off_l2_ico_entry, 1, 0x8000_0000 | off_l3_ico as u32);
+    write_res_entry(
+        &mut rsrc,
+        off_l2_ico_entry,
+        1,
+        0x8000_0000 | off_l3_ico as u32,
+    );
 
     // L3 for RT_ICON: 0 named, 1 id entry (lang=0)
     write_res_dir(&mut rsrc, off_l3_ico, 0, 1);

@@ -22,7 +22,10 @@ use clap::Parser;
 use rine_thumbnailer_core::{ThumbnailRequest, generate_png_thumbnail};
 
 #[derive(Parser)]
-#[command(name = "rine-thumbnailer", about = "Generate PNG thumbnails for Windows PE executables")]
+#[command(
+    name = "rine-thumbnailer",
+    about = "Generate PNG thumbnails for Windows PE executables"
+)]
 struct Args {
     /// Source file: a `file://` URI or an absolute/relative path.
     input: String,
@@ -41,19 +44,28 @@ fn main() {
     let input_path = match resolve_input(&args.input) {
         Ok(p) => p,
         Err(e) => {
-            eprintln!("rine-thumbnailer: failed to resolve input {:?}: {e}", args.input);
+            eprintln!(
+                "rine-thumbnailer: failed to resolve input {:?}: {e}",
+                args.input
+            );
             std::process::exit(1);
         }
     };
 
     let size = args.size.clamp(16, 1024);
 
-    let req = ThumbnailRequest { input_path: &input_path, size_px: size };
+    let req = ThumbnailRequest {
+        input_path: &input_path,
+        size_px: size,
+    };
 
     let png = match generate_png_thumbnail(&req) {
         Ok(bytes) => bytes,
         Err(e) => {
-            eprintln!("rine-thumbnailer: thumbnail generation failed for {:?}: {e}", input_path);
+            eprintln!(
+                "rine-thumbnailer: thumbnail generation failed for {:?}: {e}",
+                input_path
+            );
             std::process::exit(1);
         }
     };

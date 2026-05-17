@@ -104,7 +104,10 @@ pub fn extract_icons(file_bytes: &[u8]) -> Result<ExtractedIcons, crate::Thumbna
     let needed_ids: Vec<u16> = group_entries.iter().map(|e| e.id).collect();
     let icons = collect_icon_data(&rsrc, &needed_ids)?;
 
-    Ok(ExtractedIcons { group_entries, icons })
+    Ok(ExtractedIcons {
+        group_entries,
+        icons,
+    })
 }
 
 // ── Locate the resource section ──────────────────────────────────────────────
@@ -188,8 +191,8 @@ fn iter_dir_entries(
     dir_offset: u32,
     mut f: impl FnMut(u32, u32) -> Result<(), crate::ThumbnailError>,
 ) -> Result<(), crate::ThumbnailError> {
-    let (num_named, num_id) = read_res_dir(rsrc, dir_offset)
-        .ok_or(crate::ThumbnailError::MalformedResource)?;
+    let (num_named, num_id) =
+        read_res_dir(rsrc, dir_offset).ok_or(crate::ThumbnailError::MalformedResource)?;
 
     let total = (num_named as usize)
         .checked_add(num_id as usize)
@@ -204,10 +207,8 @@ fn iter_dir_entries(
         let raw = rsrc
             .slice_at_dir_offset(entry_offset as u32, RES_ENTRY_SIZE)
             .ok_or(crate::ThumbnailError::MalformedResource)?;
-        let name_or_id = read_u32_le(raw, 0)
-            .ok_or(crate::ThumbnailError::MalformedResource)?;
-        let data_or_dir = read_u32_le(raw, 4)
-            .ok_or(crate::ThumbnailError::MalformedResource)?;
+        let name_or_id = read_u32_le(raw, 0).ok_or(crate::ThumbnailError::MalformedResource)?;
+        let data_or_dir = read_u32_le(raw, 4).ok_or(crate::ThumbnailError::MalformedResource)?;
         f(name_or_id, data_or_dir)?;
     }
     Ok(())
@@ -229,7 +230,8 @@ fn collect_data_entries(
                     let raw = rsrc
                         .slice_at_dir_offset(leaf, RES_DATA_ENTRY_SIZE)
                         .ok_or(crate::ThumbnailError::MalformedResource)?;
-                    let rva = read_u32_le(raw, 0).ok_or(crate::ThumbnailError::MalformedResource)?;
+                    let rva =
+                        read_u32_le(raw, 0).ok_or(crate::ThumbnailError::MalformedResource)?;
                     let size =
                         read_u32_le(raw, 4).ok_or(crate::ThumbnailError::MalformedResource)?;
                     out.push((rva, size));
@@ -297,12 +299,26 @@ fn parse_grp_icon_dir(data: &[u8]) -> Result<Vec<GroupIconEntry>, crate::Thumbna
         let off = 6 + i * entry_size;
         let raw_width = data[off];
         let raw_height = data[off + 1];
-        let width = if raw_width == 0 { 256 } else { raw_width as u32 };
-        let height = if raw_height == 0 { 256 } else { raw_height as u32 };
-        let bit_count = read_u16_le(data, off + 6).ok_or(crate::ThumbnailError::MalformedResource)?;
+        let width = if raw_width == 0 {
+            256
+        } else {
+            raw_width as u32
+        };
+        let height = if raw_height == 0 {
+            256
+        } else {
+            raw_height as u32
+        };
+        let bit_count =
+            read_u16_le(data, off + 6).ok_or(crate::ThumbnailError::MalformedResource)?;
         // bytes_in_res at off+8 is informational only; skip it.
         let id = read_u16_le(data, off + 12).ok_or(crate::ThumbnailError::MalformedResource)?;
-        entries.push(GroupIconEntry { width, height, bit_count, id });
+        entries.push(GroupIconEntry {
+            width,
+            height,
+            bit_count,
+            id,
+        });
     }
     Ok(entries)
 }
@@ -356,7 +372,10 @@ fn collect_icon_data(
                 let data = rsrc
                     .slice_at_rva(rva, size as usize)
                     .ok_or(crate::ThumbnailError::MalformedResource)?;
-                icons.push(IconData { id: icon_id, data: data.to_vec() });
+                icons.push(IconData {
+                    id: icon_id,
+                    data: data.to_vec(),
+                });
                 found = true;
                 Ok(())
             })?;
