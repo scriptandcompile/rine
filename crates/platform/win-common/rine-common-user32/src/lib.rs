@@ -8,6 +8,7 @@
 //! architecture-specific `extern "C"` / `extern "win64"` ABI shims and pass
 //! in a callback for wnd_proc invocations.
 
+pub mod accelerator;
 pub mod backend;
 pub mod char_navigation;
 pub mod class_registration;

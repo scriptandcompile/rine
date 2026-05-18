@@ -397,6 +397,88 @@ pub mod window_message {
     pub const WM_APP: u32 = 0x8000;
 }
 
+/// Accelerator flag bits used by `ACCEL.f_virt`.
+pub mod accel_flags {
+    pub const FVIRTKEY: u8 = 0x01;
+    pub const FNOINVERT: u8 = 0x02;
+    pub const FSHIFT: u8 = 0x04;
+    pub const FCONTROL: u8 = 0x08;
+    pub const FALT: u8 = 0x10;
+    pub const FLAST: u8 = 0x80;
+}
+
+/// A subset of Win32 virtual-key constants used by keyboard and accelerator paths.
+pub mod virtual_key {
+    pub const VK_BACK: u16 = 0x08;
+    pub const VK_TAB: u16 = 0x09;
+    pub const VK_RETURN: u16 = 0x0D;
+    pub const VK_SHIFT: u16 = 0x10;
+    pub const VK_CONTROL: u16 = 0x11;
+    pub const VK_MENU: u16 = 0x12;
+    pub const VK_PAUSE: u16 = 0x13;
+    pub const VK_CAPITAL: u16 = 0x14;
+    pub const VK_ESCAPE: u16 = 0x1B;
+    pub const VK_SPACE: u16 = 0x20;
+    pub const VK_PRIOR: u16 = 0x21;
+    pub const VK_NEXT: u16 = 0x22;
+    pub const VK_END: u16 = 0x23;
+    pub const VK_HOME: u16 = 0x24;
+    pub const VK_LEFT: u16 = 0x25;
+    pub const VK_UP: u16 = 0x26;
+    pub const VK_RIGHT: u16 = 0x27;
+    pub const VK_DOWN: u16 = 0x28;
+    pub const VK_INSERT: u16 = 0x2D;
+    pub const VK_DELETE: u16 = 0x2E;
+    pub const VK_0: u16 = 0x30;
+    pub const VK_1: u16 = 0x31;
+    pub const VK_2: u16 = 0x32;
+    pub const VK_3: u16 = 0x33;
+    pub const VK_4: u16 = 0x34;
+    pub const VK_5: u16 = 0x35;
+    pub const VK_6: u16 = 0x36;
+    pub const VK_7: u16 = 0x37;
+    pub const VK_8: u16 = 0x38;
+    pub const VK_9: u16 = 0x39;
+    pub const VK_A: u16 = 0x41;
+    pub const VK_B: u16 = 0x42;
+    pub const VK_C: u16 = 0x43;
+    pub const VK_D: u16 = 0x44;
+    pub const VK_E: u16 = 0x45;
+    pub const VK_F: u16 = 0x46;
+    pub const VK_G: u16 = 0x47;
+    pub const VK_H: u16 = 0x48;
+    pub const VK_I: u16 = 0x49;
+    pub const VK_J: u16 = 0x4A;
+    pub const VK_K: u16 = 0x4B;
+    pub const VK_L: u16 = 0x4C;
+    pub const VK_M: u16 = 0x4D;
+    pub const VK_N: u16 = 0x4E;
+    pub const VK_O: u16 = 0x4F;
+    pub const VK_P: u16 = 0x50;
+    pub const VK_Q: u16 = 0x51;
+    pub const VK_R: u16 = 0x52;
+    pub const VK_S: u16 = 0x53;
+    pub const VK_T: u16 = 0x54;
+    pub const VK_U: u16 = 0x55;
+    pub const VK_V: u16 = 0x56;
+    pub const VK_W: u16 = 0x57;
+    pub const VK_X: u16 = 0x58;
+    pub const VK_Y: u16 = 0x59;
+    pub const VK_Z: u16 = 0x5A;
+    pub const VK_F1: u16 = 0x70;
+    pub const VK_F2: u16 = 0x71;
+    pub const VK_F3: u16 = 0x72;
+    pub const VK_F4: u16 = 0x73;
+    pub const VK_F5: u16 = 0x74;
+    pub const VK_F6: u16 = 0x75;
+    pub const VK_F7: u16 = 0x76;
+    pub const VK_F8: u16 = 0x77;
+    pub const VK_F9: u16 = 0x78;
+    pub const VK_F10: u16 = 0x79;
+    pub const VK_F11: u16 = 0x7A;
+    pub const VK_F12: u16 = 0x7B;
+}
+
 /// Handle into the AtomTable for registered window classes.
 pub type ATOM = u16;
 
@@ -420,6 +502,15 @@ pub struct Msg {
     pub l_param: LPARAM,
     pub time: u32,
     pub pt: Point,
+}
+
+/// The Win32 `ACCEL` structure used by accelerator tables.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Accel {
+    pub f_virt: u8,
+    pub key: u16,
+    pub cmd: u16,
 }
 
 /// The Windows POINT structure.

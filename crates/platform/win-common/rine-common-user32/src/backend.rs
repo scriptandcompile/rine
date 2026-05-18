@@ -16,10 +16,13 @@ use rine_channel::{HostWindowCommand, HostWindowEvent, HostWindowSender};
 use rine_types::windows::*;
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalPosition, LogicalSize};
-use winit::event::WindowEvent;
+use winit::event::{ElementState, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
+use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::platform::pump_events::EventLoopExtPumpEvents;
 use winit::window::{Window, WindowId};
+
+use crate::accelerator;
 
 pub fn user32_debug_enabled() -> bool {
     static ENABLED: OnceLock<bool> = OnceLock::new();
@@ -299,6 +302,44 @@ impl ApplicationHandler for WinitPumpApp<'_> {
                 time: 0,
                 pt: Point::default(),
             }),
+            WindowEvent::ModifiersChanged(modifiers) => {
+                let state = modifiers.state();
+                accelerator::update_modifier_state(
+                    state.shift_key(),
+                    state.control_key(),
+                    state.alt_key(),
+                );
+            }
+            WindowEvent::KeyboardInput { event, .. } => {
+                if event.state != ElementState::Pressed {
+                    return;
+                }
+
+                let PhysicalKey::Code(code) = event.physical_key else {
+                    return;
+                };
+
+                let Some(vk) = key_code_to_virtual_key(code) else {
+                    return;
+                };
+
+                accelerator::update_modifier_key(vk, true);
+
+                let message = if accelerator::is_alt_down() {
+                    window_message::WM_SYSKEYDOWN
+                } else {
+                    window_message::WM_KEYDOWN
+                };
+
+                self.out.push(Msg {
+                    hwnd,
+                    message,
+                    w_param: vk as usize,
+                    l_param: 0,
+                    time: 0,
+                    pt: Point::default(),
+                });
+            }
             WindowEvent::RedrawRequested => self.out.push(Msg {
                 hwnd,
                 message: window_message::WM_PAINT,
@@ -310,6 +351,82 @@ impl ApplicationHandler for WinitPumpApp<'_> {
             _ => {}
         }
     }
+}
+
+fn key_code_to_virtual_key(code: KeyCode) -> Option<u16> {
+    let vk = match code {
+        KeyCode::Backspace => virtual_key::VK_BACK,
+        KeyCode::Tab => virtual_key::VK_TAB,
+        KeyCode::Enter => virtual_key::VK_RETURN,
+        KeyCode::ShiftLeft | KeyCode::ShiftRight => virtual_key::VK_SHIFT,
+        KeyCode::ControlLeft | KeyCode::ControlRight => virtual_key::VK_CONTROL,
+        KeyCode::AltLeft | KeyCode::AltRight => virtual_key::VK_MENU,
+        KeyCode::Pause => virtual_key::VK_PAUSE,
+        KeyCode::CapsLock => virtual_key::VK_CAPITAL,
+        KeyCode::Escape => virtual_key::VK_ESCAPE,
+        KeyCode::Space => virtual_key::VK_SPACE,
+        KeyCode::PageUp => virtual_key::VK_PRIOR,
+        KeyCode::PageDown => virtual_key::VK_NEXT,
+        KeyCode::End => virtual_key::VK_END,
+        KeyCode::Home => virtual_key::VK_HOME,
+        KeyCode::ArrowLeft => virtual_key::VK_LEFT,
+        KeyCode::ArrowUp => virtual_key::VK_UP,
+        KeyCode::ArrowRight => virtual_key::VK_RIGHT,
+        KeyCode::ArrowDown => virtual_key::VK_DOWN,
+        KeyCode::Insert => virtual_key::VK_INSERT,
+        KeyCode::Delete => virtual_key::VK_DELETE,
+        KeyCode::Digit0 => virtual_key::VK_0,
+        KeyCode::Digit1 => virtual_key::VK_1,
+        KeyCode::Digit2 => virtual_key::VK_2,
+        KeyCode::Digit3 => virtual_key::VK_3,
+        KeyCode::Digit4 => virtual_key::VK_4,
+        KeyCode::Digit5 => virtual_key::VK_5,
+        KeyCode::Digit6 => virtual_key::VK_6,
+        KeyCode::Digit7 => virtual_key::VK_7,
+        KeyCode::Digit8 => virtual_key::VK_8,
+        KeyCode::Digit9 => virtual_key::VK_9,
+        KeyCode::KeyA => virtual_key::VK_A,
+        KeyCode::KeyB => virtual_key::VK_B,
+        KeyCode::KeyC => virtual_key::VK_C,
+        KeyCode::KeyD => virtual_key::VK_D,
+        KeyCode::KeyE => virtual_key::VK_E,
+        KeyCode::KeyF => virtual_key::VK_F,
+        KeyCode::KeyG => virtual_key::VK_G,
+        KeyCode::KeyH => virtual_key::VK_H,
+        KeyCode::KeyI => virtual_key::VK_I,
+        KeyCode::KeyJ => virtual_key::VK_J,
+        KeyCode::KeyK => virtual_key::VK_K,
+        KeyCode::KeyL => virtual_key::VK_L,
+        KeyCode::KeyM => virtual_key::VK_M,
+        KeyCode::KeyN => virtual_key::VK_N,
+        KeyCode::KeyO => virtual_key::VK_O,
+        KeyCode::KeyP => virtual_key::VK_P,
+        KeyCode::KeyQ => virtual_key::VK_Q,
+        KeyCode::KeyR => virtual_key::VK_R,
+        KeyCode::KeyS => virtual_key::VK_S,
+        KeyCode::KeyT => virtual_key::VK_T,
+        KeyCode::KeyU => virtual_key::VK_U,
+        KeyCode::KeyV => virtual_key::VK_V,
+        KeyCode::KeyW => virtual_key::VK_W,
+        KeyCode::KeyX => virtual_key::VK_X,
+        KeyCode::KeyY => virtual_key::VK_Y,
+        KeyCode::KeyZ => virtual_key::VK_Z,
+        KeyCode::F1 => virtual_key::VK_F1,
+        KeyCode::F2 => virtual_key::VK_F2,
+        KeyCode::F3 => virtual_key::VK_F3,
+        KeyCode::F4 => virtual_key::VK_F4,
+        KeyCode::F5 => virtual_key::VK_F5,
+        KeyCode::F6 => virtual_key::VK_F6,
+        KeyCode::F7 => virtual_key::VK_F7,
+        KeyCode::F8 => virtual_key::VK_F8,
+        KeyCode::F9 => virtual_key::VK_F9,
+        KeyCode::F10 => virtual_key::VK_F10,
+        KeyCode::F11 => virtual_key::VK_F11,
+        KeyCode::F12 => virtual_key::VK_F12,
+        _ => return None,
+    };
+
+    Some(vk)
 }
 
 impl HostedBackend {

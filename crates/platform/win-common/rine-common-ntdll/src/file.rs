@@ -262,6 +262,7 @@ pub unsafe fn nt_close(handle: HANDLE) -> u32 {
         Some(HandleEntry::Semaphore(_)) => NtStatus::SUCCESS.0,
         Some(HandleEntry::Heap(_)) => NtStatus::SUCCESS.0,
         Some(HandleEntry::RegistryKey(_)) => NtStatus::SUCCESS.0,
+        Some(HandleEntry::AcceleratorTable(_)) => NtStatus::SUCCESS.0,
         Some(HandleEntry::Window(_)) => {
             // Window handles should not be closed via NtClose.
             NtStatus::INVALID_HANDLE.0

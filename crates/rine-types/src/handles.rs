@@ -17,7 +17,7 @@ use crate::registry::RegistryKeyState;
 use crate::threading::{
     EventWaitable, MutexWaitable, ProcessWaitable, SemaphoreWaitable, ThreadWaitable, Waitable,
 };
-use crate::windows::HWND;
+use crate::windows::{Accel, HWND};
 
 // ---------------------------------------------------------------------------
 // Heap state (for HeapCreate handles)
@@ -394,6 +394,34 @@ impl HMENU {
     }
 }
 
+/// A handle to an accelerator table loaded by user32.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct HACCEL(HANDLE);
+
+impl HACCEL {
+    /// The null accelerator handle (`NULL`).
+    pub const NULL: Self = Self(HANDLE::NULL);
+
+    /// Create an `HACCEL` from a raw `usize` value, for use in the Windows ABI.
+    #[inline]
+    pub const fn from_raw(value: usize) -> Self {
+        Self(HANDLE::from_raw(value as isize))
+    }
+
+    /// Get the raw `usize` value of this `HACCEL`.
+    #[inline]
+    pub const fn as_raw(self) -> usize {
+        self.0.as_raw() as usize
+    }
+
+    /// Check if this handle is `NULL` (0).
+    #[inline]
+    pub const fn is_null(self) -> bool {
+        self.0.is_null()
+    }
+}
+
 /// An HMODULE value (base address of a loaded module).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
@@ -465,6 +493,8 @@ pub enum HandleEntry {
     RegistryKey(RegistryKeyState),
     /// A window created by `CreateWindow`.
     Window(HWND),
+    /// An accelerator table loaded by `LoadAccelerators`.
+    AcceleratorTable(Vec<Accel>),
 }
 
 /// State kept for an active `FindFirstFile`/`FindNextFile` session.
@@ -626,6 +656,19 @@ impl HandleTable {
             Some(HandleEntry::Process(p)) => Some(Waitable::Process(p.clone())),
             Some(HandleEntry::Mutex(m)) => Some(Waitable::Mutex(m.clone())),
             Some(HandleEntry::Semaphore(s)) => Some(Waitable::Semaphore(s.clone())),
+            _ => None,
+        }
+    }
+
+    /// Run a closure with read-only access to an accelerator table behind a handle.
+    /// Returns `None` if the handle doesn't exist or isn't an accelerator-table handle.
+    pub fn with_accelerator_table<F, R>(&self, h: HANDLE, f: F) -> Option<R>
+    where
+        F: FnOnce(&[Accel]) -> R,
+    {
+        let inner = self.inner.lock().unwrap();
+        match inner.map.get(&h.as_raw()) {
+            Some(HandleEntry::AcceleratorTable(entries)) => Some(f(entries)),
             _ => None,
         }
     }

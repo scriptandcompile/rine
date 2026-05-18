@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T22:53:58.652891+00:00",
+  "generatedAt": "2026-05-18T01:26:58.272553+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 59,
+      "functionCount": 63,
       "functions": [
         {
           "name": "CharNextA",
@@ -3045,6 +3045,32 @@
           }
         },
         {
+          "name": "LoadAcceleratorsA",
+          "x64": {
+            "status": "partial",
+            "symbol": "accelerator::LoadAcceleratorsA",
+            "source": "user32 - accelerator.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "accelerator::LoadAcceleratorsA",
+            "source": "user32 - accelerator.rs"
+          }
+        },
+        {
+          "name": "LoadAcceleratorsW",
+          "x64": {
+            "status": "partial",
+            "symbol": "accelerator::LoadAcceleratorsW",
+            "source": "user32 - accelerator.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "accelerator::LoadAcceleratorsW",
+            "source": "user32 - accelerator.rs"
+          }
+        },
+        {
           "name": "LoadCursorA",
           "x64": {
             "status": "stubbed",
@@ -3370,6 +3396,32 @@
           }
         },
         {
+          "name": "TranslateAcceleratorA",
+          "x64": {
+            "status": "partial",
+            "symbol": "accelerator::TranslateAcceleratorA",
+            "source": "user32 - accelerator.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "accelerator::TranslateAcceleratorA",
+            "source": "user32 - accelerator.rs"
+          }
+        },
+        {
+          "name": "TranslateAcceleratorW",
+          "x64": {
+            "status": "partial",
+            "symbol": "accelerator::TranslateAcceleratorW",
+            "source": "user32 - accelerator.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "accelerator::TranslateAcceleratorW",
+            "source": "user32 - accelerator.rs"
+          }
+        },
+        {
           "name": "TranslateMessage",
           "x64": {
             "status": "stubbed",
@@ -3425,16 +3477,16 @@
     }
   ],
   "totals": {
-    "functions": 259,
+    "functions": 263,
     "x64": {
       "implemented": 99,
-      "partial": 113,
+      "partial": 117,
       "stubbed": 47,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 99,
-      "partial": 113,
+      "partial": 117,
       "stubbed": 47,
       "unimplemented": 0
     }

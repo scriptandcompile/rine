@@ -3735,6 +3735,7 @@ dependencies = [
 name = "rine-common-user32"
 version = "0.1.4"
 dependencies = [
+ "goblin",
  "rine-channel",
  "rine-types",
  "tracing",

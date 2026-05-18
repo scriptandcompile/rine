@@ -204,6 +204,7 @@ pub fn close_handle(handle: HANDLE) -> BOOL {
         Some(HandleEntry::Heap(_)) => BOOL::TRUE,
         Some(HandleEntry::RegistryKey(_)) => BOOL::TRUE,
         Some(HandleEntry::FindData(_)) => BOOL::TRUE,
+        Some(HandleEntry::AcceleratorTable(_)) => BOOL::TRUE,
         Some(HandleEntry::File(object)) => {
             let Some(fd) = std_handle_to_fd(object as u32) else {
                 return BOOL::FALSE;
