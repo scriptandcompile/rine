@@ -104,3 +104,55 @@ pub unsafe fn rtl_get_version(info: *mut OsVersionInfoW) -> u32 {
 
     0 // STATUS_SUCCESS
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn init_with_valid_string() {
+        let wide: Vec<u16> = "Hello\0".encode_utf16().collect();
+        let mut us = UnicodeString::empty();
+        unsafe {
+            rtl_init_unicode_string(&mut us, wide.as_ptr());
+        }
+        assert_eq!(us.length, 10); // "Hello" = 10 bytes
+        assert_eq!(us.maximum_length, 12); // 10 + 2 (one extra u16)
+        assert_eq!(us.buffer, wide.as_ptr() as *mut u16);
+    }
+
+    #[test]
+    fn init_with_empty_string() {
+        let wide: Vec<u16> = "\0".encode_utf16().collect();
+        let mut us = UnicodeString::empty();
+        unsafe {
+            rtl_init_unicode_string(&mut us, wide.as_ptr());
+        }
+        assert_eq!(us.length, 0);
+        assert_eq!(us.maximum_length, 2); // 0 + 2
+    }
+
+    #[test]
+    fn init_with_null_destination() {
+        let wide: Vec<u16> = "test\0".encode_utf16().collect();
+        unsafe {
+            rtl_init_unicode_string(core::ptr::null_mut(), wide.as_ptr());
+        }
+        // no crash = success
+    }
+
+    #[test]
+    fn init_with_null_source_sets_empty() {
+        let mut us = UnicodeString {
+            length: 0xFFFF,
+            maximum_length: 0xFFFF,
+            buffer: core::ptr::null_mut(),
+        };
+        unsafe {
+            rtl_init_unicode_string(&mut us, core::ptr::null());
+        }
+        assert_eq!(us.length, 0);
+        assert_eq!(us.maximum_length, 0);
+        assert!(us.buffer.is_null());
+    }
+}
