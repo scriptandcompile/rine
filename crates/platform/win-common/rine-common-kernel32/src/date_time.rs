@@ -28,7 +28,7 @@ pub unsafe fn get_local_time(mut lp_system_time: LPSYSTEMTIME) {
         // We have to clamp to 999 because timestamp_subsec_millis can go larger than 999 in leap second scenarios,
         // but the win32 api expects a value between 0 and 999.
         lp_system_time.as_mut().wMilliseconds =
-            std::cmp::max(local_now.timestamp_subsec_millis(), 999) as u16;
+            std::cmp::min(local_now.timestamp_subsec_millis(), 999) as u16;
         lp_system_time.as_mut().wMinute = local_now.minute() as u16;
         lp_system_time.as_mut().wMonth = local_now.month() as u16;
         lp_system_time.as_mut().wSecond = local_now.second() as u16;
@@ -100,4 +100,105 @@ pub unsafe fn get_date_format_a(
     _cch_date: u32,
 ) -> u32 {
     0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{Datelike, Local, Timelike};
+
+    fn to_lp(st: &mut SYSTEMTIME) -> LPSYSTEMTIME {
+        unsafe { std::mem::transmute::<*mut SYSTEMTIME, LPSYSTEMTIME>(st as *mut SYSTEMTIME) }
+    }
+
+    fn null_lp() -> LPSYSTEMTIME {
+        unsafe { std::mem::transmute::<*mut SYSTEMTIME, LPSYSTEMTIME>(std::ptr::null_mut()) }
+    }
+
+    #[test]
+    fn null_pointer_does_not_crash() {
+        unsafe { get_local_time(null_lp()) };
+    }
+
+    #[test]
+    fn fills_all_fields_to_current_time() {
+        let mut st: SYSTEMTIME = unsafe { std::mem::zeroed() };
+        unsafe { get_local_time(to_lp(&mut st)) };
+
+        let now = Local::now();
+
+        assert_eq!(st.wYear, now.year() as u16);
+        assert_eq!(st.wMonth, now.month() as u16);
+        assert_eq!(st.wDay, now.day() as u16);
+        assert_eq!(st.wDayOfWeek, now.weekday().number_from_sunday() as u16);
+        assert_eq!(st.wHour, now.hour() as u16);
+        assert_eq!(st.wMinute, now.minute() as u16);
+        assert_eq!(st.wSecond, now.second() as u16);
+        // wMilliseconds may differ by 1 from now.timestamp_subsec_millis() due to
+        // clock granularity between the call inside get_local_time and our read here.
+        let actual_ms = now.timestamp_subsec_millis();
+        let diff = (st.wMilliseconds as u32).abs_diff(actual_ms);
+        assert!(
+            diff <= 2,
+            "wMilliseconds should be close to actual subsec millis, \
+             got {diff} away (st={}, now={actual_ms})",
+            st.wMilliseconds
+        );
+    }
+
+    #[test]
+    fn milliseconds_within_valid_range() {
+        let mut st: SYSTEMTIME = unsafe { std::mem::zeroed() };
+        unsafe { get_local_time(to_lp(&mut st)) };
+
+        assert!(
+            st.wMilliseconds <= 999,
+            "wMilliseconds must not exceed 999, got {}",
+            st.wMilliseconds
+        );
+    }
+
+    #[test]
+    fn year_is_reasonable() {
+        let mut st: SYSTEMTIME = unsafe { std::mem::zeroed() };
+        unsafe { get_local_time(to_lp(&mut st)) };
+
+        assert!(
+            st.wYear >= 2020 && st.wYear <= 2100,
+            "year should be in a reasonable range, got {}",
+            st.wYear
+        );
+    }
+
+    #[test]
+    fn month_is_one_to_twelve() {
+        let mut st: SYSTEMTIME = unsafe { std::mem::zeroed() };
+        unsafe { get_local_time(to_lp(&mut st)) };
+
+        assert!(
+            (1..=12).contains(&st.wMonth),
+            "month must be 1-12, got {}",
+            st.wMonth
+        );
+    }
+
+    #[test]
+    fn day_is_one_to_thirtyone() {
+        let mut st: SYSTEMTIME = unsafe { std::mem::zeroed() };
+        unsafe { get_local_time(to_lp(&mut st)) };
+
+        assert!(
+            (1..=31).contains(&st.wDay),
+            "day must be 1-31, got {}",
+            st.wDay
+        );
+    }
+
+    #[test]
+    fn hour_is_zero_to_twentythree() {
+        let mut st: SYSTEMTIME = unsafe { std::mem::zeroed() };
+        unsafe { get_local_time(to_lp(&mut st)) };
+
+        assert!(st.wHour <= 23, "hour must be 0-23, got {}", st.wHour);
+    }
 }
