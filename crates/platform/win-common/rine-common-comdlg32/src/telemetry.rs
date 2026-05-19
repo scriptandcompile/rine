@@ -146,3 +146,149 @@ fn windows_theme_label(theme: WindowsTheme) -> &'static str {
         WindowsTheme::Auto => "windows_version",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // -- theme_label --
+
+    #[test]
+    fn theme_label_maps_native() {
+        assert_eq!(theme_label(DialogTheme::Native), "native");
+    }
+
+    #[test]
+    fn theme_label_maps_windows() {
+        assert_eq!(theme_label(DialogTheme::Windows), "windows");
+    }
+
+    // -- backend_label --
+
+    #[test]
+    fn backend_label_maps_gtk() {
+        assert_eq!(backend_label(NativeBackend::Gtk), "gtk");
+    }
+
+    #[test]
+    fn backend_label_maps_kde() {
+        assert_eq!(backend_label(NativeBackend::Kde), "kde");
+    }
+
+    #[test]
+    fn backend_label_maps_portal() {
+        assert_eq!(backend_label(NativeBackend::Portal), "portal");
+    }
+
+    // -- windows_theme_label --
+
+    #[test]
+    fn windows_theme_label_maps_xp() {
+        assert_eq!(windows_theme_label(WindowsTheme::Xp), "xp");
+    }
+
+    #[test]
+    fn windows_theme_label_maps_win7() {
+        assert_eq!(windows_theme_label(WindowsTheme::Win7), "win7");
+    }
+
+    #[test]
+    fn windows_theme_label_maps_win10() {
+        assert_eq!(windows_theme_label(WindowsTheme::Win10), "win10");
+    }
+
+    #[test]
+    fn windows_theme_label_maps_win11() {
+        assert_eq!(windows_theme_label(WindowsTheme::Win11), "win11");
+    }
+
+    #[test]
+    fn windows_theme_label_maps_auto() {
+        assert_eq!(windows_theme_label(WindowsTheme::Auto), "windows_version");
+    }
+
+    // -- build_open_fields --
+
+    #[test]
+    fn build_open_fields_native_portal_auto() {
+        let policy = DialogPolicy {
+            theme: DialogTheme::Native,
+            native_backend: NativeBackend::Portal,
+            windows_theme: WindowsTheme::Auto,
+        };
+        let fields = build_open_fields("GetOpenFileNameW", policy);
+        assert_eq!(fields.api, "GetOpenFileNameW");
+        assert_eq!(fields.theme, "native");
+        assert_eq!(fields.native_backend, "portal");
+        assert_eq!(fields.windows_theme, "windows_version");
+    }
+
+    #[test]
+    fn build_open_fields_windows_gtk_win10() {
+        let policy = DialogPolicy {
+            theme: DialogTheme::Windows,
+            native_backend: NativeBackend::Gtk,
+            windows_theme: WindowsTheme::Win10,
+        };
+        let fields = build_open_fields("GetSaveFileNameA", policy);
+        assert_eq!(fields.api, "GetSaveFileNameA");
+        assert_eq!(fields.theme, "windows");
+        assert_eq!(fields.native_backend, "gtk");
+        assert_eq!(fields.windows_theme, "win10");
+    }
+
+    // -- build_result_fields --
+
+    #[test]
+    fn build_result_fields_success_with_path() {
+        let policy = DialogPolicy {
+            theme: DialogTheme::Native,
+            native_backend: NativeBackend::Kde,
+            windows_theme: WindowsTheme::Win11,
+        };
+        let fields = build_result_fields(
+            "GetOpenFileNameA",
+            policy,
+            true,
+            0,
+            Some("/home/user/file.txt".into()),
+        );
+        assert_eq!(fields.api, "GetOpenFileNameA");
+        assert_eq!(fields.theme, "native");
+        assert_eq!(fields.native_backend, "kde");
+        assert_eq!(fields.windows_theme, "win11");
+        assert!(fields.success);
+        assert_eq!(fields.error_code, 0);
+        assert_eq!(fields.selected_path, Some("/home/user/file.txt".into()));
+    }
+
+    #[test]
+    fn build_result_fields_failure_no_path() {
+        let policy = DialogPolicy {
+            theme: DialogTheme::Windows,
+            native_backend: NativeBackend::Gtk,
+            windows_theme: WindowsTheme::Xp,
+        };
+        let fields = build_result_fields("GetSaveFileNameW", policy, false, 1223, None);
+        assert_eq!(fields.api, "GetSaveFileNameW");
+        assert_eq!(fields.theme, "windows");
+        assert_eq!(fields.native_backend, "gtk");
+        assert_eq!(fields.windows_theme, "xp");
+        assert!(!fields.success);
+        assert_eq!(fields.error_code, 1223);
+        assert_eq!(fields.selected_path, None);
+    }
+
+    #[test]
+    fn build_result_fields_success_no_path() {
+        let policy = DialogPolicy {
+            theme: DialogTheme::Native,
+            native_backend: NativeBackend::Portal,
+            windows_theme: WindowsTheme::Win7,
+        };
+        let fields = build_result_fields("GetOpenFileNameW", policy, true, 0, None);
+        assert!(fields.success);
+        assert_eq!(fields.error_code, 0);
+        assert_eq!(fields.selected_path, None);
+    }
+}
