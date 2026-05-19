@@ -193,6 +193,23 @@ pub unsafe extern "win64" fn ShowWindow(hwnd: HWND, cmd_show: i32) -> BOOL {
     common::show_window(hwnd, cmd_show)
 }
 
+/// Determine whether a window is minimized (iconic).
+///
+/// # Arguments
+/// * `hwnd`: Handle of the window to query.
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime.
+///
+/// # Returns
+/// `BOOL::TRUE` if the window is minimized, `BOOL::FALSE` otherwise.
+#[rine_dlls::implemented]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn IsIconic(hwnd: HWND) -> BOOL {
+    common::is_iconic(hwnd)
+}
+
 /// Request a WM_PAINT for the given window.
 ///
 /// # Arguments

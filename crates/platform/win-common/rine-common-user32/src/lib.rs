@@ -29,7 +29,7 @@ pub use message_queue::{
     post_quit_message, send_message, translate_message,
 };
 pub use message_registration::register_window_message;
-pub use window_lifecycle::{create_window, destroy_window, show_window, update_window};
+pub use window_lifecycle::{create_window, destroy_window, is_iconic, show_window, update_window};
 pub use window_text::{
     get_window_text_a, get_window_text_length, get_window_text_w, set_window_text,
 };

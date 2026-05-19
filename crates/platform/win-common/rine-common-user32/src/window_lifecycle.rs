@@ -122,10 +122,22 @@ pub fn show_window(hwnd: HWND, cmd_show: i32) -> BOOL {
     WINDOW_MANAGER.update_window(hwnd, |state| match cmd_show {
         show_window::SW_HIDE => state.visible = false,
         show_window::SW_SHOWNORMAL | show_window::SW_SHOW | show_window::SW_SHOWDEFAULT => {
-            state.visible = true
-        }
-        show_window::SW_SHOWMINIMIZED | show_window::SW_SHOWMAXIMIZED | show_window::SW_RESTORE => {
             state.visible = true;
+            state.style &= !(window_style::WS_MINIMIZE | window_style::WS_MAXIMIZE);
+        }
+        show_window::SW_SHOWMINIMIZED => {
+            state.visible = true;
+            state.style |= window_style::WS_MINIMIZE;
+            state.style &= !window_style::WS_MAXIMIZE;
+        }
+        show_window::SW_SHOWMAXIMIZED => {
+            state.visible = true;
+            state.style |= window_style::WS_MAXIMIZE;
+            state.style &= !window_style::WS_MINIMIZE;
+        }
+        show_window::SW_RESTORE => {
+            state.visible = true;
+            state.style &= !(window_style::WS_MINIMIZE | window_style::WS_MAXIMIZE);
         }
         _ => {}
     });
@@ -147,6 +159,16 @@ pub fn show_window(hwnd: HWND, cmd_show: i32) -> BOOL {
     });
 
     if was_visible { BOOL::TRUE } else { BOOL::FALSE }
+}
+
+/// Determine whether a window is minimized (iconic).
+///
+/// Returns `BOOL::TRUE` if the window has the `WS_MINIMIZE` style, `BOOL::FALSE` otherwise.
+pub fn is_iconic(hwnd: HWND) -> BOOL {
+    match WINDOW_MANAGER.get_window(hwnd) {
+        Some(state) if state.style & window_style::WS_MINIMIZE != 0 => BOOL::TRUE,
+        _ => BOOL::FALSE,
+    }
 }
 
 /// Request a WM_PAINT for the given window.
@@ -178,4 +200,86 @@ pub fn update_window(hwnd: HWND) -> BOOL {
     });
 
     BOOL::TRUE
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{LazyLock, Mutex};
+
+    static TEST_MUTEX: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+
+    fn test_window_state() -> WindowState {
+        WindowState {
+            hwnd: HWND::NULL,
+            class_name: "test-window-lifecycle".to_owned(),
+            title: "".to_owned(),
+            style: 0,
+            ex_style: 0,
+            rect: Rect::default(),
+            client_rect: Rect::default(),
+            parent: HWND::NULL,
+            visible: true,
+            enabled: true,
+            wnd_proc: 0,
+            user_data: 0,
+        }
+    }
+
+    #[test]
+    fn is_iconic_returns_false_for_normal_window() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let hwnd = WINDOW_MANAGER.create_window(test_window_state());
+        assert_eq!(is_iconic(hwnd), BOOL::FALSE);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn is_iconic_returns_true_for_minimized_window() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let state = WindowState {
+            style: window_style::WS_MINIMIZE,
+            ..test_window_state()
+        };
+        let hwnd = WINDOW_MANAGER.create_window(state);
+        assert_eq!(is_iconic(hwnd), BOOL::TRUE);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn is_iconic_returns_false_for_maximized_window() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let state = WindowState {
+            style: window_style::WS_MAXIMIZE,
+            ..test_window_state()
+        };
+        let hwnd = WINDOW_MANAGER.create_window(state);
+        assert_eq!(is_iconic(hwnd), BOOL::FALSE);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn is_iconic_returns_false_for_invalid_hwnd() {
+        assert_eq!(is_iconic(HWND::NULL), BOOL::FALSE);
+    }
+
+    #[test]
+    fn is_iconic_returns_true_after_show_window_minimized() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let hwnd = WINDOW_MANAGER.create_window(test_window_state());
+        show_window(hwnd, show_window::SW_SHOWMINIMIZED);
+        assert_eq!(is_iconic(hwnd), BOOL::TRUE);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn is_iconic_returns_false_after_restore_from_minimized() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let hwnd = WINDOW_MANAGER.create_window(test_window_state());
+        show_window(hwnd, show_window::SW_SHOWMINIMIZED);
+        assert_eq!(is_iconic(hwnd), BOOL::TRUE);
+        show_window(hwnd, show_window::SW_RESTORE);
+        assert_eq!(is_iconic(hwnd), BOOL::FALSE);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
 }

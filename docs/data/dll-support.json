@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T01:26:58.272553+00:00",
+  "generatedAt": "2026-05-19T21:35:05.779695+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 63,
+      "functionCount": 64,
       "functions": [
         {
           "name": "CharNextA",
@@ -3042,6 +3042,19 @@
             "status": "stubbed",
             "symbol": "message_queue::IsDialogMessageA",
             "source": "user32 - message_queue.rs"
+          }
+        },
+        {
+          "name": "IsIconic",
+          "x64": {
+            "status": "implemented",
+            "symbol": "window_lifecycle::IsIconic",
+            "source": "user32 - window_lifecycle.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "window_lifecycle::IsIconic",
+            "source": "user32 - window_lifecycle.rs"
           }
         },
         {
@@ -3477,15 +3490,15 @@
     }
   ],
   "totals": {
-    "functions": 263,
+    "functions": 264,
     "x64": {
-      "implemented": 99,
+      "implemented": 100,
       "partial": 117,
       "stubbed": 47,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 99,
+      "implemented": 100,
       "partial": 117,
       "stubbed": 47,
       "unimplemented": 0
