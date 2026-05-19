@@ -66,3 +66,86 @@ pub(crate) struct GdiState {
     pub(crate) dcs: HashMap<usize, DeviceContext>,
     pub(crate) objects: HashMap<usize, GdiObject>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bitmap_new_valid_dimensions() {
+        let bm = Bitmap::new(32, 16).expect("valid dimensions should create bitmap");
+        assert_eq!(bm.width, 32);
+        assert_eq!(bm.height, 16);
+        assert_eq!(bm.pixels.len(), 32 * 16);
+        assert!(bm.pixels.iter().all(|&p| p == 0));
+    }
+
+    #[test]
+    fn bitmap_new_zero_width() {
+        assert!(Bitmap::new(0, 16).is_none());
+    }
+
+    #[test]
+    fn bitmap_new_zero_height() {
+        assert!(Bitmap::new(32, 0).is_none());
+    }
+
+    #[test]
+    fn bitmap_new_negative_width() {
+        assert!(Bitmap::new(-1, 16).is_none());
+    }
+
+    #[test]
+    fn bitmap_new_negative_height() {
+        assert!(Bitmap::new(32, -8).is_none());
+    }
+
+    #[test]
+    fn bitmap_new_one_by_one() {
+        let bm = Bitmap::new(1, 1).expect("1x1 is valid");
+        assert_eq!(bm.width, 1);
+        assert_eq!(bm.height, 1);
+        assert_eq!(bm.pixels.len(), 1);
+    }
+
+    #[test]
+    fn bitmap_index_valid() {
+        let bm = Bitmap::new(10, 10).unwrap();
+        assert_eq!(bm.index(0, 0), Some(0));
+        assert_eq!(bm.index(5, 3), Some(3 * 10 + 5));
+        assert_eq!(bm.index(9, 9), Some(9 * 10 + 9));
+    }
+
+    #[test]
+    fn bitmap_index_negative_x() {
+        let bm = Bitmap::new(10, 10).unwrap();
+        assert!(bm.index(-1, 0).is_none());
+    }
+
+    #[test]
+    fn bitmap_index_negative_y() {
+        let bm = Bitmap::new(10, 10).unwrap();
+        assert!(bm.index(0, -5).is_none());
+    }
+
+    #[test]
+    fn bitmap_index_out_of_bounds_x() {
+        let bm = Bitmap::new(10, 10).unwrap();
+        assert!(bm.index(10, 0).is_none());
+        assert!(bm.index(15, 0).is_none());
+    }
+
+    #[test]
+    fn bitmap_index_out_of_bounds_y() {
+        let bm = Bitmap::new(10, 10).unwrap();
+        assert!(bm.index(0, 10).is_none());
+        assert!(bm.index(0, 20).is_none());
+    }
+
+    #[test]
+    fn bitmap_index_out_of_bounds_both() {
+        let bm = Bitmap::new(10, 10).unwrap();
+        assert!(bm.index(10, 10).is_none());
+        assert!(bm.index(100, 100).is_none());
+    }
+}
