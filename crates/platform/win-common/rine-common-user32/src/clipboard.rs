@@ -142,7 +142,10 @@ mod tests {
     fn try_from_valid_values() {
         assert_eq!(ClipboardFormat::try_from(1), Ok(ClipboardFormat::Text));
         assert_eq!(ClipboardFormat::try_from(2), Ok(ClipboardFormat::Bitmap));
-        assert_eq!(ClipboardFormat::try_from(3), Ok(ClipboardFormat::MetafilePict));
+        assert_eq!(
+            ClipboardFormat::try_from(3),
+            Ok(ClipboardFormat::MetafilePict)
+        );
         assert_eq!(ClipboardFormat::try_from(4), Ok(ClipboardFormat::Sylk));
         assert_eq!(ClipboardFormat::try_from(5), Ok(ClipboardFormat::Dif));
         assert_eq!(ClipboardFormat::try_from(6), Ok(ClipboardFormat::Tiff));
@@ -152,8 +155,14 @@ mod tests {
         assert_eq!(ClipboardFormat::try_from(10), Ok(ClipboardFormat::Pendata));
         assert_eq!(ClipboardFormat::try_from(11), Ok(ClipboardFormat::Riff));
         assert_eq!(ClipboardFormat::try_from(12), Ok(ClipboardFormat::Wave));
-        assert_eq!(ClipboardFormat::try_from(13), Ok(ClipboardFormat::UnicodeText));
-        assert_eq!(ClipboardFormat::try_from(14), Ok(ClipboardFormat::EnhancedMetafile));
+        assert_eq!(
+            ClipboardFormat::try_from(13),
+            Ok(ClipboardFormat::UnicodeText)
+        );
+        assert_eq!(
+            ClipboardFormat::try_from(14),
+            Ok(ClipboardFormat::EnhancedMetafile)
+        );
         assert_eq!(ClipboardFormat::try_from(15), Ok(ClipboardFormat::HDrop));
         assert_eq!(ClipboardFormat::try_from(16), Ok(ClipboardFormat::Locale));
     }
