@@ -111,3 +111,251 @@ pub unsafe fn get_version_ex_a(info: *mut OsVersionInfoA) -> BOOL {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rine_types::os::{
+        set_version, VersionInfo, VER_NT_WORKSTATION, VER_PLATFORM_WIN32_NT, VER_SUITE_SINGLEUSERTS,
+    };
+    use std::sync::{LazyLock, Mutex};
+
+    static TEST_MUTEX: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+
+    fn pack(major: u32, minor: u32, build: u32) -> u32 {
+        let lo = (major & 0xFF) | ((minor & 0xFF) << 8);
+        let hi = build & 0xFFFF;
+        (hi << 16) | lo
+    }
+
+    // ── get_version_packed ──────────────────────────────────────
+
+    #[test]
+    fn packed_default_version() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        set_version(VersionInfo::default());
+        assert_eq!(get_version_packed(), pack(10, 0, 22631));
+    }
+
+    #[test]
+    fn packed_windows_7() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        set_version(VersionInfo {
+            major: 6,
+            minor: 1,
+            build: 7601,
+            ..Default::default()
+        });
+        assert_eq!(get_version_packed(), pack(6, 1, 7601));
+    }
+
+    #[test]
+    fn packed_windows_xp() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        set_version(VersionInfo {
+            major: 5,
+            minor: 1,
+            build: 2600,
+            ..Default::default()
+        });
+        assert_eq!(get_version_packed(), pack(5, 1, 2600));
+    }
+
+    #[test]
+    fn packed_all_zeros() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        set_version(VersionInfo {
+            major: 0,
+            minor: 0,
+            build: 0,
+            ..Default::default()
+        });
+        assert_eq!(get_version_packed(), 0);
+    }
+
+    #[test]
+    fn packed_max_values() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        set_version(VersionInfo {
+            major: 255,
+            minor: 255,
+            build: 65535,
+            ..Default::default()
+        });
+        assert_eq!(get_version_packed(), 0xFFFFFFFF);
+    }
+
+    // ── get_version_ex_w ────────────────────────────────────────
+
+    #[test]
+    fn version_ex_w_null() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        assert_eq!(unsafe { get_version_ex_w(std::ptr::null_mut()) }, BOOL::FALSE);
+    }
+
+    #[test]
+    fn version_ex_w_base() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        set_version(VersionInfo {
+            major: 10,
+            minor: 0,
+            build: 22631,
+            csd_version: "Test".into(),
+            ..Default::default()
+        });
+        let mut info = OsVersionInfoW {
+            os_version_info_size: SIZEOF_OSVERSIONINFOW,
+            major_version: 0,
+            minor_version: 0,
+            build_number: 0,
+            platform_id: 0,
+            csd_version: [0u16; 128],
+        };
+        let result = unsafe { get_version_ex_w(&mut info) };
+        assert_eq!(result, BOOL::TRUE);
+        assert_eq!(info.major_version, 10);
+        assert_eq!(info.minor_version, 0);
+        assert_eq!(info.build_number, 22631);
+        assert_eq!(info.platform_id, VER_PLATFORM_WIN32_NT);
+        assert_eq!(
+            String::from_utf16_lossy(&info.csd_version).trim_end_matches('\0'),
+            "Test"
+        );
+    }
+
+    #[test]
+    fn version_ex_w_extended() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        set_version(VersionInfo {
+            major: 10,
+            minor: 0,
+            build: 22631,
+            service_pack_major: 1,
+            service_pack_minor: 2,
+            ..Default::default()
+        });
+        let mut info = OsVersionInfoExW {
+            os_version_info_size: SIZEOF_OSVERSIONINFOEXW,
+            major_version: 0,
+            minor_version: 0,
+            build_number: 0,
+            platform_id: 0,
+            csd_version: [0u16; 128],
+            service_pack_major: 0,
+            service_pack_minor: 0,
+            suite_mask: 0,
+            product_type: 0,
+            reserved: 0,
+        };
+        let ptr = &mut info as *mut OsVersionInfoExW as *mut OsVersionInfoW;
+        let result = unsafe { get_version_ex_w(ptr) };
+        assert_eq!(result, BOOL::TRUE);
+        assert_eq!(info.major_version, 10);
+        assert_eq!(info.minor_version, 0);
+        assert_eq!(info.build_number, 22631);
+        assert_eq!(info.service_pack_major, 1);
+        assert_eq!(info.service_pack_minor, 2);
+        assert_eq!(info.suite_mask, VER_SUITE_SINGLEUSERTS);
+        assert_eq!(info.product_type, VER_NT_WORKSTATION);
+    }
+
+    #[test]
+    fn version_ex_w_invalid_size() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let mut info = OsVersionInfoW {
+            os_version_info_size: 0xDEAD,
+            major_version: 0,
+            minor_version: 0,
+            build_number: 0,
+            platform_id: 0,
+            csd_version: [0u16; 128],
+        };
+        assert_eq!(unsafe { get_version_ex_w(&mut info) }, BOOL::FALSE);
+    }
+
+    // ── get_version_ex_a ────────────────────────────────────────
+
+    #[test]
+    fn version_ex_a_null() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        assert_eq!(unsafe { get_version_ex_a(std::ptr::null_mut()) }, BOOL::FALSE);
+    }
+
+    #[test]
+    fn version_ex_a_base() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        set_version(VersionInfo {
+            major: 6,
+            minor: 1,
+            build: 7601,
+            csd_version: "SP1".into(),
+            ..Default::default()
+        });
+        let mut info = OsVersionInfoA {
+            os_version_info_size: SIZEOF_OSVERSIONINFOA,
+            major_version: 0,
+            minor_version: 0,
+            build_number: 0,
+            platform_id: 0,
+            csd_version: [0u8; 128],
+        };
+        let result = unsafe { get_version_ex_a(&mut info) };
+        assert_eq!(result, BOOL::TRUE);
+        assert_eq!(info.major_version, 6);
+        assert_eq!(info.minor_version, 1);
+        assert_eq!(info.build_number, 7601);
+        assert_eq!(info.platform_id, VER_PLATFORM_WIN32_NT);
+        let csd = String::from_utf8_lossy(&info.csd_version);
+        assert_eq!(csd.trim_end_matches('\0'), "SP1");
+    }
+
+    #[test]
+    fn version_ex_a_extended() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        set_version(VersionInfo {
+            major: 6,
+            minor: 1,
+            build: 7601,
+            service_pack_major: 1,
+            service_pack_minor: 0,
+            ..Default::default()
+        });
+        let mut info = OsVersionInfoExA {
+            os_version_info_size: SIZEOF_OSVERSIONINFOEXA,
+            major_version: 0,
+            minor_version: 0,
+            build_number: 0,
+            platform_id: 0,
+            csd_version: [0u8; 128],
+            service_pack_major: 0,
+            service_pack_minor: 0,
+            suite_mask: 0,
+            product_type: 0,
+            reserved: 0,
+        };
+        let ptr = &mut info as *mut OsVersionInfoExA as *mut OsVersionInfoA;
+        let result = unsafe { get_version_ex_a(ptr) };
+        assert_eq!(result, BOOL::TRUE);
+        assert_eq!(info.major_version, 6);
+        assert_eq!(info.minor_version, 1);
+        assert_eq!(info.build_number, 7601);
+        assert_eq!(info.service_pack_major, 1);
+        assert_eq!(info.service_pack_minor, 0);
+        assert_eq!(info.suite_mask, VER_SUITE_SINGLEUSERTS);
+        assert_eq!(info.product_type, VER_NT_WORKSTATION);
+    }
+
+    #[test]
+    fn version_ex_a_invalid_size() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let mut info = OsVersionInfoA {
+            os_version_info_size: 0xDEAD,
+            major_version: 0,
+            minor_version: 0,
+            build_number: 0,
+            platform_id: 0,
+            csd_version: [0u8; 128],
+        };
+        assert_eq!(unsafe { get_version_ex_a(&mut info) }, BOOL::FALSE);
+    }
+}
