@@ -108,9 +108,15 @@ mod tests {
     #[test]
     fn map_lctype_to_string_returns_correct_language() {
         assert_eq!(map_lctype_to_string(LOCALE_ILANGUAGE), Some("0409"));
-        assert_eq!(map_lctype_to_string(LOCALE_SLANGUAGE), Some("English (United States)"));
+        assert_eq!(
+            map_lctype_to_string(LOCALE_SLANGUAGE),
+            Some("English (United States)")
+        );
         assert_eq!(map_lctype_to_string(LOCALE_SABBREVLANGNAME), Some("ENU"));
-        assert_eq!(map_lctype_to_string(LOCALE_SNATIVELANGNAME), Some("English"));
+        assert_eq!(
+            map_lctype_to_string(LOCALE_SNATIVELANGNAME),
+            Some("English")
+        );
     }
 
     #[test]
@@ -118,8 +124,14 @@ mod tests {
         assert_eq!(map_lctype_to_string(LOCALE_ICOUNTRY), Some("1"));
         assert_eq!(map_lctype_to_string(LOCALE_SCOUNTRY), Some("United States"));
         assert_eq!(map_lctype_to_string(LOCALE_SABBREVCTRYNAME), Some("USA"));
-        assert_eq!(map_lctype_to_string(LOCALE_SNATIVECTRYNAME), Some("United States"));
-        assert_eq!(map_lctype_to_string(LOCALE_SENGCOUNTRY), Some("United States"));
+        assert_eq!(
+            map_lctype_to_string(LOCALE_SNATIVECTRYNAME),
+            Some("United States")
+        );
+        assert_eq!(
+            map_lctype_to_string(LOCALE_SENGCOUNTRY),
+            Some("United States")
+        );
     }
 
     #[test]
@@ -144,7 +156,10 @@ mod tests {
 
     #[test]
     fn map_lctype_to_string_returns_correct_ansi_code_page() {
-        assert_eq!(map_lctype_to_string(LOCALE_IDEFAULTANSICODEPAGE), Some("1252"));
+        assert_eq!(
+            map_lctype_to_string(LOCALE_IDEFAULTANSICODEPAGE),
+            Some("1252")
+        );
     }
 
     #[test]

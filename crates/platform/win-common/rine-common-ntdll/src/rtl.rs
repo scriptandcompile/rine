@@ -108,9 +108,7 @@ pub unsafe fn rtl_get_version(info: *mut OsVersionInfoW) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rine_types::os::{
-        VER_NT_WORKSTATION, VER_PLATFORM_WIN32_NT, VER_SUITE_SINGLEUSERTS,
-    };
+    use rine_types::os::{VER_NT_WORKSTATION, VER_PLATFORM_WIN32_NT, VER_SUITE_SINGLEUSERTS};
 
     #[test]
     fn rtl_get_version_with_osversioninfow() {
@@ -145,7 +143,8 @@ mod tests {
             product_type: 0,
             reserved: 0xFF,
         };
-        let ret = unsafe { rtl_get_version(core::ptr::addr_of_mut!(info).cast::<OsVersionInfoW>()) };
+        let ret =
+            unsafe { rtl_get_version(core::ptr::addr_of_mut!(info).cast::<OsVersionInfoW>()) };
         assert_eq!(ret, 0);
         assert_eq!(info.major_version, 10);
         assert_eq!(info.minor_version, 0);
@@ -173,7 +172,8 @@ mod tests {
             product_type: 0,
             reserved: 0xFF,
         };
-        let ret = unsafe { rtl_get_version(core::ptr::addr_of_mut!(info).cast::<OsVersionInfoW>()) };
+        let ret =
+            unsafe { rtl_get_version(core::ptr::addr_of_mut!(info).cast::<OsVersionInfoW>()) };
         assert_eq!(ret, 0);
         assert_eq!(info.os_version_info_size, SIZEOF_OSVERSIONINFOEXW);
         assert_eq!(info.major_version, 10);
