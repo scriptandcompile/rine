@@ -10,3 +10,6 @@ rine-types = { workspace = true }
 
 [target.'cfg(target_pointer_width = "64")'.dependencies]
 rfd = { workspace = true }
+
+[dev-dependencies]
+serial_test = { workspace = true }

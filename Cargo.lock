@@ -3684,6 +3684,7 @@ version = "0.1.4"
 dependencies = [
  "rfd",
  "rine-types",
+ "serial_test",
 ]
 
 [[package]]

@@ -89,3 +89,222 @@ fn resolve_windows_theme() -> WindowsTheme {
         _ => WindowsTheme::Auto,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serial_test::serial;
+
+    fn set_env(k: &str, v: &str) {
+        unsafe { std::env::set_var(k, v) };
+    }
+
+    fn remove_env(k: &str) {
+        unsafe { std::env::remove_var(k) };
+    }
+
+    // ── resolve_dialog_policy ──────────────────────────────────────
+
+    #[test]
+    #[serial]
+    fn default_policy_is_native_portal_auto() {
+        remove_env("RINE_DIALOG_THEME");
+        remove_env("RINE_DIALOG_MODE");
+        remove_env("RINE_DIALOG_NATIVE_BACKEND");
+        remove_env("RINE_DIALOG_EMULATED_THEME");
+        let policy = resolve_dialog_policy();
+        assert_eq!(policy.theme, DialogTheme::Native);
+        assert_eq!(policy.native_backend, NativeBackend::Portal);
+        assert_eq!(policy.windows_theme, WindowsTheme::Auto);
+    }
+
+    // ── resolve_theme ──────────────────────────────────────────────
+
+    #[test]
+    #[serial]
+    fn theme_windows_via_primary_env() {
+        set_env("RINE_DIALOG_THEME", "windows");
+        remove_env("RINE_DIALOG_MODE");
+        assert_eq!(resolve_theme(), DialogTheme::Windows);
+    }
+
+    #[test]
+    #[serial]
+    fn theme_windows_via_primary_env_emulated_alias() {
+        set_env("RINE_DIALOG_THEME", "emulated");
+        remove_env("RINE_DIALOG_MODE");
+        assert_eq!(resolve_theme(), DialogTheme::Windows);
+    }
+
+    #[test]
+    #[serial]
+    fn theme_windows_is_case_insensitive() {
+        set_env("RINE_DIALOG_THEME", "WINDOWS");
+        remove_env("RINE_DIALOG_MODE");
+        assert_eq!(resolve_theme(), DialogTheme::Windows);
+    }
+
+    #[test]
+    #[serial]
+    fn theme_native_for_unrecognized_primary_value() {
+        set_env("RINE_DIALOG_THEME", "other");
+        remove_env("RINE_DIALOG_MODE");
+        assert_eq!(resolve_theme(), DialogTheme::Native);
+    }
+
+    #[test]
+    #[serial]
+    fn theme_windows_via_backward_compat_env() {
+        remove_env("RINE_DIALOG_THEME");
+        set_env("RINE_DIALOG_MODE", "windows");
+        assert_eq!(resolve_theme(), DialogTheme::Windows);
+    }
+
+    #[test]
+    #[serial]
+    fn theme_windows_via_backward_compat_emulated() {
+        remove_env("RINE_DIALOG_THEME");
+        set_env("RINE_DIALOG_MODE", "emulated");
+        assert_eq!(resolve_theme(), DialogTheme::Windows);
+    }
+
+    #[test]
+    #[serial]
+    fn theme_native_when_only_backward_compat_is_unrecognized() {
+        remove_env("RINE_DIALOG_THEME");
+        set_env("RINE_DIALOG_MODE", "other");
+        assert_eq!(resolve_theme(), DialogTheme::Native);
+    }
+
+    #[test]
+    #[serial]
+    fn theme_primary_takes_precedence_over_backward_compat() {
+        set_env("RINE_DIALOG_THEME", "native");
+        set_env("RINE_DIALOG_MODE", "windows");
+        assert_eq!(resolve_theme(), DialogTheme::Native);
+    }
+
+    #[test]
+    #[serial]
+    fn theme_native_when_no_env_set() {
+        remove_env("RINE_DIALOG_THEME");
+        remove_env("RINE_DIALOG_MODE");
+        assert_eq!(resolve_theme(), DialogTheme::Native);
+    }
+
+    // ── resolve_native_backend ─────────────────────────────────────
+
+    #[test]
+    #[serial]
+    fn native_backend_gtk() {
+        set_env("RINE_DIALOG_NATIVE_BACKEND", "gtk");
+        assert_eq!(resolve_native_backend(), NativeBackend::Gtk);
+    }
+
+    #[test]
+    #[serial]
+    fn native_backend_kde() {
+        set_env("RINE_DIALOG_NATIVE_BACKEND", "kde");
+        assert_eq!(resolve_native_backend(), NativeBackend::Kde);
+    }
+
+    #[test]
+    #[serial]
+    fn native_backend_portal() {
+        set_env("RINE_DIALOG_NATIVE_BACKEND", "portal");
+        assert_eq!(resolve_native_backend(), NativeBackend::Portal);
+    }
+
+    #[test]
+    #[serial]
+    fn native_backend_auto_defaults_to_portal() {
+        set_env("RINE_DIALOG_NATIVE_BACKEND", "auto");
+        assert_eq!(resolve_native_backend(), NativeBackend::Portal);
+    }
+
+    #[test]
+    #[serial]
+    fn native_backend_unrecognized_defaults_to_portal() {
+        set_env("RINE_DIALOG_NATIVE_BACKEND", "unknown");
+        assert_eq!(resolve_native_backend(), NativeBackend::Portal);
+    }
+
+    #[test]
+    #[serial]
+    fn native_backend_case_insensitive() {
+        set_env("RINE_DIALOG_NATIVE_BACKEND", "GTK");
+        assert_eq!(resolve_native_backend(), NativeBackend::Gtk);
+    }
+
+    #[test]
+    #[serial]
+    fn native_backend_default_when_unset() {
+        remove_env("RINE_DIALOG_NATIVE_BACKEND");
+        assert_eq!(resolve_native_backend(), NativeBackend::Portal);
+    }
+
+    // ── resolve_windows_theme ──────────────────────────────────────
+
+    #[test]
+    #[serial]
+    fn windows_theme_xp() {
+        set_env("RINE_DIALOG_EMULATED_THEME", "xp");
+        assert_eq!(resolve_windows_theme(), WindowsTheme::Xp);
+    }
+
+    #[test]
+    #[serial]
+    fn windows_theme_win7() {
+        set_env("RINE_DIALOG_EMULATED_THEME", "win7");
+        assert_eq!(resolve_windows_theme(), WindowsTheme::Win7);
+    }
+
+    #[test]
+    #[serial]
+    fn windows_theme_win10() {
+        set_env("RINE_DIALOG_EMULATED_THEME", "win10");
+        assert_eq!(resolve_windows_theme(), WindowsTheme::Win10);
+    }
+
+    #[test]
+    #[serial]
+    fn windows_theme_win11() {
+        set_env("RINE_DIALOG_EMULATED_THEME", "win11");
+        assert_eq!(resolve_windows_theme(), WindowsTheme::Win11);
+    }
+
+    #[test]
+    #[serial]
+    fn windows_theme_auto_explicit() {
+        set_env("RINE_DIALOG_EMULATED_THEME", "auto");
+        assert_eq!(resolve_windows_theme(), WindowsTheme::Auto);
+    }
+
+    #[test]
+    #[serial]
+    fn windows_theme_windows_version() {
+        set_env("RINE_DIALOG_EMULATED_THEME", "windows_version");
+        assert_eq!(resolve_windows_theme(), WindowsTheme::Auto);
+    }
+
+    #[test]
+    #[serial]
+    fn windows_theme_unrecognized_defaults_to_auto() {
+        set_env("RINE_DIALOG_EMULATED_THEME", "unknown");
+        assert_eq!(resolve_windows_theme(), WindowsTheme::Auto);
+    }
+
+    #[test]
+    #[serial]
+    fn windows_theme_case_insensitive() {
+        set_env("RINE_DIALOG_EMULATED_THEME", "XP");
+        assert_eq!(resolve_windows_theme(), WindowsTheme::Xp);
+    }
+
+    #[test]
+    #[serial]
+    fn windows_theme_default_when_unset() {
+        remove_env("RINE_DIALOG_EMULATED_THEME");
+        assert_eq!(resolve_windows_theme(), WindowsTheme::Auto);
+    }
+}
