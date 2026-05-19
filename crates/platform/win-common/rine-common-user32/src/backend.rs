@@ -719,3 +719,140 @@ pub fn pump_backend_messages() {
         }
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use winit::keyboard::KeyCode;
+
+    // -- key_code_to_virtual_key --
+
+    #[test]
+    fn maps_backspace() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::Backspace), Some(0x08));
+    }
+
+    #[test]
+    fn maps_tab() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::Tab), Some(0x09));
+    }
+
+    #[test]
+    fn maps_enter() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::Enter), Some(0x0D));
+    }
+
+    #[test]
+    fn maps_escape() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::Escape), Some(0x1B));
+    }
+
+    #[test]
+    fn maps_space() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::Space), Some(0x20));
+    }
+
+    #[test]
+    fn maps_caps_lock() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::CapsLock), Some(0x14));
+    }
+
+    #[test]
+    fn maps_modifier_keys() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::ShiftLeft), Some(0x10));
+        assert_eq!(key_code_to_virtual_key(KeyCode::ShiftRight), Some(0x10));
+        assert_eq!(key_code_to_virtual_key(KeyCode::ControlLeft), Some(0x11));
+        assert_eq!(key_code_to_virtual_key(KeyCode::ControlRight), Some(0x11));
+        assert_eq!(key_code_to_virtual_key(KeyCode::AltLeft), Some(0x12));
+        assert_eq!(key_code_to_virtual_key(KeyCode::AltRight), Some(0x12));
+    }
+
+    #[test]
+    fn maps_navigation_keys() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::PageUp), Some(0x21));
+        assert_eq!(key_code_to_virtual_key(KeyCode::PageDown), Some(0x22));
+        assert_eq!(key_code_to_virtual_key(KeyCode::End), Some(0x23));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Home), Some(0x24));
+        assert_eq!(key_code_to_virtual_key(KeyCode::ArrowLeft), Some(0x25));
+        assert_eq!(key_code_to_virtual_key(KeyCode::ArrowUp), Some(0x26));
+        assert_eq!(key_code_to_virtual_key(KeyCode::ArrowRight), Some(0x27));
+        assert_eq!(key_code_to_virtual_key(KeyCode::ArrowDown), Some(0x28));
+    }
+
+    #[test]
+    fn maps_insert_delete() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::Insert), Some(0x2D));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Delete), Some(0x2E));
+    }
+
+    #[test]
+    fn maps_pause() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::Pause), Some(0x13));
+    }
+
+    #[test]
+    fn maps_digit_keys() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::Digit0), Some(0x30));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Digit1), Some(0x31));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Digit2), Some(0x32));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Digit3), Some(0x33));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Digit4), Some(0x34));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Digit5), Some(0x35));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Digit6), Some(0x36));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Digit7), Some(0x37));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Digit8), Some(0x38));
+        assert_eq!(key_code_to_virtual_key(KeyCode::Digit9), Some(0x39));
+    }
+
+    #[test]
+    fn maps_letter_keys() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::KeyA), Some(0x41));
+        assert_eq!(key_code_to_virtual_key(KeyCode::KeyB), Some(0x42));
+        assert_eq!(key_code_to_virtual_key(KeyCode::KeyZ), Some(0x5A));
+    }
+
+    #[test]
+    fn maps_function_keys() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::F1), Some(0x70));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F2), Some(0x71));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F3), Some(0x72));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F4), Some(0x73));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F5), Some(0x74));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F6), Some(0x75));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F7), Some(0x76));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F8), Some(0x77));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F9), Some(0x78));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F10), Some(0x79));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F11), Some(0x7A));
+        assert_eq!(key_code_to_virtual_key(KeyCode::F12), Some(0x7B));
+    }
+
+    #[test]
+    fn unmapped_key_returns_none() {
+        assert_eq!(key_code_to_virtual_key(KeyCode::F13), None);
+        assert_eq!(key_code_to_virtual_key(KeyCode::AudioVolumeUp), None);
+        assert_eq!(key_code_to_virtual_key(KeyCode::BrowserHome), None);
+        assert_eq!(key_code_to_virtual_key(KeyCode::MediaPlayPause), None);
+    }
+
+    // -- panic_payload_message --
+
+    #[test]
+    fn panic_payload_extracts_string() {
+        let msg = "oops".to_string();
+        assert_eq!(panic_payload_message(&msg), "oops");
+    }
+
+    #[test]
+    fn panic_payload_extracts_static_str() {
+        assert_eq!(panic_payload_message(&"static error"), "static error");
+    }
+
+    #[test]
+    fn panic_payload_fallback_for_other_types() {
+        assert_eq!(
+            panic_payload_message(&42),
+            "unknown backend initialization panic"
+        );
+    }
+}
