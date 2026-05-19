@@ -100,3 +100,57 @@ fn map_lctype_to_string(lc_type: u32) -> Option<&'static str> {
         _ => None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn map_lctype_to_string_returns_correct_language() {
+        assert_eq!(map_lctype_to_string(LOCALE_ILANGUAGE), Some("0409"));
+        assert_eq!(map_lctype_to_string(LOCALE_SLANGUAGE), Some("English (United States)"));
+        assert_eq!(map_lctype_to_string(LOCALE_SABBREVLANGNAME), Some("ENU"));
+        assert_eq!(map_lctype_to_string(LOCALE_SNATIVELANGNAME), Some("English"));
+    }
+
+    #[test]
+    fn map_lctype_to_string_returns_correct_country() {
+        assert_eq!(map_lctype_to_string(LOCALE_ICOUNTRY), Some("1"));
+        assert_eq!(map_lctype_to_string(LOCALE_SCOUNTRY), Some("United States"));
+        assert_eq!(map_lctype_to_string(LOCALE_SABBREVCTRYNAME), Some("USA"));
+        assert_eq!(map_lctype_to_string(LOCALE_SNATIVECTRYNAME), Some("United States"));
+        assert_eq!(map_lctype_to_string(LOCALE_SENGCOUNTRY), Some("United States"));
+    }
+
+    #[test]
+    fn map_lctype_to_string_returns_correct_formatting() {
+        assert_eq!(map_lctype_to_string(LOCALE_SLIST), Some(","));
+        assert_eq!(map_lctype_to_string(LOCALE_SDECIMAL), Some("."));
+        assert_eq!(map_lctype_to_string(LOCALE_STHOUSAND), Some(","));
+        assert_eq!(map_lctype_to_string(LOCALE_SCURRENCY), Some("$"));
+        assert_eq!(map_lctype_to_string(LOCALE_SINTLSYMBOL), Some("USD"));
+        assert_eq!(map_lctype_to_string(LOCALE_ICURRDIGITS), Some("2"));
+    }
+
+    #[test]
+    fn map_lctype_to_string_returns_correct_date_time() {
+        assert_eq!(map_lctype_to_string(LOCALE_SSHORTDATE), Some("M/d/yyyy"));
+        assert_eq!(map_lctype_to_string(LOCALE_IDATE), Some("0"));
+        assert_eq!(map_lctype_to_string(LOCALE_ITIME), Some("0"));
+        assert_eq!(map_lctype_to_string(LOCALE_S1159), Some("AM"));
+        assert_eq!(map_lctype_to_string(LOCALE_S2359), Some("PM"));
+        assert_eq!(map_lctype_to_string(LOCALE_STIMEFORMAT), Some("h:mm:ss tt"));
+    }
+
+    #[test]
+    fn map_lctype_to_string_returns_correct_ansi_code_page() {
+        assert_eq!(map_lctype_to_string(LOCALE_IDEFAULTANSICODEPAGE), Some("1252"));
+    }
+
+    #[test]
+    fn map_lctype_to_string_returns_none_for_unknown() {
+        assert_eq!(map_lctype_to_string(0), None);
+        assert_eq!(map_lctype_to_string(0xFFFF_FFFF), None);
+        assert_eq!(map_lctype_to_string(0x0000_0000), None);
+    }
+}
