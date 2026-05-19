@@ -35,7 +35,7 @@ static ENV_BLOCK_W: OnceLock<SyncPtr> = OnceLock::new();
 /// - The returned block is intentionally leaked for process lifetime instead of reference-counted/freeable per call.
 /// - Pointer ownership validation by `FreeEnvironmentStringsA/W` is not enforced at this layer.
 #[unsafe(no_mangle)]
-pub unsafe fn get_environment_strings() -> *mut u8 {
+pub unsafe fn get_environment_strings_a() -> *mut u8 {
     ENV_BLOCK_W
         .get_or_init(|| {
             let block = rine_types::environment::build_wide_block();
@@ -347,4 +347,409 @@ pub unsafe fn expand_environment_strings_w(src: LPCWSTR, dst: *mut u16, dst_size
         *dst.add(encoded.len()) = 0;
     }
     needed
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn to_lpcstr(s: &[u8]) -> LPCSTR {
+        unsafe { std::mem::transmute(s.as_ptr()) }
+    }
+
+    fn to_lpcwstr(s: &[u16]) -> LPCWSTR {
+        unsafe { std::mem::transmute(s.as_ptr()) }
+    }
+
+    fn set_var(name: &str, value: Option<&str>) {
+        rine_types::environment::set_var(name, value);
+    }
+
+    // ── get_environment_variable_a ─────────────────────────────────
+
+    #[test]
+    fn get_env_var_a_found() {
+        set_var("RINE_K32_GET_A", Some("hello_world"));
+
+        let name = b"RINE_K32_GET_A\0";
+        let mut buf = [0u8; 64];
+        let result = unsafe { get_environment_variable_a(to_lpcstr(name), buf.as_mut_ptr(), 64) };
+
+        assert_eq!(result, 11);
+        assert_eq!(&buf[..11], b"hello_world");
+        assert_eq!(buf[11], 0);
+
+        set_var("RINE_K32_GET_A", None);
+    }
+
+    #[test]
+    fn get_env_var_a_not_found() {
+        let name = b"RINE_K32_NONEXISTENT_XYZ\0";
+        let mut buf = [0u8; 64];
+        let result = unsafe { get_environment_variable_a(to_lpcstr(name), buf.as_mut_ptr(), 64) };
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn get_env_var_a_null_name() {
+        let mut buf = [0u8; 64];
+        let result = unsafe { get_environment_variable_a(LPCSTR::NULL, buf.as_mut_ptr(), 64) };
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn get_env_var_a_buffer_too_small() {
+        set_var("RINE_K32_GET_SMALL", Some("abcdefghij"));
+
+        let name = b"RINE_K32_GET_SMALL\0";
+        let mut buf = [0u8; 4];
+        let result = unsafe { get_environment_variable_a(to_lpcstr(name), buf.as_mut_ptr(), 4) };
+
+        assert_eq!(result, 11);
+
+        set_var("RINE_K32_GET_SMALL", None);
+    }
+
+    #[test]
+    fn get_env_var_a_null_dst_returns_needed() {
+        set_var("RINE_K32_GET_NDST", Some("data"));
+
+        let name = b"RINE_K32_GET_NDST\0";
+        let result =
+            unsafe { get_environment_variable_a(to_lpcstr(name), std::ptr::null_mut(), 0) };
+
+        assert_eq!(result, 5);
+
+        set_var("RINE_K32_GET_NDST", None);
+    }
+
+    // ── get_environment_variable_w ─────────────────────────────────
+
+    #[test]
+    fn get_env_var_w_found() {
+        set_var("RINE_K32_GET_W", Some("wide_val"));
+
+        let name: Vec<u16> = "RINE_K32_GET_W\0".encode_utf16().collect();
+        let mut buf = [0u16; 64];
+        let result = unsafe { get_environment_variable_w(to_lpcwstr(&name), buf.as_mut_ptr(), 64) };
+
+        assert_eq!(result, 8);
+
+        let expected: Vec<u16> = "wide_val\0".encode_utf16().collect();
+        assert_eq!(&buf[..9], &expected[..]);
+
+        set_var("RINE_K32_GET_W", None);
+    }
+
+    #[test]
+    fn get_env_var_w_not_found() {
+        let name: Vec<u16> = "RINE_K32_NONEXISTENT_W\0".encode_utf16().collect();
+        let mut buf = [0u16; 64];
+        let result = unsafe { get_environment_variable_w(to_lpcwstr(&name), buf.as_mut_ptr(), 64) };
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn get_env_var_w_null_name() {
+        let mut buf = [0u16; 64];
+        let result = unsafe { get_environment_variable_w(LPCWSTR::NULL, buf.as_mut_ptr(), 64) };
+        assert_eq!(result, 0);
+    }
+
+    // ── set_environment_variable_a ─────────────────────────────────
+
+    #[test]
+    fn set_env_var_a_set() {
+        let name = b"RINE_K32_SET_A\0";
+        let value = b"set_value\0";
+
+        let result = unsafe { set_environment_variable_a(to_lpcstr(name), to_lpcstr(value)) };
+        assert_eq!(result, BOOL::TRUE);
+
+        assert_eq!(
+            rine_types::environment::get_var("RINE_K32_SET_A"),
+            Some("set_value".to_string())
+        );
+
+        set_var("RINE_K32_SET_A", None);
+    }
+
+    #[test]
+    fn set_env_var_a_delete() {
+        set_var("RINE_K32_SET_DEL", Some("delete_me"));
+
+        let name = b"RINE_K32_SET_DEL\0";
+        let result = unsafe { set_environment_variable_a(to_lpcstr(name), LPCSTR::NULL) };
+        assert_eq!(result, BOOL::TRUE);
+        assert!(rine_types::environment::get_var("RINE_K32_SET_DEL").is_none());
+    }
+
+    #[test]
+    fn set_env_var_a_null_name() {
+        let value = b"val\0";
+        let result = unsafe { set_environment_variable_a(LPCSTR::NULL, to_lpcstr(value)) };
+        assert_eq!(result, BOOL::FALSE);
+    }
+
+    // ── set_environment_variable_w ─────────────────────────────────
+
+    #[test]
+    fn set_env_var_w_set() {
+        let name: Vec<u16> = "RINE_K32_SET_W\0".encode_utf16().collect();
+        let value: Vec<u16> = "w_set_val\0".encode_utf16().collect();
+
+        let result = unsafe { set_environment_variable_w(to_lpcwstr(&name), to_lpcwstr(&value)) };
+        assert_eq!(result, BOOL::TRUE);
+
+        assert_eq!(
+            rine_types::environment::get_var("RINE_K32_SET_W"),
+            Some("w_set_val".to_string())
+        );
+
+        set_var("RINE_K32_SET_W", None);
+    }
+
+    #[test]
+    fn set_env_var_w_delete() {
+        set_var("RINE_K32_SET_DEL_W", Some("delete_me_w"));
+
+        let name: Vec<u16> = "RINE_K32_SET_DEL_W\0".encode_utf16().collect();
+        let result = unsafe { set_environment_variable_w(to_lpcwstr(&name), LPCWSTR::NULL) };
+        assert_eq!(result, BOOL::TRUE);
+        assert!(rine_types::environment::get_var("RINE_K32_SET_DEL_W").is_none());
+    }
+
+    #[test]
+    fn set_env_var_w_null_name() {
+        let value: Vec<u16> = "val\0".encode_utf16().collect();
+        let result = unsafe { set_environment_variable_w(LPCWSTR::NULL, to_lpcwstr(&value)) };
+        assert_eq!(result, BOOL::FALSE);
+    }
+
+    // ── expand_environment_strings_a ───────────────────────────────
+
+    #[test]
+    fn expand_a_no_vars() {
+        let src = b"plain_string\0";
+        let mut dst = [0u8; 128];
+        let result = unsafe { expand_environment_strings_a(to_lpcstr(src), dst.as_mut_ptr(), 128) };
+
+        assert_eq!(result, 13);
+        assert_eq!(&dst[..12], b"plain_string");
+        assert_eq!(dst[12], 0);
+    }
+
+    #[test]
+    fn expand_a_known_var() {
+        set_var("RINE_K32_EXP_A", Some("replaced"));
+
+        let src = b"before_%RINE_K32_EXP_A%_after\0";
+        let mut dst = [0u8; 128];
+        let result = unsafe { expand_environment_strings_a(to_lpcstr(src), dst.as_mut_ptr(), 128) };
+
+        let expected = b"before_replaced_after";
+        assert_eq!(result, expected.len() as u32 + 1);
+        assert_eq!(&dst[..expected.len()], expected);
+        assert_eq!(dst[expected.len()], 0);
+
+        set_var("RINE_K32_EXP_A", None);
+    }
+
+    #[test]
+    fn expand_a_unknown_var_preserved() {
+        let src = b"%RINE_K32_UNKNOWN_42%\0";
+        let mut dst = [0u8; 128];
+        let result = unsafe { expand_environment_strings_a(to_lpcstr(src), dst.as_mut_ptr(), 128) };
+
+        let expected = b"%RINE_K32_UNKNOWN_42%";
+        assert_eq!(result, expected.len() as u32 + 1);
+        assert_eq!(&dst[..expected.len()], expected);
+    }
+
+    #[test]
+    fn expand_a_null_src() {
+        let mut dst = [0u8; 128];
+        let result = unsafe { expand_environment_strings_a(LPCSTR::NULL, dst.as_mut_ptr(), 128) };
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn expand_a_null_dst_returns_needed() {
+        let src = b"hello\0";
+        let result =
+            unsafe { expand_environment_strings_a(to_lpcstr(src), std::ptr::null_mut(), 0) };
+        assert_eq!(result, 6);
+    }
+
+    #[test]
+    fn expand_a_buffer_too_small() {
+        set_var("RINE_K32_EXP_SM", Some("abcdefghij"));
+
+        let src = b"%RINE_K32_EXP_SM%\0";
+        let mut dst = [0u8; 4];
+        let result = unsafe { expand_environment_strings_a(to_lpcstr(src), dst.as_mut_ptr(), 4) };
+
+        assert_eq!(result, 11);
+
+        set_var("RINE_K32_EXP_SM", None);
+    }
+
+    #[test]
+    fn expand_a_multiple_vars() {
+        set_var("RINE_K32_M1", Some("X"));
+        set_var("RINE_K32_M2", Some("Y"));
+
+        let src = b"%RINE_K32_M1%-%RINE_K32_M2%\0";
+        let mut dst = [0u8; 128];
+        let result = unsafe { expand_environment_strings_a(to_lpcstr(src), dst.as_mut_ptr(), 128) };
+
+        let expected = b"X-Y";
+        assert_eq!(result, expected.len() as u32 + 1);
+        assert_eq!(&dst[..expected.len()], expected);
+
+        set_var("RINE_K32_M1", None);
+        set_var("RINE_K32_M2", None);
+    }
+
+    // ── expand_environment_strings_w ───────────────────────────────
+
+    #[test]
+    fn get_env_var_w_buffer_too_small() {
+        set_var("RINE_K32_GET_W_SM", Some("long_value_here"));
+
+        let name: Vec<u16> = "RINE_K32_GET_W_SM\0".encode_utf16().collect();
+        let mut buf = [0u16; 4];
+        let result = unsafe { get_environment_variable_w(to_lpcwstr(&name), buf.as_mut_ptr(), 4) };
+
+        assert_eq!(result, 16);
+
+        set_var("RINE_K32_GET_W_SM", None);
+    }
+
+    #[test]
+    fn expand_w_unknown_var_preserved() {
+        let src: Vec<u16> = "%UNKNOWN_W_VAR%\0".encode_utf16().collect();
+        let mut dst = [0u16; 128];
+        let result =
+            unsafe { expand_environment_strings_w(to_lpcwstr(&src), dst.as_mut_ptr(), 128) };
+
+        let expected: Vec<u16> = "%UNKNOWN_W_VAR%".encode_utf16().collect();
+        assert_eq!(result, expected.len() as u32 + 1);
+        assert_eq!(&dst[..expected.len()], &expected);
+    }
+
+    #[test]
+    fn expand_w_null_src() {
+        let mut dst = [0u16; 128];
+        let result = unsafe { expand_environment_strings_w(LPCWSTR::NULL, dst.as_mut_ptr(), 128) };
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn expand_w_null_dst_returns_needed() {
+        let src: Vec<u16> = "hi\0".encode_utf16().collect();
+        let result =
+            unsafe { expand_environment_strings_w(to_lpcwstr(&src), std::ptr::null_mut(), 0) };
+        assert_eq!(result, 3);
+    }
+
+    #[test]
+    fn expand_w_unicode_chars() {
+        set_var("RINE_K32_EXP_U", Some("\u{00e9}\u{20ac}"));
+
+        let src: Vec<u16> = "%RINE_K32_EXP_U%\0".encode_utf16().collect();
+        let mut dst = [0u16; 128];
+        let result =
+            unsafe { expand_environment_strings_w(to_lpcwstr(&src), dst.as_mut_ptr(), 128) };
+
+        let expected: Vec<u16> = "\u{00e9}\u{20ac}".encode_utf16().collect();
+        assert_eq!(result, expected.len() as u32 + 1);
+        assert_eq!(&dst[..expected.len()], &expected);
+        assert_eq!(dst[expected.len()], 0);
+
+        set_var("RINE_K32_EXP_U", None);
+    }
+
+    // ── get_environment_strings / free_environment_strings ─────────
+
+    #[test]
+    fn get_env_strings_returns_non_null() {
+        let ptr = unsafe { get_environment_strings_a() };
+        assert!(!ptr.is_null());
+    }
+
+    #[test]
+    fn get_env_strings_w_returns_non_null() {
+        let ptr = unsafe { get_environment_strings_w() };
+        assert!(!ptr.is_null());
+    }
+
+    #[test]
+    fn get_env_strings_w_double_null_terminated() {
+        let ptr = unsafe { get_environment_strings_w() };
+        assert!(!ptr.is_null());
+
+        let mut count = 0u32;
+        let mut i = 0;
+        loop {
+            let val = unsafe { *ptr.add(i) };
+            if val == 0 {
+                count += 1;
+                if count == 2 {
+                    break;
+                }
+            } else {
+                count = 0;
+            }
+            i += 1;
+            // safe-guard: block should not be unreasonably large
+            assert!(i < 1_000_000, "block too large, seems broken");
+        }
+    }
+
+    #[test]
+    fn free_env_strings_a_with_correct_ptr() {
+        let ptr = unsafe { get_environment_strings_a() };
+        assert_eq!(unsafe { free_environment_strings_a(ptr) }, BOOL::TRUE);
+    }
+
+    #[test]
+    fn free_env_strings_a_null() {
+        assert_eq!(
+            unsafe { free_environment_strings_a(std::ptr::null_mut()) },
+            BOOL::FALSE
+        );
+    }
+
+    #[test]
+    fn free_env_strings_a_wrong_ptr() {
+        let mut dummy = 0u8;
+        assert_eq!(
+            unsafe { free_environment_strings_a(&mut dummy) },
+            BOOL::FALSE
+        );
+    }
+
+    #[test]
+    fn free_env_strings_w_with_correct_ptr() {
+        let ptr = unsafe { get_environment_strings_w() };
+        assert_eq!(unsafe { free_environment_strings_w(ptr) }, BOOL::TRUE);
+    }
+
+    #[test]
+    fn free_env_strings_w_null() {
+        assert_eq!(
+            unsafe { free_environment_strings_w(std::ptr::null_mut()) },
+            BOOL::FALSE
+        );
+    }
+
+    #[test]
+    fn free_env_strings_w_wrong_ptr() {
+        let mut dummy = 0u16;
+        assert_eq!(
+            unsafe { free_environment_strings_w(&mut dummy) },
+            BOOL::FALSE
+        );
+    }
 }

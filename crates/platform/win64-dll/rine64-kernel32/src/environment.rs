@@ -200,7 +200,7 @@ pub unsafe extern "win64" fn ExpandEnvironmentStringsW(
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn GetEnvironmentStrings() -> *mut u8 {
-    unsafe { common::environment::get_environment_strings() }
+    unsafe { common::environment::get_environment_strings_a() }
 }
 
 /// Get the environment strings for the current process.
