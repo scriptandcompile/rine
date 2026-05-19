@@ -37,3 +37,45 @@ pub fn last_error() -> u32 {
 pub fn set_last_error(code: DialogErrorCode) {
     LAST_ERROR.store(code as u32, Ordering::Relaxed);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_error_is_none() {
+        // The static starts at None, and we haven't called set_last_error.
+        assert_eq!(last_error(), DialogErrorCode::None as u32);
+    }
+
+    #[test]
+    fn set_and_read_each_code() {
+        for code in &[
+            DialogErrorCode::None,
+            DialogErrorCode::CderrInitialization,
+            DialogErrorCode::CderrDialogFailure,
+            DialogErrorCode::FnerrBufferTooSmall,
+        ] {
+            set_last_error(*code);
+            assert_eq!(last_error(), *code as u32);
+        }
+    }
+
+    #[test]
+    fn last_error_overwrites_previous() {
+        set_last_error(DialogErrorCode::CderrInitialization);
+        assert_eq!(last_error(), 0x0002);
+
+        set_last_error(DialogErrorCode::FnerrBufferTooSmall);
+        assert_eq!(last_error(), 0x3003);
+    }
+
+    #[test]
+    fn error_persists_until_overwritten() {
+        set_last_error(DialogErrorCode::CderrDialogFailure);
+        // read it multiple times — it should stay the same
+        for _ in 0..10 {
+            assert_eq!(last_error(), 0xFFFF);
+        }
+    }
+}
