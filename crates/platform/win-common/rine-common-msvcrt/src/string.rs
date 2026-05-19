@@ -53,3 +53,82 @@ pub unsafe fn strncmp(s1: *const c_char, s2: *const c_char, n: usize) -> i32 {
 pub unsafe fn strcmp(s1: *const c_char, s2: *const c_char) -> i32 {
     unsafe { libc::strcmp(s1, s2) }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strlen_normal() {
+        let bytes = b"hello\0";
+        let len = unsafe { strlen(bytes.as_ptr() as *const c_char) };
+        assert_eq!(len, 5);
+    }
+
+    #[test]
+    fn strlen_empty() {
+        let bytes = b"\0";
+        let len = unsafe { strlen(bytes.as_ptr() as *const c_char) };
+        assert_eq!(len, 0);
+    }
+
+    #[test]
+    fn strncmp_equal() {
+        let a = b"hello\0";
+        let b = b"hello\0";
+        let result =
+            unsafe { strncmp(a.as_ptr() as *const c_char, b.as_ptr() as *const c_char, 5) };
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn strncmp_less_than() {
+        let a = b"apple\0";
+        let b = b"banana\0";
+        let result =
+            unsafe { strncmp(a.as_ptr() as *const c_char, b.as_ptr() as *const c_char, 5) };
+        assert!(result < 0);
+    }
+
+    #[test]
+    fn strncmp_greater_than() {
+        let a = b"zebra\0";
+        let b = b"banana\0";
+        let result =
+            unsafe { strncmp(a.as_ptr() as *const c_char, b.as_ptr() as *const c_char, 5) };
+        assert!(result > 0);
+    }
+
+    #[test]
+    fn strncmp_limited_by_n() {
+        let a = b"aaaaaaa\0";
+        let b = b"aaaabbb\0";
+        let result =
+            unsafe { strncmp(a.as_ptr() as *const c_char, b.as_ptr() as *const c_char, 3) };
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn strcmp_equal() {
+        let a = b"hello\0";
+        let b = b"hello\0";
+        let result = unsafe { strcmp(a.as_ptr() as *const c_char, b.as_ptr() as *const c_char) };
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn strcmp_less_than() {
+        let a = b"apple\0";
+        let b = b"banana\0";
+        let result = unsafe { strcmp(a.as_ptr() as *const c_char, b.as_ptr() as *const c_char) };
+        assert!(result < 0);
+    }
+
+    #[test]
+    fn strcmp_greater_than() {
+        let a = b"zebra\0";
+        let b = b"banana\0";
+        let result = unsafe { strcmp(a.as_ptr() as *const c_char, b.as_ptr() as *const c_char) };
+        assert!(result > 0);
+    }
+}
