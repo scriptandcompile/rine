@@ -160,3 +160,96 @@ fn integer_resource_id_from_wide(table_name: LPCWSTR) -> Option<u16> {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rine_types::strings::{LPCSTR, LPCWSTR};
+    use std::mem;
+
+    fn make_lpcstr(addr: *const u8) -> LPCSTR {
+        unsafe { mem::transmute::<*const u8, LPCSTR>(addr) }
+    }
+
+    fn make_lpcwstr(addr: *const u16) -> LPCWSTR {
+        unsafe { mem::transmute::<*const u16, LPCWSTR>(addr) }
+    }
+
+    #[test]
+    fn ansi_null_returns_none() {
+        assert_eq!(integer_resource_id_from_ansi(LPCSTR::NULL), None);
+    }
+
+    #[test]
+    fn ansi_address_zero_returns_none() {
+        let ptr = std::ptr::null::<u8>();
+        assert_eq!(integer_resource_id_from_ansi(make_lpcstr(ptr)), None);
+    }
+
+    #[test]
+    fn ansi_small_id_returns_some() {
+        let ptr = 1usize as *const u8;
+        assert_eq!(integer_resource_id_from_ansi(make_lpcstr(ptr)), Some(1));
+    }
+
+    #[test]
+    fn ansi_max_id_returns_some() {
+        let ptr = 0xFFFFusize as *const u8;
+        assert_eq!(
+            integer_resource_id_from_ansi(make_lpcstr(ptr)),
+            Some(0xFFFF)
+        );
+    }
+
+    #[test]
+    fn ansi_large_ptr_returns_none() {
+        let ptr = 0x10000usize as *const u8;
+        assert_eq!(integer_resource_id_from_ansi(make_lpcstr(ptr)), None);
+    }
+
+    #[test]
+    fn ansi_typical_string_ptr_returns_none() {
+        let val: u8 = 0;
+        let ptr = &val as *const u8;
+        assert_eq!(integer_resource_id_from_ansi(make_lpcstr(ptr)), None);
+    }
+
+    #[test]
+    fn wide_null_returns_none() {
+        assert_eq!(integer_resource_id_from_wide(LPCWSTR::NULL), None);
+    }
+
+    #[test]
+    fn wide_address_zero_returns_none() {
+        let ptr = std::ptr::null::<u16>();
+        assert_eq!(integer_resource_id_from_wide(make_lpcwstr(ptr)), None);
+    }
+
+    #[test]
+    fn wide_small_id_returns_some() {
+        let ptr = 1usize as *const u16;
+        assert_eq!(integer_resource_id_from_wide(make_lpcwstr(ptr)), Some(1));
+    }
+
+    #[test]
+    fn wide_max_id_returns_some() {
+        let ptr = 0xFFFFusize as *const u16;
+        assert_eq!(
+            integer_resource_id_from_wide(make_lpcwstr(ptr)),
+            Some(0xFFFF)
+        );
+    }
+
+    #[test]
+    fn wide_large_ptr_returns_none() {
+        let ptr = 0x10000usize as *const u16;
+        assert_eq!(integer_resource_id_from_wide(make_lpcwstr(ptr)), None);
+    }
+
+    #[test]
+    fn wide_typical_string_ptr_returns_none() {
+        let val: u16 = 0;
+        let ptr = &val as *const u16;
+        assert_eq!(integer_resource_id_from_wide(make_lpcwstr(ptr)), None);
+    }
+}
