@@ -108,6 +108,97 @@ pub unsafe fn rtl_get_version(info: *mut OsVersionInfoW) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rine_types::os::{
+        VER_NT_WORKSTATION, VER_PLATFORM_WIN32_NT, VER_SUITE_SINGLEUSERTS,
+    };
+
+    #[test]
+    fn rtl_get_version_with_osversioninfow() {
+        let mut info = OsVersionInfoW {
+            os_version_info_size: SIZEOF_OSVERSIONINFOW,
+            major_version: 0,
+            minor_version: 0,
+            build_number: 0,
+            platform_id: 0,
+            csd_version: [0u16; 128],
+        };
+        let ret = unsafe { rtl_get_version(&mut info) };
+        assert_eq!(ret, 0); // STATUS_SUCCESS
+        assert_eq!(info.major_version, 10);
+        assert_eq!(info.minor_version, 0);
+        assert_eq!(info.build_number, 22631);
+        assert_eq!(info.platform_id, VER_PLATFORM_WIN32_NT);
+    }
+
+    #[test]
+    fn rtl_get_version_with_osversioninfoexw() {
+        let mut info = OsVersionInfoExW {
+            os_version_info_size: SIZEOF_OSVERSIONINFOEXW,
+            major_version: 0,
+            minor_version: 0,
+            build_number: 0,
+            platform_id: 0,
+            csd_version: [0u16; 128],
+            service_pack_major: 0xFFFF,
+            service_pack_minor: 0xFFFF,
+            suite_mask: 0,
+            product_type: 0,
+            reserved: 0xFF,
+        };
+        let ret = unsafe { rtl_get_version(core::ptr::addr_of_mut!(info).cast::<OsVersionInfoW>()) };
+        assert_eq!(ret, 0);
+        assert_eq!(info.major_version, 10);
+        assert_eq!(info.minor_version, 0);
+        assert_eq!(info.build_number, 22631);
+        assert_eq!(info.platform_id, VER_PLATFORM_WIN32_NT);
+        assert_eq!(info.service_pack_major, 0);
+        assert_eq!(info.service_pack_minor, 0);
+        assert_eq!(info.suite_mask, VER_SUITE_SINGLEUSERTS);
+        assert_eq!(info.product_type, VER_NT_WORKSTATION);
+        assert_eq!(info.reserved, 0);
+    }
+
+    #[test]
+    fn rtl_get_version_zero_size_treated_as_ex() {
+        let mut info = OsVersionInfoExW {
+            os_version_info_size: 0,
+            major_version: 0,
+            minor_version: 0,
+            build_number: 0,
+            platform_id: 0,
+            csd_version: [0u16; 128],
+            service_pack_major: 0xFFFF,
+            service_pack_minor: 0xFFFF,
+            suite_mask: 0,
+            product_type: 0,
+            reserved: 0xFF,
+        };
+        let ret = unsafe { rtl_get_version(core::ptr::addr_of_mut!(info).cast::<OsVersionInfoW>()) };
+        assert_eq!(ret, 0);
+        assert_eq!(info.os_version_info_size, SIZEOF_OSVERSIONINFOEXW);
+        assert_eq!(info.major_version, 10);
+        assert_eq!(info.service_pack_major, 0);
+    }
+
+    #[test]
+    fn rtl_get_version_null_returns_invalid_parameter() {
+        let ret = unsafe { rtl_get_version(core::ptr::null_mut()) };
+        assert_eq!(ret, 0xC000_000D); // STATUS_INVALID_PARAMETER
+    }
+
+    #[test]
+    fn rtl_get_version_invalid_size_returns_invalid_parameter() {
+        let mut info = OsVersionInfoW {
+            os_version_info_size: 0xDEAD,
+            major_version: 0,
+            minor_version: 0,
+            build_number: 0,
+            platform_id: 0,
+            csd_version: [0u16; 128],
+        };
+        let ret = unsafe { rtl_get_version(&mut info) };
+        assert_eq!(ret, 0xC000_000D);
+    }
 
     #[test]
     fn init_with_valid_string() {
