@@ -374,15 +374,16 @@ pub fn wait_for_multiple_objects(handles: &[HANDLE], wait_all: bool, duration: D
 /// `WAIT_OBJECT_0` if all waitables were signalled, `WAIT_TIMEOUT` if the timeout elapsed, or `WAIT_FAILED` on error.
 fn wait_for_all(waitables: &[Waitable], duration: Duration) -> u32 {
     let start = Instant::now();
+    let dur_ms = duration.as_millis() as u64;
     for w in waitables {
         let remaining = if duration == Duration::from_millis(INFINITE as u64) {
             INFINITE
         } else {
-            let elapsed = start.elapsed().as_millis() as u32;
-            if elapsed >= duration.as_millis() as u32 {
+            let elapsed = start.elapsed().as_millis() as u64;
+            if dur_ms > 0 && elapsed >= dur_ms {
                 return WaitStatus::WAIT_TIMEOUT.0;
             }
-            duration.as_millis() as u32 - elapsed
+            dur_ms.saturating_sub(elapsed) as u32
         };
 
         let result = threading::wait_on(w, remaining);
@@ -424,5 +425,234 @@ fn wait_for_any(waitables: &[Waitable], duration: Duration) -> u32 {
         }
 
         std::thread::sleep(Duration::from_millis(1));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rine_types::threading::{EventInner, EventWaitable, WaitStatus};
+    use std::sync::{Arc, Condvar, Mutex};
+
+    fn signaled_event() -> Waitable {
+        Waitable::Event(EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(true),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        })
+    }
+
+    fn nonsignaled_event() -> Waitable {
+        Waitable::Event(EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(false),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        })
+    }
+
+    // ── wait_for_all ──
+
+    #[test]
+    fn wait_for_all_all_signaled() {
+        let w = vec![signaled_event(), signaled_event()];
+        assert_eq!(
+            wait_for_all(&w, Duration::from_millis(0)),
+            WaitStatus::WAIT_OBJECT_0.0
+        );
+    }
+
+    #[test]
+    fn wait_for_all_one_nonsignaled_timeout() {
+        let w = vec![signaled_event(), nonsignaled_event()];
+        assert_eq!(
+            wait_for_all(&w, Duration::from_millis(0)),
+            WaitStatus::WAIT_TIMEOUT.0
+        );
+    }
+
+    #[test]
+    fn wait_for_all_empty() {
+        assert_eq!(
+            wait_for_all(&[], Duration::from_millis(0)),
+            WaitStatus::WAIT_OBJECT_0.0
+        );
+    }
+
+    // ── wait_for_any ──
+
+    #[test]
+    fn wait_for_any_first_signaled() {
+        let w = vec![signaled_event(), nonsignaled_event()];
+        assert_eq!(
+            wait_for_any(&w, Duration::from_millis(0)),
+            WaitStatus::WAIT_OBJECT_0.0
+        );
+    }
+
+    #[test]
+    fn wait_for_any_second_signaled() {
+        let w = vec![nonsignaled_event(), signaled_event()];
+        assert_eq!(
+            wait_for_any(&w, Duration::from_millis(0)),
+            WaitStatus::WAIT_OBJECT_0.0 + 1
+        );
+    }
+
+    #[test]
+    fn wait_for_any_none_signaled_timeout() {
+        let w = vec![nonsignaled_event(), nonsignaled_event()];
+        assert_eq!(
+            wait_for_any(&w, Duration::from_millis(0)),
+            WaitStatus::WAIT_TIMEOUT.0
+        );
+    }
+
+    #[test]
+    fn wait_for_any_all_signaled_returns_first() {
+        let w = vec![signaled_event(), signaled_event()];
+        assert_eq!(
+            wait_for_any(&w, Duration::from_millis(0)),
+            WaitStatus::WAIT_OBJECT_0.0
+        );
+    }
+
+    // ── wait_for_multiple_objects ──
+
+    #[test]
+    fn wmo_empty_handles_fails() {
+        assert_eq!(
+            wait_for_multiple_objects(&[], false, Duration::from_millis(0)),
+            WaitStatus::WAIT_FAILED.0
+        );
+        assert_eq!(
+            wait_for_multiple_objects(&[], true, Duration::from_millis(0)),
+            WaitStatus::WAIT_FAILED.0
+        );
+    }
+
+    #[test]
+    fn wmo_too_many_handles_fails() {
+        let handles = [HANDLE::from_raw(1); 65];
+        assert_eq!(
+            wait_for_multiple_objects(&handles, false, Duration::from_millis(0)),
+            WaitStatus::WAIT_FAILED.0
+        );
+    }
+
+    #[test]
+    fn wmo_invalid_handle_fails() {
+        let h = HANDLE::from_raw(0xDEAD);
+        assert_eq!(
+            wait_for_multiple_objects(&[h], false, Duration::from_millis(0)),
+            WaitStatus::WAIT_FAILED.0
+        );
+    }
+
+    #[test]
+    fn wmo_signaled_event_wait_any() {
+        let h = handle_table().insert(HandleEntry::Event(EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(true),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        }));
+        assert_eq!(
+            wait_for_multiple_objects(&[h], false, Duration::from_millis(0)),
+            WaitStatus::WAIT_OBJECT_0.0
+        );
+        handle_table().remove(h);
+    }
+
+    #[test]
+    fn wmo_nonsignaled_event_timeout() {
+        let h = handle_table().insert(HandleEntry::Event(EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(false),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        }));
+        assert_eq!(
+            wait_for_multiple_objects(&[h], false, Duration::from_millis(0)),
+            WaitStatus::WAIT_TIMEOUT.0
+        );
+        handle_table().remove(h);
+    }
+
+    #[test]
+    fn wmo_two_signaled_events_wait_all() {
+        let h1 = handle_table().insert(HandleEntry::Event(EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(true),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        }));
+        let h2 = handle_table().insert(HandleEntry::Event(EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(true),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        }));
+        assert_eq!(
+            wait_for_multiple_objects(&[h1, h2], true, Duration::from_millis(0)),
+            WaitStatus::WAIT_OBJECT_0.0
+        );
+        handle_table().remove(h1);
+        handle_table().remove(h2);
+    }
+
+    #[test]
+    fn wmo_two_events_wait_all_timeout() {
+        let h1 = handle_table().insert(HandleEntry::Event(EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(true),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        }));
+        let h2 = handle_table().insert(HandleEntry::Event(EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(false),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        }));
+        assert_eq!(
+            wait_for_multiple_objects(&[h1, h2], true, Duration::from_millis(0)),
+            WaitStatus::WAIT_TIMEOUT.0
+        );
+        handle_table().remove(h1);
+        handle_table().remove(h2);
+    }
+
+    #[test]
+    fn wmo_two_events_wait_any_second_signaled() {
+        let h1 = handle_table().insert(HandleEntry::Event(EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(false),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        }));
+        let h2 = handle_table().insert(HandleEntry::Event(EventWaitable {
+            inner: Arc::new(EventInner {
+                signaled: Mutex::new(true),
+                condvar: Condvar::new(),
+                manual_reset: true,
+            }),
+        }));
+        assert_eq!(
+            wait_for_multiple_objects(&[h1, h2], false, Duration::from_millis(0)),
+            WaitStatus::WAIT_OBJECT_0.0 + 1
+        );
+        handle_table().remove(h1);
+        handle_table().remove(h2);
     }
 }
