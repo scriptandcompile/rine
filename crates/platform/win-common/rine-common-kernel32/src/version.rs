@@ -116,7 +116,7 @@ pub unsafe fn get_version_ex_a(info: *mut OsVersionInfoA) -> BOOL {
 mod tests {
     use super::*;
     use rine_types::os::{
-        set_version, VersionInfo, VER_NT_WORKSTATION, VER_PLATFORM_WIN32_NT, VER_SUITE_SINGLEUSERTS,
+        VER_NT_WORKSTATION, VER_PLATFORM_WIN32_NT, VER_SUITE_SINGLEUSERTS, VersionInfo, set_version,
     };
     use std::sync::{LazyLock, Mutex};
 
@@ -190,7 +190,10 @@ mod tests {
     #[test]
     fn version_ex_w_null() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        assert_eq!(unsafe { get_version_ex_w(std::ptr::null_mut()) }, BOOL::FALSE);
+        assert_eq!(
+            unsafe { get_version_ex_w(std::ptr::null_mut()) },
+            BOOL::FALSE
+        );
     }
 
     #[test]
@@ -278,7 +281,10 @@ mod tests {
     #[test]
     fn version_ex_a_null() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        assert_eq!(unsafe { get_version_ex_a(std::ptr::null_mut()) }, BOOL::FALSE);
+        assert_eq!(
+            unsafe { get_version_ex_a(std::ptr::null_mut()) },
+            BOOL::FALSE
+        );
     }
 
     #[test]
