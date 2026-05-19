@@ -165,3 +165,129 @@ pub unsafe fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_
 pub unsafe fn memset(dest: *mut c_void, c: i32, n: usize) -> *mut c_void {
     unsafe { libc::memset(dest, c, n) }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn memcpy_copies_exact_bytes() {
+        let src = b"hello world";
+        let mut dst = [0u8; 11];
+        unsafe {
+            memcpy(
+                dst.as_mut_ptr() as *mut c_void,
+                src.as_ptr() as *const c_void,
+                11,
+            );
+        }
+        assert_eq!(&dst, src);
+    }
+
+    #[test]
+    fn memcpy_copies_partial() {
+        let src = b"abcdefghij";
+        let mut dst = [0u8; 5];
+        unsafe {
+            memcpy(
+                dst.as_mut_ptr() as *mut c_void,
+                src.as_ptr() as *const c_void,
+                5,
+            );
+        }
+        assert_eq!(&dst, b"abcde");
+    }
+
+    #[test]
+    fn memcpy_zero_bytes_no_op() {
+        let src = b"data";
+        let mut dst = [0xFFu8; 4];
+        unsafe {
+            memcpy(
+                dst.as_mut_ptr() as *mut c_void,
+                src.as_ptr() as *const c_void,
+                0,
+            );
+        }
+        assert_eq!(dst, [0xFF, 0xFF, 0xFF, 0xFF]);
+    }
+
+    #[test]
+    fn memcpy_returns_dest_pointer() {
+        let src = b"test";
+        let mut dst = [0u8; 4];
+        let result = unsafe {
+            memcpy(
+                dst.as_mut_ptr() as *mut c_void,
+                src.as_ptr() as *const c_void,
+                4,
+            )
+        };
+        assert_eq!(result, dst.as_mut_ptr() as *mut c_void);
+    }
+
+    #[test]
+    fn memset_fills_with_byte_value() {
+        let mut buf = [0xFFu8; 10];
+        unsafe {
+            memset(buf.as_mut_ptr() as *mut c_void, 0xAB, 10);
+        }
+        assert_eq!(buf, [0xAB; 10]);
+    }
+
+    #[test]
+    fn memset_partial_fill() {
+        let mut buf = [0xFFu8; 10];
+        unsafe {
+            memset(buf.as_mut_ptr() as *mut c_void, 0, 5);
+        }
+        assert_eq!(&buf[..5], &[0u8; 5]);
+        assert_eq!(&buf[5..], &[0xFFu8; 5]);
+    }
+
+    #[test]
+    fn memset_zero_bytes_no_op() {
+        let mut buf = [0x42u8; 5];
+        unsafe {
+            memset(buf.as_mut_ptr() as *mut c_void, 0, 0);
+        }
+        assert_eq!(buf, [0x42; 5]);
+    }
+
+    #[test]
+    fn memset_returns_dest_pointer() {
+        let mut buf = [0u8; 4];
+        let result = unsafe { memset(buf.as_mut_ptr() as *mut c_void, 0, 4) };
+        assert_eq!(result, buf.as_mut_ptr() as *mut c_void);
+    }
+
+    #[test]
+    fn memset_sign_extension_cast() {
+        let mut buf = [0xFFu8; 4];
+        unsafe {
+            memset(buf.as_mut_ptr() as *mut c_void, -1, 4);
+        }
+        assert_eq!(buf, [0xFF; 4]);
+    }
+
+    #[test]
+    fn memcpy_and_memset_roundtrip() {
+        let mut buf = [0u8; 8];
+        unsafe {
+            memset(buf.as_mut_ptr() as *mut c_void, 0xAB, 8);
+        }
+        assert_eq!(buf, [0xAB; 8]);
+
+        let src = [0x12, 0x34, 0x56, 0x78];
+        unsafe {
+            memcpy(
+                buf.as_mut_ptr() as *mut c_void,
+                src.as_ptr() as *const c_void,
+                4,
+            );
+        }
+        let mut expected = [0xAB; 8];
+        expected[..4].copy_from_slice(&src);
+        assert_eq!(buf, expected);
+    }
+}
