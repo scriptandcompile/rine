@@ -197,3 +197,217 @@ pub fn lstrcpyna(llpstring1: LPSTR, lpstring2: LPCSTR, imaxlength: u32) -> LPSTR
 
     llpstring1
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── lstrlena ──────────────────────────────────────────────────
+
+    #[test]
+    fn lstrlena_normal() {
+        let bytes = b"hello\0";
+        let s: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        assert_eq!(lstrlena(s), 5);
+    }
+
+    #[test]
+    fn lstrlena_empty() {
+        let bytes = b"\0";
+        let s: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        assert_eq!(lstrlena(s), 0);
+    }
+
+    #[test]
+    fn lstrlena_null() {
+        assert_eq!(lstrlena(LPCSTR::NULL), 0);
+    }
+
+    // ── lstrcmpa ──────────────────────────────────────────────────
+
+    #[test]
+    fn lstrcmpa_equal() {
+        let a = b"hello\0";
+        let b = b"hello\0";
+        let sa: LPCSTR = unsafe { std::mem::transmute(a.as_ptr()) };
+        let sb: LPCSTR = unsafe { std::mem::transmute(b.as_ptr()) };
+        assert_eq!(lstrcmpa(sa, sb), 0);
+    }
+
+    #[test]
+    fn lstrcmpa_less_than() {
+        let a = b"apple\0";
+        let b = b"banana\0";
+        let sa: LPCSTR = unsafe { std::mem::transmute(a.as_ptr()) };
+        let sb: LPCSTR = unsafe { std::mem::transmute(b.as_ptr()) };
+        assert!(lstrcmpa(sa, sb) < 0);
+    }
+
+    #[test]
+    fn lstrcmpa_greater_than() {
+        let a = b"zebra\0";
+        let b = b"banana\0";
+        let sa: LPCSTR = unsafe { std::mem::transmute(a.as_ptr()) };
+        let sb: LPCSTR = unsafe { std::mem::transmute(b.as_ptr()) };
+        assert!(lstrcmpa(sa, sb) > 0);
+    }
+
+    #[test]
+    fn lstrcmpa_both_null() {
+        assert_eq!(lstrcmpa(LPCSTR::NULL, LPCSTR::NULL), 0);
+    }
+
+    #[test]
+    fn lstrcmpa_first_null() {
+        let b = b"hello\0";
+        let sb: LPCSTR = unsafe { std::mem::transmute(b.as_ptr()) };
+        assert_eq!(lstrcmpa(LPCSTR::NULL, sb), -1);
+    }
+
+    #[test]
+    fn lstrcmpa_second_null() {
+        let a = b"hello\0";
+        let sa: LPCSTR = unsafe { std::mem::transmute(a.as_ptr()) };
+        assert_eq!(lstrcmpa(sa, LPCSTR::NULL), 1);
+    }
+
+    // ── lstrcmpia ─────────────────────────────────────────────────
+
+    #[test]
+    fn lstrcmpia_equal_case_insensitive() {
+        let a = b"Hello\0";
+        let b = b"hello\0";
+        let sa: LPCSTR = unsafe { std::mem::transmute(a.as_ptr()) };
+        let sb: LPCSTR = unsafe { std::mem::transmute(b.as_ptr()) };
+        assert_eq!(lstrcmpia(sa, sb), 0);
+    }
+
+    #[test]
+    fn lstrcmpia_different() {
+        let a = b"hello\0";
+        let b = b"world\0";
+        let sa: LPCSTR = unsafe { std::mem::transmute(a.as_ptr()) };
+        let sb: LPCSTR = unsafe { std::mem::transmute(b.as_ptr()) };
+        assert!(lstrcmpia(sa, sb) != 0);
+    }
+
+    #[test]
+    fn lstrcmpia_both_null() {
+        assert_eq!(lstrcmpia(LPCSTR::NULL, LPCSTR::NULL), 0);
+    }
+
+    #[test]
+    fn lstrcmpia_first_null() {
+        let b = b"hello\0";
+        let sb: LPCSTR = unsafe { std::mem::transmute(b.as_ptr()) };
+        assert_eq!(lstrcmpia(LPCSTR::NULL, sb), -1);
+    }
+
+    #[test]
+    fn lstrcmpia_second_null() {
+        let a = b"hello\0";
+        let sa: LPCSTR = unsafe { std::mem::transmute(a.as_ptr()) };
+        assert_eq!(lstrcmpia(sa, LPCSTR::NULL), 1);
+    }
+
+    // ── lstrcpya ──────────────────────────────────────────────────
+
+    #[test]
+    fn lstrcpya_copies_string() {
+        let src = b"hello\0";
+        let mut dst = [0u8; 16];
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(src.as_ptr()) };
+        let lp_dst: LPSTR = unsafe { std::mem::transmute(dst.as_mut_ptr()) };
+        let result = lstrcpya(lp_dst, lp_src);
+        assert!(!result.is_null());
+        assert_eq!(&dst[..6], b"hello\0");
+    }
+
+    #[test]
+    fn lstrcpya_null_dest() {
+        let src = b"hello\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(src.as_ptr()) };
+        assert!(lstrcpya(LPSTR::NULL, lp_src).is_null());
+    }
+
+    #[test]
+    fn lstrcpya_null_src() {
+        let mut dst = [0u8; 16];
+        dst[0] = 0xFF;
+        let lp_dst: LPSTR = unsafe { std::mem::transmute(dst.as_mut_ptr()) };
+        let result = lstrcpya(lp_dst, LPCSTR::NULL);
+        assert!(result.is_null());
+        assert_eq!(dst[0], 0xFF);
+    }
+
+    // ── lstrcata ──────────────────────────────────────────────────
+
+    #[test]
+    fn lstrcata_concatenates() {
+        let mut buf = [0u8; 32];
+        buf[..6].copy_from_slice(b"hello\0");
+        let append = b" world\0";
+        let lp_buf: LPSTR = unsafe { std::mem::transmute(buf.as_mut_ptr()) };
+        let lp_append: LPCSTR = unsafe { std::mem::transmute(append.as_ptr()) };
+        let result = lstrcata(lp_buf, lp_append);
+        assert!(!result.is_null());
+        let expected = b"hello world\0";
+        assert_eq!(&buf[..expected.len()], expected);
+    }
+
+    #[test]
+    fn lstrcata_null_dest() {
+        let append = b" world\0";
+        let lp_append: LPCSTR = unsafe { std::mem::transmute(append.as_ptr()) };
+        assert!(lstrcata(LPSTR::NULL, lp_append).is_null());
+    }
+
+    #[test]
+    fn lstrcata_null_src() {
+        let mut buf = b"hello\0\0\0\0\0\0".to_owned();
+        let lp_buf: LPSTR = unsafe { std::mem::transmute(buf.as_mut_ptr()) };
+        let result = lstrcata(lp_buf, LPCSTR::NULL);
+        assert!(!result.is_null());
+        assert_eq!(&buf[..6], b"hello\0");
+    }
+
+    // ── lstrcpyna ─────────────────────────────────────────────────
+
+    #[test]
+    fn lstrcpyna_copies_exact() {
+        let src = b"hello\0";
+        let mut dst = [0u8; 16];
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(src.as_ptr()) };
+        let lp_dst: LPSTR = unsafe { std::mem::transmute(dst.as_mut_ptr()) };
+        let result = lstrcpyna(lp_dst, lp_src, 6);
+        assert!(!result.is_null());
+        assert_eq!(&dst[..6], b"hello\0");
+    }
+
+    #[test]
+    fn lstrcpyna_truncates() {
+        let src = b"helloworld\0";
+        let mut dst = [0u8; 6];
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(src.as_ptr()) };
+        let lp_dst: LPSTR = unsafe { std::mem::transmute(dst.as_mut_ptr()) };
+        let result = lstrcpyna(lp_dst, lp_src, 6);
+        assert!(!result.is_null());
+        assert_eq!(&dst[..6], b"hello\0");
+    }
+
+    #[test]
+    fn lstrcpyna_null_dest() {
+        let src = b"hello\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(src.as_ptr()) };
+        assert!(lstrcpyna(LPSTR::NULL, lp_src, 6).is_null());
+    }
+
+    #[test]
+    fn lstrcpyna_null_src() {
+        let mut dst = [0xFFu8; 16];
+        let lp_dst: LPSTR = unsafe { std::mem::transmute(dst.as_mut_ptr()) };
+        let result = lstrcpyna(lp_dst, LPCSTR::NULL, 6);
+        assert!(!result.is_null());
+        assert_eq!(dst[0], 0);
+    }
+}
