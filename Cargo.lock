@@ -3737,6 +3737,7 @@ name = "rine-common-user32"
 version = "0.1.4"
 dependencies = [
  "goblin",
+ "rfd",
  "rine-channel",
  "rine-types",
  "serial_test",

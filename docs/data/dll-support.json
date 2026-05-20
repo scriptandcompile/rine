@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T01:55:53.112716+00:00",
+  "generatedAt": "2026-05-20T02:15:25.386612+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 67,
+      "functionCount": 68,
       "functions": [
         {
           "name": "CharNextA",
@@ -3136,6 +3136,19 @@
           }
         },
         {
+          "name": "MessageBoxA",
+          "x64": {
+            "status": "implemented",
+            "symbol": "dialogs::MessageBoxA",
+            "source": "user32 - dialogs.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "dialogs::MessageBoxA",
+            "source": "user32 - dialogs.rs"
+          }
+        },
+        {
           "name": "OpenClipboard",
           "x64": {
             "status": "stubbed",
@@ -3529,15 +3542,15 @@
     }
   ],
   "totals": {
-    "functions": 267,
+    "functions": 268,
     "x64": {
-      "implemented": 101,
+      "implemented": 102,
       "partial": 119,
       "stubbed": 47,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 102,
+      "implemented": 103,
       "partial": 118,
       "stubbed": 47,
       "unimplemented": 0

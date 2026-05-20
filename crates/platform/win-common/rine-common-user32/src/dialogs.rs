@@ -277,3 +277,118 @@ pub fn end_dialog(_hdlg: HWND, _result: isize) -> BOOL {
     );
     BOOL::FALSE
 }
+
+// ---------------------------------------------------------------------------
+// MessageBoxA constants
+// ---------------------------------------------------------------------------
+
+// Button type flags
+pub const MB_OK: u32 = 0x00000000;
+pub const MB_OKCANCEL: u32 = 0x00000001;
+pub const MB_ABORTRETRYIGNORE: u32 = 0x00000002;
+pub const MB_YESNOCANCEL: u32 = 0x00000003;
+pub const MB_YESNO: u32 = 0x00000004;
+pub const MB_RETRYCANCEL: u32 = 0x00000005;
+pub const MB_CANCELTRYCONTINUE: u32 = 0x00000006;
+pub const MB_HELP: u32 = 0x00004000;
+
+// Icon type flags
+pub const MB_ICONHAND: u32 = 0x00000010;
+pub const MB_ICONSTOP: u32 = MB_ICONHAND;
+pub const MB_ICONERROR: u32 = MB_ICONHAND;
+pub const MB_ICONQUESTION: u32 = 0x00000020;
+pub const MB_ICONEXCLAMATION: u32 = 0x00000030;
+pub const MB_ICONWARNING: u32 = MB_ICONEXCLAMATION;
+pub const MB_ICONASTERISK: u32 = 0x00000040;
+pub const MB_ICONINFORMATION: u32 = MB_ICONASTERISK;
+
+// Default button flags
+pub const MB_DEFBUTTON1: u32 = 0x00000000;
+pub const MB_DEFBUTTON2: u32 = 0x00000100;
+pub const MB_DEFBUTTON3: u32 = 0x00000200;
+pub const MB_DEFBUTTON4: u32 = 0x00000300;
+
+// Modality flags
+pub const MB_APPLMODAL: u32 = 0x00000000;
+pub const MB_SYSTEMMODAL: u32 = 0x00001000;
+pub const MB_TASKMODAL: u32 = 0x00002000;
+
+// Misc flags
+pub const MB_SETFOREGROUND: u32 = 0x00010000;
+pub const MB_TOPMOST: u32 = 0x00040000;
+pub const MB_SERVICE_NOTIFICATION: u32 = 0x00200000;
+
+// Return values
+pub const IDOK: i32 = 1;
+pub const IDCANCEL: i32 = 2;
+pub const IDABORT: i32 = 3;
+pub const IDRETRY: i32 = 4;
+pub const IDIGNORE: i32 = 5;
+pub const IDYES: i32 = 6;
+pub const IDNO: i32 = 7;
+pub const IDTRYAGAIN: i32 = 10;
+pub const IDCONTINUE: i32 = 11;
+
+/// Displays a modal dialog box that contains a system icon, a set of buttons, and a brief
+/// application-specific message, such as status or error information. The message box returns
+/// an integer value that indicates which button the user clicked.
+///
+/// # Arguments
+/// * `_hwnd` - A handle to the owner window of the message box. If this parameter is `HWND::NULL`,
+///   the message box has no owner window.
+/// * `text` - The message to be displayed.
+/// * `caption` - The dialog box title. If this parameter is `None`, the default title is used.
+/// * `u_type` - The contents and behavior of the dialog box. This parameter can be a combination
+///   of flags from the MB_* constants.
+///
+/// # Returns
+/// If the function succeeds, the return value is one of the ID* constants indicating which button
+/// was pressed. If there is not enough memory to create the message box, the return value is `0`.
+///
+/// # Notes
+/// This implementation uses `rfd` for native message dialogs. Not all button combinations
+/// supported by Windows are exposed by `rfd`; unsupported combinations fall back to a simple
+/// OK dialog and log a warning.
+pub fn message_box_a(_hwnd: HWND, text: &str, caption: &str, u_type: u32) -> i32 {
+    use rfd::{MessageButtons, MessageDialog, MessageDialogResult, MessageLevel};
+
+    let buttons = u_type & 0x0F;
+    let icon = u_type & 0xF0;
+
+    let level = match icon {
+        MB_ICONHAND => MessageLevel::Error,
+        MB_ICONQUESTION => MessageLevel::Info,
+        MB_ICONEXCLAMATION => MessageLevel::Warning,
+        MB_ICONASTERISK => MessageLevel::Info,
+        _ => MessageLevel::Info,
+    };
+
+    let rfd_buttons = match buttons {
+        MB_OK => MessageButtons::Ok,
+        MB_OKCANCEL => MessageButtons::OkCancel,
+        MB_YESNO => MessageButtons::YesNo,
+        MB_YESNOCANCEL => MessageButtons::YesNoCancel,
+        _ => {
+            warn!(
+                "MessageBoxA: unsupported button combination (u_type={:#x}), falling back to OK.",
+                u_type
+            );
+            MessageButtons::Ok
+        }
+    };
+
+    let result = MessageDialog::new()
+        .set_level(level)
+        .set_title(caption)
+        .set_description(text)
+        .set_buttons(rfd_buttons)
+        .show();
+
+    match result {
+        MessageDialogResult::Ok => IDOK,
+        MessageDialogResult::Cancel => IDCANCEL,
+        MessageDialogResult::Yes => IDYES,
+        MessageDialogResult::No => IDNO,
+        MessageDialogResult::Custom(_) => IDOK,
+    }
+}

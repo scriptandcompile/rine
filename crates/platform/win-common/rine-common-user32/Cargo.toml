@@ -11,6 +11,7 @@ rine-types = { workspace = true }
 winit = { workspace = true }
 tracing = { workspace = true }
 goblin = { workspace = true }
+rfd = { workspace = true }
 
 [dev-dependencies]
 serial_test = { workspace = true }
