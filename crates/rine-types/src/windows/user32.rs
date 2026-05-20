@@ -5,9 +5,9 @@
 
 use core::fmt;
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::sync::{Arc, Mutex};
 
-use crate::errors::BOOL;
 use crate::handles::HMENU;
 
 // ---------------------------------------------------------------------------
@@ -41,66 +41,6 @@ impl HWND {
 impl fmt::Debug for HWND {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "HWND({:#x})", self.0)
-    }
-}
-
-/// A shell drag-and-drop handle (HDROP).
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-#[repr(transparent)]
-pub struct HDROP(usize);
-
-impl HDROP {
-    pub const NULL: Self = Self(0);
-
-    #[inline]
-    pub const fn from_raw(value: usize) -> Self {
-        Self(value)
-    }
-
-    #[inline]
-    pub const fn as_raw(self) -> usize {
-        self.0
-    }
-
-    #[inline]
-    pub const fn is_null(self) -> bool {
-        self.0 == 0
-    }
-}
-
-impl fmt::Debug for HDROP {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "HDROP({:#x})", self.0)
-    }
-}
-
-/// A Windows device context handle (HDC).
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-#[repr(transparent)]
-pub struct HDC(usize);
-
-impl HDC {
-    pub const NULL: Self = Self(0);
-
-    #[inline]
-    pub const fn from_raw(value: usize) -> Self {
-        Self(value)
-    }
-
-    #[inline]
-    pub const fn as_raw(self) -> usize {
-        self.0
-    }
-
-    #[inline]
-    pub const fn is_null(self) -> bool {
-        self.0 == 0
-    }
-}
-
-impl fmt::Debug for HDC {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "HDC({:#x})", self.0)
     }
 }
 
@@ -612,25 +552,15 @@ pub mod system_metrics {
 /// Negative values reference per-window data, while non-negative values
 /// reference per-class or dialog-specific data.
 pub mod window_long_index {
-    /// The window style (WS_*).
     pub const GWL_STYLE: i32 = -16;
-    /// The extended window style (WS_EX_*).
     pub const GWL_EXSTYLE: i32 = -20;
-    /// The identifier of the child window.
     pub const GWL_ID: i32 = -12;
-    /// A pointer to the window procedure (same as GWLP_WNDPROC).
     pub const GWLP_WNDPROC: i32 = -4;
-    /// A handle to the application instance.
     pub const GWLP_HINSTANCE: i32 = -6;
-    /// A handle to the parent window.
     pub const GWLP_HWNDPARENT: i32 = -8;
-    /// User data associated with the window.
     pub const GWLP_USERDATA: i32 = -21;
-    /// The return value of a dialog box message (dialog box only).
     pub const DWLP_MSGRESULT: i32 = 0;
-    /// A pointer to the dialog box procedure (dialog box only).
     pub const DWLP_DLGPROC: i32 = 4;
-    /// User data associated with a dialog box (dialog box only).
     pub const DWLP_USER: i32 = 8;
 }
 
@@ -638,7 +568,6 @@ pub mod window_long_index {
 pub type ATOM = u16;
 
 /// Pointer-sized Windows parameter/result aliases.
-/// WPARAM is an unsigned pointer-sized value, LPARAM and LRESULT are signed.
 pub type WPARAM = usize;
 pub type LPARAM = isize;
 pub type LRESULT = isize;
@@ -656,7 +585,7 @@ pub struct Msg {
     pub w_param: WPARAM,
     pub l_param: LPARAM,
     pub time: u32,
-    pub pt: Point,
+    pub pt: crate::windows::Point,
 }
 
 /// The Win32 `ACCEL` structure used by accelerator tables.
@@ -668,24 +597,6 @@ pub struct Accel {
     pub cmd: u16,
 }
 
-/// The Windows POINT structure.
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Point {
-    pub x: i32,
-    pub y: i32,
-}
-
-/// The Windows DROPFILES structure used by WM_DROPFILES/HDROP.
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct DropFiles {
-    pub p_files: u32,
-    pub pt: Point,
-    pub f_nc: BOOL,
-    pub f_wide: BOOL,
-}
-
 // ---------------------------------------------------------------------------
 // WNDCLASSEX structure
 // ---------------------------------------------------------------------------
@@ -695,7 +606,7 @@ pub struct DropFiles {
 #[derive(Debug, Clone, Copy)]
 pub struct WndClassA {
     pub style: u32,
-    pub lpfn_wnd_proc: usize, // function pointer
+    pub lpfn_wnd_proc: usize,
     pub cb_cls_extra: i32,
     pub cb_wnd_extra: i32,
     pub h_instance: usize,
@@ -711,7 +622,7 @@ pub struct WndClassA {
 #[derive(Debug, Clone, Copy)]
 pub struct WndClassW {
     pub style: u32,
-    pub lpfn_wnd_proc: usize, // function pointer
+    pub lpfn_wnd_proc: usize,
     pub cb_cls_extra: i32,
     pub cb_wnd_extra: i32,
     pub h_instance: usize,
@@ -728,7 +639,7 @@ pub struct WndClassW {
 pub struct WndClassExA {
     pub cb_size: u32,
     pub style: u32,
-    pub lpfn_wnd_proc: usize, // function pointer
+    pub lpfn_wnd_proc: usize,
     pub cb_cls_extra: i32,
     pub cb_wnd_extra: i32,
     pub h_instance: usize,
@@ -746,7 +657,7 @@ pub struct WndClassExA {
 pub struct WndClassExW {
     pub cb_size: u32,
     pub style: u32,
-    pub lpfn_wnd_proc: usize, // function pointer
+    pub lpfn_wnd_proc: usize,
     pub cb_cls_extra: i32,
     pub cb_wnd_extra: i32,
     pub h_instance: usize,
@@ -757,33 +668,6 @@ pub struct WndClassExW {
     pub lpsz_class_name: *const u16,
     pub h_icon_sm: usize,
 }
-
-// ---------------------------------------------------------------------------
-// RECT structure
-// ---------------------------------------------------------------------------
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Rect {
-    pub left: i32,
-    pub top: i32,
-    pub right: i32,
-    pub bottom: i32,
-}
-
-impl Rect {
-    /// Check whether a point at (x, y) lies inside this rectangle.
-    ///
-    /// The right and bottom edges are exclusive, matching Windows convention.
-    pub fn contains_point(&self, x: i32, y: i32) -> bool {
-        x >= self.left && x < self.right && y >= self.top && y < self.bottom
-    }
-}
-
-// ---------------------------------------------------------------------------
-// POINT structure
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Window Class Storage
@@ -846,36 +730,19 @@ impl Default for WindowClassRegistry {
 /// Per-window state tracked by the user32 implementation.
 #[derive(Debug, Clone)]
 pub struct WindowState {
-    /// Window handle.
     pub hwnd: HWND,
-    /// Window class name.
     pub class_name: String,
-    /// Window title.
     pub title: String,
-    /// Window styles (WS_*).
     pub style: u32,
-    /// Extended window styles (WS_EX_*).
     pub ex_style: u32,
-    /// Window position and size.
-    pub rect: Rect,
-    /// Client area rectangle.
-    pub client_rect: Rect,
-    /// Parent window handle.
+    pub rect: crate::windows::Rect,
+    pub client_rect: crate::windows::Rect,
     pub parent: HWND,
-    /// Whether the window is visible.
     pub visible: bool,
-    /// Whether the window is enabled.
     pub enabled: bool,
-    /// Window procedure from the class.
     pub wnd_proc: usize,
-    /// User data pointer (SetWindowLongPtr).
     pub user_data: usize,
-    /// Handle to the window menu, or `None` if no menu is attached.
     pub menu: Option<HMENU>,
-    /// Handle to the system menu (window menu / control menu), or `None`.
-    ///
-    /// The system menu is created by the system for every top-level window
-    /// and is typically accessed via Alt+Space or by clicking the window icon.
     pub system_menu: Option<HMENU>,
 }
 
@@ -885,8 +752,6 @@ pub struct WindowManager {
     next_hwnd: Mutex<usize>,
     focused_hwnd: Mutex<HWND>,
     foreground_hwnd: Mutex<HWND>,
-    /// Tracks the most recently activated popup window per owner window.
-    /// Key: owner HWND, Value: last active popup HWND.
     last_active_popup: Mutex<HashMap<HWND, HWND>>,
 }
 
@@ -960,10 +825,6 @@ impl WindowManager {
         windows.remove(&hwnd).is_some()
     }
 
-    /// Records that a popup window was activated under its owner.
-    ///
-    /// If `popup` is NULL this is a no-op. The owner is resolved from the
-    /// popup's `parent` field in the window state.
     pub fn record_popup_activation(&self, popup: HWND) {
         if popup.is_null() {
             return;
@@ -978,31 +839,18 @@ impl WindowManager {
         }
     }
 
-    /// Returns the last active popup for a given owner window.
-    ///
-    /// Returns `HWND::NULL` if no popup has been recorded for this owner.
     pub fn get_last_active_popup(&self, owner: HWND) -> HWND {
         let map = self.last_active_popup.lock().unwrap();
         map.get(&owner).copied().unwrap_or(HWND::NULL)
     }
 
-    /// ChildWindowFromPoint — determines which child window (if any) contains
-    /// the specified point.
-    ///
-    /// The point is in the client coordinates of the parent window. Only
-    /// visible, enabled immediate children of the parent are considered.
-    /// If multiple children contain the point, the topmost (highest HWND)
-    /// is returned. If no child contains the point, the parent HWND is
-    /// returned. Returns `HWND::NULL` if the parent does not exist.
-    pub fn child_window_from_point(&self, parent: HWND, pt: Point) -> HWND {
+    pub fn child_window_from_point(&self, parent: HWND, pt: crate::windows::Point) -> HWND {
         let windows = self.windows.lock().unwrap();
 
-        // The parent must exist.
         if !windows.contains_key(&parent) {
             return HWND::NULL;
         }
 
-        // Scan all children of `parent` — the highest HWND is topmost.
         let mut found: HWND = HWND::NULL;
         for (&hwnd, state) in windows.iter() {
             if state.parent != parent {
@@ -1014,7 +862,6 @@ impl WindowManager {
             if !state.rect.contains_point(pt.x, pt.y) {
                 continue;
             }
-            // Later-created windows have higher HWND values and are on top.
             if found.is_null() || hwnd.as_raw() > found.as_raw() {
                 found = hwnd;
             }
@@ -1063,28 +910,24 @@ impl MessageQueue {
 
     pub fn get_message(&self, msg: &mut Msg) -> bool {
         loop {
-            // Check for quit
             if *self.quit.lock().unwrap() {
                 msg.message = window_message::WM_QUIT;
                 msg.w_param = *self.quit_code.lock().unwrap() as usize;
                 return false;
             }
 
-            // Check for pending messages - retrieve from front of queue (FIFO)
             let mut messages = self.messages.lock().unwrap();
             if !messages.is_empty() {
                 *msg = messages.remove(0);
                 return true;
             }
 
-            // No messages, yield
             drop(messages);
             std::thread::yield_now();
         }
     }
 
     pub fn peek_message(&self, msg: &mut Msg, remove: bool) -> bool {
-        // Check for quit first
         if *self.quit.lock().unwrap() {
             msg.message = window_message::WM_QUIT;
             msg.w_param = *self.quit_code.lock().unwrap() as usize;
@@ -1096,7 +939,6 @@ impl MessageQueue {
             return false;
         }
 
-        // Treat messages as a FIFO queue: read/remove from the front
         *msg = messages[0];
         if remove {
             messages.remove(0);
@@ -1115,8 +957,6 @@ impl Default for MessageQueue {
 // Global State
 // ---------------------------------------------------------------------------
 
-use std::sync::LazyLock;
-
 pub static WINDOW_CLASS_REGISTRY: LazyLock<Arc<WindowClassRegistry>> =
     LazyLock::new(|| Arc::new(WindowClassRegistry::new()));
 
@@ -1133,6 +973,9 @@ thread_local! {
 
 #[cfg(test)]
 mod tests {
+    use crate::windows::Point;
+    use crate::windows::Rect;
+
     use super::*;
 
     // ── Hwnd ──────────────────────────────────────────────────────
@@ -1207,7 +1050,7 @@ mod tests {
 
         assert!(registry.unregister("TempClass"));
         assert!(registry.get("TempClass").is_none());
-        assert!(!registry.unregister("TempClass")); // Second unregister fails
+        assert!(!registry.unregister("TempClass"));
     }
 
     // ── WindowManager ──────────────────────────────────────────────
@@ -1309,7 +1152,7 @@ mod tests {
 
         assert!(manager.destroy_window(hwnd));
         assert!(manager.get_window(hwnd).is_none());
-        assert!(!manager.destroy_window(hwnd)); // Second destroy fails
+        assert!(!manager.destroy_window(hwnd));
     }
 
     // ── MessageQueue ───────────────────────────────────────────────
@@ -1337,12 +1180,12 @@ mod tests {
             pt: Point { x: 0, y: 0 },
         };
 
-        assert!(queue.peek_message(&mut retrieved, false)); // Don't remove
+        assert!(queue.peek_message(&mut retrieved, false));
         assert_eq!(retrieved.message, window_message::WM_PAINT);
         assert_eq!(retrieved.hwnd.as_raw(), 0x1000);
 
-        assert!(queue.peek_message(&mut retrieved, true)); // Remove
-        assert!(!queue.peek_message(&mut retrieved, false)); // Now empty
+        assert!(queue.peek_message(&mut retrieved, true));
+        assert!(!queue.peek_message(&mut retrieved, false));
     }
 
     #[test]
@@ -1389,23 +1232,5 @@ mod tests {
         assert_eq!(window_message::WM_PAINT, 0x000F);
         assert_eq!(window_message::WM_QUIT, 0x0012);
         assert_eq!(window_message::WM_CLOSE, 0x0010);
-    }
-
-    // ── Rect & Point ───────────────────────────────────────────────
-
-    #[test]
-    fn rect_default() {
-        let rect = Rect::default();
-        assert_eq!(rect.left, 0);
-        assert_eq!(rect.top, 0);
-        assert_eq!(rect.right, 0);
-        assert_eq!(rect.bottom, 0);
-    }
-
-    #[test]
-    fn point_default() {
-        let point = Point::default();
-        assert_eq!(point.x, 0);
-        assert_eq!(point.y, 0);
     }
 }
