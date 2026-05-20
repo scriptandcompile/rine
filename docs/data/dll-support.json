@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T02:15:25.386612+00:00",
+  "generatedAt": "2026-05-20T04:05:33.729483+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 68,
+      "functionCount": 69,
       "functions": [
         {
           "name": "CharNextA",
@@ -2977,6 +2977,19 @@
             "status": "stubbed",
             "symbol": "menu::GetSystemMenu",
             "source": "user32 - menu.rs"
+          }
+        },
+        {
+          "name": "GetSystemMetrics",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "system_metrics::GetSystemMetrics",
+            "source": "user32 - system_metrics.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "system_metrics::GetSystemMetrics",
+            "source": "user32 - system_metrics.rs"
           }
         },
         {
@@ -3542,17 +3555,17 @@
     }
   ],
   "totals": {
-    "functions": 268,
+    "functions": 269,
     "x64": {
       "implemented": 102,
       "partial": 119,
-      "stubbed": 47,
+      "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 103,
       "partial": 118,
-      "stubbed": 47,
+      "stubbed": 48,
       "unimplemented": 0
     }
   }

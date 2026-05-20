@@ -14,6 +14,7 @@ mod menu;
 mod message_queue;
 mod message_registration;
 mod sound;
+mod system_metrics;
 mod window_lifecycle;
 mod window_text;
 
