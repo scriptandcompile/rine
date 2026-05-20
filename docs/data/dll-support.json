@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T04:05:33.729483+00:00",
+  "generatedAt": "2026-05-20T04:14:16.245367+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 69,
+      "functionCount": 70,
       "functions": [
         {
           "name": "CharNextA",
@@ -3042,6 +3042,19 @@
             "status": "partial",
             "symbol": "window_text::GetWindowTextW",
             "source": "user32 - window_text.rs"
+          }
+        },
+        {
+          "name": "InvalidateRect",
+          "x64": {
+            "status": "partial",
+            "symbol": "window_lifecycle::InvalidateRect",
+            "source": "user32 - window_lifecycle.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "window_lifecycle::InvalidateRect",
+            "source": "user32 - window_lifecycle.rs"
           }
         },
         {
@@ -3555,16 +3568,16 @@
     }
   ],
   "totals": {
-    "functions": 269,
+    "functions": 270,
     "x64": {
       "implemented": 102,
-      "partial": 119,
+      "partial": 120,
       "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 103,
-      "partial": 118,
+      "partial": 119,
       "stubbed": 48,
       "unimplemented": 0
     }

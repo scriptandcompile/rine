@@ -202,6 +202,43 @@ pub fn update_window(hwnd: HWND) -> BOOL {
     BOOL::TRUE
 }
 
+/// Mark the window's client area as needing a redraw.
+///
+/// `rect` and `erase` are accepted for API compatibility; the current
+/// implementation always invalidates the entire window and posts `WM_PAINT`.
+/// Returns `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found.
+pub fn invalidate_rect(hwnd: HWND, _rect: Option<&Rect>, erase: BOOL) -> BOOL {
+    if WINDOW_MANAGER.get_window(hwnd).is_none() {
+        return BOOL::FALSE;
+    }
+
+    request_native_redraw(hwnd);
+
+    THREAD_MESSAGE_QUEUE.with(|queue| {
+        if erase == BOOL::TRUE {
+            queue.post_message(Msg {
+                hwnd,
+                message: window_message::WM_ERASEBKGND,
+                w_param: 0,
+                l_param: 0,
+                time: 0,
+                pt: Point::default(),
+            });
+        }
+
+        queue.post_message(Msg {
+            hwnd,
+            message: window_message::WM_PAINT,
+            w_param: 0,
+            l_param: 0,
+            time: 0,
+            pt: Point::default(),
+        });
+    });
+
+    BOOL::TRUE
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

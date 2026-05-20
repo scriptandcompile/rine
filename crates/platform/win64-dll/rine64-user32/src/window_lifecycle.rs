@@ -230,3 +230,33 @@ pub unsafe extern "win64" fn IsIconic(hwnd: HWND) -> BOOL {
 pub unsafe extern "win64" fn UpdateWindow(hwnd: HWND) -> BOOL {
     common::update_window(hwnd)
 }
+
+/// Mark part of the window's client area as needing a redraw.
+///
+/// # Arguments
+/// * `hwnd`: Handle of the window to invalidate.
+/// * `lp_rect`: Pointer to a `Rect` structure, or null to invalidate the entire client area.
+/// * `b_erase`: Whether to erase the background during the next `WM_PAINT`.
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime.
+/// If `lp_rect` is non-null it must point to a valid `Rect`.
+///
+/// # Returns
+/// `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found.
+///
+/// # Notes
+/// The `lp_rect` parameter is accepted but ignored; the entire client area is
+/// always invalidated. On error the `GetLastError` code should be set to indicate
+/// the reason for failure, such as `ERROR_INVALID_WINDOW_HANDLE` if the specified
+/// handle does not correspond to a valid window. Currently, we do not set `GetLastError`.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn InvalidateRect(
+    hwnd: HWND,
+    lp_rect: *const Rect,
+    b_erase: BOOL,
+) -> BOOL {
+    common::invalidate_rect(hwnd, lp_rect.as_ref(), b_erase)
+}
