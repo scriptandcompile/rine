@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T05:00:56.207445+00:00",
+  "generatedAt": "2026-05-20T05:16:23.589316+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 77,
+      "functionCount": 78,
       "functions": [
         {
           "name": "CharNextA",
@@ -3526,6 +3526,19 @@
           }
         },
         {
+          "name": "SetForegroundWindow",
+          "x64": {
+            "status": "implemented",
+            "symbol": "focus::SetForegroundWindow",
+            "source": "user32 - focus.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "focus::SetForegroundWindow",
+            "source": "user32 - focus.rs"
+          }
+        },
+        {
           "name": "SetWindowTextA",
           "x64": {
             "status": "partial",
@@ -3659,15 +3672,15 @@
     }
   ],
   "totals": {
-    "functions": 277,
+    "functions": 278,
     "x64": {
-      "implemented": 102,
+      "implemented": 103,
       "partial": 127,
       "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 103,
+      "implemented": 104,
       "partial": 126,
       "stubbed": 48,
       "unimplemented": 0

@@ -211,6 +211,9 @@ pub mod window_message {
     pub const WM_MOVE: u32 = 0x0003;
     pub const WM_SIZE: u32 = 0x0005;
     pub const WM_ACTIVATE: u32 = 0x0006;
+    pub const WA_INACTIVE: u32 = 0;
+    pub const WA_ACTIVE: u32 = 1;
+    pub const WA_CLICKACTIVE: u32 = 2;
     pub const WM_SETFOCUS: u32 = 0x0007;
     pub const WM_KILLFOCUS: u32 = 0x0008;
     pub const WM_ENABLE: u32 = 0x000A;
@@ -836,6 +839,7 @@ pub struct WindowManager {
     windows: Mutex<HashMap<HWND, WindowState>>,
     next_hwnd: Mutex<usize>,
     focused_hwnd: Mutex<HWND>,
+    foreground_hwnd: Mutex<HWND>,
 }
 
 impl WindowManager {
@@ -844,6 +848,7 @@ impl WindowManager {
             windows: Mutex::new(HashMap::new()),
             next_hwnd: Mutex::new(0x10000),
             focused_hwnd: Mutex::new(HWND::NULL),
+            foreground_hwnd: Mutex::new(HWND::NULL),
         }
     }
 
@@ -855,6 +860,17 @@ impl WindowManager {
         let mut focused = self.focused_hwnd.lock().unwrap();
         let prev = *focused;
         *focused = hwnd;
+        prev
+    }
+
+    pub fn get_foreground(&self) -> HWND {
+        *self.foreground_hwnd.lock().unwrap()
+    }
+
+    pub fn set_foreground(&self, hwnd: HWND) -> HWND {
+        let mut foreground = self.foreground_hwnd.lock().unwrap();
+        let prev = *foreground;
+        *foreground = hwnd;
         prev
     }
 
