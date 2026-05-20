@@ -3743,6 +3743,7 @@ dependencies = [
  "serial_test",
  "tracing",
  "winit 0.30.13",
+ "x11rb",
 ]
 
 [[package]]

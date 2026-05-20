@@ -1,4 +1,13 @@
-use std::sync::Mutex;
+pub mod cached;
+pub mod provider;
+use cached::CachedCursorProvider;
+use provider::CursorProvider;
+
+#[cfg(target_os = "linux")]
+#[cfg_attr(test, allow(dead_code))]
+pub mod x11;
+
+use std::sync::OnceLock;
 use tracing::warn;
 
 /// Standard predefined system cursor resource IDs (IDC_* values).
@@ -139,12 +148,38 @@ pub fn set_cursor(cursor: u32) -> Option<u32> {
     None
 }
 
-/// Global cursor position store used by `get_cursor_pos` and `set_cursor_pos`.
-///
-/// This provides a best-effort in-memory cursor position. The position is initially
-/// `None` (unknown) until `set_cursor_pos` is called, meaning `get_cursor_pos` will
-/// return `None` on the first call if the position has never been set.
-static CURSOR_POSITION: Mutex<Option<(i32, i32)>> = Mutex::new(None);
+// ── Provider selection ───────────────────────────────────────────────
+
+static CURSOR_PROVIDER: OnceLock<Box<dyn CursorProvider + Send + Sync>> = OnceLock::new();
+
+fn cached_mode_forced() -> bool {
+    std::env::var("RINE_CURSOR_CACHED")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
+fn get_cursor_provider() -> &'static dyn CursorProvider {
+    CURSOR_PROVIDER
+        .get_or_init(|| {
+            // 1. Explicit override via environment variable.
+            if cached_mode_forced() {
+                tracing::debug!("cursor provider: cached mode forced by RINE_CURSOR_CACHED");
+                return Box::new(CachedCursorProvider::new());
+            }
+
+            // 2. Platform provider (never in test builds so unit tests are
+            //    deterministic and don't depend on a display server).
+            #[cfg(all(target_os = "linux", not(test)))]
+            if let Some(provider) = x11::X11CursorProvider::try_new() {
+                return provider;
+            }
+
+            // 3. Fallback: in-memory cache.
+            tracing::debug!("cursor provider: using cached fallback");
+            Box::new(CachedCursorProvider::new())
+        })
+        .as_ref()
+}
 
 /// Retrieves the position of the mouse cursor in screen coordinates.
 ///
@@ -162,16 +197,12 @@ static CURSOR_POSITION: Mutex<Option<(i32, i32)>> = Mutex::new(None);
 /// access to the window station or if the input desktop is not the current desktop).
 ///
 /// # Notes
-/// This function returns a best-effort position from the in-memory cursor store. The
-/// position may not reflect the actual OS cursor position — it only reflects the last
-/// value written by `set_cursor_pos`. This means `get_cursor_pos` will return `None`
-/// if `set_cursor_pos` has never been called, even if the OS knows the cursor position.
-/// This implementation does not set the `GetLastError` value on failure.
-/// The following operations are **not yet implemented**:
-/// - Querying the actual OS cursor position through the windowing system (X11/Wayland)
-/// - Tracking cursor movement from input events when the position is changed externally
+/// When a windowing backend (X11) is available, this function queries the real OS cursor
+/// position.  In non-windowed mode or when the environment variable `RINE_CURSOR_CACHED=1`
+/// is set, it returns the last position written by [`set_cursor_pos`] (or `None` if never
+/// set).
 pub fn get_cursor_pos() -> Option<(i32, i32)> {
-    *CURSOR_POSITION.lock().unwrap()
+    get_cursor_provider().get_cursor_pos()
 }
 
 /// Moves the mouse cursor to the specified screen coordinates.
@@ -184,18 +215,12 @@ pub fn get_cursor_pos() -> Option<(i32, i32)> {
 /// `true` if the cursor was moved successfully, or `false` if the function fails.
 ///
 /// # Notes
-/// This function stores the requested position in memory so that `get_cursor_pos`
-/// can retrieve it. The position is **not** propagated to the underlying windowing
-/// system, meaning the actual OS cursor does not move. Applications that rely on
-/// the OS cursor position for input will not see the effect of this call.
-/// This implementation does not set the `GetLastError` value on failure.
-/// The following operations are **not yet implemented**:
-/// - Moving the actual OS cursor through the windowing system (X11/Wayland)
-/// - Input injection or synthesis of mouse move events
-/// - Validating that the coordinates lie within a valid display monitor
+/// When a windowing backend (X11) is available, this function moves the real OS cursor.
+/// In non-windowed mode or when the environment variable `RINE_CURSOR_CACHED=1` is set,
+/// the position is stored in memory so that [`get_cursor_pos`] can retrieve it, but the
+/// OS cursor is not moved.
 pub fn set_cursor_pos(x: i32, y: i32) -> bool {
-    *CURSOR_POSITION.lock().unwrap() = Some((x, y));
-    true
+    get_cursor_provider().set_cursor_pos(x, y)
 }
 
 #[cfg(test)]
@@ -274,42 +299,66 @@ mod tests {
         assert!(set_cursor(0).is_none());
     }
 
-    // ── get_cursor_pos / set_cursor_pos ─────────────────────────
+    // ── CachedCursorProvider unit tests ─────────────────────────
     //
-    // These tests share the global CURSOR_POSITION state and must run
-    // serially to avoid interfering with each other.
+    // These test the cached provider directly to avoid depending on
+    // global state or serialisation.
+
+    #[test]
+    fn cached_provider_returns_none_initially() {
+        let provider = CachedCursorProvider::new();
+        assert_eq!(provider.get_cursor_pos(), None);
+    }
+
+    #[test]
+    fn cached_provider_returns_set_position() {
+        let provider = CachedCursorProvider::new();
+        assert!(provider.set_cursor_pos(100, 200));
+        assert_eq!(provider.get_cursor_pos(), Some((100, 200)));
+    }
+
+    #[test]
+    fn cached_provider_overwrites_position() {
+        let provider = CachedCursorProvider::new();
+        provider.set_cursor_pos(10, 20);
+        provider.set_cursor_pos(30, 40);
+        assert_eq!(provider.get_cursor_pos(), Some((30, 40)));
+    }
+
+    #[test]
+    fn cached_provider_negative_coordinates() {
+        let provider = CachedCursorProvider::new();
+        provider.set_cursor_pos(-1, -1);
+        assert_eq!(provider.get_cursor_pos(), Some((-1, -1)));
+    }
+
+    #[test]
+    fn cached_provider_zero_coordinates() {
+        let provider = CachedCursorProvider::new();
+        assert!(provider.set_cursor_pos(0, 0));
+        assert_eq!(provider.get_cursor_pos(), Some((0, 0)));
+    }
+
+    // ── Module-level API end-to-end (uses global provider) ───────
+    //
+    // These tests exercise the public `get_cursor_pos` / `set_cursor_pos`
+    // functions through the global provider.  In test builds the provider
+    // is always the cached variant (`cfg(test)` prevents the X11 backend
+    // from initialising).  They must run serially because they share the
+    // single global `CachedCursorProvider` instance.
 
     #[test]
     #[serial]
-    fn get_cursor_pos_returns_last_set_position() {
+    fn module_api_end_to_end() {
         assert!(set_cursor_pos(100, 200));
         assert_eq!(get_cursor_pos(), Some((100, 200)));
-    }
 
-    #[test]
-    #[serial]
-    fn get_cursor_pos_returns_overwritten_position() {
-        set_cursor_pos(10, 20);
-        set_cursor_pos(30, 40);
-        assert_eq!(get_cursor_pos(), Some((30, 40)));
-    }
+        assert!(set_cursor_pos(300, 400));
+        assert_eq!(get_cursor_pos(), Some((300, 400)));
 
-    #[test]
-    #[serial]
-    fn get_cursor_pos_returns_negative_coordinates() {
-        set_cursor_pos(-1, -1);
+        assert!(set_cursor_pos(-1, -1));
         assert_eq!(get_cursor_pos(), Some((-1, -1)));
-    }
 
-    #[test]
-    #[serial]
-    fn set_cursor_pos_returns_true() {
-        assert!(set_cursor_pos(0, 0));
-    }
-
-    #[test]
-    #[serial]
-    fn set_cursor_pos_zero_coordinates() {
         assert!(set_cursor_pos(0, 0));
         assert_eq!(get_cursor_pos(), Some((0, 0)));
     }

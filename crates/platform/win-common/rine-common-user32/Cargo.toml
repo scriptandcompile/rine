@@ -12,6 +12,7 @@ winit = { workspace = true }
 tracing = { workspace = true }
 goblin = { workspace = true }
 rfd = { workspace = true }
+x11rb = { version = "0.13", default-features = false }
 
 [dev-dependencies]
 serial_test = { workspace = true }
