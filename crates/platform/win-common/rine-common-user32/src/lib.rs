@@ -14,6 +14,7 @@ pub mod char_navigation;
 pub mod class_registration;
 pub mod clipboard;
 pub mod cursor;
+pub mod device_context;
 pub mod dialogs;
 pub mod focus;
 pub mod format;
@@ -27,6 +28,7 @@ pub mod window_text;
 
 pub use char_navigation::{char_next_a, char_prev_a};
 pub use class_registration::unregister_class;
+pub use device_context::{get_dc, get_window_dc, release_dc};
 pub use focus::{get_focus, set_focus};
 pub use message_queue::{
     def_window_proc, dispatch_message, get_message, is_dialog_message, peek_message, post_message,

@@ -7,6 +7,7 @@ mod char_navigation;
 mod class_registration;
 mod clipboard;
 mod cursor;
+mod device_context;
 mod dialogs;
 mod focus;
 mod format;

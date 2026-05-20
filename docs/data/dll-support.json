@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T04:32:43.699428+00:00",
+  "generatedAt": "2026-05-20T04:47:37.346005+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 73,
+      "functionCount": 76,
       "functions": [
         {
           "name": "CharNextA",
@@ -2889,6 +2889,19 @@
           }
         },
         {
+          "name": "GetDC",
+          "x64": {
+            "status": "partial",
+            "symbol": "device_context::GetDC",
+            "source": "user32 - device_context.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "device_context::GetDC",
+            "source": "user32 - device_context.rs"
+          }
+        },
+        {
           "name": "GetDlgCtrlID",
           "x64": {
             "status": "stubbed",
@@ -3016,6 +3029,19 @@
             "status": "stubbed",
             "symbol": "system_metrics::GetSystemMetrics",
             "source": "user32 - system_metrics.rs"
+          }
+        },
+        {
+          "name": "GetWindowDC",
+          "x64": {
+            "status": "partial",
+            "symbol": "device_context::GetWindowDC",
+            "source": "user32 - device_context.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "device_context::GetWindowDC",
+            "source": "user32 - device_context.rs"
           }
         },
         {
@@ -3370,6 +3396,19 @@
           }
         },
         {
+          "name": "ReleaseDC",
+          "x64": {
+            "status": "partial",
+            "symbol": "device_context::ReleaseDC",
+            "source": "user32 - device_context.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "device_context::ReleaseDC",
+            "source": "user32 - device_context.rs"
+          }
+        },
+        {
           "name": "SendDlgItemMessageA",
           "x64": {
             "status": "stubbed",
@@ -3607,16 +3646,16 @@
     }
   ],
   "totals": {
-    "functions": 273,
+    "functions": 276,
     "x64": {
       "implemented": 102,
-      "partial": 123,
+      "partial": 126,
       "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 103,
-      "partial": 122,
+      "partial": 125,
       "stubbed": 48,
       "unimplemented": 0
     }
