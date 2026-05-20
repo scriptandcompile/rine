@@ -5,6 +5,7 @@ use rine_types::{errors::BOOL, strings::json_escape};
 
 use crate::backend::{
     create_native_window, destroy_native_window, request_native_redraw, set_native_visibility,
+    set_native_window_rect,
 };
 
 /// Create a new window from pre-parsed Rust string arguments.
@@ -234,6 +235,98 @@ pub fn invalidate_rect(hwnd: HWND, _rect: Option<&Rect>, erase: BOOL) -> BOOL {
             time: 0,
             pt: Point::default(),
         });
+    });
+
+    BOOL::TRUE
+}
+
+/// Enable or disable mouse and keyboard input to the specified window.
+///
+/// Returns `BOOL::TRUE` if the window was previously enabled, `BOOL::FALSE` otherwise.
+/// Posts a `WM_ENABLE` message to the window.
+pub fn enable_window(hwnd: HWND, enable: BOOL) -> BOOL {
+    let was_enabled = WINDOW_MANAGER
+        .get_window(hwnd)
+        .map(|state| state.enabled)
+        .unwrap_or(false);
+
+    WINDOW_MANAGER.update_window(hwnd, |state| {
+        state.enabled = enable.is_true();
+    });
+
+    THREAD_MESSAGE_QUEUE.with(|queue| {
+        queue.post_message(Msg {
+            hwnd,
+            message: window_message::WM_ENABLE,
+            w_param: usize::from(enable.is_true()),
+            l_param: 0,
+            time: 0,
+            pt: Point::default(),
+        });
+    });
+
+    if was_enabled { BOOL::TRUE } else { BOOL::FALSE }
+}
+
+/// Move and optionally resize a window.
+///
+/// Changes the position and dimensions of the window. Posts `WM_MOVE` and `WM_SIZE`
+/// messages. If `repaint` is `BOOL::TRUE`, also posts `WM_PAINT`.
+///
+/// Returns `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found.
+pub fn move_window(hwnd: HWND, x: i32, y: i32, width: i32, height: i32, repaint: BOOL) -> BOOL {
+    let found = WINDOW_MANAGER.update_window(hwnd, |state| {
+        state.rect = Rect {
+            left: x,
+            top: y,
+            right: x + width,
+            bottom: y + height,
+        };
+        state.client_rect = Rect {
+            left: 0,
+            top: 0,
+            right: width,
+            bottom: height,
+        };
+    });
+
+    if !found {
+        return BOOL::FALSE;
+    }
+
+    set_native_window_rect(hwnd, x, y, width, height);
+
+    THREAD_MESSAGE_QUEUE.with(|queue| {
+        let lparam_move = ((y as i16 as u16 as usize) << 16) | (x as i16 as u16 as usize);
+        queue.post_message(Msg {
+            hwnd,
+            message: window_message::WM_MOVE,
+            w_param: 0,
+            l_param: lparam_move as isize,
+            time: 0,
+            pt: Point { x, y },
+        });
+
+        let lparam_size = ((height as u16 as usize) << 16) | (width as u16 as usize);
+        queue.post_message(Msg {
+            hwnd,
+            message: window_message::WM_SIZE,
+            w_param: 0,
+            l_param: lparam_size as isize,
+            time: 0,
+            pt: Point::default(),
+        });
+
+        if repaint == BOOL::TRUE {
+            queue.post_message(Msg {
+                hwnd,
+                message: window_message::WM_PAINT,
+                w_param: 0,
+                l_param: 0,
+                time: 0,
+                pt: Point::default(),
+            });
+        }
     });
 
     BOOL::TRUE

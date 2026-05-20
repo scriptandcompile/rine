@@ -137,6 +137,14 @@ impl WinitBackend {
         }
     }
 
+    fn set_window_rect(&self, hwnd: HWND, x: i32, y: i32, width: i32, height: i32) {
+        if let Some(window) = self.state.windows.get(&hwnd) {
+            window.set_outer_position(LogicalPosition::new(x as f64, y as f64));
+            let _ = window
+                .request_inner_size(LogicalSize::new(width.max(1) as f64, height.max(1) as f64));
+        }
+    }
+
     fn pump_messages(&mut self) -> Vec<Msg> {
         let mut out = Vec::new();
         let mut app = WinitPumpApp {
@@ -511,6 +519,18 @@ impl HostedBackend {
         });
     }
 
+    fn set_window_rect(&self, hwnd: HWND, x: i32, y: i32, width: i32, height: i32) {
+        self.send(HostWindowCommand::SetRect {
+            runtime_hwnd: hwnd.as_raw() as u64,
+            rect: Rect {
+                left: x,
+                top: y,
+                right: x + width,
+                bottom: y + height,
+            },
+        });
+    }
+
     fn pump_messages(&mut self) -> Vec<Msg> {
         let mut out = Vec::new();
         while let Ok(event) = self.events.try_recv() {
@@ -690,6 +710,13 @@ pub fn request_native_redraw(hwnd: HWND) {
     let _ = with_backend(|backend| match backend {
         Backend::Local(local) => local.request_redraw(hwnd),
         Backend::Hosted(hosted) => hosted.request_redraw(hwnd),
+    });
+}
+
+pub fn set_native_window_rect(hwnd: HWND, x: i32, y: i32, width: i32, height: i32) {
+    let _ = with_backend(|backend| match backend {
+        Backend::Local(local) => local.set_window_rect(hwnd, x, y, width, height),
+        Backend::Hosted(hosted) => hosted.set_window_rect(hwnd, x, y, width, height),
     });
 }
 

@@ -260,3 +260,61 @@ pub unsafe extern "win64" fn InvalidateRect(
 ) -> BOOL {
     common::invalidate_rect(hwnd, lp_rect.as_ref(), b_erase)
 }
+
+/// Enable or disable mouse and keyboard input to the specified window.
+///
+/// # Arguments
+/// * `hwnd`: Handle of the window.
+/// * `enable`: Whether to enable (`BOOL::TRUE`) or disable (`BOOL::FALSE`) the window.
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime.
+///
+/// # Returns
+/// `BOOL::TRUE` if the window was previously enabled, `BOOL::FALSE` otherwise.
+///
+/// # Notes
+/// Currently, we do not set `GetLastError`. On error (e.g. invalid HWND) the function
+/// returns `BOOL::FALSE`, which is indistinguishable from a window that was already
+/// disabled. The native backend is not notified of enable state changes, so disabled
+/// windows may still receive native input events.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn EnableWindow(hwnd: HWND, enable: BOOL) -> BOOL {
+    common::enable_window(hwnd, enable)
+}
+
+/// Move and optionally resize a window.
+///
+/// # Arguments
+/// * `hwnd`: Handle of the window.
+/// * `x`: New x position.
+/// * `y`: New y position.
+/// * `width`: New width.
+/// * `height`: New height.
+/// * `repaint`: Whether to repaint the window.
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime.
+///
+/// # Returns
+/// `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found.
+///
+/// # Notes
+/// Currently, we do not set `GetLastError`. The `repaint` parameter only controls
+/// whether `WM_PAINT` is posted; native backend repaint is always performed.
+/// Child-window coordinate translation (for `WS_CHILD` windows) is not implemented.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn MoveWindow(
+    hwnd: HWND,
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+    repaint: BOOL,
+) -> BOOL {
+    common::move_window(hwnd, x, y, width, height, repaint)
+}

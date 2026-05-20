@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T04:14:16.245367+00:00",
+  "generatedAt": "2026-05-20T04:23:57.608330+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 70,
+      "functionCount": 72,
       "functions": [
         {
           "name": "CharNextA",
@@ -2834,6 +2834,19 @@
             "status": "stubbed",
             "symbol": "menu::EnableMenuItem",
             "source": "user32 - menu.rs"
+          }
+        },
+        {
+          "name": "EnableWindow",
+          "x64": {
+            "status": "partial",
+            "symbol": "window_lifecycle::EnableWindow",
+            "source": "user32 - window_lifecycle.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "window_lifecycle::EnableWindow",
+            "source": "user32 - window_lifecycle.rs"
           }
         },
         {
@@ -3172,6 +3185,19 @@
             "status": "implemented",
             "symbol": "dialogs::MessageBoxA",
             "source": "user32 - dialogs.rs"
+          }
+        },
+        {
+          "name": "MoveWindow",
+          "x64": {
+            "status": "partial",
+            "symbol": "window_lifecycle::MoveWindow",
+            "source": "user32 - window_lifecycle.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "window_lifecycle::MoveWindow",
+            "source": "user32 - window_lifecycle.rs"
           }
         },
         {
@@ -3568,16 +3594,16 @@
     }
   ],
   "totals": {
-    "functions": 270,
+    "functions": 272,
     "x64": {
       "implemented": 102,
-      "partial": 120,
+      "partial": 122,
       "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 103,
-      "partial": 119,
+      "partial": 121,
       "stubbed": 48,
       "unimplemented": 0
     }
