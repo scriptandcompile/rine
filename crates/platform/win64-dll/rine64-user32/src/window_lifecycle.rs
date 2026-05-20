@@ -261,6 +261,42 @@ pub unsafe extern "win64" fn InvalidateRect(
     common::invalidate_rect(hwnd, lp_rect.as_ref(), b_erase)
 }
 
+/// Retrieve the client-area coordinates of a window.
+///
+/// # Arguments
+/// * `hwnd`: Handle of the window.
+/// * `lp_rect`: Pointer to a `Rect` structure that receives the client coordinates.
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime.
+/// `lp_rect` must point to a valid, writable `Rect`.
+///
+/// # Returns
+/// `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found.
+///
+/// # Notes
+/// The `left` and `top` members are always 0; `right` and `bottom` contain the
+/// width and height of the client area. This value is updated by `MoveWindow`
+/// and `CreateWindowEx`, but does **not** account for:
+/// - Non-client areas (menus, scroll bars, title bars) — requires
+///   `AdjustWindowRect[Ex]` which is not implemented yet.
+/// - DPI scaling / per-monitor DPI awareness.
+/// - Native compositor decorations on the underlying winit window.
+/// - `WM_NCCALCSIZE` handling — custom non-client areas will show stale values.
+/// - On error the `GetLastError` code should be set to `ERROR_INVALID_WINDOW_HANDLE`.
+///   Currently, we do not set `GetLastError`.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn GetClientRect(hwnd: HWND, lp_rect: *mut Rect) -> BOOL {
+    let mut rect = Rect::default();
+    let result = common::get_client_rect(hwnd, &mut rect);
+    if result == BOOL::TRUE {
+        unsafe { *lp_rect = rect };
+    }
+    result
+}
+
 /// Enable or disable mouse and keyboard input to the specified window.
 ///
 /// # Arguments

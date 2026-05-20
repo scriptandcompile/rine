@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T04:23:57.608330+00:00",
+  "generatedAt": "2026-05-20T04:32:43.699428+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 72,
+      "functionCount": 73,
       "functions": [
         {
           "name": "CharNextA",
@@ -2860,6 +2860,19 @@
             "status": "stubbed",
             "symbol": "dialogs::EndDialog",
             "source": "user32 - dialogs.rs"
+          }
+        },
+        {
+          "name": "GetClientRect",
+          "x64": {
+            "status": "partial",
+            "symbol": "window_lifecycle::GetClientRect",
+            "source": "user32 - window_lifecycle.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "window_lifecycle::GetClientRect",
+            "source": "user32 - window_lifecycle.rs"
           }
         },
         {
@@ -3594,16 +3607,16 @@
     }
   ],
   "totals": {
-    "functions": 272,
+    "functions": 273,
     "x64": {
       "implemented": 102,
-      "partial": 122,
+      "partial": 123,
       "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 103,
-      "partial": 121,
+      "partial": 122,
       "stubbed": 48,
       "unimplemented": 0
     }

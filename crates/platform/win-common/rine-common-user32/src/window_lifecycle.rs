@@ -268,6 +268,35 @@ pub fn enable_window(hwnd: HWND, enable: BOOL) -> BOOL {
     if was_enabled { BOOL::TRUE } else { BOOL::FALSE }
 }
 
+/// Retrieve the client-area coordinates of a window.
+///
+/// Fills `rect` with the client rectangle. The `left` and `top` members are
+/// always 0; `right` and `bottom` contain the width and height of the client
+/// area.
+///
+/// Returns `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found.
+///
+/// # Notes
+/// This function returns the `client_rect` stored in the window manager. The
+/// client rect is updated by `move_window` and `create_window`, but it does
+/// **not** account for:
+/// - Non-client areas (menus, scroll bars, title bar) — that would require a
+///   `AdjustWindowRect[Ex]` helper which is not implemented yet.
+/// - DPI scaling / per-monitor DPI awareness.
+/// - Actual native compositor / window-manager decorations on the underlying
+///   winit window, because the backend does not expose decoration sizes.
+/// - `WM_NCCALCSIZE` handling — applications that customise their non-client
+///   area will see stale values.
+pub fn get_client_rect(hwnd: HWND, rect: &mut Rect) -> BOOL {
+    match WINDOW_MANAGER.get_window(hwnd) {
+        Some(state) => {
+            *rect = state.client_rect;
+            BOOL::TRUE
+        }
+        None => BOOL::FALSE,
+    }
+}
+
 /// Move and optionally resize a window.
 ///
 /// Changes the position and dimensions of the window. Posts `WM_MOVE` and `WM_SIZE`
@@ -411,5 +440,66 @@ mod tests {
         show_window(hwnd, show_window::SW_RESTORE);
         assert_eq!(is_iconic(hwnd), BOOL::FALSE);
         WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn get_client_rect_returns_correct_size() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let state = WindowState {
+            rect: Rect {
+                left: 10,
+                top: 20,
+                right: 110,
+                bottom: 70,
+            },
+            client_rect: Rect {
+                left: 0,
+                top: 0,
+                right: 100,
+                bottom: 50,
+            },
+            ..test_window_state()
+        };
+        let hwnd = WINDOW_MANAGER.create_window(state);
+        let mut rect = Rect::default();
+        assert_eq!(get_client_rect(hwnd, &mut rect), BOOL::TRUE);
+        assert_eq!(rect.left, 0);
+        assert_eq!(rect.top, 0);
+        assert_eq!(rect.right, 100);
+        assert_eq!(rect.bottom, 50);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn get_client_rect_returns_false_for_invalid_hwnd() {
+        let mut rect = Rect::default();
+        assert_eq!(get_client_rect(HWND::NULL, &mut rect), BOOL::FALSE);
+    }
+
+    #[test]
+    fn get_client_rect_reflects_move_window() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let hwnd = WINDOW_MANAGER.create_window(test_window_state());
+        move_window(hwnd, 5, 10, 200, 150, BOOL::FALSE);
+        let mut rect = Rect::default();
+        assert_eq!(get_client_rect(hwnd, &mut rect), BOOL::TRUE);
+        assert_eq!(rect.left, 0);
+        assert_eq!(rect.top, 0);
+        assert_eq!(rect.right, 200);
+        assert_eq!(rect.bottom, 150);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn get_client_rect_does_not_modify_rect_on_failure() {
+        let mut rect = Rect {
+            left: -1,
+            top: -2,
+            right: -3,
+            bottom: -4,
+        };
+        let original = rect;
+        assert_eq!(get_client_rect(HWND::NULL, &mut rect), BOOL::FALSE);
+        assert_eq!(rect, original);
     }
 }
