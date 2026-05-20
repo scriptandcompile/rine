@@ -362,7 +362,7 @@ mod tests {
         }
 
         #[test]
-        fn format_X() {
+        fn format_uppercase_x() {
             let fmt = b"%X\0";
             let args = 0xABCDu32;
             let mut buf = [0u8; 64];
