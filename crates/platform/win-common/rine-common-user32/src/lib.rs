@@ -25,6 +25,7 @@ pub mod message_registration;
 pub mod sound;
 pub mod system_metrics;
 pub mod window_lifecycle;
+pub mod window_long;
 pub mod window_text;
 
 pub use char_navigation::{char_next_a, char_prev_a};
@@ -40,6 +41,7 @@ pub use window_lifecycle::{
     child_window_from_point, create_window, destroy_window, enable_window, get_client_rect,
     invalidate_rect, is_iconic, move_window, screen_to_client, show_window, update_window,
 };
+pub use window_long::set_window_long_a;
 pub use window_text::{
     get_window_text_a, get_window_text_length, get_window_text_w, set_window_text,
 };

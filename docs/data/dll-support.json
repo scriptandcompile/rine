@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T17:36:03.996863+00:00",
+  "generatedAt": "2026-05-20T18:40:28.136066+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 83,
+      "functionCount": 85,
       "functions": [
         {
           "name": "CharNextA",
@@ -3604,6 +3604,32 @@
           }
         },
         {
+          "name": "SetWindowLongA",
+          "x64": {
+            "status": "partial",
+            "symbol": "window_long::SetWindowLongA",
+            "source": "user32 - window_long.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "window_long::SetWindowLongA",
+            "source": "user32 - window_long.rs"
+          }
+        },
+        {
+          "name": "SetWindowLongW",
+          "x64": {
+            "status": "partial",
+            "symbol": "window_long::SetWindowLongW",
+            "source": "user32 - window_long.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "window_long::SetWindowLongW",
+            "source": "user32 - window_long.rs"
+          }
+        },
+        {
           "name": "SetWindowTextA",
           "x64": {
             "status": "partial",
@@ -3737,16 +3763,16 @@
     }
   ],
   "totals": {
-    "functions": 283,
+    "functions": 285,
     "x64": {
       "implemented": 103,
-      "partial": 133,
+      "partial": 135,
       "stubbed": 47,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
-      "partial": 132,
+      "partial": 134,
       "stubbed": 47,
       "unimplemented": 0
     }

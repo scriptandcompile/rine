@@ -606,6 +606,34 @@ pub mod system_metrics {
     pub const SM_REMOTECONTROL: i32 = 0x2001;
 }
 
+/// Window long index values for SetWindowLong/GetWindowLong.
+///
+/// These indices specify which attribute of a window to retrieve or modify.
+/// Negative values reference per-window data, while non-negative values
+/// reference per-class or dialog-specific data.
+pub mod window_long_index {
+    /// The window style (WS_*).
+    pub const GWL_STYLE: i32 = -16;
+    /// The extended window style (WS_EX_*).
+    pub const GWL_EXSTYLE: i32 = -20;
+    /// The identifier of the child window.
+    pub const GWL_ID: i32 = -12;
+    /// A pointer to the window procedure (same as GWLP_WNDPROC).
+    pub const GWLP_WNDPROC: i32 = -4;
+    /// A handle to the application instance.
+    pub const GWLP_HINSTANCE: i32 = -6;
+    /// A handle to the parent window.
+    pub const GWLP_HWNDPARENT: i32 = -8;
+    /// User data associated with the window.
+    pub const GWLP_USERDATA: i32 = -21;
+    /// The return value of a dialog box message (dialog box only).
+    pub const DWLP_MSGRESULT: i32 = 0;
+    /// A pointer to the dialog box procedure (dialog box only).
+    pub const DWLP_DLGPROC: i32 = 4;
+    /// User data associated with a dialog box (dialog box only).
+    pub const DWLP_USER: i32 = 8;
+}
+
 /// Handle into the AtomTable for registered window classes.
 pub type ATOM = u16;
 

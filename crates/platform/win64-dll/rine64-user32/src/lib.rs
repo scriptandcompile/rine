@@ -18,6 +18,7 @@ mod message_registration;
 mod sound;
 mod system_metrics;
 mod window_lifecycle;
+mod window_long;
 mod window_text;
 
 pub struct User32Plugin;
