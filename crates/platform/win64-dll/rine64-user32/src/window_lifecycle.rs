@@ -391,3 +391,38 @@ pub unsafe extern "win64" fn MoveWindow(
 ) -> BOOL {
     common::move_window(hwnd, x, y, width, height, repaint)
 }
+
+/// ChildWindowFromPoint — determines which child window (if any) contains
+/// the specified point.
+///
+/// # Arguments
+/// * `hwnd_parent`: Handle of the parent window to search for children.
+/// * `pt`: A `Point` structure containing the point to search for, in the
+///   parent's client coordinates.
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime.
+/// The `pt` structure is passed by value and does not require any pointer
+/// validity guarantees.
+///
+/// # Returns
+/// The handle of the child window that contains the point, or the handle of
+/// the parent window if no child contains the point. Returns `HWND::NULL` if
+/// the parent handle does not correspond to a valid window.
+///
+/// # Notes
+/// Only visible, enabled, immediate children of the parent are considered.
+/// Grandchildren are not searched. If multiple children contain the point,
+/// the topmost child (highest in Z-order) is returned. The current
+/// implementation does **not** account for:
+/// - Transparent / layered child windows that should be skipped
+///   (use `ChildWindowFromPointEx` with `CWP_SKIPTRANSPARENT` for that).
+/// - Clipped children — children that are partially or fully outside the
+///   parent's client area are still candidates.
+/// - `GetLastError` is not set on failure.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn ChildWindowFromPoint(hwnd_parent: HWND, pt: Point) -> HWND {
+    common::child_window_from_point(hwnd_parent, pt)
+}

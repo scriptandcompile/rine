@@ -743,6 +743,15 @@ pub struct Rect {
     pub bottom: i32,
 }
 
+impl Rect {
+    /// Check whether a point at (x, y) lies inside this rectangle.
+    ///
+    /// The right and bottom edges are exclusive, matching Windows convention.
+    pub fn contains_point(&self, x: i32, y: i32) -> bool {
+        x >= self.left && x < self.right && y >= self.top && y < self.bottom
+    }
+}
+
 // ---------------------------------------------------------------------------
 // POINT structure
 // ---------------------------------------------------------------------------
@@ -939,6 +948,43 @@ impl WindowManager {
     pub fn get_last_active_popup(&self, owner: HWND) -> HWND {
         let map = self.last_active_popup.lock().unwrap();
         map.get(&owner).copied().unwrap_or(HWND::NULL)
+    }
+
+    /// ChildWindowFromPoint — determines which child window (if any) contains
+    /// the specified point.
+    ///
+    /// The point is in the client coordinates of the parent window. Only
+    /// visible, enabled immediate children of the parent are considered.
+    /// If multiple children contain the point, the topmost (highest HWND)
+    /// is returned. If no child contains the point, the parent HWND is
+    /// returned. Returns `HWND::NULL` if the parent does not exist.
+    pub fn child_window_from_point(&self, parent: HWND, pt: Point) -> HWND {
+        let windows = self.windows.lock().unwrap();
+
+        // The parent must exist.
+        if !windows.contains_key(&parent) {
+            return HWND::NULL;
+        }
+
+        // Scan all children of `parent` — the highest HWND is topmost.
+        let mut found: HWND = HWND::NULL;
+        for (&hwnd, state) in windows.iter() {
+            if state.parent != parent {
+                continue;
+            }
+            if !state.visible || !state.enabled {
+                continue;
+            }
+            if !state.rect.contains_point(pt.x, pt.y) {
+                continue;
+            }
+            // Later-created windows have higher HWND values and are on top.
+            if found.is_null() || hwnd.as_raw() > found.as_raw() {
+                found = hwnd;
+            }
+        }
+
+        if found.is_null() { parent } else { found }
     }
 }
 

@@ -399,6 +399,33 @@ pub fn move_window(hwnd: HWND, x: i32, y: i32, width: i32, height: i32, repaint:
     BOOL::TRUE
 }
 
+/// ChildWindowFromPoint — determines which child window (if any) contains
+/// the specified point.
+///
+/// # Arguments
+/// * `parent`: Handle of the parent window to search for children.
+/// * `pt`: A `Point` structure containing the point to search for, in the
+///   parent's client coordinates.
+///
+/// # Returns
+/// The handle of the child window that contains the point, or the handle of
+/// the parent window if no child contains the point. Returns `HWND::NULL` if
+/// the parent handle does not correspond to a valid window.
+///
+/// # Notes
+/// Only visible, enabled, immediate children of the parent are considered.
+/// Grandchildren are not searched. If multiple children contain the point,
+/// the topmost child (highest in Z-order) is returned. The current
+/// implementation does **not** account for:
+/// - Transparent / layered child windows that should be skipped
+///   (use `ChildWindowFromPointEx` with `CWP_SKIPTRANSPARENT` for that).
+/// - Clipped children — children that are partially or fully outside the
+///   parent's client area are still candidates.
+/// - `GetLastError` is not set on failure.
+pub fn child_window_from_point(parent: HWND, pt: Point) -> HWND {
+    WINDOW_MANAGER.child_window_from_point(parent, pt)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -612,5 +639,191 @@ mod tests {
         assert_eq!(pt.x, 50);
         assert_eq!(pt.y, 50);
         WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    // -----------------------------------------------------------------------
+    // child_window_from_point tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn child_window_from_point_invalid_parent_returns_null() {
+        let result = child_window_from_point(HWND::NULL, Point::default());
+        assert_eq!(result, HWND::NULL);
+
+        let result = child_window_from_point(HWND::from_raw(0xDEAD), Point::default());
+        assert_eq!(result, HWND::NULL);
+    }
+
+    #[test]
+    fn child_window_from_point_no_children_returns_parent() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let parent = WINDOW_MANAGER.create_window(test_window_state());
+        let result = child_window_from_point(parent, Point { x: 0, y: 0 });
+        assert_eq!(result, parent);
+        WINDOW_MANAGER.destroy_window(parent);
+    }
+
+    #[test]
+    fn child_window_from_point_finds_child_containing_point() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let parent = WINDOW_MANAGER.create_window(test_window_state());
+        let child = WINDOW_MANAGER.create_window(WindowState {
+            rect: Rect {
+                left: 10,
+                top: 10,
+                right: 110,
+                bottom: 110,
+            },
+            parent,
+            visible: true,
+            enabled: true,
+            ..test_window_state()
+        });
+        // Point (50, 50) is inside the child rect (10,10)-(110,110)
+        let result = child_window_from_point(parent, Point { x: 50, y: 50 });
+        assert_eq!(result, child);
+        WINDOW_MANAGER.destroy_window(child);
+        WINDOW_MANAGER.destroy_window(parent);
+    }
+
+    #[test]
+    fn child_window_from_point_skips_invisible_child() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let parent = WINDOW_MANAGER.create_window(test_window_state());
+        let _invisible = WINDOW_MANAGER.create_window(WindowState {
+            rect: Rect {
+                left: 0,
+                top: 0,
+                right: 200,
+                bottom: 200,
+            },
+            parent,
+            visible: false,
+            enabled: true,
+            ..test_window_state()
+        });
+        // Point is inside the invisible child, but it should be skipped
+        let result = child_window_from_point(parent, Point { x: 50, y: 50 });
+        assert_eq!(result, parent);
+        WINDOW_MANAGER.destroy_window(_invisible);
+        WINDOW_MANAGER.destroy_window(parent);
+    }
+
+    #[test]
+    fn child_window_from_point_skips_disabled_child() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let parent = WINDOW_MANAGER.create_window(test_window_state());
+        let _disabled = WINDOW_MANAGER.create_window(WindowState {
+            rect: Rect {
+                left: 0,
+                top: 0,
+                right: 200,
+                bottom: 200,
+            },
+            parent,
+            visible: true,
+            enabled: false,
+            ..test_window_state()
+        });
+        let result = child_window_from_point(parent, Point { x: 50, y: 50 });
+        assert_eq!(result, parent);
+        WINDOW_MANAGER.destroy_window(_disabled);
+        WINDOW_MANAGER.destroy_window(parent);
+    }
+
+    #[test]
+    fn child_window_from_point_returns_topmost_when_overlapping() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let parent = WINDOW_MANAGER.create_window(test_window_state());
+        let bottom = WINDOW_MANAGER.create_window(WindowState {
+            rect: Rect {
+                left: 0,
+                top: 0,
+                right: 200,
+                bottom: 200,
+            },
+            parent,
+            visible: true,
+            enabled: true,
+            ..test_window_state()
+        });
+        let top = WINDOW_MANAGER.create_window(WindowState {
+            rect: Rect {
+                left: 0,
+                top: 0,
+                right: 200,
+                bottom: 200,
+            },
+            parent,
+            visible: true,
+            enabled: true,
+            ..test_window_state()
+        });
+        // Both contain (50, 50); topmost (highest HWND) should win
+        let result = child_window_from_point(parent, Point { x: 50, y: 50 });
+        assert_eq!(result, top);
+        WINDOW_MANAGER.destroy_window(bottom);
+        WINDOW_MANAGER.destroy_window(top);
+        WINDOW_MANAGER.destroy_window(parent);
+    }
+
+    #[test]
+    fn child_window_from_point_point_outside_child_but_inside_parent() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let parent = WINDOW_MANAGER.create_window(test_window_state());
+        let child = WINDOW_MANAGER.create_window(WindowState {
+            rect: Rect {
+                left: 100,
+                top: 100,
+                right: 200,
+                bottom: 200,
+            },
+            parent,
+            visible: true,
+            enabled: true,
+            ..test_window_state()
+        });
+        // Point (50, 50) is inside parent but outside child
+        let result = child_window_from_point(parent, Point { x: 50, y: 50 });
+        assert_eq!(result, parent);
+        WINDOW_MANAGER.destroy_window(child);
+        WINDOW_MANAGER.destroy_window(parent);
+    }
+
+    #[test]
+    fn child_window_from_point_skips_non_immediate_children() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let parent = WINDOW_MANAGER.create_window(test_window_state());
+        let child = WINDOW_MANAGER.create_window(WindowState {
+            rect: Rect {
+                left: 0,
+                top: 0,
+                right: 100,
+                bottom: 100,
+            },
+            parent,
+            visible: true,
+            enabled: true,
+            ..test_window_state()
+        });
+        // Grandchild of parent, child of `child`
+        let _grandchild = WINDOW_MANAGER.create_window(WindowState {
+            rect: Rect {
+                left: 10,
+                top: 10,
+                right: 50,
+                bottom: 50,
+            },
+            parent: child,
+            visible: true,
+            enabled: true,
+            ..test_window_state()
+        });
+        // (25, 25) is inside grandchild, but grandchild is not a direct child of parent
+        let result = child_window_from_point(parent, Point { x: 25, y: 25 });
+        assert_eq!(result, child);
+        WINDOW_MANAGER.destroy_window(_grandchild);
+        WINDOW_MANAGER.destroy_window(child);
+        WINDOW_MANAGER.destroy_window(parent);
     }
 }
