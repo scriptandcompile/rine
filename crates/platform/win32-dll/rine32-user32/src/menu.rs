@@ -1,29 +1,25 @@
 use rine_common_user32::menu as common;
 use rine_types::{errors::BOOL, handles::HMENU, windows::HWND};
 
-/// Checks or unchecks a menu item, returning the previous state of the item.
+/// Checks or unchecks a menu item (32-bit `stdcall` ABI).
+///
+/// See the [common `check_menu_item`](common::check_menu_item) for full documentation.
 ///
 /// # Arguments
-/// * `handle_menu` - A handle to the menu that contains the item to be checked or unchecked.
-/// * `id_check_item` - The identifier or position of the menu item to be checked or unchecked.
-/// * `check` - The action to be performed on the menu item. This parameter can be a bitwise combination of the following values:
-///     - MF_BYCOMMAND (0x00000000): Indicates that `id_check_item` specifies the identifier of the menu item.
-///     - MF_BYPOSITION (0x00000400): Indicates that `id_check_item` specifies the position of the menu item.
-///     - MF_CHECKED (0x00000008): Checks the menu item.
-///     - MF_UNCHECKED (0x00000000): Unchecks the menu item.
-///
-/// # Safety
-/// This function is unsafe because it interacts with raw pointers.
-/// The caller must ensure that the `handle_menu` is a valid handle to a menu and that the `id_check_item`
-/// corresponds to a valid menu item within that menu.
-/// Additionally, the caller must ensure that the `check` parameter is a valid combination of the MF_* flags.
+/// * `handle_menu` - A handle to the menu that contains the item.
+/// * `id_check_item` - The identifier or position of the menu item.
+/// * `check` - Combination of `MF_CHECKED`/`MF_UNCHECKED` and
+///   `MF_BYCOMMAND`/`MF_BYPOSITION`.
 ///
 /// # Returns
-/// A `PreviousMenuState` indicating the previous state of the menu item before the check/uncheck operation was performed.
-/// The possible return values are:
-///   `PreviousMenuState::NotChecked`: The menu item was previously unchecked.
-///   `PreviousMenuState::Checked`: The menu item was previously checked.
-///   `PreviousMenuState::NotAMenuItem`: The specified item was not a menu item.
+/// The previous state as an `i32`: `0` (unchecked), `1` (checked), or
+/// `-1` (item not found).
+///
+/// # Safety
+/// See common `check_menu_item`.
+///
+/// # Notes
+/// Currently stubbed — always returns `-1` (`NotAMenuItem`).
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
@@ -115,37 +111,31 @@ pub unsafe extern "stdcall" fn GetSystemMenu(handle_window: HWND, revert: BOOL) 
     common::get_system_menu(handle_window, revert.is_true()).unwrap_or(HMENU::NULL)
 }
 
-/// Enables, disables, or grays out a menu item.
+/// Enables, disables, or grays out a menu item (32-bit `stdcall` ABI).
+///
+/// See the [common `enable_menu_item`](common::enable_menu_item) for full documentation.
 ///
 /// # Arguments
-/// * `_handle_menu` - A handle to the menu that contains the item to be enabled, disabled, or grayed out.
-/// * `_id_enable_item` - The identifier or position of the menu item to be enabled, disabled, or grayed out.
-/// * `_enable` - The action to be performed on the menu item. This parameter can be a bitwise combination of the following values:
-///     - MF_BYCOMMAND (0x00000000): Indicates that `id_enable_item` specifies the identifier of the menu item.
-///     - MF_BYPOSITION (0x00000400): Indicates that `id_enable_item` specifies the position of the menu item.
-///     - MF_ENABLED (0x00000000): Enables the menu item.
-///     - MF_GRAYED (0x00000001): Grays out the menu item and disables it.
-///     - MF_DISABLED (0x00000002): Disables the menu item without graying it out.
-///
-/// # Safety
-/// This function is unsafe because it interacts with raw pointers.
-/// The caller must ensure that the `handle_menu` is a valid handle to a menu and that the `id_enable_item` corresponds to a valid menu item within that menu.
-/// Additionally, the caller must ensure that the `enable` parameter is a valid combination of the MF_* flags.
-/// The caller must also ensure that the menu structure is properly initialized and that the specified item is within bounds.
+/// * `handle_menu` - A handle to the menu that contains the item.
+/// * `id_enable_item` - The identifier or position of the menu item.
+/// * `enable` - Combination of `MF_ENABLED`/`MF_DISABLED`/`MF_GRAYED` and
+///   `MF_BYCOMMAND`/`MF_BYPOSITION`.
 ///
 /// # Returns
-/// Returns `BOOL::TRUE` if the menu item was successfully enabled, disabled, or grayed out, and `BOOL::FALSE` if the operation
-/// failed (for example, if the specified menu item was invalid).
+/// `BOOL::TRUE` on success, `BOOL::FALSE` on failure.
+///
+/// # Safety
+/// See common `enable_menu_item`.
 ///
 /// # Notes
-/// This function is currently a stub and returns `BOOL::FALSE` as a placeholder.
+/// Currently stubbed — always returns `BOOL::FALSE`.
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn EnableMenuItem(
-    _handle_menu: HMENU,
-    _id_enable_item: u32,
-    _enable: u32,
+    handle_menu: HMENU,
+    id_enable_item: u32,
+    enable: u32,
 ) -> BOOL {
-    common::enable_menu_item(_handle_menu, _id_enable_item, _enable)
+    common::enable_menu_item(handle_menu, id_enable_item, enable)
 }

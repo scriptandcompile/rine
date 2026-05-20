@@ -4,41 +4,71 @@ use rine_types::windows::{HWND, WINDOW_MANAGER};
 
 use tracing::warn;
 
+/// Menu-item flag constants used by `CheckMenuItem` and `EnableMenuItem`.
+pub mod menu_flags {
+    /// The `u_id_check_item` or `u_id_enable_item` parameter is a menu-item identifier.
+    pub const MF_BYCOMMAND: u32 = 0x0000_0000;
+    /// The `u_id_check_item` or `u_id_enable_item` parameter is a zero-based position.
+    pub const MF_BYPOSITION: u32 = 0x0000_0400;
+
+    /// Checks the menu item (used with `CheckMenuItem`).
+    pub const MF_CHECKED: u32 = 0x0000_0008;
+    /// Unchecks the menu item (used with `CheckMenuItem`).
+    pub const MF_UNCHECKED: u32 = 0x0000_0000;
+
+    /// Enables the menu item (used with `EnableMenuItem`).
+    pub const MF_ENABLED: u32 = 0x0000_0000;
+    /// Grays out and disables the menu item (used with `EnableMenuItem`).
+    pub const MF_GRAYED: u32 = 0x0000_0001;
+    /// Disables the menu item without graying it (used with `EnableMenuItem`).
+    pub const MF_DISABLED: u32 = 0x0000_0002;
+}
+
+/// Previous state of a menu item as returned by `CheckMenuItem`.
+///
+/// Maps to the Windows `i32` return value:
+/// - `NotChecked` (0): the item was previously unchecked.
+/// - `Checked` (1): the item was previously checked.
+/// - `NotAMenuItem` (-1): the specified item was not a menu item.
+#[derive(Debug, PartialEq, Eq)]
 #[repr(i32)]
 pub enum PreviousMenuState {
+    /// The menu item was previously unchecked (MF_UNCHECKED).
     NotChecked = 0,
+    /// The menu item was previously checked (MF_CHECKED).
     Checked = 1,
+    /// The specified item was not a menu item.
     NotAMenuItem = -1,
 }
 
 /// Checks or unchecks a menu item, returning the previous state of the item.
 ///
 /// # Arguments
-/// * `_handle_menu` - A handle to the menu that contains the item to be checked or unchecked.
-/// * `_id_check_item` - The identifier or position of the menu item to be checked or unchecked.
-/// * `_check` - The action to be performed on the menu item. This parameter can be a bitwise combination of the following values:
-///     - MF_BYCOMMAND (0x00000000): Indicates that `_id_check_item` specifies the identifier of the menu item.
-///     - MF_BYPOSITION (0x00000400): Indicates that `_id_check_item` specifies the position of the menu item.
-///     - MF_CHECKED (0x00000008): Checks the menu item.
-///     - MF_UNCHECKED (0x00000000): Unchecks the menu item.
-///
-/// # Safety
-/// This function is unsafe because it interacts with raw pointers.
-/// The caller must ensure that the `_handle_menu` is a valid handle to a menu and that the `_id_check_item`
-/// corresponds to a valid menu item within that menu.
-/// Additionally, the caller must ensure that the `_check` parameter is a valid combination of the MF_* flags.
+/// * `handle_menu` - A handle to the menu that contains the item to be checked
+///   or unchecked.
+/// * `id_check_item` - The identifier or position of the menu item, interpreted
+///   according to the `MF_BYCOMMAND` / `MF_BYPOSITION` flag in `check`.
+/// * `check` - A combination of `MF_CHECKED` or `MF_UNCHECKED` with
+///   `MF_BYCOMMAND` or `MF_BYPOSITION`.
 ///
 /// # Returns
-/// A `PreviousMenuState` indicating the previous state of the menu item before the check/uncheck operation was performed.
-/// The possible return values are:
-///   `PreviousMenuState::NotChecked`: The menu item was previously unchecked.
-///   `PreviousMenuState::Checked`: The menu item was previously checked.
-///   `PreviousMenuState::NotAMenuItem`: The specified item was not a menu item.
+/// `PreviousMenuState::NotChecked` if the item was previously unchecked,
+/// `PreviousMenuState::Checked` if it was previously checked, or
+/// `PreviousMenuState::NotAMenuItem` if the item did not exist.
+///
+/// # Safety
+/// `handle_menu` must be a valid handle to a menu that has been properly
+/// initialized. `id_check_item` must be a valid identifier or position within
+/// that menu. `check` must be a valid combination of `MF_*` flags.
 ///
 /// # Notes
-/// This function is currently a stub and returns `PreviousMenuState::NotAMenuItem` as a placeholder.
-pub fn check_menu_item(_handle_menu: HMENU, _id_check_item: u32, _check: u32) -> PreviousMenuState {
-    // Implementation goes here
+/// This function is currently a stub and always returns
+/// `PreviousMenuState::NotAMenuItem`. Full implementation requires a
+/// menu-item state tracker (`HashMap<HMENU, MenuState>`) that stores the
+/// checked state and associated menu items per handle, which has not yet
+/// been wired into the runtime.
+pub fn check_menu_item(handle_menu: HMENU, id_check_item: u32, check: u32) -> PreviousMenuState {
+    let _ = (handle_menu, id_check_item, check);
     warn!("check_menu_item is not implemented yet. Returning NotAMenuItem as a placeholder.");
     PreviousMenuState::NotAMenuItem
 }
@@ -133,28 +163,33 @@ pub fn get_system_menu(handle_window: HWND, revert: bool) -> Option<HMENU> {
 /// Enables, disables, or grays out a menu item.
 ///
 /// # Arguments
-/// * `_handle_menu` - A handle to the menu that contains the item to be enabled, disabled, or grayed out.
-/// * `_id_enable_item` - The identifier or position of the menu item to be enabled, disabled, or grayed out.
-/// * `_enable` - The action to be performed on the menu item. This parameter can be a bitwise combination of the following values:
-///     - MF_BYCOMMAND (0x00000000): Indicates that `_id_enable_item` specifies the identifier of the menu item.
-///     - MF_BYPOSITION (0x00000400): Indicates that `_id_enable_item` specifies the position of the menu item.
-///     - MF_ENABLED (0x00000000): Enables the menu item.
-///     - MF_DISABLED (0x00000002): Disables the menu item, but it is still visible.
-///     - MF_GRAYED (0x00000001): Grays out the menu item, making it appear disabled and unselectable.
-///
-/// # Safety
-/// The caller must ensure that the `_handle_menu` is a valid handle to a menu and that the `_id_enable_item` corresponds
-/// to a valid menu item within that menu.
-/// Additionally, the caller must ensure that the `_enable` parameter is a valid combination of the MF_* flags.
-/// The caller must also ensure that the menu structure is properly initialized and that the specified item is within bounds.
+/// * `handle_menu` - A handle to the menu that contains the item to be enabled,
+///   disabled, or grayed out.
+/// * `id_enable_item` - The identifier or position of the menu item, interpreted
+///   according to the `MF_BYCOMMAND` / `MF_BYPOSITION` flag in `enable`.
+/// * `enable` - A combination of `MF_ENABLED`, `MF_DISABLED`, or `MF_GRAYED`
+///   with `MF_BYCOMMAND` or `MF_BYPOSITION`.
 ///
 /// # Returns
-/// Returns `BOOL::TRUE` if the menu item was successfully enabled, disabled, or grayed out, and `BOOL::FALSE` if the operation
-/// failed (for example, if the specified menu item was invalid).
+/// `BOOL::TRUE` if the state was changed successfully, or `BOOL::FALSE` if the
+/// menu item does not exist.
+///
+/// # Safety
+/// `handle_menu` must be a valid handle to a menu that has been properly
+/// initialized. `id_enable_item` must be a valid identifier or position within
+/// that menu. `enable` must be a valid combination of `MF_*` flags.
 ///
 /// # Notes
-/// This function is currently a stub and returns `BOOL::FALSE` as a placeholder.
-pub fn enable_menu_item(_handle_menu: HMENU, _id_enable_item: u32, _enable: u32) -> BOOL {
+/// This function is currently a stub and always returns `BOOL::FALSE`.
+/// Full implementation requires a menu-item state tracker that stores the
+/// enabled/disabled state per item handle, which has not yet been wired into
+/// the runtime.
+///
+/// Note that the real Windows API returns the *previous* state
+/// (`MF_ENABLED`, `MF_DISABLED`, `MF_GRAYED`) on success, not `BOOL::TRUE`.
+/// Once the full implementation is in place the return type should be revisited.
+pub fn enable_menu_item(handle_menu: HMENU, id_enable_item: u32, enable: u32) -> BOOL {
+    let _ = (handle_menu, id_enable_item, enable);
     warn!("enable_menu_item is not implemented yet. Returning BOOL::FALSE as a placeholder.");
     BOOL::FALSE
 }
@@ -248,5 +283,120 @@ mod tests {
         let hwnd = WINDOW_MANAGER.create_window(state);
         assert_eq!(get_system_menu(hwnd, true), None);
         WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    // ── check_menu_item (stub) ─────────────────────────────────────
+
+    #[test]
+    fn check_menu_item_returns_not_a_menu_item_for_null_handle() {
+        assert_eq!(
+            check_menu_item(
+                HMENU::NULL,
+                0,
+                menu_flags::MF_BYCOMMAND | menu_flags::MF_CHECKED
+            ),
+            PreviousMenuState::NotAMenuItem
+        );
+    }
+
+    #[test]
+    fn check_menu_item_returns_not_a_menu_item_for_non_null_handle() {
+        // HMENU is just a wrapper; any value other than NULL is a valid sentinel.
+        let h = HMENU::NULL;
+        assert_eq!(
+            check_menu_item(h, 42, menu_flags::MF_BYCOMMAND | menu_flags::MF_UNCHECKED),
+            PreviousMenuState::NotAMenuItem
+        );
+    }
+
+    #[test]
+    fn check_menu_item_accepts_mf_byposition() {
+        assert_eq!(
+            check_menu_item(
+                HMENU::NULL,
+                0,
+                menu_flags::MF_BYPOSITION | menu_flags::MF_CHECKED
+            ),
+            PreviousMenuState::NotAMenuItem
+        );
+    }
+
+    #[test]
+    fn check_menu_item_accepts_mf_byposition_with_unchecked() {
+        assert_eq!(
+            check_menu_item(
+                HMENU::NULL,
+                5,
+                menu_flags::MF_BYPOSITION | menu_flags::MF_UNCHECKED
+            ),
+            PreviousMenuState::NotAMenuItem
+        );
+    }
+
+    // ── enable_menu_item (stub) ────────────────────────────────────
+
+    #[test]
+    fn enable_menu_item_returns_false_for_null_handle() {
+        assert_eq!(
+            enable_menu_item(
+                HMENU::NULL,
+                0,
+                menu_flags::MF_BYCOMMAND | menu_flags::MF_ENABLED
+            ),
+            BOOL::FALSE
+        );
+    }
+
+    #[test]
+    fn enable_menu_item_returns_false_for_non_null_handle() {
+        let h = HMENU::NULL;
+        assert_eq!(
+            enable_menu_item(h, 42, menu_flags::MF_BYCOMMAND | menu_flags::MF_DISABLED),
+            BOOL::FALSE
+        );
+    }
+
+    #[test]
+    fn enable_menu_item_accepts_mf_grayed() {
+        assert_eq!(
+            enable_menu_item(
+                HMENU::NULL,
+                0,
+                menu_flags::MF_BYPOSITION | menu_flags::MF_GRAYED
+            ),
+            BOOL::FALSE
+        );
+    }
+
+    #[test]
+    fn enable_menu_item_accepts_mf_byposition() {
+        assert_eq!(
+            enable_menu_item(
+                HMENU::NULL,
+                3,
+                menu_flags::MF_BYPOSITION | menu_flags::MF_ENABLED
+            ),
+            BOOL::FALSE
+        );
+    }
+
+    // ── menu_flags constants ───────────────────────────────────────
+
+    #[test]
+    fn menu_flag_values() {
+        assert_eq!(menu_flags::MF_BYCOMMAND, 0x0000_0000);
+        assert_eq!(menu_flags::MF_BYPOSITION, 0x0000_0400);
+        assert_eq!(menu_flags::MF_CHECKED, 0x0000_0008);
+        assert_eq!(menu_flags::MF_UNCHECKED, 0x0000_0000);
+        assert_eq!(menu_flags::MF_ENABLED, 0x0000_0000);
+        assert_eq!(menu_flags::MF_GRAYED, 0x0000_0001);
+        assert_eq!(menu_flags::MF_DISABLED, 0x0000_0002);
+    }
+
+    #[test]
+    fn previous_menu_state_values() {
+        assert_eq!(PreviousMenuState::NotChecked as i32, 0);
+        assert_eq!(PreviousMenuState::Checked as i32, 1);
+        assert_eq!(PreviousMenuState::NotAMenuItem as i32, -1);
     }
 }
