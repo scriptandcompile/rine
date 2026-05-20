@@ -297,6 +297,44 @@ pub fn get_client_rect(hwnd: HWND, rect: &mut Rect) -> BOOL {
     }
 }
 
+/// Convert screen coordinates to client-area coordinates.
+///
+/// Converts the screen coordinates of `point` to client coordinates relative
+/// to the specified window. On success the point is modified in place.
+///
+/// # Arguments
+/// * `hwnd`: Handle of the window whose client area defines the coordinate
+///   space to convert into.
+/// * `point`: A `Point` containing screen coordinates to convert. On success
+///   the fields are overwritten with the corresponding client-area coordinates.
+///
+/// # Returns
+/// `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found (the point
+/// is not modified on failure).
+///
+/// # Notes
+/// The current implementation uses the window's `rect` origin as the client-area
+/// origin on screen. It does **not** account for:
+/// - Non-client areas (title bar, borders, scroll bars) — the offset between
+///   the window origin and the client-area origin is not tracked. A full
+///   implementation would need `AdjustWindowRect[Ex]` or native decoration
+///   queries.
+/// - DPI scaling / per-monitor DPI awareness.
+/// - Child-window coordinate chains: if `hwnd` is a child window, the
+///   coordinates should logically be relative to its parent's client area, but
+///   this conversion is not yet implemented.
+/// - `GetLastError` is not set on failure.
+pub fn screen_to_client(hwnd: HWND, point: &mut Point) -> BOOL {
+    match WINDOW_MANAGER.get_window(hwnd) {
+        Some(state) => {
+            point.x -= state.rect.left;
+            point.y -= state.rect.top;
+            BOOL::TRUE
+        }
+        None => BOOL::FALSE,
+    }
+}
+
 /// Move and optionally resize a window.
 ///
 /// Changes the position and dimensions of the window. Posts `WM_MOVE` and `WM_SIZE`
@@ -501,5 +539,78 @@ mod tests {
         let original = rect;
         assert_eq!(get_client_rect(HWND::NULL, &mut rect), BOOL::FALSE);
         assert_eq!(rect, original);
+    }
+
+    #[test]
+    fn screen_to_client_converts_screen_point_to_client() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let state = WindowState {
+            rect: Rect {
+                left: 100,
+                top: 200,
+                right: 400,
+                bottom: 500,
+            },
+            client_rect: Rect {
+                left: 0,
+                top: 0,
+                right: 300,
+                bottom: 300,
+            },
+            ..test_window_state()
+        };
+        let hwnd = WINDOW_MANAGER.create_window(state);
+        let mut pt = Point { x: 150, y: 250 };
+        assert_eq!(screen_to_client(hwnd, &mut pt), BOOL::TRUE);
+        assert_eq!(pt.x, 50);
+        assert_eq!(pt.y, 50);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn screen_to_client_point_above_window_produces_negative_coords() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let state = WindowState {
+            rect: Rect {
+                left: 100,
+                top: 200,
+                right: 400,
+                bottom: 500,
+            },
+            ..test_window_state()
+        };
+        let hwnd = WINDOW_MANAGER.create_window(state);
+        let mut pt = Point { x: 50, y: 50 };
+        assert_eq!(screen_to_client(hwnd, &mut pt), BOOL::TRUE);
+        assert_eq!(pt.x, -50);
+        assert_eq!(pt.y, -150);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn screen_to_client_returns_false_for_invalid_hwnd() {
+        let mut pt = Point { x: 100, y: 100 };
+        assert_eq!(screen_to_client(HWND::NULL, &mut pt), BOOL::FALSE);
+    }
+
+    #[test]
+    fn screen_to_client_does_not_modify_point_on_failure() {
+        let mut pt = Point { x: 42, y: 99 };
+        let original = pt;
+        assert_eq!(screen_to_client(HWND::NULL, &mut pt), BOOL::FALSE);
+        assert_eq!(pt.x, original.x);
+        assert_eq!(pt.y, original.y);
+    }
+
+    #[test]
+    fn screen_to_client_reflects_move_window() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let hwnd = WINDOW_MANAGER.create_window(test_window_state());
+        move_window(hwnd, 50, 60, 200, 150, BOOL::FALSE);
+        let mut pt = Point { x: 100, y: 110 };
+        assert_eq!(screen_to_client(hwnd, &mut pt), BOOL::TRUE);
+        assert_eq!(pt.x, 50);
+        assert_eq!(pt.y, 50);
+        WINDOW_MANAGER.destroy_window(hwnd);
     }
 }

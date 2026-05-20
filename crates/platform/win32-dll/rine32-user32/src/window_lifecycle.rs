@@ -297,6 +297,43 @@ pub unsafe extern "stdcall" fn GetClientRect(hwnd: HWND, lp_rect: *mut Rect) -> 
     result
 }
 
+/// Convert screen coordinates to client-area coordinates.
+///
+/// # Arguments
+/// * `hwnd`: Handle of the window whose client area defines the coordinate
+///   space to convert into.
+/// * `lp_point`: Pointer to a `Point` structure containing screen coordinates.
+///   On success the structure is overwritten with the corresponding client-area
+///   coordinates.
+///
+/// # Safety
+/// The caller must pass a valid window handle that belongs to this runtime.
+/// `lp_point` must point to a valid, readable and writable `Point`.
+///
+/// # Returns
+/// `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found.
+///
+/// # Notes
+/// The current implementation uses the window's `rect` origin as the client-area
+/// origin on screen. It does **not** account for:
+/// - Non-client areas (title bar, borders, scroll bars) — the offset between
+///   the window origin and the client-area origin is not tracked.
+/// - DPI scaling / per-monitor DPI awareness.
+/// - Child-window coordinate chains.
+/// - On error the `GetLastError` code should be set to
+///   `ERROR_INVALID_WINDOW_HANDLE`. Currently, we do not set `GetLastError`.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn ScreenToClient(hwnd: HWND, lp_point: *mut Point) -> BOOL {
+    let mut point = unsafe { *lp_point };
+    let result = common::screen_to_client(hwnd, &mut point);
+    if result == BOOL::TRUE {
+        unsafe { *lp_point = point };
+    }
+    result
+}
+
 /// Enable or disable mouse and keyboard input to the specified window.
 ///
 /// # Arguments

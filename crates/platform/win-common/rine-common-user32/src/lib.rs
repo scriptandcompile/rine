@@ -37,7 +37,7 @@ pub use message_queue::{
 pub use message_registration::register_window_message;
 pub use window_lifecycle::{
     create_window, destroy_window, enable_window, get_client_rect, invalidate_rect, is_iconic,
-    move_window, show_window, update_window,
+    move_window, screen_to_client, show_window, update_window,
 };
 pub use window_text::{
     get_window_text_a, get_window_text_length, get_window_text_w, set_window_text,
