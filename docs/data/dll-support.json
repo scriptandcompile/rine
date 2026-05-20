@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T05:16:23.589316+00:00",
+  "generatedAt": "2026-05-20T05:32:29.612652+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 78,
+      "functionCount": 79,
       "functions": [
         {
           "name": "CharNextA",
@@ -2950,6 +2950,19 @@
           "x86": {
             "status": "implemented",
             "symbol": "focus::GetFocus",
+            "source": "user32 - focus.rs"
+          }
+        },
+        {
+          "name": "GetLastActivePopup",
+          "x64": {
+            "status": "partial",
+            "symbol": "focus::GetLastActivePopup",
+            "source": "user32 - focus.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "focus::GetLastActivePopup",
             "source": "user32 - focus.rs"
           }
         },
@@ -3672,16 +3685,16 @@
     }
   ],
   "totals": {
-    "functions": 278,
+    "functions": 279,
     "x64": {
       "implemented": 103,
-      "partial": 127,
+      "partial": 128,
       "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
-      "partial": 126,
+      "partial": 127,
       "stubbed": 48,
       "unimplemented": 0
     }

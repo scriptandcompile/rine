@@ -115,6 +115,52 @@ pub fn set_foreground_window(hwnd: HWND) -> BOOL {
     BOOL::TRUE
 }
 
+/// GetLastActivePopup — retrieves the handle to the most recent active popup
+/// window owned by the specified window.
+///
+/// # Arguments
+/// * `hwnd` - A handle to the owner window.
+///
+/// # Returns
+/// The handle to the most recent active popup window. The return value is the
+/// same as `hwnd` if any of the following are true:
+/// - The window identified by `hwnd` was not recently active.
+/// - The window identified by `hwnd` does not own any popup windows.
+/// - The window identified by `hwnd` is itself a popup window.
+///
+/// # Safety
+/// The caller must ensure that the provided HWND is valid (was returned by a
+/// previous `CreateWindow` or `CreateWindowEx` call). Passing an invalid HWND
+/// will cause the function to return the input `hwnd` unchanged.
+///
+/// # Notes
+/// Partial implementation. Popup activation tracking via `set_focus` /
+/// `set_foreground_window` is not yet wired in; therefore this function
+/// currently returns `hwnd` (the fallback per spec) whenever the window
+/// is a popup or no popup has been explicitly recorded. Full support
+/// requires hooking `record_popup_activation` into the focus/foreground
+/// paths.
+pub fn get_last_active_popup(hwnd: HWND) -> HWND {
+    if hwnd.is_null() {
+        return HWND::NULL;
+    }
+
+    if let Some(state) = WINDOW_MANAGER.get_window(hwnd) {
+        if state.style & window_style::WS_POPUP != 0 {
+            return hwnd;
+        }
+    } else {
+        return hwnd;
+    }
+
+    let popup = WINDOW_MANAGER.get_last_active_popup(hwnd);
+    if popup.is_null() {
+        return hwnd;
+    }
+
+    popup
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -411,6 +457,100 @@ mod tests {
         reset_state();
         WINDOW_MANAGER.destroy_window(a);
         WINDOW_MANAGER.destroy_window(b);
+    }
+
+    // -----------------------------------------------------------------------
+    // get_last_active_popup tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    #[serial]
+    fn get_last_active_popup_null_returns_null() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        reset_state();
+        assert_eq!(get_last_active_popup(HWND::NULL), HWND::NULL);
+    }
+
+    #[test]
+    #[serial]
+    fn get_last_active_popup_invalid_returns_self() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        reset_state();
+        let invalid = HWND::from_raw(0xDEAD);
+        assert_eq!(get_last_active_popup(invalid), invalid);
+    }
+
+    #[test]
+    #[serial]
+    fn get_last_active_popup_popup_window_returns_self() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        reset_state();
+        let mut state = test_window_state();
+        state.style = window_style::WS_POPUP;
+        let hwnd = WINDOW_MANAGER.create_window(state);
+        assert_eq!(get_last_active_popup(hwnd), hwnd);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    #[serial]
+    fn get_last_active_popup_no_popup_returns_self() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        reset_state();
+        let hwnd = WINDOW_MANAGER.create_window(test_window_state());
+        assert_eq!(get_last_active_popup(hwnd), hwnd);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    #[serial]
+    fn get_last_active_popup_returns_recorded_popup() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        reset_state();
+        let owner = WINDOW_MANAGER.create_window(test_window_state());
+        let mut popup_state = test_window_state();
+        popup_state.parent = owner;
+        let popup = WINDOW_MANAGER.create_window(popup_state);
+        WINDOW_MANAGER.record_popup_activation(popup);
+        assert_eq!(get_last_active_popup(owner), popup);
+        reset_state();
+        WINDOW_MANAGER.destroy_window(owner);
+        WINDOW_MANAGER.destroy_window(popup);
+    }
+
+    #[test]
+    #[serial]
+    fn get_last_active_popup_returns_most_recent_popup() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        reset_state();
+        let owner = WINDOW_MANAGER.create_window(test_window_state());
+        let mut state_a = test_window_state();
+        state_a.parent = owner;
+        let popup_a = WINDOW_MANAGER.create_window(state_a);
+        let mut state_b = test_window_state();
+        state_b.parent = owner;
+        let popup_b = WINDOW_MANAGER.create_window(state_b);
+        WINDOW_MANAGER.record_popup_activation(popup_a);
+        WINDOW_MANAGER.record_popup_activation(popup_b);
+        assert_eq!(get_last_active_popup(owner), popup_b);
+        reset_state();
+        WINDOW_MANAGER.destroy_window(owner);
+        WINDOW_MANAGER.destroy_window(popup_a);
+        WINDOW_MANAGER.destroy_window(popup_b);
+    }
+
+    #[test]
+    #[serial]
+    fn get_last_active_popup_owner_without_popup_records_not_affected() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        reset_state();
+        let owner = WINDOW_MANAGER.create_window(test_window_state());
+        let popup_state = test_window_state();
+        // Not setting parent — this popup is not owned by `owner`
+        let _popup = WINDOW_MANAGER.create_window(popup_state);
+        assert_eq!(get_last_active_popup(owner), owner);
+        WINDOW_MANAGER.destroy_window(owner);
+        WINDOW_MANAGER.destroy_window(_popup);
     }
 
     #[test]

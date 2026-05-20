@@ -840,6 +840,9 @@ pub struct WindowManager {
     next_hwnd: Mutex<usize>,
     focused_hwnd: Mutex<HWND>,
     foreground_hwnd: Mutex<HWND>,
+    /// Tracks the most recently activated popup window per owner window.
+    /// Key: owner HWND, Value: last active popup HWND.
+    last_active_popup: Mutex<HashMap<HWND, HWND>>,
 }
 
 impl WindowManager {
@@ -849,6 +852,7 @@ impl WindowManager {
             next_hwnd: Mutex::new(0x10000),
             focused_hwnd: Mutex::new(HWND::NULL),
             foreground_hwnd: Mutex::new(HWND::NULL),
+            last_active_popup: Mutex::new(HashMap::new()),
         }
     }
 
@@ -909,6 +913,32 @@ impl WindowManager {
     pub fn destroy_window(&self, hwnd: HWND) -> bool {
         let mut windows = self.windows.lock().unwrap();
         windows.remove(&hwnd).is_some()
+    }
+
+    /// Records that a popup window was activated under its owner.
+    ///
+    /// If `popup` is NULL this is a no-op. The owner is resolved from the
+    /// popup's `parent` field in the window state.
+    pub fn record_popup_activation(&self, popup: HWND) {
+        if popup.is_null() {
+            return;
+        }
+        let windows = self.windows.lock().unwrap();
+        let owner = windows.get(&popup).map(|s| s.parent).unwrap_or(HWND::NULL);
+        drop(windows);
+
+        if !owner.is_null() {
+            let mut map = self.last_active_popup.lock().unwrap();
+            map.insert(owner, popup);
+        }
+    }
+
+    /// Returns the last active popup for a given owner window.
+    ///
+    /// Returns `HWND::NULL` if no popup has been recorded for this owner.
+    pub fn get_last_active_popup(&self, owner: HWND) -> HWND {
+        let map = self.last_active_popup.lock().unwrap();
+        map.get(&owner).copied().unwrap_or(HWND::NULL)
     }
 }
 

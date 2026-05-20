@@ -37,6 +37,35 @@ pub unsafe extern "stdcall" fn SetFocus(hwnd: HWND) -> HWND {
     common::set_focus(hwnd)
 }
 
+/// GetLastActivePopup — retrieves the handle to the most recent active popup
+/// window owned by the specified window.
+///
+/// # Arguments
+/// * `hwnd` - A handle to the owner window.
+///
+/// # Returns
+/// The handle to the most recent active popup window. The return value is the
+/// same as `hwnd` if any of the following are true:
+/// - The window identified by `hwnd` was not recently active.
+/// - The window identified by `hwnd` does not own any popup windows.
+/// - The window identified by `hwnd` is itself a popup window.
+///
+/// # Safety
+/// The caller must ensure that the provided HWND is valid (was returned by a
+/// previous `CreateWindow` or `CreateWindowEx` call). Passing an invalid HWND
+/// will cause the function to return the input `hwnd` unchanged.
+///
+/// # Notes
+/// Partial implementation. Popup activation tracking is not yet wired into
+/// `SetFocus`/`SetForegroundWindow`; therefore this function currently returns
+/// `hwnd` (the fallback per spec) when no popup has been explicitly recorded.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GetLastActivePopup(hwnd: HWND) -> HWND {
+    common::get_last_active_popup(hwnd)
+}
+
 /// SetForegroundWindow — brings the thread that created the specified window
 /// into the foreground and activates the window.
 ///
