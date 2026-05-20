@@ -424,6 +424,8 @@ mod tests {
             enabled: true,
             wnd_proc,
             user_data: 0,
+            menu: None,
+            system_menu: None,
         }
     }
 

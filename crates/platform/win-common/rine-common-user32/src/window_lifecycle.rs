@@ -45,6 +45,8 @@ pub fn create_window(
         enabled: (style & window_style::WS_DISABLED) == 0,
         wnd_proc: class.wnd_proc,
         user_data: 0,
+        menu: None,
+        system_menu: None,
     };
 
     let hwnd = WINDOW_MANAGER.create_window(state);
@@ -447,6 +449,8 @@ mod tests {
             enabled: true,
             wnd_proc: 0,
             user_data: 0,
+            menu: None,
+            system_menu: None,
         }
     }
 

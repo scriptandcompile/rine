@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T17:06:55.996801+00:00",
+  "generatedAt": "2026-05-20T17:36:03.996863+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 82,
+      "functionCount": 83,
       "functions": [
         {
           "name": "CharNextA",
@@ -2891,12 +2891,12 @@
         {
           "name": "GetCursorPos",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "cursor::GetCursorPos",
             "source": "user32 - cursor.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "cursor::GetCursorPos",
             "source": "user32 - cursor.rs"
           }
@@ -2982,12 +2982,12 @@
         {
           "name": "GetMenu",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "menu::GetMenu",
             "source": "user32 - menu.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "menu::GetMenu",
             "source": "user32 - menu.rs"
           }
@@ -3034,12 +3034,12 @@
         {
           "name": "GetSystemMenu",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "menu::GetSystemMenu",
             "source": "user32 - menu.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "menu::GetSystemMenu",
             "source": "user32 - menu.rs"
           }
@@ -3539,6 +3539,19 @@
           }
         },
         {
+          "name": "SetCursorPos",
+          "x64": {
+            "status": "partial",
+            "symbol": "cursor::SetCursorPos",
+            "source": "user32 - cursor.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "cursor::SetCursorPos",
+            "source": "user32 - cursor.rs"
+          }
+        },
+        {
           "name": "SetDlgItemTextA",
           "x64": {
             "status": "stubbed",
@@ -3724,17 +3737,17 @@
     }
   ],
   "totals": {
-    "functions": 282,
+    "functions": 283,
     "x64": {
       "implemented": 103,
-      "partial": 129,
-      "stubbed": 50,
+      "partial": 133,
+      "stubbed": 47,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
-      "partial": 128,
-      "stubbed": 50,
+      "partial": 132,
+      "stubbed": 47,
       "unimplemented": 0
     }
   }

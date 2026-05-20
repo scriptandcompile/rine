@@ -60,6 +60,13 @@ impl BOOL {
     }
 }
 
+impl From<bool> for BOOL {
+    #[inline]
+    fn from(value: bool) -> Self {
+        if value { BOOL::TRUE } else { BOOL::FALSE }
+    }
+}
+
 impl core::fmt::Debug for BOOL {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self.0 {

@@ -44,15 +44,17 @@ pub unsafe extern "win64" fn CheckMenuItem(
 /// * `_position` - The zero-based index position of the menu item that activates the submenu.
 ///
 /// # Safety
-/// _handle_menu must be a valid handle to a menu, and _position must correspond to a valid menu item that has an associated submenu.
-/// The caller must ensure that the menu structure is properly initialized and that the specified position is within bounds.
+/// `_handle_menu` must be a valid handle to a menu, and `_position` must correspond to a valid
+/// menu item that has an associated submenu. The caller must ensure that the menu structure is
+/// properly initialized and that the specified position is within bounds.
 ///
 /// # Returns
-/// An `u32` containing the handle to the submenu if the specified menu item has an associated submenu,
-/// or `0` if the menu item does not have a submenu or if the specified position is invalid.
+/// A handle to the submenu if the specified menu item has an associated submenu,
+/// or `HMENU::NULL` (0) if the menu item does not have a submenu or if the specified position is invalid.
 ///
 /// # Notes
-/// This function is currently a stub and returns `0` as a placeholder.
+/// This function is currently a stub and returns `HMENU::NULL` unconditionally.
+/// Full implementation requires tracking a menu-item tree with submenu associations per `HMENU`.
 #[rine_dlls::stubbed]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
@@ -63,50 +65,56 @@ pub unsafe extern "win64" fn GetSubMenu(_handle_menu: HMENU, _position: u32) -> 
 /// Retrieves a handle to the menu assigned to the specified window.
 ///
 /// # Arguments
-/// * `_handle_window` - A handle to the window whose menu handle is to be retrieved.
+/// * `handle_window` - A handle to the window whose menu handle is to be retrieved.
 ///
 /// # Safety
-/// _handle_window must be a valid handle to a window.
-/// The caller must ensure that the window structure is properly initialized.
+/// `handle_window` must be a valid handle to a window. The caller must ensure that the window
+/// structure is properly initialized.
 ///
 /// # Returns
-/// An `u32` containing the handle to the menu assigned to the specified window,
-/// or `0` if the window does not have a menu or if the specified window handle is invalid.
-/// if the window is a child window, the return value is undefined.
-///
-/// # Notes
-/// This function is currently a stub and returns `0` as a placeholder.
-#[rine_dlls::stubbed]
-#[allow(non_snake_case)]
-#[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetMenu(_handle_window: HWND) -> HMENU {
-    common::get_menu(_handle_window).unwrap_or(HMENU::NULL)
-}
-
-/// Enables the application to access the window menu (also known as the system menu or control menu) for copying and modifying.
-///
-/// # Arguments
-/// * `_handle_window` - A handle to the window whose system menu is to be accessed.
-/// * `_revert` - A boolean value that specifies whether to reset the system menu to its default state.
-///   If this parameter is `true`, the system menu will be reset to its default state.
-///   If this parameter is `false`, the system menu will be returned in its current state.
-///
-/// # Safety
-/// _handle_window must be a valid handle to a window.
-/// The caller must ensure that the window structure is properly initialized.
-///
-/// # Returns
-/// An `u32` containing the handle to the system menu if the specified window has a system menu and the handle is
-/// valid, or `0` if the window does not have a system menu or if the specified window handle is invalid.
+/// A handle to the menu assigned to the specified window, or `HMENU::NULL` (0) if the window
+/// does not have a menu or if the specified window handle is invalid.
 /// If the window is a child window, the return value is undefined.
 ///
 /// # Notes
-/// This function is currently a stub and returns `0` as a placeholder.
-#[rine_dlls::stubbed]
+/// The menu handle is read from `WindowState::menu`. Currently, `CreateWindowEx` and `SetMenu`
+/// do not populate this field, so this function will typically return `HMENU::NULL` until those
+/// code paths are wired up.
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
-pub unsafe extern "win64" fn GetSystemMenu(_handle_window: HWND) -> HMENU {
-    common::get_system_menu(_handle_window, false).unwrap_or(HMENU::NULL)
+pub unsafe extern "win64" fn GetMenu(handle_window: HWND) -> HMENU {
+    common::get_menu(handle_window).unwrap_or(HMENU::NULL)
+}
+
+/// Enables the application to access the window menu (also known as the system menu or
+/// control menu) for copying and modifying.
+///
+/// # Arguments
+/// * `handle_window` - A handle to the window whose system menu is to be accessed.
+/// * `revert` - A boolean value that specifies whether to reset the system menu to its
+///   default state. If `true`, the system menu is reset to the default; if `false`, the
+///   current system menu is returned. Currently, `revert` is ignored and behaves as `false`.
+///
+/// # Safety
+/// `handle_window` must be a valid handle to a window. The caller must ensure that the window
+/// structure is properly initialized.
+///
+/// # Returns
+/// A handle to the system menu if the specified window has a system menu, or `HMENU::NULL` (0)
+/// if the window does not have a system menu or if the specified window handle is invalid.
+/// If the window is a child window, the return value is undefined.
+///
+/// # Notes
+/// The system menu handle is read from `WindowState::system_menu`. The system menu is not
+/// automatically created for new top-level windows, so this function will typically return
+/// `HMENU::NULL`. When `revert` is `true`, the call is delegated to the common implementation
+/// which logs a warning and returns `HMENU::NULL`.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn GetSystemMenu(handle_window: HWND, revert: BOOL) -> HMENU {
+    common::get_system_menu(handle_window, revert.is_true()).unwrap_or(HMENU::NULL)
 }
 
 /// Enables, disables, or grays out a menu item.

@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::errors::BOOL;
+use crate::handles::HMENU;
 
 // ---------------------------------------------------------------------------
 // Window Handle (HWND)
@@ -841,6 +842,13 @@ pub struct WindowState {
     pub wnd_proc: usize,
     /// User data pointer (SetWindowLongPtr).
     pub user_data: usize,
+    /// Handle to the window menu, or `None` if no menu is attached.
+    pub menu: Option<HMENU>,
+    /// Handle to the system menu (window menu / control menu), or `None`.
+    ///
+    /// The system menu is created by the system for every top-level window
+    /// and is typically accessed via Alt+Space or by clicking the window icon.
+    pub system_menu: Option<HMENU>,
 }
 
 /// Global window state manager.
@@ -1202,6 +1210,8 @@ mod tests {
             enabled: true,
             wnd_proc: 0x3000,
             user_data: 0,
+            menu: None,
+            system_menu: None,
         };
 
         let hwnd = manager.create_window(state);
@@ -1229,6 +1239,8 @@ mod tests {
             enabled: true,
             wnd_proc: 0,
             user_data: 0,
+            menu: None,
+            system_menu: None,
         };
 
         let hwnd = manager.create_window(state);
@@ -1260,6 +1272,8 @@ mod tests {
             enabled: true,
             wnd_proc: 0,
             user_data: 0,
+            menu: None,
+            system_menu: None,
         };
 
         let hwnd = manager.create_window(state);

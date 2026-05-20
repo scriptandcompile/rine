@@ -158,22 +158,59 @@ pub unsafe extern "stdcall" fn SetCursor(cursor: u32) -> u32 {
 /// desktop is not the current desktop).
 ///
 /// # Notes
-/// This function is currently a stub and returns `BOOL::FALSE` as a placeholder.
+/// This function returns the cursor position from an in-memory store. The position
+/// reflects only the last value written by `SetCursorPos`; it does **not** track the
+/// actual OS cursor position. Returns `BOOL::FALSE` if `SetCursorPos` has never been
+/// called (position is unset).
 /// This implementation does not set the `GetLastError` value on failure.
-#[rine_dlls::stubbed]
+/// The following operations are **not yet implemented**:
+/// - Querying the actual OS cursor position through the windowing system
+/// - Tracking cursor movement from external input events
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetCursorPos(lppt: *mut Point) -> BOOL {
-    warn!("GetCursorPos is not implemented yet. Returning FALSE as a placeholder.");
-
     let result = common::get_cursor_pos();
 
-    if result.is_none() {
+    let Some((x, y)) = result else {
         return BOOL::FALSE;
+    };
+
+    unsafe {
+        (*lppt).x = x;
+        (*lppt).y = y;
     }
 
-    (*lppt).x = result.unwrap().0;
-    (*lppt).y = result.unwrap().1;
-
     BOOL::TRUE
+}
+
+/// Moves the mouse cursor to the specified screen coordinates.
+///
+/// # Arguments
+/// * `x` - The new x-coordinate of the cursor, in screen coordinates.
+/// * `y` - The new y-coordinate of the cursor, in screen coordinates.
+///
+/// # Returns
+/// `BOOL::TRUE` if the cursor was moved successfully, or `BOOL::FALSE` if the function fails.
+///
+/// # Safety
+/// This function does not perform any validation of the provided coordinates. The caller
+/// should ensure that the coordinates are within the bounds of a valid display monitor.
+/// Moving the cursor to invalid coordinates may result in undefined behavior in the
+/// windowing system.
+///
+/// # Notes
+/// This function stores the requested position in an in-memory store so that
+/// `GetCursorPos` can retrieve it. The position is **not** propagated to the
+/// underlying windowing system, so the actual OS cursor does not move.
+/// This implementation does not set the `GetLastError` value on failure.
+/// The following operations are **not yet implemented**:
+/// - Moving the actual OS cursor through the windowing system (X11/Wayland)
+/// - Input injection or synthesis of mouse move events
+/// - Validating that the coordinates lie within a valid display monitor
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn SetCursorPos(x: i32, y: i32) -> BOOL {
+    BOOL::from(common::set_cursor_pos(x, y))
 }

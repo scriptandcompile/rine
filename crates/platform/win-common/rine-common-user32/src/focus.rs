@@ -184,6 +184,8 @@ mod tests {
             enabled: true,
             wnd_proc: 0,
             user_data: 0,
+            menu: None,
+            system_menu: None,
         }
     }
 

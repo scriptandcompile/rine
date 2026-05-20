@@ -373,7 +373,7 @@ impl HINSTANCE {
 }
 
 /// A handle to a menu (from `CreateMenu` and related functions).
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct HMENU(HANDLE);
 
