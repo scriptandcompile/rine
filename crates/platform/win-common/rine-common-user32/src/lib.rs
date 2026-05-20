@@ -15,6 +15,7 @@ pub mod class_registration;
 pub mod clipboard;
 pub mod cursor;
 pub mod dialogs;
+pub mod focus;
 pub mod menu;
 pub mod message_queue;
 pub mod message_registration;
@@ -24,6 +25,7 @@ pub mod window_text;
 
 pub use char_navigation::{char_next_a, char_prev_a};
 pub use class_registration::unregister_class;
+pub use focus::{get_focus, set_focus};
 pub use message_queue::{
     def_window_proc, dispatch_message, get_message, is_dialog_message, peek_message, post_message,
     post_quit_message, send_message, translate_message,

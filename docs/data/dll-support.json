@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T21:35:05.779695+00:00",
+  "generatedAt": "2026-05-20T00:04:46.694404+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 64,
+      "functionCount": 66,
       "functions": [
         {
           "name": "CharNextA",
@@ -2899,6 +2899,19 @@
             "status": "stubbed",
             "symbol": "dialogs::GetDlgItemTextW",
             "source": "user32 - dialogs.rs"
+          }
+        },
+        {
+          "name": "GetFocus",
+          "x64": {
+            "status": "partial",
+            "symbol": "focus::GetFocus",
+            "source": "user32 - focus.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "focus::GetFocus",
+            "source": "user32 - focus.rs"
           }
         },
         {
@@ -3370,6 +3383,19 @@
           }
         },
         {
+          "name": "SetFocus",
+          "x64": {
+            "status": "implemented",
+            "symbol": "focus::SetFocus",
+            "source": "user32 - focus.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "focus::SetFocus",
+            "source": "user32 - focus.rs"
+          }
+        },
+        {
           "name": "SetWindowTextA",
           "x64": {
             "status": "partial",
@@ -3490,15 +3516,15 @@
     }
   ],
   "totals": {
-    "functions": 264,
+    "functions": 266,
     "x64": {
-      "implemented": 100,
-      "partial": 117,
+      "implemented": 101,
+      "partial": 118,
       "stubbed": 47,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 100,
+      "implemented": 102,
       "partial": 117,
       "stubbed": 47,
       "unimplemented": 0

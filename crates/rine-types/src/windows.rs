@@ -712,6 +712,7 @@ pub struct WindowState {
 pub struct WindowManager {
     windows: Mutex<HashMap<HWND, WindowState>>,
     next_hwnd: Mutex<usize>,
+    focused_hwnd: Mutex<HWND>,
 }
 
 impl WindowManager {
@@ -719,7 +720,19 @@ impl WindowManager {
         Self {
             windows: Mutex::new(HashMap::new()),
             next_hwnd: Mutex::new(0x10000),
+            focused_hwnd: Mutex::new(HWND::NULL),
         }
+    }
+
+    pub fn get_focus(&self) -> HWND {
+        *self.focused_hwnd.lock().unwrap()
+    }
+
+    pub fn set_focus(&self, hwnd: HWND) -> HWND {
+        let mut focused = self.focused_hwnd.lock().unwrap();
+        let prev = *focused;
+        *focused = hwnd;
+        prev
     }
 
     pub fn create_window(&self, state: WindowState) -> HWND {

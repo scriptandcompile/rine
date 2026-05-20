@@ -187,6 +187,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::manual_dangling_ptr)]
     fn ansi_small_id_returns_some() {
         let ptr = 1usize as *const u8;
         assert_eq!(integer_resource_id_from_ansi(make_lpcstr(ptr)), Some(1));
@@ -226,6 +227,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::manual_dangling_ptr)]
     fn wide_small_id_returns_some() {
         let ptr = 1usize as *const u16;
         assert_eq!(integer_resource_id_from_wide(make_lpcwstr(ptr)), Some(1));

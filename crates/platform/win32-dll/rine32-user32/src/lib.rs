@@ -13,6 +13,7 @@ mod class_registration;
 mod clipboard;
 mod cursor;
 mod dialogs;
+mod focus;
 mod menu;
 mod message_queue;
 mod message_registration;

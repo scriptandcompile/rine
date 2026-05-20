@@ -3739,6 +3739,7 @@ dependencies = [
  "goblin",
  "rine-channel",
  "rine-types",
+ "serial_test",
  "tracing",
  "winit 0.30.13",
 ]
