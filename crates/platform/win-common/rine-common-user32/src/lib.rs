@@ -18,6 +18,7 @@ pub mod device_context;
 pub mod dialogs;
 pub mod focus;
 pub mod format;
+pub mod icon;
 pub mod menu;
 pub mod message_queue;
 pub mod message_registration;

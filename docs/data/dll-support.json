@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T06:05:18.676278+00:00",
+  "generatedAt": "2026-05-20T17:06:55.996801+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 80,
+      "functionCount": 82,
       "functions": [
         {
           "name": "CharNextA",
@@ -3227,6 +3227,32 @@
           }
         },
         {
+          "name": "LoadIconA",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "icon::LoadIconA",
+            "source": "user32 - icon.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "icon::LoadIconA",
+            "source": "user32 - icon.rs"
+          }
+        },
+        {
+          "name": "LoadIconW",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "icon::LoadIconW",
+            "source": "user32 - icon.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "icon::LoadIconW",
+            "source": "user32 - icon.rs"
+          }
+        },
+        {
           "name": "MessageBeep",
           "x64": {
             "status": "stubbed",
@@ -3698,17 +3724,17 @@
     }
   ],
   "totals": {
-    "functions": 280,
+    "functions": 282,
     "x64": {
       "implemented": 103,
       "partial": 129,
-      "stubbed": 48,
+      "stubbed": 50,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
       "partial": 128,
-      "stubbed": 48,
+      "stubbed": 50,
       "unimplemented": 0
     }
   }

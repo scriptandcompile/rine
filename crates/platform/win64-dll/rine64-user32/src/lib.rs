@@ -11,6 +11,7 @@ mod device_context;
 mod dialogs;
 mod focus;
 mod format;
+mod icon;
 mod menu;
 mod message_queue;
 mod message_registration;
