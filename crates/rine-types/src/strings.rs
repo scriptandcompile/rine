@@ -65,6 +65,27 @@ impl LPCSTR {
         self.0
     }
 
+    /// Check whether the pointer is an integer resource identifier (IS_INTRESOURCE).
+    ///
+    /// In Win32, resource identifiers are encoded as pointers whose high 16 bits are zero,
+    /// with the resource ID stored in the low 16 bits. This is used by macros such as
+    /// `MAKEINTRESOURCE` and functions like `LoadCursor`/`LoadIcon`/`LoadImage`.
+    ///
+    /// # Returns
+    /// `true` if the pointer is non-null and its high 16 bits are all zero,
+    /// indicating an integer resource identifier.
+    pub fn is_int_resource(self) -> bool {
+        !self.is_null() && (self.0 as usize >> 16) == 0
+    }
+
+    /// Extract the low 16 bits as a resource ID when `is_int_resource` is true.
+    ///
+    /// # Returns
+    /// The resource ID as a `u16`.
+    pub fn to_int_resource(self) -> u16 {
+        self.0 as u16
+    }
+
     /// Read a string from the pointer location, treating it as a null-terminated ANSI string.
     ///
     /// # Safety
@@ -223,6 +244,27 @@ impl LPCWSTR {
     /// The raw pointer as a `*const u16`.
     pub fn as_ptr(self) -> *const u16 {
         self.0
+    }
+
+    /// Check whether the pointer is an integer resource identifier (IS_INTRESOURCE).
+    ///
+    /// In Win32, resource identifiers are encoded as pointers whose high 16 bits are zero,
+    /// with the resource ID stored in the low 16 bits. This is used by macros such as
+    /// `MAKEINTRESOURCE` and functions like `LoadCursor`/`LoadIcon`/`LoadImage`.
+    ///
+    /// # Returns
+    /// `true` if the pointer is non-null and its high 16 bits are all zero,
+    /// indicating an integer resource identifier.
+    pub fn is_int_resource(self) -> bool {
+        !self.is_null() && (self.0 as usize >> 16) == 0
+    }
+
+    /// Extract the low 16 bits as a resource ID when `is_int_resource` is true.
+    ///
+    /// # Returns
+    /// The resource ID as a `u16`.
+    pub fn to_int_resource(self) -> u16 {
+        self.0 as u16
     }
 
     /// Read a string from the pointer location, treating it as a null-terminated UTF-16LE string.
