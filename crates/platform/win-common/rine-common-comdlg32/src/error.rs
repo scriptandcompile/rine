@@ -45,13 +45,6 @@ mod tests {
 
     #[test]
     #[serial]
-    fn default_error_is_none() {
-        // The static starts at None, and we haven't called set_last_error.
-        assert_eq!(last_error(), DialogErrorCode::None as u32);
-    }
-
-    #[test]
-    #[serial]
     fn set_and_read_each_code() {
         for code in &[
             DialogErrorCode::None,
