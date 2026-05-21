@@ -11,11 +11,9 @@ const x86Implemented = document.getElementById("x86-implemented");
 const x64TotalImplemented = document.getElementById("x64-total-implemented");
 const x64TotalPartial = document.getElementById("x64-total-partial");
 const x64TotalStubbed = document.getElementById("x64-total-stubbed");
-const x64TotalUnimplemented = document.getElementById("x64-total-unimplemented");
 const x86TotalImplemented = document.getElementById("x86-total-implemented");
 const x86TotalPartial = document.getElementById("x86-total-partial");
 const x86TotalStubbed = document.getElementById("x86-total-stubbed");
-const x86TotalUnimplemented = document.getElementById("x86-total-unimplemented");
 const generatedAt = document.getElementById("generated-at");
 
 const GITHUB_BLOB_ROOT = "https://github.com/scriptandcompile/rine/blob/main";
@@ -213,11 +211,9 @@ async function initialize() {
     x64TotalImplemented.textContent = String(safeStatusTotal(data.totals.x64, "implemented"));
     x64TotalPartial.textContent = String(safeStatusTotal(data.totals.x64, "partial"));
     x64TotalStubbed.textContent = String(safeStatusTotal(data.totals.x64, "stubbed"));
-    x64TotalUnimplemented.textContent = String(safeStatusTotal(data.totals.x64, "unimplemented"));
     x86TotalImplemented.textContent = String(safeStatusTotal(data.totals.x86, "implemented"));
     x86TotalPartial.textContent = String(safeStatusTotal(data.totals.x86, "partial"));
     x86TotalStubbed.textContent = String(safeStatusTotal(data.totals.x86, "stubbed"));
-    x86TotalUnimplemented.textContent = String(safeStatusTotal(data.totals.x86, "unimplemented"));
     generatedAt.textContent = `Generated: ${formatGeneratedAt(data.generatedAt)}`;
 
     const dllNames = data.dlls.map((dll) => dll.name).sort((a, b) => a.localeCompare(b));
