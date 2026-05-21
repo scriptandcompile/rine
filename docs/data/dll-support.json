@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T18:40:28.136066+00:00",
+  "generatedAt": "2026-05-21T09:14:01.814530+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2652,7 +2652,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 85,
+      "functionCount": 86,
       "functions": [
         {
           "name": "CharNextA",
@@ -3253,6 +3253,19 @@
           }
         },
         {
+          "name": "LoadStringA",
+          "x64": {
+            "status": "partial",
+            "symbol": "load_string::LoadStringA",
+            "source": "user32 - load_string.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "load_string::LoadStringA",
+            "source": "user32 - load_string.rs"
+          }
+        },
+        {
           "name": "MessageBeep",
           "x64": {
             "status": "stubbed",
@@ -3763,16 +3776,16 @@
     }
   ],
   "totals": {
-    "functions": 285,
+    "functions": 286,
     "x64": {
       "implemented": 103,
-      "partial": 135,
+      "partial": 136,
       "stubbed": 47,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
-      "partial": 134,
+      "partial": 135,
       "stubbed": 47,
       "unimplemented": 0
     }

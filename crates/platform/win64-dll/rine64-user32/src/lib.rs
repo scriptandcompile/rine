@@ -12,6 +12,7 @@ mod dialogs;
 mod focus;
 mod format;
 mod icon;
+mod load_string;
 mod menu;
 mod message_queue;
 mod message_registration;
