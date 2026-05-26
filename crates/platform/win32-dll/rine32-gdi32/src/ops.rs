@@ -170,6 +170,31 @@ pub unsafe extern "stdcall" fn CreatePen(style: i32, width: i32, color: u32) -> 
     unsafe { common::create_pen(style, width, color) }
 }
 
+/// Retrieves a handle to one of the predefined stock pens or brushes.
+///
+/// # Arguments
+/// * `object`: The stock object index. Supported indices currently include brush/pen objects:
+///   `WHITE_BRUSH`, `LTGRAY_BRUSH`, `GRAY_BRUSH`, `DKGRAY_BRUSH`, `BLACK_BRUSH`,
+///   `NULL_BRUSH`/`HOLLOW_BRUSH`, `WHITE_PEN`, `BLACK_PEN`, `NULL_PEN`, `DC_BRUSH`, and `DC_PEN`.
+///
+/// # Safety
+/// The caller must pass a valid stock object index according to the Win32 API contract.
+/// Returned stock-object handles are owned by the runtime and must not be freed with `DeleteObject`.
+///
+/// # Returns
+/// Returns a stable stock-object handle for supported indices, or 0 when the requested index is not supported.
+///
+/// # Notes
+/// This is a partial implementation. Font, palette, and additional stock-object categories are not implemented yet.
+/// `NULL_PEN`/`NULL_BRUSH` and `DC_PEN`/`DC_BRUSH` currently use placeholder pen/brush objects;
+/// null-object rendering semantics and dynamic DC pen/brush color semantics are not fully implemented.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GetStockObject(object: i32) -> usize {
+    unsafe { common::get_stock_object(object) }
+}
+
 /// Selects an object into the specified device context (DC). The new object replaces the previous object of the same type.
 ///
 /// # Arguments

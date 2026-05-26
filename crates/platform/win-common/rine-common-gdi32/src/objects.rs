@@ -80,6 +80,7 @@ impl Default for DeviceContext {
 pub(crate) struct GdiState {
     pub(crate) dcs: HashMap<usize, DeviceContext>,
     pub(crate) objects: HashMap<usize, GdiObject>,
+    pub(crate) stock_objects: HashMap<i32, usize>,
 }
 
 #[cfg(test)]

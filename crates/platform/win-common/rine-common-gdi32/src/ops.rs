@@ -19,6 +19,19 @@ pub const MM_TWIPS: i32 = 6;
 pub const MM_ISOTROPIC: i32 = 7;
 pub const MM_ANISOTROPIC: i32 = 8;
 
+pub const WHITE_BRUSH: i32 = 0;
+pub const LTGRAY_BRUSH: i32 = 1;
+pub const GRAY_BRUSH: i32 = 2;
+pub const DKGRAY_BRUSH: i32 = 3;
+pub const BLACK_BRUSH: i32 = 4;
+pub const NULL_BRUSH: i32 = 5;
+pub const HOLLOW_BRUSH: i32 = NULL_BRUSH;
+pub const WHITE_PEN: i32 = 6;
+pub const BLACK_PEN: i32 = 7;
+pub const NULL_PEN: i32 = 8;
+pub const DC_BRUSH: i32 = 18;
+pub const DC_PEN: i32 = 19;
+
 pub(crate) fn bitmap_bytes(bitmap: &Bitmap) -> u64 {
     (bitmap.pixels.len() * std::mem::size_of::<u32>()) as u64
 }
@@ -39,6 +52,63 @@ fn is_valid_map_mode(mode: i32) -> bool {
             | MM_ISOTROPIC
             | MM_ANISOTROPIC
     )
+}
+
+fn stock_object_for_index(object: i32) -> Option<GdiObject> {
+    match object {
+        WHITE_BRUSH => Some(GdiObject::Brush(Brush { color: 0x00FF_FFFF })),
+        LTGRAY_BRUSH => Some(GdiObject::Brush(Brush { color: 0x00C0_C0C0 })),
+        GRAY_BRUSH => Some(GdiObject::Brush(Brush { color: 0x0080_8080 })),
+        DKGRAY_BRUSH => Some(GdiObject::Brush(Brush { color: 0x0040_4040 })),
+        BLACK_BRUSH => Some(GdiObject::Brush(Brush { color: 0x0000_0000 })),
+        NULL_BRUSH => Some(GdiObject::Brush(Brush { color: 0x0000_0000 })),
+        WHITE_PEN => Some(GdiObject::Pen(Pen { color: 0x00FF_FFFF })),
+        BLACK_PEN => Some(GdiObject::Pen(Pen { color: 0x0000_0000 })),
+        NULL_PEN => Some(GdiObject::Pen(Pen { color: 0x0000_0000 })),
+        // Current renderer does not support dynamic DC pen/brush colors yet.
+        DC_BRUSH => Some(GdiObject::Brush(Brush { color: 0x0000_0000 })),
+        DC_PEN => Some(GdiObject::Pen(Pen { color: 0x0000_0000 })),
+        _ => None,
+    }
+}
+
+/// Retrieves a handle to one of the predefined stock pens or brushes.
+///
+/// # Arguments
+/// * `object`: The stock object index. This implementation supports brush/pen indices:
+///   `WHITE_BRUSH`, `LTGRAY_BRUSH`, `GRAY_BRUSH`, `DKGRAY_BRUSH`, `BLACK_BRUSH`,
+///   `NULL_BRUSH`/`HOLLOW_BRUSH`, `WHITE_PEN`, `BLACK_PEN`, `NULL_PEN`, `DC_BRUSH`, and `DC_PEN`.
+///
+/// # Safety
+/// The caller must pass a valid stock object index expected by the Win32 API contract.
+/// Returned handles are owned by the runtime and must not be freed with `delete_object`.
+///
+/// # Returns
+/// Returns a stable handle for the requested stock object when supported, or 0 for unsupported indices.
+///
+/// # Notes
+/// This is a partial implementation. Font, palette, and other stock-object indices are not yet supported.
+/// `NULL_PEN`/`NULL_BRUSH` and `DC_PEN`/`DC_BRUSH` currently map to basic placeholder pen/brush objects;
+/// null-object drawing semantics and dynamic DC pen/brush color semantics are not fully implemented yet.
+pub unsafe fn get_stock_object(object: i32) -> usize {
+    let mut state = gdi_state().lock().unwrap();
+
+    if let Some(existing) = state.stock_objects.get(&object) {
+        return *existing;
+    }
+
+    let Some(gdi_object) = stock_object_for_index(object) else {
+        return 0;
+    };
+
+    let handle = alloc_handle();
+    state.objects.insert(handle, gdi_object);
+    state.stock_objects.insert(object, handle);
+
+    let detail = format!(r#"{{"handle":{},"stock_index":{}}}"#, handle, object);
+    rine_types::dev_notify!(on_handle_created(handle as i64, "GdiStockObject", &detail));
+
+    handle
 }
 
 /// Creates a memory device context (DC) compatible with the specified device.
@@ -346,6 +416,14 @@ pub unsafe fn select_object(hdc: usize, object: usize) -> usize {
 /// created with, to prevent resource leaks and undefined behavior.
 pub unsafe fn delete_object(object: usize) -> BOOL {
     let mut state = gdi_state().lock().unwrap();
+    if state
+        .stock_objects
+        .values()
+        .any(|stock_handle| *stock_handle == object)
+    {
+        return BOOL::FALSE;
+    }
+
     if object_selected_by_any_dc(&state, object) {
         return BOOL::FALSE;
     }
@@ -589,6 +667,32 @@ mod tests {
             assert_eq!(set_map_mode(dc, 0), 0);
             assert_eq!(set_map_mode(0xDEADBEEF, MM_TEXT), 0);
             assert_eq!(delete_dc(dc), BOOL::TRUE);
+        }
+    }
+
+    #[test]
+    fn get_stock_object_returns_stable_handle_for_supported_index() {
+        unsafe {
+            let first = get_stock_object(WHITE_BRUSH);
+            let second = get_stock_object(WHITE_BRUSH);
+            assert_ne!(first, 0);
+            assert_eq!(first, second);
+        }
+    }
+
+    #[test]
+    fn get_stock_object_returns_zero_for_unsupported_index() {
+        unsafe {
+            assert_eq!(get_stock_object(10), 0);
+        }
+    }
+
+    #[test]
+    fn delete_object_rejects_stock_object_handles() {
+        unsafe {
+            let stock = get_stock_object(BLACK_PEN);
+            assert_ne!(stock, 0);
+            assert_eq!(delete_object(stock), BOOL::FALSE);
         }
     }
 }

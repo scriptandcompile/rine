@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T09:14:01.814530+00:00",
+  "generatedAt": "2026-05-26T20:08:19.639847+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -204,7 +204,7 @@
     },
     {
       "name": "gdi32.dll",
-      "functionCount": 10,
+      "functionCount": 13,
       "functions": [
         {
           "name": "BitBlt",
@@ -298,6 +298,19 @@
           }
         },
         {
+          "name": "GetStockObject",
+          "x64": {
+            "status": "partial",
+            "symbol": "ops::GetStockObject",
+            "source": "gdi32 - ops.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "ops::GetStockObject",
+            "source": "gdi32 - ops.rs"
+          }
+        },
+        {
           "name": "SelectObject",
           "x64": {
             "status": "implemented",
@@ -307,6 +320,32 @@
           "x86": {
             "status": "implemented",
             "symbol": "ops::SelectObject",
+            "source": "gdi32 - ops.rs"
+          }
+        },
+        {
+          "name": "SetBkMode",
+          "x64": {
+            "status": "partial",
+            "symbol": "ops::SetBkMode",
+            "source": "gdi32 - ops.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "ops::SetBkMode",
+            "source": "gdi32 - ops.rs"
+          }
+        },
+        {
+          "name": "SetMapMode",
+          "x64": {
+            "status": "partial",
+            "symbol": "ops::SetMapMode",
+            "source": "gdi32 - ops.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "ops::SetMapMode",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -3776,16 +3815,16 @@
     }
   ],
   "totals": {
-    "functions": 286,
+    "functions": 289,
     "x64": {
       "implemented": 103,
-      "partial": 136,
+      "partial": 139,
       "stubbed": 47,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
-      "partial": 135,
+      "partial": 138,
       "stubbed": 47,
       "unimplemented": 0
     }
