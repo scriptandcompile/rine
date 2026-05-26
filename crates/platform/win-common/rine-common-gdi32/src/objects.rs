@@ -53,12 +53,27 @@ pub(crate) enum GdiObject {
     Pen(Pen),
 }
 
-#[derive(Default)]
 pub(crate) struct DeviceContext {
     pub(crate) selected_bitmap: Option<usize>,
     pub(crate) selected_brush: Option<usize>,
     pub(crate) selected_pen: Option<usize>,
+    pub(crate) bk_mode: i32,
+    pub(crate) map_mode: i32,
     pub(crate) owned_objects: Vec<usize>,
+}
+
+impl Default for DeviceContext {
+    fn default() -> Self {
+        Self {
+            selected_bitmap: None,
+            selected_brush: None,
+            selected_pen: None,
+            // Windows defaults for a newly created memory DC.
+            bk_mode: crate::ops::OPAQUE,
+            map_mode: crate::ops::MM_TEXT,
+            owned_objects: Vec::new(),
+        }
+    }
 }
 
 #[derive(Default)]

@@ -7,9 +7,38 @@ use crate::telemetry::{notify_bitmap_alloc, notify_bitmap_free};
 use crate::text::draw_text;
 
 pub const SRCCOPY: u32 = 0x00CC0020;
+pub const TRANSPARENT: i32 = 1;
+pub const OPAQUE: i32 = 2;
+
+pub const MM_TEXT: i32 = 1;
+pub const MM_LOMETRIC: i32 = 2;
+pub const MM_HIMETRIC: i32 = 3;
+pub const MM_LOENGLISH: i32 = 4;
+pub const MM_HIENGLISH: i32 = 5;
+pub const MM_TWIPS: i32 = 6;
+pub const MM_ISOTROPIC: i32 = 7;
+pub const MM_ANISOTROPIC: i32 = 8;
 
 pub(crate) fn bitmap_bytes(bitmap: &Bitmap) -> u64 {
     (bitmap.pixels.len() * std::mem::size_of::<u32>()) as u64
+}
+
+fn is_valid_bk_mode(mode: i32) -> bool {
+    mode == TRANSPARENT || mode == OPAQUE
+}
+
+fn is_valid_map_mode(mode: i32) -> bool {
+    matches!(
+        mode,
+        MM_TEXT
+            | MM_LOMETRIC
+            | MM_HIMETRIC
+            | MM_LOENGLISH
+            | MM_HIENGLISH
+            | MM_TWIPS
+            | MM_ISOTROPIC
+            | MM_ANISOTROPIC
+    )
 }
 
 /// Creates a memory device context (DC) compatible with the specified device.
@@ -78,6 +107,61 @@ pub unsafe fn delete_dc(hdc: usize) -> BOOL {
 
     rine_types::dev_notify!(on_handle_closed(hdc as i64));
     BOOL::TRUE
+}
+
+/// Sets the background mix mode for text, hatched brushes, and pen styles in the specified device context.
+///
+/// # Arguments
+/// * `hdc`: A handle to the device context whose background mode will be updated.
+/// * `mode`: The requested background mode. Supported values are `TRANSPARENT` and `OPAQUE`.
+///
+/// # Safety
+/// The caller must ensure that `hdc` is a valid device context handle that belongs to this runtime.
+/// Passing an invalid handle or unsupported `mode` value causes this function to fail and return 0.
+///
+/// # Returns
+/// Returns the previous background mode on success, or 0 if `hdc` is invalid or `mode` is unsupported.
+pub unsafe fn set_bk_mode(hdc: usize, mode: i32) -> i32 {
+    if !is_valid_bk_mode(mode) {
+        return 0;
+    }
+
+    let mut state = gdi_state().lock().unwrap();
+    let Some(dc) = state.dcs.get_mut(&hdc) else {
+        return 0;
+    };
+
+    let previous = dc.bk_mode;
+    dc.bk_mode = mode;
+    previous
+}
+
+/// Sets the mapping mode for the specified device context.
+///
+/// # Arguments
+/// * `hdc`: A handle to the device context whose mapping mode will be updated.
+/// * `mode`: The requested mapping mode. Supported values are `MM_TEXT`, `MM_LOMETRIC`, `MM_HIMETRIC`,
+///   `MM_LOENGLISH`, `MM_HIENGLISH`, `MM_TWIPS`, `MM_ISOTROPIC`, and `MM_ANISOTROPIC`.
+///
+/// # Safety
+/// The caller must ensure that `hdc` is a valid device context handle that belongs to this runtime.
+/// Passing an invalid handle or unsupported `mode` value causes this function to fail and return 0.
+///
+/// # Returns
+/// Returns the previous mapping mode on success, or 0 if `hdc` is invalid or `mode` is unsupported.
+pub unsafe fn set_map_mode(hdc: usize, mode: i32) -> i32 {
+    if !is_valid_map_mode(mode) {
+        return 0;
+    }
+
+    let mut state = gdi_state().lock().unwrap();
+    let Some(dc) = state.dcs.get_mut(&hdc) else {
+        return 0;
+    };
+
+    let previous = dc.map_mode;
+    dc.map_mode = mode;
+    previous
 }
 
 /// Creates a bitmap compatible with the device that is associated with the specified device context (DC).
@@ -465,6 +549,46 @@ mod tests {
             assert_eq!(delete_object(bitmap), BOOL::FALSE);
             assert_eq!(delete_dc(dc), BOOL::TRUE);
             assert_eq!(delete_object(bitmap), BOOL::TRUE);
+        }
+    }
+
+    #[test]
+    fn set_bk_mode_updates_state_and_returns_previous_mode() {
+        unsafe {
+            let dc = create_compatible_dc(0);
+            assert_eq!(set_bk_mode(dc, TRANSPARENT), OPAQUE);
+            assert_eq!(set_bk_mode(dc, OPAQUE), TRANSPARENT);
+            assert_eq!(delete_dc(dc), BOOL::TRUE);
+        }
+    }
+
+    #[test]
+    fn set_bk_mode_rejects_invalid_mode_and_invalid_dc() {
+        unsafe {
+            let dc = create_compatible_dc(0);
+            assert_eq!(set_bk_mode(dc, 99), 0);
+            assert_eq!(set_bk_mode(0xDEADBEEF, OPAQUE), 0);
+            assert_eq!(delete_dc(dc), BOOL::TRUE);
+        }
+    }
+
+    #[test]
+    fn set_map_mode_updates_state_and_returns_previous_mode() {
+        unsafe {
+            let dc = create_compatible_dc(0);
+            assert_eq!(set_map_mode(dc, MM_ISOTROPIC), MM_TEXT);
+            assert_eq!(set_map_mode(dc, MM_ANISOTROPIC), MM_ISOTROPIC);
+            assert_eq!(delete_dc(dc), BOOL::TRUE);
+        }
+    }
+
+    #[test]
+    fn set_map_mode_rejects_invalid_mode_and_invalid_dc() {
+        unsafe {
+            let dc = create_compatible_dc(0);
+            assert_eq!(set_map_mode(dc, 0), 0);
+            assert_eq!(set_map_mode(0xDEADBEEF, MM_TEXT), 0);
+            assert_eq!(delete_dc(dc), BOOL::TRUE);
         }
     }
 }

@@ -43,6 +43,50 @@ pub unsafe extern "win64" fn DeleteDC(hdc: usize) -> BOOL {
     unsafe { common::delete_dc(hdc) }
 }
 
+/// Sets the background mix mode for text, hatched brushes, and pen styles in the specified device context.
+///
+/// # Arguments
+/// * `hdc`: A handle to the device context whose background mode is updated.
+/// * `mode`: The new background mode. Supported values are `TRANSPARENT` (1) and `OPAQUE` (2).
+///
+/// # Safety
+/// The caller must ensure that `hdc` is a valid device context handle and that `mode` is one of the supported values.
+/// Passing an invalid handle or unsupported mode causes this function to fail and return 0.
+///
+/// # Returns
+/// Returns the previous background mode on success, or 0 on failure.
+///
+/// # Notes
+/// The current renderer does not yet apply background-mode semantics to all drawing paths; this call currently stores mode state for compatibility.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn SetBkMode(hdc: usize, mode: i32) -> i32 {
+    unsafe { common::set_bk_mode(hdc, mode) }
+}
+
+/// Sets the mapping mode for the specified device context.
+///
+/// # Arguments
+/// * `hdc`: A handle to the device context whose mapping mode is updated.
+/// * `mode`: The new mapping mode. Supported values are `MM_TEXT` through `MM_ANISOTROPIC`.
+///
+/// # Safety
+/// The caller must ensure that `hdc` is a valid device context handle and that `mode` is a supported map mode.
+/// Passing an invalid handle or unsupported mode causes this function to fail and return 0.
+///
+/// # Returns
+/// Returns the previous mapping mode on success, or 0 on failure.
+///
+/// # Notes
+/// Coordinate transformation behavior for non-`MM_TEXT` modes is not fully implemented yet; this call currently stores mode state for API compatibility.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn SetMapMode(hdc: usize, mode: i32) -> i32 {
+    unsafe { common::set_map_mode(hdc, mode) }
+}
+
 /// Creates a bitmap compatible with the device that is associated with the specified device context (DC).
 ///
 /// # Arguments
