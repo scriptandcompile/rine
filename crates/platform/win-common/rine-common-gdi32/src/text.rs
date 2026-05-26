@@ -1,12 +1,15 @@
 use crate::objects::Bitmap;
 
+pub(crate) const PSEUDO_GLYPH_WIDTH: i32 = 8;
+pub(crate) const PSEUDO_GLYPH_HEIGHT: i32 = 12;
+
 pub(crate) fn draw_text(bitmap: &mut Bitmap, x: i32, y: i32, text: &str) {
     for (glyph_index, ch) in text.chars().enumerate() {
-        let glyph_base_x = x + (glyph_index as i32 * 8);
+        let glyph_base_x = x + (glyph_index as i32 * PSEUDO_GLYPH_WIDTH);
         let glyph = ch as u32;
 
-        for row in 0..12 {
-            for col in 0..8 {
+        for row in 0..PSEUDO_GLYPH_HEIGHT {
+            for col in 0..PSEUDO_GLYPH_WIDTH {
                 // Lightweight pseudo-glyph so TextOut mutates the software surface.
                 if ((glyph >> ((row + col) & 0x7)) & 1) == 0 {
                     continue;

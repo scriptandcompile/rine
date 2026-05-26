@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T20:28:50.626034+00:00",
+  "generatedAt": "2026-05-26T21:32:12.564247+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -217,7 +217,7 @@
     },
     {
       "name": "gdi32.dll",
-      "functionCount": 13,
+      "functionCount": 14,
       "functions": [
         {
           "name": "BitBlt",
@@ -320,6 +320,19 @@
           "x86": {
             "status": "partial",
             "symbol": "ops::GetStockObject",
+            "source": "gdi32 - ops.rs"
+          }
+        },
+        {
+          "name": "GetTextExtentPointA",
+          "x64": {
+            "status": "stubbed",
+            "symbol": "ops::GetTextExtentPointA",
+            "source": "gdi32 - ops.rs"
+          },
+          "x86": {
+            "status": "stubbed",
+            "symbol": "ops::GetTextExtentPointA",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -3828,17 +3841,17 @@
     }
   ],
   "totals": {
-    "functions": 290,
+    "functions": 291,
     "x64": {
       "implemented": 103,
       "partial": 140,
-      "stubbed": 47,
+      "stubbed": 48,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
       "partial": 139,
-      "stubbed": 47,
+      "stubbed": 48,
       "unimplemented": 0
     }
   }

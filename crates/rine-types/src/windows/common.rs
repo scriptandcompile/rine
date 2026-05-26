@@ -28,6 +28,14 @@ pub struct Point {
     pub y: i32,
 }
 
+/// The Windows SIZE structure.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Size {
+    pub cx: i32,
+    pub cy: i32,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -46,5 +54,12 @@ mod tests {
         let point = Point::default();
         assert_eq!(point.x, 0);
         assert_eq!(point.y, 0);
+    }
+
+    #[test]
+    fn size_default() {
+        let size = Size::default();
+        assert_eq!(size.cx, 0);
+        assert_eq!(size.cy, 0);
     }
 }

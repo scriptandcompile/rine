@@ -1,7 +1,7 @@
 use rine_common_gdi32 as common;
 use rine_types::errors::BOOL;
 use rine_types::strings::{LPCSTR, LPCWSTR};
-use rine_types::windows::Rect;
+use rine_types::windows::{Rect, Size};
 
 /// Creates a memory device context (DC) compatible with the specified device.
 ///
@@ -393,5 +393,42 @@ pub unsafe extern "stdcall" fn TextOutW(
         };
 
         common::ops::text_out(hdc, x, y, &text)
+    }
+}
+
+/// Computes the width and height of an ANSI text string.
+///
+/// # Arguments
+/// * `hdc`: A handle to the device context used for measurement.
+/// * `text`: Pointer to an ANSI string buffer to measure.
+/// * `count`: Number of ANSI characters to measure from `text`.
+/// * `size`: Pointer to a `Size` structure that receives the measured extent.
+///
+/// # Returns
+/// Returns `BOOL::TRUE` on success, or `BOOL::FALSE` if inputs are invalid.
+///
+/// # Safety
+/// The caller must ensure `text` points to at least `count` readable bytes when `count > 0`.
+/// The caller must ensure `size` is a valid writable pointer to a `Size` structure.
+/// `hdc` must refer to a valid device context handle created by this runtime.
+///
+/// # Notes
+/// This is a partial implementation that uses fixed pseudo-font metrics from the software renderer.
+/// It does not currently honor selected font data, kerning, or map-mode dependent scaling.
+#[rine_dlls::stubbed]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn GetTextExtentPointA(
+    hdc: usize,
+    text: LPCSTR,
+    count: i32,
+    size: *mut Size,
+) -> BOOL {
+    unsafe {
+        let Some(text) = text.read_string_counted(count) else {
+            return BOOL::FALSE;
+        };
+
+        common::ops::get_text_extent_point_a(hdc, &text, size)
     }
 }
