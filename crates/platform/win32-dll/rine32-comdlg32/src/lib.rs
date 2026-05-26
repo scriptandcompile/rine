@@ -3,6 +3,7 @@
 pub mod error;
 pub mod open;
 pub mod save;
+pub mod title;
 
 use rine_dlls::{DllPlugin, as_win_api};
 

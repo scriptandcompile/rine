@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T20:08:19.639847+00:00",
+  "generatedAt": "2026-05-26T20:28:50.626034+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -133,7 +133,7 @@
     },
     {
       "name": "comdlg32.dll",
-      "functionCount": 5,
+      "functionCount": 6,
       "functions": [
         {
           "name": "CommDlgExtendedError",
@@ -146,6 +146,19 @@
             "status": "partial",
             "symbol": "error::CommDlgExtendedError",
             "source": "comdlg32 - error.rs"
+          }
+        },
+        {
+          "name": "GetFileTitleA",
+          "x64": {
+            "status": "partial",
+            "symbol": "title::GetFileTitleA",
+            "source": "comdlg32 - title.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "title::GetFileTitleA",
+            "source": "comdlg32 - title.rs"
           }
         },
         {
@@ -3815,16 +3828,16 @@
     }
   ],
   "totals": {
-    "functions": 289,
+    "functions": 290,
     "x64": {
       "implemented": 103,
-      "partial": 139,
+      "partial": 140,
       "stubbed": 47,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
-      "partial": 138,
+      "partial": 139,
       "stubbed": 47,
       "unimplemented": 0
     }

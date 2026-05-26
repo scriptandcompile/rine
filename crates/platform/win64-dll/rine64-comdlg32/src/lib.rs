@@ -3,6 +3,7 @@
 mod error;
 mod open;
 mod save;
+mod title;
 
 use rine_dlls::{DllPlugin, as_win_api};
 

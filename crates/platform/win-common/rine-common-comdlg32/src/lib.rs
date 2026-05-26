@@ -4,6 +4,7 @@ pub mod open;
 pub mod pick;
 pub mod save;
 pub mod telemetry;
+pub mod title;
 
 use rine_types::windows::HWND;
 
