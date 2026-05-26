@@ -206,6 +206,10 @@ pub struct HMENU(HANDLE);
 impl HMENU {
     pub const NULL: Self = Self(HANDLE::NULL);
 
+    pub const fn as_raw(self) -> isize {
+        self.0.as_raw()
+    }
+
     pub const fn is_null(self) -> bool {
         self.0.is_null()
     }

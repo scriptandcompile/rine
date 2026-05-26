@@ -40,7 +40,8 @@ pub use message_queue::{
 pub use message_registration::register_window_message;
 pub use window_lifecycle::{
     child_window_from_point, create_window, destroy_window, enable_window, get_client_rect,
-    invalidate_rect, is_iconic, move_window, screen_to_client, show_window, update_window,
+    invalidate_rect, is_iconic, move_window, screen_to_client, set_window_control_id, show_window,
+    update_window,
 };
 pub use window_long::set_window_long_a;
 pub use window_text::{

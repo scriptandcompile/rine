@@ -749,6 +749,7 @@ pub struct WindowState {
 /// Global window state manager.
 pub struct WindowManager {
     windows: Mutex<HashMap<HWND, WindowState>>,
+    control_ids: Mutex<HashMap<HWND, i32>>,
     next_hwnd: Mutex<usize>,
     focused_hwnd: Mutex<HWND>,
     foreground_hwnd: Mutex<HWND>,
@@ -759,6 +760,7 @@ impl WindowManager {
     pub fn new() -> Self {
         Self {
             windows: Mutex::new(HashMap::new()),
+            control_ids: Mutex::new(HashMap::new()),
             next_hwnd: Mutex::new(0x10000),
             focused_hwnd: Mutex::new(HWND::NULL),
             foreground_hwnd: Mutex::new(HWND::NULL),
@@ -822,7 +824,54 @@ impl WindowManager {
 
     pub fn destroy_window(&self, hwnd: HWND) -> bool {
         let mut windows = self.windows.lock().unwrap();
-        windows.remove(&hwnd).is_some()
+        let removed = windows.remove(&hwnd).is_some();
+        drop(windows);
+
+        if removed {
+            let mut control_ids = self.control_ids.lock().unwrap();
+            control_ids.remove(&hwnd);
+        }
+
+        removed
+    }
+
+    pub fn set_control_id(&self, hwnd: HWND, control_id: i32) -> bool {
+        let windows = self.windows.lock().unwrap();
+        if !windows.contains_key(&hwnd) {
+            return false;
+        }
+        drop(windows);
+
+        let mut control_ids = self.control_ids.lock().unwrap();
+        control_ids.insert(hwnd, control_id);
+        true
+    }
+
+    pub fn get_control_id(&self, hwnd: HWND) -> Option<i32> {
+        let control_ids = self.control_ids.lock().unwrap();
+        control_ids.get(&hwnd).copied()
+    }
+
+    pub fn find_child_by_control_id(&self, parent: HWND, control_id: i32) -> HWND {
+        let windows = self.windows.lock().unwrap();
+        let control_ids = self.control_ids.lock().unwrap();
+
+        let mut found = HWND::NULL;
+        for (&hwnd, state) in windows.iter() {
+            if state.parent != parent {
+                continue;
+            }
+
+            if control_ids.get(&hwnd).copied() != Some(control_id) {
+                continue;
+            }
+
+            if found.is_null() || hwnd.as_raw() > found.as_raw() {
+                found = hwnd;
+            }
+        }
+
+        found
     }
 
     pub fn record_popup_activation(&self, popup: HWND) {

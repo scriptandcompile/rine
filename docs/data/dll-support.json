@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T21:32:12.564247+00:00",
+  "generatedAt": "2026-05-26T22:14:21.879435+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2787,12 +2787,12 @@
         {
           "name": "CreateDialogParamA",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::CreateDialogParamA",
             "source": "user32 - dialogs.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::CreateDialogParamA",
             "source": "user32 - dialogs.rs"
           }
@@ -2800,12 +2800,12 @@
         {
           "name": "CreateDialogParamW",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::CreateDialogParamW",
             "source": "user32 - dialogs.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::CreateDialogParamW",
             "source": "user32 - dialogs.rs"
           }
@@ -2982,12 +2982,12 @@
         {
           "name": "GetDlgCtrlID",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::GetDlgCtrlID",
             "source": "user32 - dialogs.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::GetDlgCtrlID",
             "source": "user32 - dialogs.rs"
           }
@@ -2995,12 +2995,12 @@
         {
           "name": "GetDlgItemTextA",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::GetDlgItemTextA",
             "source": "user32 - dialogs.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::GetDlgItemTextA",
             "source": "user32 - dialogs.rs"
           }
@@ -3008,12 +3008,12 @@
         {
           "name": "GetDlgItemTextW",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::GetDlgItemTextW",
             "source": "user32 - dialogs.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::GetDlgItemTextW",
             "source": "user32 - dialogs.rs"
           }
@@ -3554,12 +3554,12 @@
         {
           "name": "SendDlgItemMessageA",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::SendDlgItemMessageA",
             "source": "user32 - dialogs.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::SendDlgItemMessageA",
             "source": "user32 - dialogs.rs"
           }
@@ -3567,12 +3567,12 @@
         {
           "name": "SendDlgItemMessageW",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::SendDlgItemMessageW",
             "source": "user32 - dialogs.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::SendDlgItemMessageW",
             "source": "user32 - dialogs.rs"
           }
@@ -3632,12 +3632,12 @@
         {
           "name": "SetDlgItemTextA",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::SetDlgItemTextA",
             "source": "user32 - dialogs.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::SetDlgItemTextA",
             "source": "user32 - dialogs.rs"
           }
@@ -3645,12 +3645,12 @@
         {
           "name": "SetDlgItemTextW",
           "x64": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::SetDlgItemTextW",
             "source": "user32 - dialogs.rs"
           },
           "x86": {
-            "status": "stubbed",
+            "status": "partial",
             "symbol": "dialogs::SetDlgItemTextW",
             "source": "user32 - dialogs.rs"
           }
@@ -3844,14 +3844,14 @@
     "functions": 291,
     "x64": {
       "implemented": 103,
-      "partial": 140,
-      "stubbed": 48,
+      "partial": 149,
+      "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
-      "partial": 139,
-      "stubbed": 48,
+      "partial": 148,
+      "stubbed": 39,
       "unimplemented": 0
     }
   }

@@ -1,9 +1,59 @@
 use rine_types::errors::BOOL;
 use rine_types::handles::HINSTANCE;
 use rine_types::strings::{LPCSTR, LPCWSTR};
-use rine_types::windows::{HWND, LPARAM, LRESULT, WPARAM};
+use rine_types::windows::{HWND, LPARAM, LRESULT, WINDOW_MANAGER, WPARAM, window_message};
 
 use tracing::warn;
+
+fn find_dialog_item(hdlg: HWND, dlg_item_id: i32) -> HWND {
+    if hdlg.is_null() {
+        return HWND::NULL;
+    }
+
+    WINDOW_MANAGER.find_child_by_control_id(hdlg, dlg_item_id)
+}
+
+fn get_window_title(hwnd: HWND) -> Option<String> {
+    WINDOW_MANAGER.get_window(hwnd).map(|state| state.title)
+}
+
+fn set_window_title(hwnd: HWND, text: &str) -> bool {
+    WINDOW_MANAGER.update_window(hwnd, |state| {
+        state.title = text.to_owned();
+    })
+}
+
+unsafe fn write_ansi_text(buffer: *mut u8, max_text_length: i32, text: &str) -> u32 {
+    if buffer.is_null() || max_text_length <= 0 {
+        return 0;
+    }
+
+    let bytes = text.as_bytes();
+    let copy_len = bytes.len().min((max_text_length - 1) as usize);
+
+    unsafe {
+        std::ptr::copy_nonoverlapping(bytes.as_ptr(), buffer, copy_len);
+        *buffer.add(copy_len) = 0;
+    }
+
+    copy_len as u32
+}
+
+unsafe fn write_wide_text(buffer: *mut u16, max_text_length: i32, text: &str) -> u32 {
+    if buffer.is_null() || max_text_length <= 0 {
+        return 0;
+    }
+
+    let wide: Vec<u16> = text.encode_utf16().collect();
+    let copy_len = wide.len().min((max_text_length - 1) as usize);
+
+    unsafe {
+        std::ptr::copy_nonoverlapping(wide.as_ptr(), buffer, copy_len);
+        *buffer.add(copy_len) = 0;
+    }
+
+    copy_len as u32
+}
 
 /// Sets the title or text of a control in a dialog box.
 ///
@@ -23,10 +73,16 @@ use tracing::warn;
 /// This function Does not support setting the text of a combo box or list box control.
 /// To set the text of these controls, use the `CB_SETLBTEXT` or `LB_SETLBTEXT` message, respectively.
 pub fn set_dlg_item_text(_hdlg: HWND, _dlg_item_id: i32, _text: &str) -> BOOL {
-    warn!(
-        "SetDlgItemTextA/W is not implemented yet. This is a stub implementation that always returns FALSE."
-    );
-    BOOL::FALSE
+    let child = find_dialog_item(_hdlg, _dlg_item_id);
+    if child.is_null() {
+        return BOOL::FALSE;
+    }
+
+    if set_window_title(child, _text) {
+        BOOL::TRUE
+    } else {
+        BOOL::FALSE
+    }
 }
 
 /// Dialog proc is a pointer to a function that processes messages sent to a modal or modeless dialog box.
@@ -143,17 +199,92 @@ pub fn create_dialog_param(
 ///
 /// # Notes
 /// The current implementation is a stub and always returns `0`.
-pub fn send_dialog_item_message(
+pub fn send_dialog_item_message_a(
     _hdlg: HWND,
     _dlg_item_id: i32,
     _message: u32,
     _wparam: WPARAM,
     _lparam: LPARAM,
 ) -> LRESULT {
-    warn!(
-        "SendDlgItemMessageA/W is not implemented yet. This is a stub implementation that always returns 0."
-    );
-    0
+    let child = find_dialog_item(_hdlg, _dlg_item_id);
+    if child.is_null() {
+        return 0;
+    }
+
+    match _message {
+        window_message::WM_SETTEXT => {
+            let src = _lparam as *const i8;
+            let text = if src.is_null() {
+                String::new()
+            } else {
+                unsafe { std::ffi::CStr::from_ptr(src) }
+                    .to_string_lossy()
+                    .into_owned()
+            };
+
+            if set_window_title(child, &text) { 1 } else { 0 }
+        }
+        window_message::WM_GETTEXT => {
+            let text = get_window_title(child).unwrap_or_default();
+            unsafe { write_ansi_text(_lparam as *mut u8, _wparam as i32, &text) as isize }
+        }
+        window_message::WM_GETTEXTLENGTH => get_window_title(child)
+            .map(|text| text.len() as isize)
+            .unwrap_or(0),
+        _ => {
+            warn!(
+                "SendDlgItemMessageA message {:#x} is not implemented yet. Returning 0.",
+                _message
+            );
+            0
+        }
+    }
+}
+
+pub fn send_dialog_item_message_w(
+    _hdlg: HWND,
+    _dlg_item_id: i32,
+    _message: u32,
+    _wparam: WPARAM,
+    _lparam: LPARAM,
+) -> LRESULT {
+    let child = find_dialog_item(_hdlg, _dlg_item_id);
+    if child.is_null() {
+        return 0;
+    }
+
+    match _message {
+        window_message::WM_SETTEXT => {
+            let src = _lparam as *const u16;
+            let text = if src.is_null() {
+                String::new()
+            } else {
+                let mut len = 0usize;
+                unsafe {
+                    while *src.add(len) != 0 {
+                        len += 1;
+                    }
+                    String::from_utf16_lossy(std::slice::from_raw_parts(src, len))
+                }
+            };
+
+            if set_window_title(child, &text) { 1 } else { 0 }
+        }
+        window_message::WM_GETTEXT => {
+            let text = get_window_title(child).unwrap_or_default();
+            unsafe { write_wide_text(_lparam as *mut u16, _wparam as i32, &text) as isize }
+        }
+        window_message::WM_GETTEXTLENGTH => get_window_title(child)
+            .map(|text| text.encode_utf16().count() as isize)
+            .unwrap_or(0),
+        _ => {
+            warn!(
+                "SendDlgItemMessageW message {:#x} is not implemented yet. Returning 0.",
+                _message
+            );
+            0
+        }
+    }
 }
 
 /// Retrieves the identifier of a specified control.
@@ -175,10 +306,7 @@ pub fn send_dialog_item_message(
 /// The current implementation is a stub and always returns `0`.
 /// We currently do not set the value of `GetLastError` on failure.
 pub fn get_dialog_control_id(_hwnd: HWND) -> i32 {
-    warn!(
-        "GetDlgCtrlID is not implemented yet. This is a stub implementation that always returns 0."
-    );
-    0
+    WINDOW_MANAGER.get_control_id(_hwnd).unwrap_or(0)
 }
 
 /// Retrieves the ANSI title or text of a control in a dialog box.
@@ -210,10 +338,13 @@ pub fn get_dialog_item_text_a(
     _buffer: LPCSTR,
     _max_text_length: i32,
 ) -> u32 {
-    warn!(
-        "GetDlgItemTextA/W is not implemented yet. This is a stub implementation that always returns 0."
-    );
-    0
+    let child = find_dialog_item(_hdlg, _dlg_item_id);
+    if child.is_null() {
+        return 0;
+    }
+
+    let text = get_window_title(child).unwrap_or_default();
+    unsafe { write_ansi_text(_buffer.as_ptr() as *mut u8, _max_text_length, &text) }
 }
 
 /// Retrieves the wide (Unicode) title or text of a control in a dialog box.
@@ -245,10 +376,13 @@ pub fn get_dialog_item_text_w(
     _buffer: LPCWSTR,
     _max_text_length: i32,
 ) -> u32 {
-    warn!(
-        "GetDlgItemTextA/W is not implemented yet. This is a stub implementation that always returns 0."
-    );
-    0
+    let child = find_dialog_item(_hdlg, _dlg_item_id);
+    if child.is_null() {
+        return 0;
+    }
+
+    let text = get_window_title(child).unwrap_or_default();
+    unsafe { write_wide_text(_buffer.as_ptr() as *mut u16, _max_text_length, &text) }
 }
 
 /// Ends a modal dialog box, causing the system to end any processing for the dialog box.

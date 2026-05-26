@@ -20,7 +20,8 @@ use rine_types::windows::*;
 /// # Notes
 /// Currently, this function does not set `GetLastError` on failure.
 /// The following index values are accepted but return 0 without modifying state:
-/// `GWL_ID`, `GWLP_HINSTANCE`, `DWLP_MSGRESULT`, `DWLP_DLGPROC`, `DWLP_USER`.
+/// `GWLP_HINSTANCE`, `DWLP_MSGRESULT`, `DWLP_DLGPROC`, `DWLP_USER`.
+/// `GWL_ID` is tracked and can be queried through dialog-control APIs such as `GetDlgCtrlID`.
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
@@ -47,7 +48,8 @@ pub unsafe extern "stdcall" fn SetWindowLongA(hwnd: HWND, n_index: i32, dw_new_l
 /// # Notes
 /// Currently, this function does not set `GetLastError` on failure.
 /// The following index values are accepted but return 0 without modifying state:
-/// `GWL_ID`, `GWLP_HINSTANCE`, `DWLP_MSGRESULT`, `DWLP_DLGPROC`, `DWLP_USER`.
+/// `GWLP_HINSTANCE`, `DWLP_MSGRESULT`, `DWLP_DLGPROC`, `DWLP_USER`.
+/// `GWL_ID` is tracked and can be queried through dialog-control APIs such as `GetDlgCtrlID`.
 #[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]

@@ -78,6 +78,18 @@ pub fn create_window(
     hwnd
 }
 
+/// Record a dialog/control ID for a previously created child window.
+///
+/// This mirrors Win32 behavior where the `hMenu` argument to `CreateWindowEx`
+/// is interpreted as a child identifier when `WS_CHILD` is set.
+pub fn set_window_control_id(hwnd: HWND, control_id: i32) -> BOOL {
+    if WINDOW_MANAGER.set_control_id(hwnd, control_id) {
+        BOOL::TRUE
+    } else {
+        BOOL::FALSE
+    }
+}
+
 /// Destroy a window.
 ///
 /// Calls the window procedure with WM_DESTROY (using the provided callback

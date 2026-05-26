@@ -16,7 +16,7 @@ use rine_types::windows::*;
 /// * `width`: Width of the window.
 /// * `height`: Height of the window.
 /// * `parent`: Handle of the parent window, or `HWND::NULL` for no parent.
-/// * `_menu`: Handle of the menu, or `HMENU::NULL` for no menu. Ignored.
+/// * `_menu`: Handle of the menu for top-level windows, or child control identifier when `WS_CHILD` is set.
 /// * `_instance`: Handle of the instance, or 0 for the current instance. Ignored.
 /// * `_param`: Pointer to window creation data. Ignored.
 ///
@@ -31,8 +31,8 @@ use rine_types::windows::*;
 /// The handle of the created window, or 0 on failure.
 ///
 /// # Notes
-/// Currently, the `_menu`, `_instance`, and `_param` parameters are ignored, as they are not commonly used in typical
-/// window creation scenarios and would require additional infrastructure to support properly.
+/// For child windows (`WS_CHILD`), `_menu` is recorded as the control ID used by dialog item APIs.
+/// `_instance` and `_param` are currently ignored.
 /// On error the `GetLastError` code should be set to indicate the reason for failure, such as `ERROR_CLASS_NOT_FOUND`
 /// if the specified class name does not exist. Currently, we do not set `GetLastError`.
 #[rine_dlls::partial]
@@ -52,7 +52,7 @@ pub unsafe extern "stdcall" fn CreateWindowExA(
     _instance: usize,
     _param: *mut u8,
 ) -> HWND {
-    common::create_window(
+    let hwnd = common::create_window(
         ex_style,
         class_name.read_string().unwrap_or_default(),
         window_name.read_string().unwrap_or_default(),
@@ -64,7 +64,13 @@ pub unsafe extern "stdcall" fn CreateWindowExA(
             bottom: y + height,
         },
         parent,
-    )
+    );
+
+    if !hwnd.is_null() && (style & window_style::WS_CHILD) != 0 {
+        let _ = common::set_window_control_id(hwnd, _menu.as_raw() as i32);
+    }
+
+    hwnd
 }
 
 /// Create a new window.
@@ -79,7 +85,7 @@ pub unsafe extern "stdcall" fn CreateWindowExA(
 /// * `width`: Width of the window.
 /// * `height`: Height of the window.
 /// * `parent`: Handle of the parent window, or `HWND::NULL` for no parent.
-/// * `_menu`: Handle of the menu, or `HMENU::NULL` for no menu. Ignored.
+/// * `_menu`: Handle of the menu for top-level windows, or child control identifier when `WS_CHILD` is set.
 /// * `_instance`: Handle of the instance, or 0 for the current instance. Ignored.
 /// * `_param`: Pointer to window creation data. Ignored.
 ///
@@ -94,8 +100,8 @@ pub unsafe extern "stdcall" fn CreateWindowExA(
 /// The handle of the created window, or `HWND::NULL` on failure.
 ///
 /// # Notes
-/// Currently, the `_menu`, `_instance`, and `_param` parameters are ignored, as they are not commonly used in typical
-/// window creation scenarios and would require additional infrastructure to support properly.
+/// For child windows (`WS_CHILD`), `_menu` is recorded as the control ID used by dialog item APIs.
+/// `_instance` and `_param` are currently ignored.
 /// On error the `GetLastError` code should be set to indicate the reason for failure, such as `ERROR_CLASS_NOT_FOUND`
 /// if the specified class name does not exist. Currently, we do not set `GetLastError`.
 #[rine_dlls::partial]
@@ -115,7 +121,7 @@ pub unsafe extern "stdcall" fn CreateWindowExW(
     _instance: usize,
     _param: *mut u8,
 ) -> HWND {
-    common::create_window(
+    let hwnd = common::create_window(
         ex_style,
         class_name.read_string().unwrap_or_default(),
         window_name.read_string().unwrap_or_default(),
@@ -127,7 +133,13 @@ pub unsafe extern "stdcall" fn CreateWindowExW(
             bottom: y + height,
         },
         parent,
-    )
+    );
+
+    if !hwnd.is_null() && (style & window_style::WS_CHILD) != 0 {
+        let _ = common::set_window_control_id(hwnd, _menu.as_raw() as i32);
+    }
+
+    hwnd
 }
 
 /// Destroy a window.

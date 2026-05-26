@@ -22,7 +22,7 @@ use rine_types::windows::{HWND, LPARAM, LRESULT, WPARAM};
 /// The `SetDlgItemTextA` function sends a `WM_SETTEXT` message to the specified control.
 /// The `SetDlgItemTextA` function does not support setting the text of a combo box or list box control.
 /// To set the text of these controls, use the `CB_SETLBTEXT` or `LB_SETLBTEXT` message, respectively.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetDlgItemTextA(
@@ -52,7 +52,7 @@ pub unsafe extern "stdcall" fn SetDlgItemTextA(
 /// The `SetDlgItemTextW` function sends a `WM_SETTEXT` message to the specified control.
 /// The `SetDlgItemTextW` function does not support setting the text of a combo box or list box control.
 /// To set the text of these controls, use the `CB_SETLBTEXT` or `LB_SETLBTEXT` message, respectively.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SetDlgItemTextW(
@@ -98,7 +98,7 @@ pub unsafe extern "stdcall" fn SetDlgItemTextW(
 /// # Notes
 /// The current implementation is a stub and always returns `HWND::NULL`.
 /// We currently do not set the value of `GetLastError` on failure.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateDialogParamA(
@@ -146,7 +146,7 @@ pub unsafe extern "stdcall" fn CreateDialogParamA(
 /// # Notes
 /// The current implementation is a stub and always returns `HWND::NULL`.
 /// We currently do not set the value of `GetLastError` on failure.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn CreateDialogParamW(
@@ -184,7 +184,7 @@ pub unsafe extern "stdcall" fn CreateDialogParamW(
 ///
 /// # Notes
 /// The current implementation is a stub and always returns `0`.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SendDlgItemMessageA(
@@ -194,7 +194,7 @@ pub unsafe extern "stdcall" fn SendDlgItemMessageA(
     _wparam: WPARAM,
     _lparam: LPARAM,
 ) -> LRESULT {
-    common::send_dialog_item_message(_hdlg, _dlg_item_id, _message, _wparam, _lparam)
+    common::send_dialog_item_message_a(_hdlg, _dlg_item_id, _message, _wparam, _lparam)
 }
 
 /// Sends a specified message to a control in a dialog box.
@@ -220,7 +220,7 @@ pub unsafe extern "stdcall" fn SendDlgItemMessageA(
 ///
 /// # Notes
 /// The current implementation is a stub and always returns `0`.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn SendDlgItemMessageW(
@@ -230,7 +230,7 @@ pub unsafe extern "stdcall" fn SendDlgItemMessageW(
     _wparam: WPARAM,
     _lparam: LPARAM,
 ) -> LRESULT {
-    common::send_dialog_item_message(_hdlg, _dlg_item_id, _message, _wparam, _lparam)
+    common::send_dialog_item_message_w(_hdlg, _dlg_item_id, _message, _wparam, _lparam)
 }
 
 /// Retrieves the identifier of a specified control.
@@ -251,7 +251,7 @@ pub unsafe extern "stdcall" fn SendDlgItemMessageW(
 /// # Notes
 /// The current implementation is a stub and always returns `0`.
 /// We currently do not set the value of `GetLastError` on failure.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetDlgCtrlID(_hwnd: HWND) -> i32 {
@@ -281,7 +281,7 @@ pub unsafe extern "stdcall" fn GetDlgCtrlID(_hwnd: HWND) -> i32 {
 /// # Notes
 /// The current implementation is a stub and always returns `0`.
 /// We currently do not set the value of `GetLastError` on failure.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetDlgItemTextA(
@@ -316,7 +316,7 @@ pub unsafe extern "stdcall" fn GetDlgItemTextA(
 /// # Notes
 /// The current implementation is a stub and always returns `0`.
 /// We currently do not set the value of `GetLastError` on failure.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetDlgItemTextW(

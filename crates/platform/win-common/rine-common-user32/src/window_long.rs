@@ -22,7 +22,6 @@ use rine_types::windows::{HWND, WINDOW_MANAGER, window_long_index};
 ///
 /// # Notes
 /// Unimplemented index values (accepted but return 0):
-/// - `GWL_ID` (-12) — not tracked per-window in `WindowState`.
 /// - `DWLP_MSGRESULT` (0) — not tracked per-window in `WindowState`.
 /// - `DWLP_DLGPROC` (4) — not tracked per-window in `WindowState`.
 /// - `DWLP_USER` (8) — not tracked per-window in `WindowState`.
@@ -70,9 +69,13 @@ pub fn set_window_long_a(hwnd: HWND, n_index: i32, dw_new_long: i32) -> i32 {
 
             old
         }
+        window_long_index::GWL_ID => {
+            let old = WINDOW_MANAGER.get_control_id(hwnd).unwrap_or(0);
+            let _ = WINDOW_MANAGER.set_control_id(hwnd, dw_new_long);
+            old
+        }
         // Unimplemented indices — stub returns 0 without modifying state.
-        window_long_index::GWL_ID
-        | window_long_index::GWLP_HINSTANCE
+        window_long_index::GWLP_HINSTANCE
         | window_long_index::DWLP_MSGRESULT
         | window_long_index::DWLP_DLGPROC
         | window_long_index::DWLP_USER => 0,
@@ -166,11 +169,20 @@ mod tests {
     }
 
     #[test]
-    fn set_unimplemented_index_returns_zero() {
+    fn set_gwl_id_tracks_control_id() {
         let _guard = TEST_MUTEX.lock().unwrap();
         let hwnd = WINDOW_MANAGER.create_window(test_window_state());
         let prev = set_window_long_a(hwnd, GWL_ID, 999);
         assert_eq!(prev, 0);
+        let prev = set_window_long_a(hwnd, GWL_ID, 1000);
+        assert_eq!(prev, 999);
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn set_unimplemented_index_returns_zero() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let hwnd = WINDOW_MANAGER.create_window(test_window_state());
         let prev = set_window_long_a(hwnd, DWLP_USER, 999);
         assert_eq!(prev, 0);
         let prev = set_window_long_a(hwnd, DWLP_MSGRESULT, 999);
