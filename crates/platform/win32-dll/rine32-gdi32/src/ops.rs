@@ -170,6 +170,140 @@ pub unsafe extern "stdcall" fn CreatePen(style: i32, width: i32, color: u32) -> 
     unsafe { common::create_pen(style, width, color) }
 }
 
+/// Creates a logical font with the specified characteristics (ANSI face-name variant).
+///
+/// # Arguments
+/// * `height`: Requested font height, in logical units.
+/// * `width`: Requested average character width, in logical units.
+/// * `escapement`: Escapement angle in tenths of a degree.
+/// * `orientation`: Character orientation angle in tenths of a degree.
+/// * `weight`: Requested font weight (0..=1000).
+/// * `italic`: Nonzero requests italic style.
+/// * `underline`: Nonzero requests underline style.
+/// * `strike_out`: Nonzero requests strikeout style.
+/// * `char_set`: Character-set identifier.
+/// * `out_precision`: Output precision hint.
+/// * `clip_precision`: Clipping precision hint.
+/// * `quality`: Output quality hint.
+/// * `pitch_and_family`: Pitch/family flags.
+/// * `face_name`: Optional ANSI face-name pointer. `NULL` means no preferred face.
+///
+/// # Returns
+/// Returns a logical-font handle on success, or 0 on failure.
+///
+/// # Safety
+/// The caller must ensure `face_name` is `NULL` or points to a valid null-terminated ANSI string.
+/// The returned handle must be released with `DeleteObject` when no longer needed.
+///
+/// # Notes
+/// This is a partial implementation. The runtime stores the requested attributes for compatibility,
+/// but does not yet perform real font resolution or glyph rasterization from this metadata.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn CreateFontA(
+    height: i32,
+    width: i32,
+    escapement: i32,
+    orientation: i32,
+    weight: i32,
+    italic: u32,
+    underline: u32,
+    strike_out: u32,
+    char_set: u32,
+    out_precision: u32,
+    clip_precision: u32,
+    quality: u32,
+    pitch_and_family: u32,
+    face_name: LPCSTR,
+) -> usize {
+    unsafe {
+        common::create_font_a(
+            height,
+            width,
+            escapement,
+            orientation,
+            weight,
+            italic,
+            underline,
+            strike_out,
+            char_set,
+            out_precision,
+            clip_precision,
+            quality,
+            pitch_and_family,
+            face_name,
+        )
+    }
+}
+
+/// Creates a logical font with the specified characteristics (UTF-16 face-name variant).
+///
+/// # Arguments
+/// * `height`: Requested font height, in logical units.
+/// * `width`: Requested average character width, in logical units.
+/// * `escapement`: Escapement angle in tenths of a degree.
+/// * `orientation`: Character orientation angle in tenths of a degree.
+/// * `weight`: Requested font weight (0..=1000).
+/// * `italic`: Nonzero requests italic style.
+/// * `underline`: Nonzero requests underline style.
+/// * `strike_out`: Nonzero requests strikeout style.
+/// * `char_set`: Character-set identifier.
+/// * `out_precision`: Output precision hint.
+/// * `clip_precision`: Clipping precision hint.
+/// * `quality`: Output quality hint.
+/// * `pitch_and_family`: Pitch/family flags.
+/// * `face_name`: Optional UTF-16 face-name pointer. `NULL` means no preferred face.
+///
+/// # Returns
+/// Returns a logical-font handle on success, or 0 on failure.
+///
+/// # Safety
+/// The caller must ensure `face_name` is `NULL` or points to a valid null-terminated UTF-16 string.
+/// The returned handle must be released with `DeleteObject` when no longer needed.
+///
+/// # Notes
+/// This is a partial implementation. The runtime stores the requested attributes for compatibility,
+/// but does not yet perform real font resolution or glyph rasterization from this metadata.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn CreateFontW(
+    height: i32,
+    width: i32,
+    escapement: i32,
+    orientation: i32,
+    weight: i32,
+    italic: u32,
+    underline: u32,
+    strike_out: u32,
+    char_set: u32,
+    out_precision: u32,
+    clip_precision: u32,
+    quality: u32,
+    pitch_and_family: u32,
+    face_name: LPCWSTR,
+) -> usize {
+    unsafe {
+        common::create_font_w(
+            height,
+            width,
+            escapement,
+            orientation,
+            weight,
+            italic,
+            underline,
+            strike_out,
+            char_set,
+            out_precision,
+            clip_precision,
+            quality,
+            pitch_and_family,
+            face_name,
+        )
+    }
+}
+
 /// Retrieves a handle to one of the predefined stock pens or brushes.
 ///
 /// # Arguments

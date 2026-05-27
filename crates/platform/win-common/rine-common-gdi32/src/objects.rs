@@ -47,16 +47,36 @@ pub(crate) struct Pen {
     pub(crate) color: u32,
 }
 
+#[derive(Clone)]
+pub(crate) struct Font {
+    pub(crate) height: i32,
+    pub(crate) width: i32,
+    pub(crate) escapement: i32,
+    pub(crate) orientation: i32,
+    pub(crate) weight: i32,
+    pub(crate) italic: u32,
+    pub(crate) underline: u32,
+    pub(crate) strike_out: u32,
+    pub(crate) char_set: u32,
+    pub(crate) out_precision: u32,
+    pub(crate) clip_precision: u32,
+    pub(crate) quality: u32,
+    pub(crate) pitch_and_family: u32,
+    pub(crate) face_name: Option<String>,
+}
+
 pub(crate) enum GdiObject {
     Bitmap(Bitmap),
     Brush(Brush),
     Pen(Pen),
+    Font(Font),
 }
 
 pub(crate) struct DeviceContext {
     pub(crate) selected_bitmap: Option<usize>,
     pub(crate) selected_brush: Option<usize>,
     pub(crate) selected_pen: Option<usize>,
+    pub(crate) selected_font: Option<usize>,
     pub(crate) bk_mode: i32,
     pub(crate) map_mode: i32,
     pub(crate) owned_objects: Vec<usize>,
@@ -68,6 +88,7 @@ impl Default for DeviceContext {
             selected_bitmap: None,
             selected_brush: None,
             selected_pen: None,
+            selected_font: None,
             // Windows defaults for a newly created memory DC.
             bk_mode: crate::ops::OPAQUE,
             map_mode: crate::ops::MM_TEXT,

@@ -19,6 +19,7 @@ pub(crate) fn object_selected_by_any_dc(state: &GdiState, object: usize) -> bool
         dc.selected_bitmap == Some(object)
             || dc.selected_brush == Some(object)
             || dc.selected_pen == Some(object)
+            || dc.selected_font == Some(object)
     })
 }
 
@@ -86,6 +87,21 @@ mod tests {
             dc_handle,
             DeviceContext {
                 selected_pen: Some(obj_handle),
+                ..Default::default()
+            },
+        );
+        assert!(object_selected_by_any_dc(&state, obj_handle));
+    }
+
+    #[test]
+    fn object_selected_as_font() {
+        let mut state = GdiState::default();
+        let dc_handle = 1;
+        let obj_handle = 42;
+        state.dcs.insert(
+            dc_handle,
+            DeviceContext {
+                selected_font: Some(obj_handle),
                 ..Default::default()
             },
         );

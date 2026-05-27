@@ -1,7 +1,8 @@
 use rine_types::errors::BOOL;
+use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::{Rect, Size};
 
-use crate::objects::{Bitmap, Brush, DeviceContext, GdiObject, Pen};
+use crate::objects::{Bitmap, Brush, DeviceContext, Font, GdiObject, Pen};
 use crate::state::{alloc_handle, gdi_state, object_selected_by_any_dc, with_selected_bitmap_mut};
 use crate::telemetry::{notify_bitmap_alloc, notify_bitmap_free};
 use crate::text::{PSEUDO_GLYPH_HEIGHT, PSEUDO_GLYPH_WIDTH, draw_text};
@@ -334,6 +335,199 @@ pub unsafe fn create_pen(_style: i32, _width: i32, color: u32) -> usize {
     handle
 }
 
+fn sanitize_face_name(face_name: Option<String>) -> Option<String> {
+    face_name.and_then(|name| {
+        let trimmed = name.trim_matches(char::from(0)).trim().to_string();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed)
+        }
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+unsafe fn create_font_internal(
+    height: i32,
+    width: i32,
+    escapement: i32,
+    orientation: i32,
+    weight: i32,
+    italic: u32,
+    underline: u32,
+    strike_out: u32,
+    char_set: u32,
+    out_precision: u32,
+    clip_precision: u32,
+    quality: u32,
+    pitch_and_family: u32,
+    face_name: Option<String>,
+) -> usize {
+    let mut state = gdi_state().lock().unwrap();
+    let handle = alloc_handle();
+    let face_name = sanitize_face_name(face_name);
+
+    let detail = format!(
+        r#"{{"handle":{},"height":{},"width":{},"weight":{},"italic":{},"underline":{},"strike_out":{},"char_set":{},"quality":{},"face_name":{:?}}}"#,
+        handle, height, width, weight, italic, underline, strike_out, char_set, quality, face_name
+    );
+    rine_types::dev_notify!(on_handle_created(handle as i64, "GdiFont", &detail));
+
+    state.objects.insert(
+        handle,
+        GdiObject::Font(Font {
+            height,
+            width,
+            escapement,
+            orientation,
+            weight,
+            italic,
+            underline,
+            strike_out,
+            char_set,
+            out_precision,
+            clip_precision,
+            quality,
+            pitch_and_family,
+            face_name,
+        }),
+    );
+
+    handle
+}
+
+/// Creates a logical font from ANSI input parameters.
+///
+/// # Arguments
+/// * `height` - Requested font height, in logical units.
+/// * `width` - Requested average character width, in logical units.
+/// * `escapement` - Angle between the escapement vector and the x-axis, in tenths of a degree.
+/// * `orientation` - Angle between each character's baseline and the x-axis, in tenths of a degree.
+/// * `weight` - Requested font weight from 0 through 1000.
+/// * `italic` - Nonzero to request an italic font.
+/// * `underline` - Nonzero to request an underlined font.
+/// * `strike_out` - Nonzero to request a strikeout font.
+/// * `char_set` - Character-set identifier.
+/// * `out_precision` - Output-precision hint.
+/// * `clip_precision` - Clipping-precision hint.
+/// * `quality` - Output quality hint.
+/// * `pitch_and_family` - Pitch and family flags.
+/// * `face_name` - Optional ANSI face-name pointer. Null means no preferred face name.
+///
+/// # Safety
+/// The caller must ensure that `face_name` is null or points to a valid null-terminated ANSI string.
+/// The returned handle must be released with `delete_object` when no longer needed.
+///
+/// # Returns
+/// Returns a handle to a logical font object, or 0 if creation fails.
+///
+/// # Notes
+/// This is a partial implementation. Font matching and glyph rasterization are not implemented yet;
+/// stored font attributes are currently metadata for API compatibility and future rendering work.
+#[allow(clippy::too_many_arguments)]
+pub unsafe fn create_font_a(
+    height: i32,
+    width: i32,
+    escapement: i32,
+    orientation: i32,
+    weight: i32,
+    italic: u32,
+    underline: u32,
+    strike_out: u32,
+    char_set: u32,
+    out_precision: u32,
+    clip_precision: u32,
+    quality: u32,
+    pitch_and_family: u32,
+    face_name: LPCSTR,
+) -> usize {
+    let face_name = unsafe { face_name.read_string() };
+    unsafe {
+        create_font_internal(
+            height,
+            width,
+            escapement,
+            orientation,
+            weight,
+            italic,
+            underline,
+            strike_out,
+            char_set,
+            out_precision,
+            clip_precision,
+            quality,
+            pitch_and_family,
+            face_name,
+        )
+    }
+}
+
+/// Creates a logical font from UTF-16 input parameters.
+///
+/// # Arguments
+/// * `height` - Requested font height, in logical units.
+/// * `width` - Requested average character width, in logical units.
+/// * `escapement` - Angle between the escapement vector and the x-axis, in tenths of a degree.
+/// * `orientation` - Angle between each character's baseline and the x-axis, in tenths of a degree.
+/// * `weight` - Requested font weight from 0 through 1000.
+/// * `italic` - Nonzero to request an italic font.
+/// * `underline` - Nonzero to request an underlined font.
+/// * `strike_out` - Nonzero to request a strikeout font.
+/// * `char_set` - Character-set identifier.
+/// * `out_precision` - Output-precision hint.
+/// * `clip_precision` - Clipping-precision hint.
+/// * `quality` - Output quality hint.
+/// * `pitch_and_family` - Pitch and family flags.
+/// * `face_name` - Optional UTF-16 face-name pointer. Null means no preferred face name.
+///
+/// # Safety
+/// The caller must ensure that `face_name` is null or points to a valid null-terminated UTF-16 string.
+/// The returned handle must be released with `delete_object` when no longer needed.
+///
+/// # Returns
+/// Returns a handle to a logical font object, or 0 if creation fails.
+///
+/// # Notes
+/// This is a partial implementation. Font matching and glyph rasterization are not implemented yet;
+/// stored font attributes are currently metadata for API compatibility and future rendering work.
+#[allow(clippy::too_many_arguments)]
+pub unsafe fn create_font_w(
+    height: i32,
+    width: i32,
+    escapement: i32,
+    orientation: i32,
+    weight: i32,
+    italic: u32,
+    underline: u32,
+    strike_out: u32,
+    char_set: u32,
+    out_precision: u32,
+    clip_precision: u32,
+    quality: u32,
+    pitch_and_family: u32,
+    face_name: LPCWSTR,
+) -> usize {
+    let face_name = unsafe { face_name.read_string() };
+    unsafe {
+        create_font_internal(
+            height,
+            width,
+            escapement,
+            orientation,
+            weight,
+            italic,
+            underline,
+            strike_out,
+            char_set,
+            out_precision,
+            clip_precision,
+            quality,
+            pitch_and_family,
+            face_name,
+        )
+    }
+}
+
 /// Selects an object into the specified device context (DC). The new object replaces the previous object of the same type.
 ///
 /// # Arguments
@@ -368,6 +562,25 @@ pub unsafe fn select_object(hdc: usize, object: usize) -> usize {
             let _ = pen.color;
             2_u8
         }
+        Some(GdiObject::Font(font)) => {
+            let _ = (
+                font.height,
+                font.width,
+                font.escapement,
+                font.orientation,
+                font.weight,
+                font.italic,
+                font.underline,
+                font.strike_out,
+                font.char_set,
+                font.out_precision,
+                font.clip_precision,
+                font.quality,
+                font.pitch_and_family,
+                font.face_name.as_deref(),
+            );
+            3_u8
+        }
         None => return 0,
     };
 
@@ -386,9 +599,14 @@ pub unsafe fn select_object(hdc: usize, object: usize) -> usize {
             dc.selected_brush = Some(object);
             old
         }
-        _ => {
+        2 => {
             let old = dc.selected_pen.unwrap_or(0);
             dc.selected_pen = Some(object);
+            old
+        }
+        _ => {
+            let old = dc.selected_font.unwrap_or(0);
+            dc.selected_font = Some(object);
             old
         }
     }
@@ -603,6 +821,17 @@ mod tests {
     use crate::objects::GdiObject;
     use crate::ops::text_out;
     use crate::state::gdi_state;
+    use std::ffi::CString;
+
+    fn lpcstr_from_ptr(ptr: *const u8) -> LPCSTR {
+        // `LPCSTR` is a transparent pointer wrapper.
+        unsafe { std::mem::transmute(ptr) }
+    }
+
+    fn lpcwstr_from_ptr(ptr: *const u16) -> LPCWSTR {
+        // `LPCWSTR` is a transparent pointer wrapper.
+        unsafe { std::mem::transmute(ptr) }
+    }
 
     #[test]
     fn bitblt_copies_surface_pixels() {
@@ -766,6 +995,96 @@ mod tests {
                 BOOL::FALSE
             );
             assert_eq!(delete_dc(dc), BOOL::TRUE);
+        }
+    }
+
+    #[test]
+    fn create_font_a_creates_font_object_with_face_name() {
+        unsafe {
+            let face = CString::new("Arial").unwrap();
+            let font = create_font_a(
+                18,
+                0,
+                0,
+                0,
+                400,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                lpcstr_from_ptr(face.as_ptr() as *const u8),
+            );
+            assert_ne!(font, 0);
+
+            let state = gdi_state().lock().unwrap();
+            match state.objects.get(&font) {
+                Some(GdiObject::Font(f)) => {
+                    assert_eq!(f.height, 18);
+                    assert_eq!(f.weight, 400);
+                    assert_eq!(f.face_name.as_deref(), Some("Arial"));
+                }
+                _ => panic!("font object missing"),
+            }
+            drop(state);
+
+            assert_eq!(delete_object(font), BOOL::TRUE);
+        }
+    }
+
+    #[test]
+    fn create_font_w_allows_select_and_delete_lifecycle() {
+        unsafe {
+            let dc = create_compatible_dc(0);
+
+            let face1: Vec<u16> = "Consolas".encode_utf16().chain([0]).collect();
+            let face2: Vec<u16> = "Tahoma".encode_utf16().chain([0]).collect();
+
+            let font_a = create_font_w(
+                16,
+                0,
+                0,
+                0,
+                500,
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                lpcwstr_from_ptr(face1.as_ptr()),
+            );
+            let font_b = create_font_w(
+                14,
+                0,
+                0,
+                0,
+                300,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                lpcwstr_from_ptr(face2.as_ptr()),
+            );
+            assert_ne!(font_a, 0);
+            assert_ne!(font_b, 0);
+
+            assert_eq!(select_object(dc, font_a), 0);
+            assert_eq!(delete_object(font_a), BOOL::FALSE);
+            assert_eq!(select_object(dc, font_b), font_a);
+            assert_eq!(delete_object(font_a), BOOL::TRUE);
+
+            assert_eq!(delete_dc(dc), BOOL::TRUE);
+            assert_eq!(delete_object(font_b), BOOL::TRUE);
         }
     }
 }

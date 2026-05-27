@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T22:14:21.879435+00:00",
+  "generatedAt": "2026-05-27T00:10:09.803381+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -217,7 +217,7 @@
     },
     {
       "name": "gdi32.dll",
-      "functionCount": 14,
+      "functionCount": 16,
       "functions": [
         {
           "name": "BitBlt",
@@ -255,6 +255,32 @@
           "x86": {
             "status": "partial",
             "symbol": "ops::CreateCompatibleDC",
+            "source": "gdi32 - ops.rs"
+          }
+        },
+        {
+          "name": "CreateFontA",
+          "x64": {
+            "status": "partial",
+            "symbol": "ops::CreateFontA",
+            "source": "gdi32 - ops.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "ops::CreateFontA",
+            "source": "gdi32 - ops.rs"
+          }
+        },
+        {
+          "name": "CreateFontW",
+          "x64": {
+            "status": "partial",
+            "symbol": "ops::CreateFontW",
+            "source": "gdi32 - ops.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "ops::CreateFontW",
             "source": "gdi32 - ops.rs"
           }
         },
@@ -3841,16 +3867,16 @@
     }
   ],
   "totals": {
-    "functions": 291,
+    "functions": 293,
     "x64": {
       "implemented": 103,
-      "partial": 149,
+      "partial": 151,
       "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
-      "partial": 148,
+      "partial": 150,
       "stubbed": 39,
       "unimplemented": 0
     }
