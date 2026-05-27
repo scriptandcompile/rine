@@ -1,8 +1,8 @@
 //! Window class registration — shared logic for RegisterClass(Ex)A/W.
 
 use rine_types::errors::BOOL;
-use rine_types::strings::{read_cstr, read_wstr};
 use rine_types::windows::*;
+use text::{read_cstr, read_wstr};
 
 /// Window class registration
 ///

@@ -1,7 +1,8 @@
 //! Window lifecycle — shared logic for CreateWindowEx, DestroyWindow, ShowWindow, UpdateWindow.
 
+use rine_types::errors::BOOL;
 use rine_types::windows::*;
-use rine_types::{errors::BOOL, strings::json_escape};
+use text::json_escape;
 
 use crate::backend::{
     create_native_window, destroy_native_window, request_native_redraw, set_native_visibility,

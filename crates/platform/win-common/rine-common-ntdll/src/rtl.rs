@@ -1,7 +1,8 @@
 use rine_types::os::{
     OsVersionInfoExW, OsVersionInfoW, SIZEOF_OSVERSIONINFOEXW, SIZEOF_OSVERSIONINFOW, get_version,
 };
-use rine_types::strings::{UnicodeString, wstr_unit_len};
+use rine_types::strings::UnicodeString;
+use text::wstr_unit_len;
 
 /// Initialize a `UNICODE_STRING` structure with the given source string.
 ///

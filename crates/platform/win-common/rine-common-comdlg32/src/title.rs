@@ -1,4 +1,4 @@
-use rine_types::strings::{read_cstr, write_cstr};
+use text::{read_cstr, write_cstr};
 
 fn extract_file_title(path: &str) -> Option<&str> {
     if path.is_empty() {

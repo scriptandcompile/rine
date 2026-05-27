@@ -1,5 +1,6 @@
 use rine_types::locale::{LCID, LCTYPE};
-use rine_types::strings::{LPSTR, write_cstr};
+use rine_types::strings::LPSTR;
+use text::write_cstr;
 use tracing::warn;
 
 // Locale values below are the subset currently needed by desktop apps like notepad.

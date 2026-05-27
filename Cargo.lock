@@ -3700,6 +3700,7 @@ dependencies = [
  "rfd",
  "rine-types",
  "serial_test",
+ "text",
 ]
 
 [[package]]
@@ -3738,6 +3739,7 @@ dependencies = [
  "libc",
  "rine-dlls",
  "rine-types",
+ "text",
  "tracing",
 ]
 
@@ -3882,6 +3884,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serial_test",
+ "text",
  "thiserror 2.0.18",
  "toml 1.1.2+spec-1.1.0",
 ]

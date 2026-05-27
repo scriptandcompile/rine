@@ -10,3 +10,4 @@ rine-types = { workspace = true }
 rine-dlls = { workspace = true }
 libc = { workspace = true }
 tracing = { workspace = true }
+text = { workspace = true }

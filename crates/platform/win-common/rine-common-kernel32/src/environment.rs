@@ -1,7 +1,8 @@
 use std::sync::OnceLock;
 
 use rine_types::errors::BOOL;
-use rine_types::strings::{LPCSTR, LPCWSTR, write_cstr, write_wstr};
+use rine_types::strings::{LPCSTR, LPCWSTR};
+use text::{write_cstr, write_wstr};
 
 /// Thin wrapper so a raw pointer can live in a `static OnceLock`.
 /// Cached wide environment block for `GetEnvironmentStringsW`.

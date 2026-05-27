@@ -1,6 +1,6 @@
 use std::ptr;
 
-use rine_types::strings::{read_cstr, read_wstr, write_cstr, write_wstr};
+use text::{read_cstr, read_wstr, write_cstr, write_wstr};
 
 use crate::env_policy::{DialogTheme, resolve_dialog_policy};
 use crate::error::{DialogErrorCode, set_last_error};
