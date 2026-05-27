@@ -1,0 +1,9 @@
+[package]
+name = "threading-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared Windows TLS and wait runtime for rine"
+
+[dev-dependencies]
+serial_test = { workspace = true }

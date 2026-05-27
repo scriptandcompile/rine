@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-27T04:47:16.280389+00:00",
+  "generatedAt": "2026-05-27T09:30:45.181330+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -3065,7 +3065,7 @@
             "source": "user32 - focus.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "focus::GetFocus",
             "source": "user32 - focus.rs"
           }
@@ -3888,8 +3888,8 @@
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 104,
-      "partial": 151,
+      "implemented": 103,
+      "partial": 152,
       "stubbed": 39,
       "unimplemented": 0
     }

@@ -5,8 +5,9 @@ use std::time::{Duration, Instant};
 use rine_types::errors::BOOL;
 use rine_types::handles::{HANDLE, HandleEntry, handle_table};
 use rine_types::threading::{
-    self, INFINITE, STILL_ACTIVE, TLS_OUT_OF_INDEXES, ThreadWaitable, WaitStatus, Waitable,
+    INFINITE, STILL_ACTIVE, TLS_OUT_OF_INDEXES, ThreadWaitable, WaitStatus, Waitable,
 };
+use threading_runtime as threading;
 use tracing::{debug, warn};
 
 const CREATE_SUSPENDED: u32 = 0x04;

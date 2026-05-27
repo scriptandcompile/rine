@@ -10,7 +10,7 @@ use rine_types::windows::*;
 ///
 /// # Returns
 /// The HWND of the focused window, or HWND::NULL if no window in the calling thread's message queue has focus.
-#[rine_dlls::implemented]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn GetFocus() -> HWND {

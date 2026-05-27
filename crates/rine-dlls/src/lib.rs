@@ -20,7 +20,7 @@ pub use rine_dll_attrs::{data_export, dll, implemented, ordinal, partial, stubbe
 /// signature. Uses `extern "win64"` because PE code calls through the IAT
 /// using the Windows x64 calling convention.
 ///
-/// Re-exported from [`registry`] for convenience.
+/// Re-exported from registry for convenience.
 ///
 /// A single exported symbol from a DLL plugin.
 pub enum Export {

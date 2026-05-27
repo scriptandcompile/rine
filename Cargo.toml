@@ -32,6 +32,7 @@ members = [
     "crates/platform/win-common/shared/registry-utils",
     "crates/platform/win-common/shared/text",
     "crates/platform/win-common/shared/environment-runtime",
+    "crates/platform/win-common/shared/threading-runtime",
     "crates/platform/win-common/rine-common-kernel32",
     "crates/platform/win-common/rine-common-ntdll",
     "crates/platform/win-common/rine-common-msvcrt",
@@ -100,6 +101,7 @@ dbcs = { path = "crates/platform/win-common/shared/dbcs" }
 registry-utils = { path = "crates/platform/win-common/shared/registry-utils" }
 text = { path = "crates/platform/win-common/shared/text" }
 environment-runtime = { path = "crates/platform/win-common/shared/environment-runtime" }
+threading-runtime = { path = "crates/platform/win-common/shared/threading-runtime" }
 rine-common-kernel32 = { path = "crates/platform/win-common/rine-common-kernel32" }
 rine-common-ntdll = { path = "crates/platform/win-common/rine-common-ntdll" }
 rine-common-msvcrt = { path = "crates/platform/win-common/rine-common-msvcrt" }

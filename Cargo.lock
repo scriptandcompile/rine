@@ -3725,6 +3725,7 @@ dependencies = [
  "registry-utils",
  "rine-types",
  "text",
+ "threading-runtime",
  "tracing",
 ]
 
@@ -3892,6 +3893,7 @@ dependencies = [
  "serial_test",
  "text",
  "thiserror 2.0.18",
+ "threading-runtime",
  "toml 1.1.2+spec-1.1.0",
 ]
 
@@ -3954,6 +3956,7 @@ dependencies = [
  "rine-dlls",
  "rine-types",
  "text",
+ "threading-runtime",
  "tracing",
 ]
 
@@ -4052,6 +4055,7 @@ dependencies = [
  "rine-types",
  "serial_test",
  "text",
+ "threading-runtime",
  "tracing",
 ]
 
@@ -5173,6 +5177,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f60246a4944f24f6e018aa17cdeffb7818b76356965d03b07d6a9886e8962185"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "threading-runtime"
+version = "0.1.4"
+dependencies = [
+ "serial_test",
 ]
 
 [[package]]

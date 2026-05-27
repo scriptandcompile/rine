@@ -20,6 +20,7 @@ text = { workspace = true }
 
 [dev-dependencies]
 serial_test = { workspace = true }
+threading-runtime = { workspace = true }
 
 [build-dependencies]
 rine-dll-build = { workspace = true }

@@ -3,12 +3,15 @@
 //! Provides TLS slot management and waitable-object types used by
 //! kernel32 threading, synchronization, and the `Wait*` family.
 
-use std::cell::RefCell;
 use std::fmt;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{Arc, Condvar, LazyLock, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
+
+use threading_runtime::{
+    EventWaitRef, MutexStateLike, MutexWaitRef, ProcessWaitRef, SemaphoreWaitRef, ThreadWaitRef,
+    WaitRef, WaitableLike,
+};
 
 // ── Windows constants ────────────────────────────────────────────
 
@@ -36,81 +39,6 @@ impl WaitStatus {
 
 pub const STILL_ACTIVE: u32 = 259;
 pub const TLS_OUT_OF_INDEXES: u32 = 0xFFFF_FFFF;
-
-// ── TLS slot management ─────────────────────────────────────────
-
-const TLS_MIN_AVAILABLE: usize = 64;
-const TLS_EXPANSION: usize = 1024;
-const TLS_MAX_SLOTS: usize = TLS_MIN_AVAILABLE + TLS_EXPANSION;
-
-/// Global bitmap tracking which TLS indices are allocated.
-static TLS_BITMAP: LazyLock<Mutex<[bool; TLS_MAX_SLOTS]>> =
-    LazyLock::new(|| Mutex::new([false; TLS_MAX_SLOTS]));
-
-thread_local! {
-    /// Per-thread TLS values.  Index corresponds to the global slot index.
-    static TLS_VALUES: RefCell<Vec<usize>> = RefCell::new(vec![0; TLS_MAX_SLOTS]);
-}
-
-/// Allocate a TLS index.  Returns `None` if all slots are exhausted.
-pub fn tls_alloc() -> Option<u32> {
-    let mut bitmap = TLS_BITMAP.lock().unwrap();
-    for (i, slot) in bitmap.iter_mut().enumerate() {
-        if !*slot {
-            *slot = true;
-            return Some(i as u32);
-        }
-    }
-    None
-}
-
-/// Free a previously allocated TLS index.
-pub fn tls_free(index: u32) -> bool {
-    let idx = index as usize;
-    if idx >= TLS_MAX_SLOTS {
-        return false;
-    }
-    let mut bitmap = TLS_BITMAP.lock().unwrap();
-    if !bitmap[idx] {
-        return false;
-    }
-    bitmap[idx] = false;
-    // Clear value in the current thread (matches Windows behaviour).
-    TLS_VALUES.with(|v| {
-        let mut v = v.borrow_mut();
-        if idx < v.len() {
-            v[idx] = 0;
-        }
-    });
-    true
-}
-
-/// Get the value for a TLS index in the current thread.
-pub fn tls_get_value(index: u32) -> usize {
-    let idx = index as usize;
-    if idx >= TLS_MAX_SLOTS {
-        return 0;
-    }
-    TLS_VALUES.with(|v| {
-        let v = v.borrow();
-        if idx < v.len() { v[idx] } else { 0 }
-    })
-}
-
-/// Set the value for a TLS index in the current thread.
-pub fn tls_set_value(index: u32, value: usize) -> bool {
-    let idx = index as usize;
-    if idx >= TLS_MAX_SLOTS {
-        return false;
-    }
-    TLS_VALUES.with(|v| {
-        let mut v = v.borrow_mut();
-        if idx < v.len() {
-            v[idx] = value;
-        }
-    });
-    true
-}
 
 // ── Waitable object types ───────────────────────────────────────
 
@@ -229,413 +157,55 @@ pub enum Waitable {
     Semaphore(SemaphoreWaitable),
 }
 
-// ── Wait helpers ─────────────────────────────────────────────────
+impl MutexStateLike for MutexState {
+    fn owner(&self) -> Option<thread::ThreadId> {
+        self.owner
+    }
 
-/// Wait on a single waitable object with the given timeout (milliseconds).
-/// Returns one of `WAIT_OBJECT_0`, `WAIT_TIMEOUT`, or `WAIT_FAILED`.
-pub fn wait_on(waitable: &Waitable, timeout_ms: u32) -> u32 {
-    match waitable {
-        Waitable::Thread(t) => wait_thread(t, timeout_ms),
-        Waitable::Event(e) => wait_event(e, timeout_ms),
-        Waitable::Process(p) => wait_process(p, timeout_ms),
-        Waitable::Mutex(m) => wait_mutex(m, timeout_ms),
-        Waitable::Semaphore(s) => wait_semaphore(s, timeout_ms),
+    fn set_owner(&mut self, owner: Option<thread::ThreadId>) {
+        self.owner = owner;
+    }
+
+    fn count(&self) -> u32 {
+        self.count
+    }
+
+    fn set_count(&mut self, count: u32) {
+        self.count = count;
     }
 }
 
-fn wait_thread(t: &ThreadWaitable, timeout_ms: u32) -> u32 {
-    let (lock, cvar) = &*t.completed;
-    let mut done = lock.lock().unwrap();
-    if *done {
-        return WaitStatus::WAIT_OBJECT_0.0;
-    }
-    if timeout_ms == 0 {
-        return WaitStatus::WAIT_TIMEOUT.0;
-    }
-    if timeout_ms == INFINITE {
-        while !*done {
-            done = cvar.wait(done).unwrap();
+impl WaitableLike for Waitable {
+    type MutexState = MutexState;
+
+    fn as_wait_ref(&self) -> WaitRef<'_, Self::MutexState> {
+        match self {
+            Waitable::Thread(thread) => WaitRef::Thread(ThreadWaitRef {
+                completed: &thread.completed,
+            }),
+            Waitable::Process(process) => WaitRef::Process(ProcessWaitRef {
+                completed: &process.completed,
+            }),
+            Waitable::Event(event) => WaitRef::Event(EventWaitRef {
+                signaled: &event.inner.signaled,
+                condvar: &event.inner.condvar,
+                manual_reset: event.inner.manual_reset,
+            }),
+            Waitable::Mutex(mutex) => WaitRef::Mutex(MutexWaitRef {
+                state: &mutex.inner.state,
+                condvar: &mutex.inner.condvar,
+            }),
+            Waitable::Semaphore(semaphore) => WaitRef::Semaphore(SemaphoreWaitRef {
+                count: &semaphore.inner.count,
+                condvar: &semaphore.inner.condvar,
+            }),
         }
-        return WaitStatus::WAIT_OBJECT_0.0;
     }
-    let deadline = Instant::now() + Duration::from_millis(timeout_ms as u64);
-    while !*done {
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        if remaining.is_zero() {
-            return WaitStatus::WAIT_TIMEOUT.0;
-        }
-        let result = cvar.wait_timeout(done, remaining).unwrap();
-        done = result.0;
-    }
-    WaitStatus::WAIT_OBJECT_0.0
-}
-
-fn wait_process(p: &ProcessWaitable, timeout_ms: u32) -> u32 {
-    let (lock, cvar) = &*p.completed;
-    let mut done = lock.lock().unwrap();
-    if *done {
-        return WaitStatus::WAIT_OBJECT_0.0;
-    }
-    if timeout_ms == 0 {
-        return WaitStatus::WAIT_TIMEOUT.0;
-    }
-    if timeout_ms == INFINITE {
-        while !*done {
-            done = cvar.wait(done).unwrap();
-        }
-        return WaitStatus::WAIT_OBJECT_0.0;
-    }
-    let deadline = Instant::now() + Duration::from_millis(timeout_ms as u64);
-    while !*done {
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        if remaining.is_zero() {
-            return WaitStatus::WAIT_TIMEOUT.0;
-        }
-        let result = cvar.wait_timeout(done, remaining).unwrap();
-        done = result.0;
-    }
-    WaitStatus::WAIT_OBJECT_0.0
-}
-
-fn wait_event(e: &EventWaitable, timeout_ms: u32) -> u32 {
-    let mut signaled = e.inner.signaled.lock().unwrap();
-    if *signaled {
-        if !e.inner.manual_reset {
-            *signaled = false; // auto-reset
-        }
-        return WaitStatus::WAIT_OBJECT_0.0;
-    }
-    if timeout_ms == 0 {
-        return WaitStatus::WAIT_TIMEOUT.0;
-    }
-    if timeout_ms == INFINITE {
-        while !*signaled {
-            signaled = e.inner.condvar.wait(signaled).unwrap();
-        }
-        if !e.inner.manual_reset {
-            *signaled = false;
-        }
-        return WaitStatus::WAIT_OBJECT_0.0;
-    }
-    let deadline = Instant::now() + Duration::from_millis(timeout_ms as u64);
-    while !*signaled {
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        if remaining.is_zero() {
-            return WaitStatus::WAIT_TIMEOUT.0;
-        }
-        let result = e.inner.condvar.wait_timeout(signaled, remaining).unwrap();
-        signaled = result.0;
-    }
-    if !e.inner.manual_reset {
-        *signaled = false;
-    }
-    WaitStatus::WAIT_OBJECT_0.0
-}
-
-/// Helper: get current thread id.
-fn current_thread_id() -> thread::ThreadId {
-    thread::current().id()
-}
-
-fn wait_mutex(m: &MutexWaitable, timeout_ms: u32) -> u32 {
-    let tid = current_thread_id();
-    let mut state = m.inner.state.lock().unwrap();
-
-    // Already owned by this thread → increment recursion count.
-    if state.owner == Some(tid) {
-        state.count += 1;
-        return WaitStatus::WAIT_OBJECT_0.0;
-    }
-
-    // Unlocked → acquire immediately.
-    if state.owner.is_none() {
-        state.owner = Some(tid);
-        state.count = 1;
-        return WaitStatus::WAIT_OBJECT_0.0;
-    }
-
-    // Zero timeout → poll only.
-    if timeout_ms == 0 {
-        return WaitStatus::WAIT_TIMEOUT.0;
-    }
-
-    if timeout_ms == INFINITE {
-        while state.owner.is_some() {
-            state = m.inner.condvar.wait(state).unwrap();
-        }
-        state.owner = Some(tid);
-        state.count = 1;
-        return WaitStatus::WAIT_OBJECT_0.0;
-    }
-
-    let deadline = Instant::now() + Duration::from_millis(timeout_ms as u64);
-    while state.owner.is_some() {
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        if remaining.is_zero() {
-            return WaitStatus::WAIT_TIMEOUT.0;
-        }
-        let result = m.inner.condvar.wait_timeout(state, remaining).unwrap();
-        state = result.0;
-    }
-    state.owner = Some(tid);
-    state.count = 1;
-    WaitStatus::WAIT_OBJECT_0.0
-}
-
-fn wait_semaphore(s: &SemaphoreWaitable, timeout_ms: u32) -> u32 {
-    let mut count = s.inner.count.lock().unwrap();
-
-    // Available → decrement and return.
-    if *count > 0 {
-        *count -= 1;
-        return WaitStatus::WAIT_OBJECT_0.0;
-    }
-
-    if timeout_ms == 0 {
-        return WaitStatus::WAIT_TIMEOUT.0;
-    }
-
-    if timeout_ms == INFINITE {
-        while *count == 0 {
-            count = s.inner.condvar.wait(count).unwrap();
-        }
-        *count -= 1;
-        return WaitStatus::WAIT_OBJECT_0.0;
-    }
-
-    let deadline = Instant::now() + Duration::from_millis(timeout_ms as u64);
-    while *count == 0 {
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        if remaining.is_zero() {
-            return WaitStatus::WAIT_TIMEOUT.0;
-        }
-        let result = s.inner.condvar.wait_timeout(count, remaining).unwrap();
-        count = result.0;
-    }
-    *count -= 1;
-    WaitStatus::WAIT_OBJECT_0.0
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serial_test::serial;
-
-    // ── TLS tests ────────────────────────────────────────────────
-
-    #[test]
-    #[serial]
-    fn sequential_tls_alloc_indicies_differ() {
-        let a = tls_alloc().unwrap();
-        let b = tls_alloc().unwrap();
-        // Indices are unique (not necessarily contiguous due to parallel tests,
-        // but must differ).
-        assert_ne!(a, b);
-        tls_free(a);
-        tls_free(b);
-    }
-
-    #[test]
-    #[serial]
-    fn tls_get_set_roundtrip() {
-        let idx = tls_alloc().unwrap();
-        assert_ne!(tls_get_value(idx), 0xDEAD_BEEF); // default is zero, but shouldn't be this arbitrary value.
-        assert!(tls_set_value(idx, 0xDEAD_BEEF));
-        assert_eq!(tls_get_value(idx), 0xDEAD_BEEF);
-        tls_free(idx);
-    }
-
-    #[test]
-    #[serial]
-    fn tls_free_clears_value() {
-        let idx = tls_alloc().unwrap();
-        tls_set_value(idx, 42);
-        assert!(tls_free(idx));
-        // After free, value reads as 0 (slot no longer allocated).
-        assert_eq!(tls_get_value(idx), 0);
-    }
-
-    #[test]
-    #[serial]
-    fn tls_free_unallocated_returns_false() {
-        // Freeing a never-allocated slot should fail.
-        // Use a high index that's extremely unlikely to be allocated.
-        assert!(!tls_free(TLS_MAX_SLOTS as u32)); // out of range
-    }
-
-    #[test]
-    #[serial]
-    fn tls_double_free_returns_false() {
-        let idx = tls_alloc().unwrap();
-        assert!(tls_free(idx));
-        assert!(!tls_free(idx)); // second free fails
-    }
-
-    #[test]
-    #[serial]
-    fn tls_out_of_range_index() {
-        assert_eq!(tls_get_value(TLS_MAX_SLOTS as u32 + 1), 0);
-        assert!(!tls_set_value(TLS_MAX_SLOTS as u32 + 1, 99));
-    }
-
-    #[test]
-    #[serial]
-    fn tls_realloc_reuses_freed_slot() {
-        let a = tls_alloc().unwrap();
-        tls_free(a);
-        let b = tls_alloc().unwrap();
-        // The freed slot should be available again; the allocator scans
-        // from index 0 so `b` will be <= `a` (it gets `a` or a lower
-        // slot that another parallel test freed).
-        // Just verify we got a valid index back.
-        assert!(b < TLS_MAX_SLOTS as u32);
-        tls_free(b);
-    }
-
-    #[test]
-    #[serial]
-    fn tls_per_thread_isolation() {
-        let idx = tls_alloc().unwrap();
-        tls_set_value(idx, 111);
-
-        let child_saw = std::thread::spawn(move || {
-            // Child thread should see default value (0), not parent's.
-            let v = tls_get_value(idx);
-            tls_set_value(idx, 222);
-            (v, tls_get_value(idx))
-        })
-        .join()
-        .unwrap();
-
-        assert_eq!(child_saw, (0, 222));
-        // Parent's value unchanged.
-        assert_eq!(tls_get_value(idx), 111);
-        tls_free(idx);
-    }
-
-    // ── Event wait tests ─────────────────────────────────────────
-
-    fn make_event(manual_reset: bool, initial: bool) -> EventWaitable {
-        EventWaitable {
-            inner: Arc::new(EventInner {
-                signaled: Mutex::new(initial),
-                condvar: Condvar::new(),
-                manual_reset,
-            }),
-        }
-    }
-
-    #[test]
-    fn event_initially_signaled_returns_immediately() {
-        let e = make_event(true, true);
-        let w = Waitable::Event(e);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
-    }
-
-    #[test]
-    fn event_initially_unsignaled_times_out() {
-        let e = make_event(true, false);
-        let w = Waitable::Event(e);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
-    }
-
-    #[test]
-    fn auto_reset_event_clears_after_wait() {
-        let e = make_event(false, true); // auto-reset, initially signaled
-        let w = Waitable::Event(e);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0); // consumes the signal
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0); // now unsignaled
-    }
-
-    #[test]
-    fn manual_reset_event_stays_signaled() {
-        let e = make_event(true, true); // manual-reset, initially signaled
-        let w = Waitable::Event(e);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0); // still signaled
-    }
-
-    #[test]
-    fn event_signal_from_another_thread() {
-        let e = make_event(true, false);
-        let inner = Arc::clone(&e.inner);
-        let w = Waitable::Event(e);
-
-        std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_millis(20));
-            *inner.signaled.lock().unwrap() = true;
-            inner.condvar.notify_all();
-        });
-
-        assert_eq!(wait_on(&w, 1000), WaitStatus::WAIT_OBJECT_0.0);
-    }
-
-    #[test]
-    fn event_timeout_when_never_signaled() {
-        let e = make_event(true, false);
-        let w = Waitable::Event(e);
-        let start = Instant::now();
-        assert_eq!(wait_on(&w, 50), WaitStatus::WAIT_TIMEOUT.0);
-        let elapsed = start.elapsed();
-        assert!(elapsed >= Duration::from_millis(40));
-        assert!(elapsed < Duration::from_millis(200));
-    }
-
-    // ── Thread waitable tests ────────────────────────────────────
-
-    fn make_thread_waitable() -> ThreadWaitable {
-        ThreadWaitable {
-            exit_code: Arc::new(AtomicU32::new(STILL_ACTIVE)),
-            completed: Arc::new((Mutex::new(false), Condvar::new())),
-        }
-    }
-
-    #[test]
-    fn thread_wait_returns_timeout_while_running() {
-        let tw = make_thread_waitable();
-        let w = Waitable::Thread(tw);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
-    }
-
-    #[test]
-    fn thread_wait_returns_immediately_when_completed() {
-        let tw = make_thread_waitable();
-        // Simulate thread completion.
-        tw.exit_code.store(0, Ordering::Release);
-        let (lock, cvar) = &*tw.completed;
-        *lock.lock().unwrap() = true;
-        cvar.notify_all();
-
-        let w = Waitable::Thread(tw);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
-    }
-
-    #[test]
-    fn thread_wait_with_timeout_succeeds_when_completed_in_time() {
-        let tw = make_thread_waitable();
-        let completed = Arc::clone(&tw.completed);
-        let exit_code = Arc::clone(&tw.exit_code);
-
-        std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_millis(20));
-            exit_code.store(42, Ordering::Release);
-            let (lock, cvar) = &*completed;
-            *lock.lock().unwrap() = true;
-            cvar.notify_all();
-        });
-
-        let w = Waitable::Thread(tw);
-        assert_eq!(wait_on(&w, 1000), WaitStatus::WAIT_OBJECT_0.0);
-    }
-
-    #[test]
-    fn thread_wait_timeout_fires_when_not_completed() {
-        let tw = make_thread_waitable();
-        let w = Waitable::Thread(tw);
-        let start = Instant::now();
-        assert_eq!(wait_on(&w, 50), WaitStatus::WAIT_TIMEOUT.0);
-        assert!(start.elapsed() >= Duration::from_millis(40));
-    }
 
     // ── Constants ────────────────────────────────────────────────
 
@@ -649,221 +219,5 @@ mod tests {
 
         assert_eq!(STILL_ACTIVE, 259);
         assert_eq!(TLS_OUT_OF_INDEXES, 0xFFFF_FFFF);
-    }
-
-    // ── Mutex waitable tests ─────────────────────────────────────
-
-    fn make_mutex(initially_owned: bool) -> MutexWaitable {
-        let (owner, count) = if initially_owned {
-            (Some(thread::current().id()), 1)
-        } else {
-            (None, 0)
-        };
-        MutexWaitable {
-            inner: Arc::new(MutexInner {
-                state: Mutex::new(MutexState { owner, count }),
-                condvar: Condvar::new(),
-            }),
-        }
-    }
-
-    #[test]
-    fn mutex_unowned_acquires_immediately() {
-        let m = make_mutex(false);
-        let w = Waitable::Mutex(m);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
-    }
-
-    #[test]
-    fn mutex_owned_by_self_is_recursive() {
-        let m = make_mutex(true); // owned by current thread
-        let w = Waitable::Mutex(m.clone());
-        // Second acquire on same thread should succeed (recursive).
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
-        // Count should now be 2.
-        let state = m.inner.state.lock().unwrap();
-        assert_eq!(state.count, 2);
-    }
-
-    #[test]
-    fn mutex_owned_by_other_thread_times_out() {
-        let m = make_mutex(false);
-
-        // Acquire from another thread and hold it.
-        let inner = Arc::clone(&m.inner);
-        let barrier = Arc::new((Mutex::new(false), Condvar::new()));
-        let barrier2 = Arc::clone(&barrier);
-
-        let _holder = std::thread::spawn(move || {
-            {
-                let mut state = inner.state.lock().unwrap();
-                state.owner = Some(thread::current().id());
-                state.count = 1;
-            }
-            // Signal that we've acquired.
-            let (lock, cvar) = &*barrier2;
-            *lock.lock().unwrap() = true;
-            cvar.notify_all();
-            // Hold for a while.
-            std::thread::sleep(Duration::from_millis(200));
-            {
-                let mut state = inner.state.lock().unwrap();
-                state.owner = None;
-                state.count = 0;
-            }
-            inner.condvar.notify_one();
-        });
-
-        // Wait for the other thread to acquire.
-        let (lock, cvar) = &*barrier;
-        let mut acquired = lock.lock().unwrap();
-        while !*acquired {
-            acquired = cvar.wait(acquired).unwrap();
-        }
-
-        // Now try to acquire with a short timeout — should fail.
-        let w = Waitable::Mutex(m);
-        assert_eq!(wait_on(&w, 10), WaitStatus::WAIT_TIMEOUT.0);
-    }
-
-    #[test]
-    fn mutex_wait_succeeds_when_released_by_other_thread() {
-        let m = make_mutex(false);
-        let inner = Arc::clone(&m.inner);
-
-        // Acquire from another thread, then release after a brief hold.
-        let child = std::thread::spawn(move || {
-            {
-                let mut state = inner.state.lock().unwrap();
-                state.owner = Some(thread::current().id());
-                state.count = 1;
-            }
-            std::thread::sleep(Duration::from_millis(20));
-            {
-                let mut state = inner.state.lock().unwrap();
-                state.owner = None;
-                state.count = 0;
-            }
-            inner.condvar.notify_one();
-        });
-        child.join().unwrap();
-
-        let w = Waitable::Mutex(m);
-        assert_eq!(wait_on(&w, 1000), WaitStatus::WAIT_OBJECT_0.0);
-    }
-
-    #[test]
-    fn mutex_release_decrements_count() {
-        let m = make_mutex(true); // count = 1
-        let w = Waitable::Mutex(m.clone());
-
-        // Recursive acquire → count = 2.
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
-        assert_eq!(m.inner.state.lock().unwrap().count, 2);
-
-        // Simulate one release.
-        {
-            let mut state = m.inner.state.lock().unwrap();
-            state.count -= 1;
-        }
-        assert_eq!(m.inner.state.lock().unwrap().count, 1);
-
-        // Still owned.
-        assert!(m.inner.state.lock().unwrap().owner.is_some());
-    }
-
-    // ── Semaphore waitable tests ─────────────────────────────────
-
-    fn make_semaphore(initial: i32, max: i32) -> SemaphoreWaitable {
-        SemaphoreWaitable {
-            inner: Arc::new(SemaphoreInner {
-                count: Mutex::new(initial),
-                max_count: max,
-                condvar: Condvar::new(),
-            }),
-        }
-    }
-
-    #[test]
-    fn semaphore_with_count_acquires_immediately() {
-        let s = make_semaphore(3, 5);
-        let w = Waitable::Semaphore(s.clone());
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
-        assert_eq!(*s.inner.count.lock().unwrap(), 2);
-    }
-
-    #[test]
-    fn semaphore_zero_count_times_out() {
-        let s = make_semaphore(0, 5);
-        let w = Waitable::Semaphore(s);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
-    }
-
-    #[test]
-    fn semaphore_drains_to_zero() {
-        let s = make_semaphore(2, 5);
-        let w = Waitable::Semaphore(s.clone());
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_OBJECT_0.0);
-        assert_eq!(wait_on(&w, 0), WaitStatus::WAIT_TIMEOUT.0);
-        assert_eq!(*s.inner.count.lock().unwrap(), 0);
-    }
-
-    #[test]
-    fn semaphore_release_wakes_waiter() {
-        let s = make_semaphore(0, 5);
-        let inner = Arc::clone(&s.inner);
-
-        std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_millis(20));
-            *inner.count.lock().unwrap() += 1;
-            inner.condvar.notify_one();
-        });
-
-        let w = Waitable::Semaphore(s);
-        assert_eq!(wait_on(&w, 1000), WaitStatus::WAIT_OBJECT_0.0);
-    }
-
-    #[test]
-    fn semaphore_timeout_when_never_released() {
-        let s = make_semaphore(0, 5);
-        let w = Waitable::Semaphore(s);
-        let start = Instant::now();
-        assert_eq!(wait_on(&w, 50), WaitStatus::WAIT_TIMEOUT.0);
-        assert!(start.elapsed() >= Duration::from_millis(40));
-        assert!(start.elapsed() < Duration::from_millis(200));
-    }
-
-    #[test]
-    fn semaphore_multiple_releases_wake_multiple_waiters() {
-        let s = make_semaphore(0, 10);
-        let inner = Arc::clone(&s.inner);
-
-        // Spawn 3 waiters.
-        let handles: Vec<_> = (0..3)
-            .map(|_| {
-                let s2 = s.clone();
-                std::thread::spawn(move || {
-                    let w = Waitable::Semaphore(s2);
-                    wait_on(&w, 2000)
-                })
-            })
-            .collect();
-
-        // Give threads time to start waiting.
-        std::thread::sleep(Duration::from_millis(30));
-
-        // Release 3 at once.
-        {
-            let mut count = inner.count.lock().unwrap();
-            *count += 3;
-        }
-        for _ in 0..3 {
-            inner.condvar.notify_one();
-        }
-
-        for h in handles {
-            assert_eq!(h.join().unwrap(), WaitStatus::WAIT_OBJECT_0.0);
-        }
     }
 }

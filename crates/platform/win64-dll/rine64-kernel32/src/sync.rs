@@ -485,7 +485,8 @@ mod tests {
     use super::*;
     use rine_types::handles::handle_table;
     use rine_types::sync::CriticalSection;
-    use rine_types::threading::{WaitStatus, wait_on};
+    use rine_types::threading::WaitStatus;
+    use threading_runtime::wait_on;
 
     use std::ptr;
     use std::sync::Arc;

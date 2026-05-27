@@ -10,6 +10,7 @@ dbcs = { workspace = true }
 registry-utils = { workspace = true }
 text = { workspace = true }
 environment-runtime = { workspace = true }
+threading-runtime = { workspace = true }
 rine-types = { workspace = true }
 libc = { workspace = true }
 tracing = { workspace = true }

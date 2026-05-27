@@ -4,8 +4,8 @@ use super::provider::CursorProvider;
 
 /// In-memory cursor position cache.
 ///
-/// Stores the last position written by [`set_cursor_pos`] and returns it
-/// from [`get_cursor_pos`].  The position is initially unknown (`None`)
+/// Stores the last position written by [`CachedCursorProvider::set_cursor_pos`] and returns it
+/// from [`CachedCursorProvider::get_cursor_pos`].  The position is initially unknown (`None`)
 /// until explicitly set.
 ///
 /// This is the default provider in non-windowed environments and in tests.

@@ -19,3 +19,6 @@ text = { workspace = true }
 
 [build-dependencies]
 rine-dll-build = { workspace = true }
+
+[dev-dependencies]
+threading-runtime = { workspace = true }

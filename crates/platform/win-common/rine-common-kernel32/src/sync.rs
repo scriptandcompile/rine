@@ -342,7 +342,7 @@ pub fn create_mutex(initial_owner: BOOL, name: Option<String>) -> (HANDLE, Strin
 /// # Examples
 /// ```
 /// use rine_common_kernel32::sync::create_semaphore;
-/// use rine_types::handles::Handle;
+/// use rine_types::handles::HANDLE;
 ///
 /// let semaphore = create_semaphore(2, 5);
 /// assert!(semaphore.is_valid());

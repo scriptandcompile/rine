@@ -13,6 +13,7 @@ config = ["serde", "dep:toml", "dep:thiserror", "dep:serde_json"]
 bitflags = { workspace = true }
 text = { workspace = true }
 environment-runtime = { workspace = true }
+threading-runtime = { workspace = true }
 serde = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
