@@ -1,6 +1,5 @@
 pub mod date_time;
 pub mod dev_hooks;
-pub mod environment;
 pub mod errors;
 pub mod handles;
 pub mod locale;

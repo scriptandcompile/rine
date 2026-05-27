@@ -3,17 +3,13 @@
 //! Windows PE executables reference variables like `%USERPROFILE%`,
 //! `%TEMP%`, `%SYSTEMROOT%`, etc. This module maintains a global store
 //! seeded with sensible defaults that map well-known Windows variables
-//! to rine's Linux drive layout (`~/.rine/drives/c/…`).
+//! to rine's Linux drive layout (`~/.rine/drives/c/...`).
 //!
 //! The store is case-insensitive on variable names, matching Windows
 //! behaviour. It is safe to call from any thread (protected by a mutex).
 
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
-
-// ---------------------------------------------------------------------------
-// Global environment store
-// ---------------------------------------------------------------------------
 
 struct EnvStore {
     vars: HashMap<String, String>,
@@ -27,7 +23,6 @@ impl EnvStore {
 
         let mut vars = HashMap::new();
 
-        // Well-known Windows variables mapped to rine paths.
         vars.insert("SYSTEMROOT".into(), format!("{rine_root}/Windows"));
         vars.insert("WINDIR".into(), format!("{rine_root}/Windows"));
         vars.insert("SYSTEMDRIVE".into(), "C:".into());
@@ -71,7 +66,6 @@ impl EnvStore {
         vars.insert("NUMBER_OF_PROCESSORS".into(), num_cpus().to_string());
         vars.insert("PROCESSOR_ARCHITECTURE".into(), "AMD64".into());
 
-        // Seed the Windows PATH with System32 and friends.
         vars.insert(
             "PATH".into(),
             format!(
@@ -92,10 +86,6 @@ fn num_cpus() -> usize {
 }
 
 static ENV: LazyLock<Mutex<EnvStore>> = LazyLock::new(|| Mutex::new(EnvStore::new()));
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
 
 /// Retrieve a Windows environment variable (case-insensitive).
 ///
@@ -146,13 +136,11 @@ pub fn expand_vars(src: &str) -> String {
                 if let Some(val) = store.vars.get(&var_name.to_ascii_uppercase()) {
                     result.push_str(val);
                 } else {
-                    // Unknown variable — preserve verbatim.
                     result.push('%');
                     result.push_str(&var_name);
                     result.push('%');
                 }
             } else {
-                // Lone '%' or '%%' — emit literally.
                 result.push('%');
                 result.push_str(&var_name);
             }
@@ -177,7 +165,7 @@ pub fn build_ansi_block() -> Vec<u8> {
         block.extend_from_slice(v.as_bytes());
         block.push(0);
     }
-    block.push(0); // double-null terminator
+    block.push(0);
     block
 }
 
@@ -192,13 +180,9 @@ pub fn build_wide_block() -> Vec<u16> {
         block.extend(entry.encode_utf16());
         block.push(0);
     }
-    block.push(0); // double-null terminator
+    block.push(0);
     block
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
@@ -224,9 +208,7 @@ mod tests {
         assert!(get_var(name).is_none());
         set_var(name, Some("hello"));
         assert_eq!(get_var(name).unwrap(), "hello");
-        // Case-insensitive read.
         assert_eq!(get_var("rine_test_env_18374").unwrap(), "hello");
-        // Delete.
         set_var(name, None);
         assert!(get_var(name).is_none());
     }

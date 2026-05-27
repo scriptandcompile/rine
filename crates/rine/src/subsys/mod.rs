@@ -1,5 +1,4 @@
 pub mod dialogs;
-pub mod environment;
 pub mod filesystem;
 pub mod heap;
 pub mod process;

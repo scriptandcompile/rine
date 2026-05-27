@@ -15,6 +15,7 @@ rine-common-kernel32 = { workspace = true }
 rine-types = { workspace = true }
 libc = { workspace = true }
 tracing = { workspace = true }
+text = { workspace = true }
 
 [build-dependencies]
 rine-dll-build = { workspace = true }

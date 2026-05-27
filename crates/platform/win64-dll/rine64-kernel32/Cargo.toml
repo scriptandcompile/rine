@@ -16,6 +16,7 @@ rine-types = { workspace = true }
 libc = { workspace = true }
 nix = { workspace = true }
 tracing = { workspace = true }
+text = { workspace = true }
 
 [dev-dependencies]
 serial_test = { workspace = true }

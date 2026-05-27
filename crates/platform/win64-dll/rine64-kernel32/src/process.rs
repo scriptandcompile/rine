@@ -6,7 +6,8 @@ use rine_common_kernel32 as common;
 use rine_types::errors::{BOOL, ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER};
 use rine_types::handles::HANDLE;
 use rine_types::os::{ProcessInformation, StartupInfoA, StartupInfoW};
-use rine_types::strings::{LPCSTR, LPCWSTR, read_cstr, read_wstr};
+use rine_types::strings::{LPCSTR, LPCWSTR};
+use text::{read_cstr, read_wstr};
 
 use tracing::warn;
 

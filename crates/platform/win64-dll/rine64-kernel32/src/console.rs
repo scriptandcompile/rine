@@ -4,7 +4,7 @@ use rine_common_kernel32 as common;
 
 use rine_types::errors::BOOL;
 use rine_types::handles::HANDLE;
-use rine_types::strings::{read_cstr_counted, read_wstr_counted};
+use text::{read_cstr_counted, read_wstr_counted};
 
 /// Get a standard handle (stdin, stdout, stderr) as a raw handle value.
 ///

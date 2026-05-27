@@ -39,7 +39,7 @@ static ENV_BLOCK_W: OnceLock<SyncPtr> = OnceLock::new();
 pub unsafe fn get_environment_strings_a() -> *mut u8 {
     ENV_BLOCK_W
         .get_or_init(|| {
-            let block = rine_types::environment::build_wide_block();
+            let block = environment_runtime::build_wide_block();
             let boxed = block.into_boxed_slice();
             SyncPtr(Box::into_raw(boxed) as *mut u16)
         })
@@ -68,7 +68,7 @@ pub unsafe fn get_environment_strings_a() -> *mut u8 {
 pub unsafe fn get_environment_strings_w() -> *mut u16 {
     ENV_BLOCK_W
         .get_or_init(|| {
-            let block = rine_types::environment::build_wide_block();
+            let block = environment_runtime::build_wide_block();
             let boxed = block.into_boxed_slice();
             SyncPtr(Box::into_raw(boxed) as *mut u16)
         })
@@ -171,7 +171,7 @@ pub unsafe fn get_environment_variable_a(name: LPCSTR, buffer: *mut u8, size: u3
         None => return 0,
     };
 
-    match rine_types::environment::get_var(&var_name) {
+    match environment_runtime::get_var(&var_name) {
         Some(val) => unsafe { write_cstr(buffer, size, &val) },
         None => 0,
     }
@@ -204,7 +204,7 @@ pub unsafe fn get_environment_variable_w(name: LPCWSTR, buffer: *mut u16, size: 
         None => return 0,
     };
 
-    match rine_types::environment::get_var(&var_name) {
+    match environment_runtime::get_var(&var_name) {
         Some(val) => unsafe { write_wstr(buffer, size, &val) },
         None => 0,
     }
@@ -233,7 +233,7 @@ pub unsafe fn set_environment_variable_a(name: LPCSTR, value: LPCSTR) -> BOOL {
     };
 
     let var_value = value.read_string();
-    rine_types::environment::set_var(&var_name, var_value.as_deref());
+    environment_runtime::set_var(&var_name, var_value.as_deref());
     BOOL::TRUE
 }
 
@@ -260,7 +260,7 @@ pub unsafe fn set_environment_variable_w(name: LPCWSTR, value: LPCWSTR) -> BOOL 
     };
 
     let var_value = value.read_string();
-    rine_types::environment::set_var(&var_name, var_value.as_deref());
+    environment_runtime::set_var(&var_name, var_value.as_deref());
     BOOL::TRUE
 }
 
@@ -292,7 +292,7 @@ pub unsafe fn expand_environment_strings_a(src: LPCSTR, dst: *mut u8, dst_size: 
         None => return 0,
     };
 
-    let expanded = rine_types::environment::expand_vars(&input);
+    let expanded = environment_runtime::expand_vars(&input);
     let needed = expanded.len() as u32 + 1;
 
     if dst.is_null() || dst_size < needed {
@@ -335,7 +335,7 @@ pub unsafe fn expand_environment_strings_w(src: LPCWSTR, dst: *mut u16, dst_size
         None => return 0,
     };
 
-    let expanded = rine_types::environment::expand_vars(&input);
+    let expanded = environment_runtime::expand_vars(&input);
     let encoded: Vec<u16> = expanded.encode_utf16().collect();
     let needed = encoded.len() as u32 + 1;
 
@@ -363,7 +363,7 @@ mod tests {
     }
 
     fn set_var(name: &str, value: Option<&str>) {
-        rine_types::environment::set_var(name, value);
+        environment_runtime::set_var(name, value);
     }
 
     // ── get_environment_variable_a ─────────────────────────────────
@@ -468,7 +468,7 @@ mod tests {
         assert_eq!(result, BOOL::TRUE);
 
         assert_eq!(
-            rine_types::environment::get_var("RINE_K32_SET_A"),
+            environment_runtime::get_var("RINE_K32_SET_A"),
             Some("set_value".to_string())
         );
 
@@ -482,7 +482,7 @@ mod tests {
         let name = b"RINE_K32_SET_DEL\0";
         let result = unsafe { set_environment_variable_a(to_lpcstr(name), LPCSTR::NULL) };
         assert_eq!(result, BOOL::TRUE);
-        assert!(rine_types::environment::get_var("RINE_K32_SET_DEL").is_none());
+        assert!(environment_runtime::get_var("RINE_K32_SET_DEL").is_none());
     }
 
     #[test]
@@ -503,7 +503,7 @@ mod tests {
         assert_eq!(result, BOOL::TRUE);
 
         assert_eq!(
-            rine_types::environment::get_var("RINE_K32_SET_W"),
+            environment_runtime::get_var("RINE_K32_SET_W"),
             Some("w_set_val".to_string())
         );
 
@@ -517,7 +517,7 @@ mod tests {
         let name: Vec<u16> = "RINE_K32_SET_DEL_W\0".encode_utf16().collect();
         let result = unsafe { set_environment_variable_w(to_lpcwstr(&name), LPCWSTR::NULL) };
         assert_eq!(result, BOOL::TRUE);
-        assert!(rine_types::environment::get_var("RINE_K32_SET_DEL_W").is_none());
+        assert!(environment_runtime::get_var("RINE_K32_SET_DEL_W").is_none());
     }
 
     #[test]
