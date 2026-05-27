@@ -241,7 +241,7 @@ pub fn std_handle_to_fd(nstd_handle: u32) -> Option<i32> {
 }
 
 // ---------------------------------------------------------------------------
-// Compatibility shims
+// File descriptor handle adapters
 // ---------------------------------------------------------------------------
 
 pub const HANDLE_FD_BASE: isize = 0x1000;

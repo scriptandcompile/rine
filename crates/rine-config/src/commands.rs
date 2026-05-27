@@ -3,7 +3,8 @@ use crate::registry_ui;
 use registry_runtime::{
     init_registry_for_app, registry_store, reinit_registry_for_app, save_registry_for_app,
 };
-use rine_config_lib::{self as lib, AppConfig, VersionOption, WindowsVersion};
+use rine_config_lib::VersionOption;
+use rine_types::config::{self, AppConfig, WindowsVersion};
 use rine_types::registry::RegistryValue;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -32,8 +33,8 @@ pub struct OpenedConfig {
 pub fn open_config_target(path: String) -> Result<OpenedConfig, String> {
     let input = PathBuf::from(path);
     if is_exe_path(&input) {
-        let cfg = lib::load_config(&input).map_err(|e| e.to_string())?;
-        let cfg_path = lib::config_path(&input);
+        let cfg = config::load_config(&input).map_err(|e| e.to_string())?;
+        let cfg_path = config::config_path(&input);
         let exe_path = input
             .canonicalize()
             .unwrap_or_else(|_| input.clone())
@@ -98,12 +99,12 @@ pub fn request_app_exit(
 
 #[tauri::command]
 pub fn get_config(exe_path: String) -> Result<AppConfig, String> {
-    lib::load_config(Path::new(&exe_path)).map_err(|e| e.to_string())
+    config::load_config(Path::new(&exe_path)).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn save_config_cmd(exe_path: String, config: AppConfig) -> Result<(), String> {
-    lib::save_config(Path::new(&exe_path), &config)
+    config::save_config(Path::new(&exe_path), &config)
         .map(|_| ())
         .map_err(|e| e.to_string())
 }
@@ -121,7 +122,7 @@ pub fn save_config_file(config_path: String, config: AppConfig) -> Result<(), St
 
 #[tauri::command]
 pub fn get_config_path(exe_path: String) -> String {
-    lib::config_path(Path::new(&exe_path))
+    config::config_path(Path::new(&exe_path))
         .to_string_lossy()
         .into_owned()
 }
@@ -232,7 +233,7 @@ fn resolve_registry_windows_version(
         return Ok(version);
     }
 
-    let config = lib::load_config(exe_path).map_err(|e| e.to_string())?;
+    let config = config::load_config(exe_path).map_err(|e| e.to_string())?;
     Ok(config.windows_version)
 }
 
