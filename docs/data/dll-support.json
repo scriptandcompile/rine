@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-27T17:06:44.944942+00:00",
+  "generatedAt": "2026-05-27T17:13:37.621621+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2769,7 +2769,7 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 86,
+      "functionCount": 87,
       "functions": [
         {
           "name": "CharNextA",
@@ -3409,6 +3409,19 @@
           }
         },
         {
+          "name": "MessageBoxW",
+          "x64": {
+            "status": "implemented",
+            "symbol": "dialogs::MessageBoxW",
+            "source": "user32 - dialogs.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "dialogs::MessageBoxW",
+            "source": "user32 - dialogs.rs"
+          }
+        },
+        {
           "name": "MoveWindow",
           "x64": {
             "status": "partial",
@@ -3893,15 +3906,15 @@
     }
   ],
   "totals": {
-    "functions": 295,
+    "functions": 296,
     "x64": {
-      "implemented": 103,
+      "implemented": 104,
       "partial": 153,
       "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 103,
+      "implemented": 104,
       "partial": 153,
       "stubbed": 39,
       "unimplemented": 0

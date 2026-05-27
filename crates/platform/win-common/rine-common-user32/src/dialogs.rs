@@ -461,7 +461,7 @@ pub const IDCONTINUE: i32 = 11;
 /// This implementation uses `rfd` for native message dialogs. Not all button combinations
 /// supported by Windows are exposed by `rfd`; unsupported combinations fall back to a simple
 /// OK dialog and log a warning.
-pub fn message_box_a(_hwnd: HWND, text: &str, caption: &str, u_type: u32) -> i32 {
+pub fn message_box(_hwnd: HWND, text: &str, caption: &str, u_type: u32) -> i32 {
     use rfd::{MessageButtons, MessageDialog, MessageDialogResult, MessageLevel};
 
     let buttons = u_type & 0x0F;

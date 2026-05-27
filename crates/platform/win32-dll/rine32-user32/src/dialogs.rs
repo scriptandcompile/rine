@@ -391,5 +391,44 @@ pub unsafe extern "stdcall" fn MessageBoxA(
     let text = unsafe { lpText.read_string().unwrap_or_default() };
     let caption = unsafe { lpCaption.read_string().unwrap_or_default() };
 
-    common::message_box_a(hWnd, &text, &caption, uType)
+    common::message_box(hWnd, &text, &caption, uType)
+}
+
+/// Displays a modal dialog box that contains a system icon, a set of buttons, and a brief
+/// application-specific message, such as status or error information. The message box returns
+/// an integer value that indicates which button the user clicked.
+///
+/// # Arguments
+/// * `hWnd` - A handle to the owner window of the message box. If this parameter is `HWND::NULL`,
+///   the message box has no owner window.
+/// * `lpText` - The message to be displayed. If this parameter is `None`, the default message
+///   "No message" is displayed.
+/// * `lpCaption` - The dialog box title. If this parameter is `None`, the default title "Error"
+///   is used.
+/// * `uType` - The contents and behavior of the dialog box. This parameter can be a combination
+///   of flags from the MB_* constants (e.g. `MB_OK`, `MB_YESNO`, `MB_ICONQUESTION`, etc.).
+///
+/// # Returns
+/// If the function succeeds, the return value is one of the ID* constants indicating which button
+/// was pressed (e.g. `IDOK`, `IDCANCEL`, `IDYES`, `IDNO`).
+/// If there is not enough memory to create the message box, the return value is `0`.
+///
+/// # Safety
+/// `hWnd` must be a valid handle to a window or `HWND::NULL`.
+/// `lpText` must be a valid pointer to a null-terminated wide string or `NULL`.
+/// `lpCaption` must be a valid pointer to a null-terminated wide string or `NULL`.
+/// The function does not perform any validation of the input parameters beyond checking for null pointers.
+#[rine_dlls::implemented]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn MessageBoxW(
+    hWnd: HWND,
+    lpText: LPCWSTR,
+    lpCaption: LPCWSTR,
+    uType: u32,
+) -> i32 {
+    let text = unsafe { lpText.read_string().unwrap_or_default() };
+    let caption = unsafe { lpCaption.read_string().unwrap_or_default() };
+
+    common::message_box(hWnd, &text, &caption, uType)
 }
