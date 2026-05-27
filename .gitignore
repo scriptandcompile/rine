@@ -1,4 +1,5 @@
 /target
 /tests/fixtures/bin/
+/tests/fixtures/examples/bin/
 /.github/copilot-instructions.md
 /.agents
