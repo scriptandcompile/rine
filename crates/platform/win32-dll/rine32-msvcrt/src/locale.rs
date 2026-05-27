@@ -1,4 +1,4 @@
-//! MSVCRT locale functions: `___lc_codepage_func`.
+//! MSVCRT locale functions: `___lc_codepage_func`, `___mb_cur_max_func`.
 
 use rine_common_msvcrt as common;
 
@@ -21,7 +21,31 @@ use rine_common_msvcrt as common;
 /// This is a partial/stub implementation backed by a process-wide static value.
 /// Per-thread locale changes via `setlocale()` or `_configthreadlocale()` are
 /// not yet reflected.
-#[rine_dlls::implemented]
+#[rine_dlls::partial]
 pub unsafe extern "C" fn ___lc_codepage_func() -> *mut u32 {
     common::___lc_codepage_func()
+}
+
+/// Returns the maximum number of bytes in a multibyte character for the current locale.
+///
+/// # Arguments
+/// None.
+///
+/// # Returns
+/// The maximum byte length of a multibyte character:
+/// - `1` for single-byte code pages (e.g., 1252, 437)
+/// - `2` for DBCS code pages (e.g., 932 Shift-JIS, 936 GBK, 949 Korean, 950 Big5, 1361 Johab)
+/// - `4` for UTF-8 (65001)
+///
+/// # Safety
+/// This function reads the current locale's code page from a process-wide static
+/// value. The underlying pointer is valid for the lifetime of the process.
+///
+/// # Notes
+/// This is a partial/stub implementation backed by a process-wide static value.
+/// Per-thread locale changes via `setlocale()` or `_configthreadlocale()` are
+/// not yet reflected.
+#[rine_dlls::partial]
+pub unsafe extern "C" fn ___mb_cur_max_func() -> i32 {
+    common::___mb_cur_max_func()
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-27T17:30:32.336965+00:00",
+  "generatedAt": "2026-05-27T18:35:39.614085+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2049,7 +2049,7 @@
     },
     {
       "name": "msvcrt.dll",
-      "functionCount": 39,
+      "functionCount": 40,
       "functions": [
         {
           "name": "__C_specific_handler",
@@ -2067,13 +2067,26 @@
         {
           "name": "___lc_codepage_func",
           "x64": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "locale::___lc_codepage_func",
             "source": "msvcrt - locale.rs"
           },
           "x86": {
-            "status": "implemented",
+            "status": "partial",
             "symbol": "locale::___lc_codepage_func",
+            "source": "msvcrt - locale.rs"
+          }
+        },
+        {
+          "name": "___mb_cur_max_func",
+          "x64": {
+            "status": "partial",
+            "symbol": "locale::___mb_cur_max_func",
+            "source": "msvcrt - locale.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "locale::___mb_cur_max_func",
             "source": "msvcrt - locale.rs"
           }
         },
@@ -3919,16 +3932,16 @@
     }
   ],
   "totals": {
-    "functions": 297,
+    "functions": 298,
     "x64": {
-      "implemented": 105,
-      "partial": 153,
+      "implemented": 104,
+      "partial": 155,
       "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 105,
-      "partial": 153,
+      "implemented": 104,
+      "partial": 155,
       "stubbed": 39,
       "unimplemented": 0
     }
