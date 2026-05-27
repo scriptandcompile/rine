@@ -851,6 +851,7 @@ checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 name = "dbcs"
 version = "0.1.4"
 dependencies = [
+ "registry-runtime",
  "registry-utils",
  "rine-types",
 ]
@@ -3562,9 +3563,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
+name = "registry-runtime"
+version = "0.1.4"
+dependencies = [
+ "rine-types",
+ "serde",
+ "serde_json",
+ "serial_test",
+]
+
+[[package]]
 name = "registry-utils"
 version = "0.1.4"
 dependencies = [
+ "registry-runtime",
  "rine-types",
 ]
 
@@ -3665,6 +3677,7 @@ dependencies = [
  "libc",
  "memmap2 0.9.10",
  "nix 0.31.3",
+ "registry-runtime",
  "rine-channel",
  "rine-common-kernel32",
  "rine-dev-bridge",
@@ -3693,6 +3706,7 @@ dependencies = [
 name = "rine-common-advapi32"
 version = "0.1.4"
 dependencies = [
+ "registry-runtime",
  "rine-types",
  "tracing",
 ]
@@ -3765,6 +3779,7 @@ version = "0.1.4"
 dependencies = [
  "dbcs",
  "goblin",
+ "registry-runtime",
  "rfd",
  "rine-channel",
  "rine-types",
@@ -3787,6 +3802,7 @@ dependencies = [
 name = "rine-config"
 version = "0.1.4"
 dependencies = [
+ "registry-runtime",
  "rfd",
  "rine-frontend-common",
  "rine-types",
@@ -3889,7 +3905,6 @@ dependencies = [
  "environment-runtime",
  "libc",
  "serde",
- "serde_json",
  "serial_test",
  "text",
  "thiserror 2.0.18",
@@ -3904,6 +3919,7 @@ dependencies = [
  "clap",
  "goblin",
  "libc",
+ "registry-runtime",
  "rine-channel",
  "rine-common-kernel32",
  "rine-dev-bridge",

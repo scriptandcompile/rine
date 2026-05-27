@@ -29,6 +29,7 @@ members = [
     "crates/platform/win-common/rine-common-shell32",
     "crates/platform/win-common/rine-common-gdi32",
     "crates/platform/win-common/shared/dbcs",
+    "crates/platform/win-common/shared/registry-runtime",
     "crates/platform/win-common/shared/registry-utils",
     "crates/platform/win-common/shared/text",
     "crates/platform/win-common/shared/environment-runtime",
@@ -98,6 +99,7 @@ rine-common-comdlg32 = { path = "crates/platform/win-common/rine-common-comdlg32
 rine-common-shell32 = { path = "crates/platform/win-common/rine-common-shell32" }
 rine-common-gdi32 = { path = "crates/platform/win-common/rine-common-gdi32" }
 dbcs = { path = "crates/platform/win-common/shared/dbcs" }
+registry-runtime = { path = "crates/platform/win-common/shared/registry-runtime" }
 registry-utils = { path = "crates/platform/win-common/shared/registry-utils" }
 text = { path = "crates/platform/win-common/shared/text" }
 environment-runtime = { path = "crates/platform/win-common/shared/environment-runtime" }

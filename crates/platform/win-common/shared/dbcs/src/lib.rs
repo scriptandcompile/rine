@@ -1,5 +1,6 @@
+use registry_runtime::registry_store;
 use registry_utils::parse_u32_from_string_or_dword;
-use rine_types::registry::{HKEY_LOCAL_MACHINE, registry_store};
+use rine_types::registry::HKEY_LOCAL_MACHINE;
 
 pub const CP_ACP: u32 = 0;
 pub const CP_OEMCP: u32 = 1;

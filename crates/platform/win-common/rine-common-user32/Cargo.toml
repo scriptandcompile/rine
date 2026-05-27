@@ -9,6 +9,7 @@ description = "Shared architecture-neutral user32 logic for rine"
 rine-channel = { workspace = true }
 dbcs = { workspace = true }
 text = { workspace = true }
+registry-runtime = { workspace = true }
 rine-types = { workspace = true }
 winit = { workspace = true }
 tracing = { workspace = true }

@@ -1,5 +1,8 @@
 use crate::file_kind::{is_config_toml_path, is_exe_path};
 use crate::registry_ui;
+use registry_runtime::{
+    init_registry_for_app, registry_store, reinit_registry_for_app, save_registry_for_app,
+};
 use rine_config_lib::{self as lib, AppConfig, VersionOption, WindowsVersion};
 use rine_types::registry::RegistryValue;
 use serde::{Deserialize, Serialize};
@@ -38,7 +41,7 @@ pub fn open_config_target(path: String) -> Result<OpenedConfig, String> {
             .into_owned();
 
         // Initialize the registry for this exe and version (creates defaults if needed).
-        rine_types::registry::init_registry_for_app(&input, cfg.windows_version);
+        init_registry_for_app(&input, cfg.windows_version);
 
         return Ok(OpenedConfig {
             exe_path: Some(exe_path),
@@ -197,7 +200,7 @@ pub fn get_registry_export(
     let version = resolve_registry_windows_version(exe_path, windows_version)?;
 
     // Ensure the process-wide registry reflects the selected Windows version.
-    rine_types::registry::reinit_registry_for_app(exe_path, version);
+    reinit_registry_for_app(exe_path, version);
 
     let export = registry_ui::get_registry_export_for_ui();
     serde_json::to_value(&export).map_err(|e| format!("Failed to serialize registry: {e}"))
@@ -214,7 +217,7 @@ pub fn get_registry_key(
     let version = resolve_registry_windows_version(exe_path, windows_version)?;
 
     // Ensure the process-wide registry reflects the selected Windows version.
-    rine_types::registry::reinit_registry_for_app(exe_path, version);
+    reinit_registry_for_app(exe_path, version);
 
     let key = registry_ui::get_registry_key_for_ui(&key_path)
         .ok_or_else(|| format!("Registry key not found: {key_path}"))?;
@@ -245,7 +248,7 @@ pub fn update_registry_value(
     let version = resolve_registry_windows_version(exe_path, windows_version)?;
 
     // Ensure the process-wide registry reflects the selected Windows version.
-    rine_types::registry::reinit_registry_for_app(exe_path, version);
+    reinit_registry_for_app(exe_path, version);
 
     // Prevent modification of locked values.
     if registry_ui::is_locked_registry_value(&key_path, &value_name) {
@@ -258,7 +261,7 @@ pub fn update_registry_value(
     let (root_hkey, _root_name, subpath) = registry_ui::parse_registry_ui_path(&key_path)
         .ok_or_else(|| format!("Invalid registry key path: {key_path}"))?;
 
-    let existing_value = rine_types::registry::registry_store()
+    let existing_value = registry_store()
         .with_root(root_hkey, |root| {
             let key = if subpath.is_empty() {
                 Some(root)
@@ -271,7 +274,7 @@ pub fn update_registry_value(
 
     let parsed_value = parse_registry_value(existing_value.as_ref(), &new_value)?;
 
-    let updated = rine_types::registry::registry_store().with_root_mut(root_hkey, |root| {
+    let updated = registry_store().with_root_mut(root_hkey, |root| {
         let key = if subpath.is_empty() {
             root
         } else {
@@ -284,7 +287,7 @@ pub fn update_registry_value(
         return Err(format!("Unsupported registry root in path: {key_path}"));
     }
 
-    rine_types::registry::save_registry_for_app(exe_path, version).map(|_| ())
+    save_registry_for_app(exe_path, version).map(|_| ())
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]

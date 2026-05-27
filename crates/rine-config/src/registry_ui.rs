@@ -1,9 +1,10 @@
 use serde::Serialize;
 use std::collections::BTreeMap;
 
+use registry_runtime::registry_store;
 use rine_types::registry::{
-    self, HKEY_CLASSES_ROOT, HKEY_CURRENT_CONFIG, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE,
-    HKEY_USERS, RegistryKey, RegistryValue,
+    HKEY_CLASSES_ROOT, HKEY_CURRENT_CONFIG, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS,
+    RegistryKey, RegistryValue,
 };
 
 /// A registry value formatted for UI display.
@@ -42,7 +43,7 @@ pub struct RegistryExportUI {
 
 /// Get the registry export for UI display.
 pub fn get_registry_export_for_ui() -> RegistryExportUI {
-    let store = registry::registry_store();
+    let store = registry_store();
     let locked_paths = get_locked_registry_paths();
 
     let mut roots = BTreeMap::new();
@@ -82,7 +83,7 @@ pub fn get_registry_export_for_ui() -> RegistryExportUI {
 /// Get a single registry key snapshot for UI display by full key path.
 pub fn get_registry_key_for_ui(path: &str) -> Option<RegistryKeyUI> {
     let (root_hkey, root_name, subpath) = parse_registry_ui_path(path)?;
-    let store = registry::registry_store();
+    let store = registry_store();
 
     store.with_root(root_hkey, |root| {
         if subpath.is_empty() {

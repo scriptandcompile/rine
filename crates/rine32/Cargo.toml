@@ -16,5 +16,6 @@ rine-dlls = { workspace = true }
 rine-channel = { workspace = true }
 rine-dev-bridge = { workspace = true }
 rine-common-kernel32 = { workspace = true }
+registry-runtime = { workspace = true }
 rine-types = { workspace = true, features = ["config"] }
 rine-runtime-core = { workspace = true }

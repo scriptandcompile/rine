@@ -11,6 +11,7 @@ dev = ["dep:rine-dev-bridge"]
 
 [dependencies]
 rine-dlls = { workspace = true }
+registry-runtime = { workspace = true }
 rine-types = { workspace = true, features = ["config"] }
 rine-channel = { workspace = true }
 rine-common-kernel32 = { workspace = true }

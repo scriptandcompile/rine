@@ -6,5 +6,6 @@ license.workspace = true
 description = "Shared architecture-neutral advapi32 logic for rine"
 
 [dependencies]
+registry-runtime = { workspace = true }
 rine-types = { workspace = true }
 tracing = { workspace = true }

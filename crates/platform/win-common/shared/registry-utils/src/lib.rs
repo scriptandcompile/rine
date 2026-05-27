@@ -1,4 +1,5 @@
-use rine_types::registry::{RegistryValue, registry_store};
+use registry_runtime::registry_store;
+use rine_types::registry::RegistryValue;
 
 /// Read a registry value as either `REG_SZ` or `REG_EXPAND_SZ`.
 ///
@@ -55,7 +56,8 @@ mod tests {
         delete_value_case_insensitive, parse_u32_from_string_or_dword, read_string_or_expand,
         set_string_value,
     };
-    use rine_types::registry::{HKEY_CURRENT_USER, RegistryValue, registry_store};
+    use registry_runtime::registry_store;
+    use rine_types::registry::{HKEY_CURRENT_USER, RegistryValue};
 
     #[test]
     fn parse_u32_handles_string_and_dword() {

@@ -6,4 +6,5 @@ license.workspace = true
 description = "Shared registry value/query helpers for rine"
 
 [dependencies]
+registry-runtime = { workspace = true }
 rine-types = { workspace = true }

@@ -1,0 +1,14 @@
+[package]
+name = "registry-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared Windows registry runtime and persistence for rine"
+
+[dependencies]
+rine-types = { workspace = true, features = ["config"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+serial_test = { workspace = true }

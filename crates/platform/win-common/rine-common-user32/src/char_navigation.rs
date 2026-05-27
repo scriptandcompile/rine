@@ -2,7 +2,8 @@
 
 use std::sync::OnceLock;
 
-use rine_types::registry::{HKEY_LOCAL_MACHINE, RegistryValue, registry_store};
+use registry_runtime::registry_store;
+use rine_types::registry::{HKEY_LOCAL_MACHINE, RegistryValue};
 use rine_types::strings::LPCSTR;
 
 const DEFAULT_ANSI_CODE_PAGE: u32 = 1252;

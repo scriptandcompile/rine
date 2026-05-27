@@ -6,5 +6,6 @@ license.workspace = true
 description = "Shared DBCS code page helpers for rine"
 
 [dependencies]
+registry-runtime = { workspace = true }
 rine-types = { workspace = true }
 registry-utils = { workspace = true }

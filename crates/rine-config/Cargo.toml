@@ -18,6 +18,7 @@ rine-frontend-common = { workspace = true }
 tauri-build = { workspace = true }
 
 [dependencies]
+registry-runtime = { workspace = true }
 rine-types = { workspace = true, features = ["config"] }
 rfd = { workspace = true }
 serde = { workspace = true }

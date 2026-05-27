@@ -1,13 +1,12 @@
 //! advapi32 registry functions: RegOpenKeyExA/W, RegQueryValueExA/W,
 //! RegSetValueExA/W, RegCreateKeyExA/W, RegCloseKey.
 
+use registry_runtime::registry_store;
 use rine_types::errors::{
     ERROR_FILE_NOT_FOUND, ERROR_INVALID_HANDLE, ERROR_INVALID_PARAMETER, ERROR_SUCCESS,
 };
 use rine_types::handles::{HANDLE, HandleEntry, handle_table};
-use rine_types::registry::{
-    self, RegistryKeyState, RegistryValue, is_predefined_key, registry_store,
-};
+use rine_types::registry::{self, RegistryKeyState, RegistryValue, is_predefined_key};
 
 const ERROR_MORE_DATA: u32 = 234;
 
