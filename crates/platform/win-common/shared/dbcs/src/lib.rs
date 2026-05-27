@@ -1,4 +1,5 @@
-use rine_types::registry::{HKEY_LOCAL_MACHINE, RegistryValue, registry_store};
+use registry_utils::parse_u32_from_string_or_dword;
+use rine_types::registry::{HKEY_LOCAL_MACHINE, registry_store};
 
 pub const CP_ACP: u32 = 0;
 pub const CP_OEMCP: u32 = 1;
@@ -73,11 +74,7 @@ fn resolve_registry_code_page(value_name: &str) -> Option<u32> {
         .with_root(HKEY_LOCAL_MACHINE, |root| {
             root.open_subkey(ANSI_CODE_PAGE_REG_PATH)
                 .and_then(|code_page| code_page.get_value(value_name))
-                .and_then(|value| match value {
-                    RegistryValue::String(s) | RegistryValue::ExpandString(s) => s.parse().ok(),
-                    RegistryValue::Dword(v) => Some(*v),
-                    _ => None,
-                })
+                .and_then(parse_u32_from_string_or_dword)
         })
         .flatten()
 }

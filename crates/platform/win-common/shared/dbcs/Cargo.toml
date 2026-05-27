@@ -7,3 +7,4 @@ description = "Shared DBCS code page helpers for rine"
 
 [dependencies]
 rine-types = { workspace = true }
+registry-utils = { workspace = true }

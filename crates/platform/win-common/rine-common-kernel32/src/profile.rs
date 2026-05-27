@@ -7,9 +7,10 @@
 //! for `win.ini` through the same registry path; all other file names are
 //! serviced by real file I/O after translating the Windows path to a Linux one.
 
+use registry_utils::{delete_value_case_insensitive, read_string_or_expand, set_string_value};
 use rine_types::{
     errors::BOOL,
-    registry::{HKEY_CURRENT_USER, RegistryValue, registry_store, win_ini_section_to_reg_path},
+    registry::{HKEY_CURRENT_USER, win_ini_section_to_reg_path},
     strings::{LPSTR, LPWSTR},
 };
 use text::{write_ansi_truncating_nul, write_wide_truncating_nul};
@@ -20,31 +21,15 @@ use tracing::debug;
 // ---------------------------------------------------------------------------
 
 fn registry_query_string(reg_path: &str, key: &str) -> Option<String> {
-    registry_store()
-        .with_root(HKEY_CURRENT_USER, |root| {
-            root.open_subkey(reg_path)
-                .and_then(|k| k.get_value(key))
-                .and_then(|v| match v {
-                    RegistryValue::String(s) | RegistryValue::ExpandString(s) => Some(s.clone()),
-                    _ => None,
-                })
-        })
-        .flatten()
+    read_string_or_expand(HKEY_CURRENT_USER, reg_path, key)
 }
 
 fn registry_set_string(reg_path: &str, key: &str, value: &str) {
-    registry_store().with_root_mut(HKEY_CURRENT_USER, |root| {
-        root.create_subkey(reg_path)
-            .set_value(key.to_string(), RegistryValue::String(value.to_string()));
-    });
+    set_string_value(HKEY_CURRENT_USER, reg_path, key, value);
 }
 
 fn registry_delete_value(reg_path: &str, key: &str) {
-    let lower = key.to_ascii_lowercase();
-    registry_store().with_root_mut(HKEY_CURRENT_USER, |root| {
-        let subkey = root.create_subkey(reg_path);
-        subkey.values.retain(|k, _| k.to_ascii_lowercase() != lower);
-    });
+    delete_value_case_insensitive(HKEY_CURRENT_USER, reg_path, key);
 }
 
 // ---------------------------------------------------------------------------

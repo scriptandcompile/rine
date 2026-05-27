@@ -7,6 +7,7 @@ description = "Shared architecture-neutral kernel32 logic for rine"
 
 [dependencies]
 dbcs = { workspace = true }
+registry-utils = { workspace = true }
 text = { workspace = true }
 rine-types = { workspace = true }
 libc = { workspace = true }

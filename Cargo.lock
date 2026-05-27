@@ -851,6 +851,7 @@ checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 name = "dbcs"
 version = "0.1.4"
 dependencies = [
+ "registry-utils",
  "rine-types",
 ]
 
@@ -3557,6 +3558,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
+name = "registry-utils"
+version = "0.1.4"
+dependencies = [
+ "rine-types",
+]
+
+[[package]]
 name = "reqwest"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3708,6 +3716,7 @@ dependencies = [
  "chrono",
  "dbcs",
  "libc",
+ "registry-utils",
  "rine-types",
  "text",
  "tracing",
