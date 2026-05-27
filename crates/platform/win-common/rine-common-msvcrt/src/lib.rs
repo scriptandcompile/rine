@@ -11,7 +11,7 @@ mod stdlib;
 mod string;
 
 pub use allocation::AllocationTracker;
-pub use args::{MainArgs, cached_main_args};
+pub use args::{MainArgs, MainArgsW, cached_main_args, cached_wide_main_args};
 pub use crt_support::{
     _amsg_exit, abort_process, c_specific_handler_result, errno_location, fake_iob_32_ptr,
     fake_iob_64_ptr, lock, onexit, set_app_type, set_user_math_err, signal, unlock,

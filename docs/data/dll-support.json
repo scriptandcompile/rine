@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-27T18:35:39.614085+00:00",
+  "generatedAt": "2026-05-27T19:49:02.921376+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2049,7 +2049,7 @@
     },
     {
       "name": "msvcrt.dll",
-      "functionCount": 40,
+      "functionCount": 41,
       "functions": [
         {
           "name": "__C_specific_handler",
@@ -2192,6 +2192,19 @@
             "status": "implemented",
             "symbol": "crt_support::__setusermatherr",
             "source": "msvcrt - crt_support.rs"
+          }
+        },
+        {
+          "name": "__wgetmainargs",
+          "x64": {
+            "status": "partial",
+            "symbol": "crt_init::__wgetmainargs",
+            "source": "msvcrt - crt_init.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "crt_init::__wgetmainargs",
+            "source": "msvcrt - crt_init.rs"
           }
         },
         {
@@ -3932,16 +3945,16 @@
     }
   ],
   "totals": {
-    "functions": 298,
+    "functions": 299,
     "x64": {
       "implemented": 104,
-      "partial": 155,
+      "partial": 156,
       "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
-      "partial": 155,
+      "partial": 156,
       "stubbed": 39,
       "unimplemented": 0
     }
