@@ -1,4 +1,5 @@
 use rine_common_kernel32::strings as common;
+use rine_types::errors::BOOL;
 use rine_types::strings::{LPCSTR, LPSTR};
 
 /// A safe wrapper around `strlen` that returns 0 for null pointers, matching the behavior of `lstrlenA` in the Windows API.
@@ -139,4 +140,27 @@ pub unsafe extern "stdcall" fn lstrcpynA(
     imaxlength: u32,
 ) -> LPSTR {
     common::lstrcpyna(llpstring1, lpstring2, imaxlength)
+}
+
+/// Determine whether a byte is a lead byte in the specified code page.
+///
+/// # Arguments
+/// * `code_page` - The code page identifier to query.
+/// * `test_char` - The byte value to test.
+///
+/// # Safety
+/// This function does not dereference caller-provided pointers.
+///
+/// # Returns
+/// `BOOL::TRUE` when `test_char` is a lead byte for `code_page`; otherwise
+/// `BOOL::FALSE`.
+///
+/// # Notes
+/// This currently forwards to a partial table-based implementation in the
+/// common kernel32 layer and does not expose full CPINFO parity.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn IsDBCSLeadByteEx(code_page: u32, test_char: u8) -> BOOL {
+    common::is_dbcs_lead_byte_ex(code_page, test_char)
 }

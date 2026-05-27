@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-27T00:10:09.803381+00:00",
+  "generatedAt": "2026-05-27T04:47:16.280389+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -431,7 +431,7 @@
     },
     {
       "name": "kernel32.dll",
-      "functionCount": 122,
+      "functionCount": 123,
       "functions": [
         {
           "name": "CloseHandle",
@@ -1380,6 +1380,19 @@
             "status": "partial",
             "symbol": "sync::InitializeCriticalSectionAndSpinCount",
             "source": "kernel32 - sync.rs"
+          }
+        },
+        {
+          "name": "IsDBCSLeadByteEx",
+          "x64": {
+            "status": "partial",
+            "symbol": "strings::IsDBCSLeadByteEx",
+            "source": "kernel32 - strings.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "strings::IsDBCSLeadByteEx",
+            "source": "kernel32 - strings.rs"
           }
         },
         {
@@ -3867,16 +3880,16 @@
     }
   ],
   "totals": {
-    "functions": 293,
+    "functions": 294,
     "x64": {
       "implemented": 103,
-      "partial": 151,
+      "partial": 152,
       "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 104,
-      "partial": 150,
+      "partial": 151,
       "stubbed": 39,
       "unimplemented": 0
     }

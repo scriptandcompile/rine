@@ -6,6 +6,7 @@ license.workspace = true
 description = "Shared architecture-neutral kernel32 logic for rine"
 
 [dependencies]
+dbcs = { workspace = true }
 rine-types = { workspace = true }
 libc = { workspace = true }
 tracing = { workspace = true }

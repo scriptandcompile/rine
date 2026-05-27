@@ -848,6 +848,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 
 [[package]]
+name = "dbcs"
+version = "0.1.4"
+dependencies = [
+ "rine-types",
+]
+
+[[package]]
 name = "dbus"
 version = "0.9.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3699,6 +3706,7 @@ name = "rine-common-kernel32"
 version = "0.1.4"
 dependencies = [
  "chrono",
+ "dbcs",
  "libc",
  "rine-types",
  "tracing",
@@ -3736,6 +3744,7 @@ dependencies = [
 name = "rine-common-user32"
 version = "0.1.4"
 dependencies = [
+ "dbcs",
  "goblin",
  "rfd",
  "rine-channel",

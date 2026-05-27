@@ -65,7 +65,7 @@ unsafe fn char_next_a_with_acp(current: *const u8, acp: u32) -> *const u8 {
         return current;
     }
 
-    if is_dbcs_lead_byte(acp, byte) {
+    if dbcs::is_dbcs_lead_byte_for_code_page(acp, byte) {
         let next = unsafe { *current.add(1) };
         if next != 0 {
             return unsafe { current.add(2) };
@@ -108,23 +108,6 @@ unsafe fn char_prev_a_with_acp(start: *const u8, current: *const u8, acp: u32) -
 
     previous_boundary
 }
-
-fn is_dbcs_lead_byte(acp: u32, byte: u8) -> bool {
-    match acp {
-        // Shift-JIS
-        932 => (0x81..=0x9F).contains(&byte) || (0xE0..=0xFC).contains(&byte),
-        // GBK
-        936 => (0x81..=0xFE).contains(&byte),
-        // Korean
-        949 => (0x81..=0xFE).contains(&byte),
-        // Big5
-        950 => (0x81..=0xFE).contains(&byte),
-        // Johab
-        1361 => (0x84..=0xD3).contains(&byte) || (0xD8..=0xDE).contains(&byte),
-        _ => false,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

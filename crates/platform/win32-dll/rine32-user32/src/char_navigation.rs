@@ -16,9 +16,9 @@ use rine_types::strings::LPCSTR;
 ///
 /// # Notes
 /// This call externally depends on DBCS ANSI code pages (ACPs). The current
-/// implementation does not use a fully implemented CPINFO path and instead
-/// relies on partial lead-byte range tables. Full compatibility depends on a
-/// complete `IsDBCSLeadByte` implementation rather than the partial table path.
+/// implementation routes lead-byte classification through the shared common
+/// DBCS helper used by both user32 and `kernel32!IsDBCSLeadByteEx`.
+/// Full compatibility still depends on a complete CPINFO-backed path.
 #[rine_dlls::implemented]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
@@ -42,9 +42,9 @@ pub unsafe extern "stdcall" fn CharNextA(current: LPCSTR) -> LPCSTR {
 ///
 /// # Notes
 /// This call externally depends on DBCS ANSI code pages (ACPs). The current
-/// implementation does not use a fully implemented CPINFO path and instead
-/// relies on partial lead-byte range tables. Full compatibility depends on a
-/// complete `IsDBCSLeadByte` implementation rather than the partial table path.
+/// implementation routes lead-byte classification through the shared common
+/// DBCS helper used by both user32 and `kernel32!IsDBCSLeadByteEx`.
+/// Full compatibility still depends on a complete CPINFO-backed path.
 ///
 /// The implementation chooses correctness over speed by scanning forward from
 /// `start` to recover the previous boundary (O(n)). A backward heuristic may be

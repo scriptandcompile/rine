@@ -1,0 +1,9 @@
+[package]
+name = "dbcs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared DBCS code page helpers for rine"
+
+[dependencies]
+rine-types = { workspace = true }

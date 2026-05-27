@@ -1,3 +1,4 @@
+use rine_types::errors::BOOL;
 use rine_types::strings::{LPCSTR, LPSTR};
 
 use core::ffi::c_char;
@@ -198,6 +199,33 @@ pub fn lstrcpyna(llpstring1: LPSTR, lpstring2: LPCSTR, imaxlength: u32) -> LPSTR
     llpstring1
 }
 
+/// Determine whether a byte is a DBCS lead byte for the given code page.
+///
+/// # Arguments
+/// * `code_page` - The code page identifier to query.
+///   `CP_ACP` and `CP_THREAD_ACP` are resolved from the registry ANSI code page.
+///   `CP_OEMCP` is resolved from the registry OEM code page.
+/// * `test_char` - The byte value to test.
+///
+/// # Safety
+/// This function does not dereference pointers or access caller-provided memory.
+///
+/// # Returns
+/// `BOOL::TRUE` when `test_char` is a lead byte for the resolved code page;
+/// otherwise `BOOL::FALSE`.
+///
+/// # Notes
+/// This is a partial implementation that currently uses a small table of known
+/// DBCS code pages and lead-byte ranges.
+///
+/// Unfinished behavior:
+/// - It does not query OS `CPINFO`/`CPINFOEX` data, so code pages outside the
+///   built-in table always return `FALSE`.
+/// - It does not set thread last-error for unsupported or invalid code pages.
+pub fn is_dbcs_lead_byte_ex(code_page: u32, test_char: u8) -> BOOL {
+    BOOL::from(dbcs::is_dbcs_lead_byte_ex(code_page, test_char))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -255,6 +283,36 @@ mod tests {
     #[test]
     fn lstrcmpa_both_null() {
         assert_eq!(lstrcmpa(LPCSTR::NULL, LPCSTR::NULL), 0);
+    }
+
+    #[test]
+    fn is_dbcs_lead_byte_ex_shift_jis_lead_returns_true() {
+        assert!(is_dbcs_lead_byte_ex(932, 0x81).is_true());
+    }
+
+    #[test]
+    fn is_dbcs_lead_byte_ex_shift_jis_trailing_returns_false() {
+        assert!(is_dbcs_lead_byte_ex(932, 0x40).is_false());
+    }
+
+    #[test]
+    fn is_dbcs_lead_byte_ex_single_byte_code_page_returns_false() {
+        assert!(is_dbcs_lead_byte_ex(1252, 0x81).is_false());
+    }
+
+    #[test]
+    fn is_dbcs_lead_byte_ex_utf8_returns_false() {
+        assert!(is_dbcs_lead_byte_ex(65001, 0xE2).is_false());
+    }
+
+    #[test]
+    fn is_dbcs_lead_byte_ex_acp_defaults_to_non_dbcs() {
+        assert!(is_dbcs_lead_byte_ex(dbcs::CP_ACP, 0x81).is_false());
+    }
+
+    #[test]
+    fn is_dbcs_lead_byte_ex_thread_acp_defaults_to_non_dbcs() {
+        assert!(is_dbcs_lead_byte_ex(dbcs::CP_THREAD_ACP, 0x81).is_false());
     }
 
     #[test]
