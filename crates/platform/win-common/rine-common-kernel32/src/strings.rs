@@ -1,8 +1,21 @@
 use rine_types::errors::BOOL;
-use rine_types::strings::{LPCSTR, LPSTR};
+use rine_types::strings::{LPCSTR, LPSTR, LPWSTR};
 
 use core::ffi::c_char;
 use libc::strlen;
+
+// ── Code-page constants ──────────────────────────────────────────
+const CP_UTF8: u32 = 65001;
+
+// ── MultiByteToWideChar flag constants ───────────────────────────
+const MB_PRECOMPOSED: u32 = 0x0001;
+const MB_COMPOSITE: u32 = 0x0002;
+const MB_USEGLYPHCHARS: u32 = 0x0004;
+const MB_ERR_INVALID_CHARS: u32 = 0x0008;
+
+// ── Error codes not yet defined in rine-types ────────────────────
+const ERROR_INSUFFICIENT_BUFFER: u32 = 122;
+const ERROR_NO_UNICODE_TRANSLATION: u32 = 1113;
 
 /// A safe wrapper around `strlen` that returns 0 for null pointers, matching the behavior of `lstrlenA` in the Windows API.
 ///
@@ -224,6 +237,204 @@ pub fn lstrcpyna(llpstring1: LPSTR, lpstring2: LPCSTR, imaxlength: u32) -> LPSTR
 /// - It does not set thread last-error for unsupported or invalid code pages.
 pub fn is_dbcs_lead_byte_ex(code_page: u32, test_char: u8) -> BOOL {
     BOOL::from(dbcs::is_dbcs_lead_byte_ex(code_page, test_char))
+}
+
+// ── Internal helpers ─────────────────────────────────────────────
+
+/// Decode UTF-8 bytes to UTF-16 code units.
+///
+/// When `err_on_invalid` is `false` the conversion is lossy (invalid
+/// sequences are replaced with U+FFFD).  When `true` the function
+/// fails on the first invalid byte sequence.
+fn convert_utf8_to_utf16(bytes: &[u8], err_on_invalid: bool) -> (Vec<u16>, bool) {
+    if err_on_invalid {
+        match core::str::from_utf8(bytes) {
+            Ok(s) => (s.encode_utf16().collect(), false),
+            Err(_) => (Vec::new(), true),
+        }
+    } else {
+        (
+            String::from_utf8_lossy(bytes).encode_utf16().collect(),
+            false,
+        )
+    }
+}
+
+/// Convert an ANSI / OEM / DBCS byte slice to UTF-16.
+///
+/// # Notes
+/// This is a **stub** implementation.  For code pages other than
+/// CP_UTF8 each byte is mapped directly to a `u16` with the same
+/// numeric value (i.e. ISO-8859-1 / Latin‑1 semantics).  This is
+/// correct for ASCII (0x00‑0x7F) but incorrect for:
+///
+/// * Windows‑1252 mappings in the 0x80‑0x9F range,
+/// * OEM code page glyphs,
+/// * DBCS / Shift‑JIS / Big5 multi‑byte sequences.
+fn convert_code_page_to_utf16(
+    bytes: &[u8],
+    _code_page: u32,
+    _err_on_invalid: bool,
+) -> (Vec<u16>, bool) {
+    let utf16: Vec<u16> = bytes.iter().map(|&b| b as u16).collect();
+    (utf16, false)
+}
+
+// ── MultiByteToWideChar ──────────────────────────────────────────
+
+/// Convert a multi-byte (ANSI) string to its UTF-16LE (wide)
+/// representation, implementing the Windows
+/// [`MultiByteToWideChar`](https://learn.microsoft.com/en-us/windows/win32/api/stringapiset/nf-stringapiset-multibytetowidechar)
+/// function.
+///
+/// # Arguments
+/// * `code_page` - Code page used to interpret the source bytes.
+///   `CP_ACP` (0), `CP_OEMCP` (1) and `CP_THREAD_ACP` (3) are
+///   resolved from the emulated registry with Windows-default
+///   fallbacks.
+/// * `dw_flags` - A bitwise combination of `MB_PRECOMPOSED` (0x01),
+///   `MB_COMPOSITE` (0x02), `MB_USEGLYPHCHARS` (0x04) and
+///   `MB_ERR_INVALID_CHARS` (0x08).  Unrecognised flag bits cause
+///   the function to fail with `ERROR_INVALID_FLAGS`.
+/// * `lp_multi_byte_str` - Pointer to the source multi-byte string.
+/// * `cb_multi_byte` - Size of the source buffer in bytes, or `-1`
+///   if the source is null-terminated.
+/// * `lp_wide_char_str` - Pointer to the destination wide-character
+///   buffer.  May be `NULL` when `cch_wide_char` is `0` (query
+///   size mode).
+/// * `cch_wide_char` - Size of the destination buffer in wide
+///   characters (`u16` units).  Pass `0` to query the required
+///   buffer size without writing.
+///
+/// # Safety
+/// * `lp_multi_byte_str` must be non-null and point to a readable
+///   buffer of at least `cb_multi_byte` bytes (or a valid
+///   null-terminated byte string when `cb_multi_byte == -1`).
+/// * When `cch_wide_char > 0`, `lp_wide_char_str` must be non-null
+///   and point to a writable buffer of at least `cch_wide_char`
+///   `u16` elements.  The buffer may overlap with the source buffer;
+///   this implementation copies through an intermediate `Vec` so it
+///   is safe even with overlapping buffers.
+///
+/// # Returns
+/// * On success: the number of wide characters written to
+///   `lp_wide_char_str`, **excluding** any terminating null
+///   character.
+/// * When `cch_wide_char == 0`: the required buffer size in wide
+///   characters (including the terminator when
+///   `cb_multi_byte == -1`).
+/// * On failure: `0`.  `SetLastError` is called with one of
+///   `ERROR_INVALID_PARAMETER`, `ERROR_INSUFFICIENT_BUFFER`,
+///   `ERROR_INVALID_FLAGS`, or `ERROR_NO_UNICODE_TRANSLATION`.
+///
+/// # Notes
+/// **Partial implementation.**
+///
+/// Fully supported:
+/// * `CP_UTF8` (65001) — correct UTF-8 → UTF-16 conversion with
+///   `MB_ERR_INVALID_CHARS` error detection.
+///
+/// Stub behaviour for all other code pages:
+/// * Each byte is cast directly to a `u16` (Latin‑1 / ISO-8859-1
+///   semantics).  This is correct for plain ASCII (0x00‑0x7F) but
+///   wrong for Windows‑1252 0x80‑0x9F, OEM code page glyphs, and
+///   every DBCS / CJK multi-byte encoding.
+/// * `MB_ERR_INVALID_CHARS` has no effect for non-UTF-8 code pages.
+/// * `MB_PRECOMPOSED`, `MB_COMPOSITE` and `MB_USEGLYPHCHARS` are
+///   accepted but ignored; no Unicode normalisation is performed.
+pub unsafe fn multi_byte_to_wide_char(
+    code_page: u32,
+    dw_flags: u32,
+    lp_multi_byte_str: LPCSTR,
+    cb_multi_byte: i32,
+    lp_wide_char_str: LPWSTR,
+    cch_wide_char: i32,
+) -> i32 {
+    // ── Parameter validation ─────────────────────────────────────
+    if lp_multi_byte_str.is_null() {
+        crate::process::set_last_error(rine_types::errors::ERROR_INVALID_PARAMETER);
+        return 0;
+    }
+
+    if cb_multi_byte == 0 {
+        crate::process::set_last_error(rine_types::errors::ERROR_INVALID_PARAMETER);
+        return 0;
+    }
+
+    if cch_wide_char < 0 {
+        crate::process::set_last_error(rine_types::errors::ERROR_INVALID_PARAMETER);
+        return 0;
+    }
+
+    if cch_wide_char > 0 && lp_wide_char_str.is_null() {
+        crate::process::set_last_error(rine_types::errors::ERROR_INVALID_PARAMETER);
+        return 0;
+    }
+
+    // Reject unrecognised flag bits.
+    let known_flags: u32 = MB_PRECOMPOSED | MB_COMPOSITE | MB_USEGLYPHCHARS | MB_ERR_INVALID_CHARS;
+    if dw_flags & !known_flags != 0 {
+        crate::process::set_last_error(rine_types::errors::ERROR_INVALID_PARAMETER);
+        return 0;
+    }
+
+    // ── Resolve ACP / OEMCP aliases ──────────────────────────────
+    let resolved_cp = dbcs::resolve_code_page(code_page);
+
+    // ── Obtain the source byte slice ─────────────────────────────
+    let src_bytes: &[u8] = if cb_multi_byte == -1 {
+        let len = lstrlena(lp_multi_byte_str) as usize;
+        unsafe { core::slice::from_raw_parts(lp_multi_byte_str.as_ptr(), len) }
+    } else {
+        unsafe { core::slice::from_raw_parts(lp_multi_byte_str.as_ptr(), cb_multi_byte as usize) }
+    };
+
+    // ── Convert to UTF-16 ────────────────────────────────────────
+    let err_on_invalid = (dw_flags & MB_ERR_INVALID_CHARS) != 0;
+
+    let (wide_chars, had_errors) = if resolved_cp == CP_UTF8 {
+        convert_utf8_to_utf16(src_bytes, err_on_invalid)
+    } else {
+        convert_code_page_to_utf16(src_bytes, resolved_cp, err_on_invalid)
+    };
+
+    if had_errors && err_on_invalid {
+        crate::process::set_last_error(ERROR_NO_UNICODE_TRANSLATION);
+        return 0;
+    }
+
+    // ── Determine the required size ──────────────────────────────
+    // When cbMultiByte is -1 the null terminator counts toward the
+    // required buffer size.
+    let required = if cb_multi_byte == -1 {
+        wide_chars.len() as i32 + 1
+    } else {
+        wide_chars.len() as i32
+    };
+
+    // Query-size mode — just return what is needed.
+    if cch_wide_char == 0 {
+        return required;
+    }
+
+    if cch_wide_char < required {
+        crate::process::set_last_error(ERROR_INSUFFICIENT_BUFFER);
+        return 0;
+    }
+
+    // ── Write to the output buffer ───────────────────────────────
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            wide_chars.as_ptr(),
+            lp_wide_char_str.as_mut_ptr(),
+            wide_chars.len(),
+        );
+        if cb_multi_byte == -1 {
+            *lp_wide_char_str.as_mut_ptr().add(wide_chars.len()) = 0;
+        }
+    }
+
+    wide_chars.len() as i32
 }
 
 #[cfg(test)]
@@ -467,5 +678,155 @@ mod tests {
         let result = lstrcpyna(lp_dst, LPCSTR::NULL, 6);
         assert!(!result.is_null());
         assert_eq!(dst[0], 0);
+    }
+
+    // ── multi_byte_to_wide_char ─────────────────────────────────────
+
+    #[test]
+    fn multi_byte_to_wide_char_null_src_returns_zero() {
+        unsafe {
+            assert_eq!(
+                multi_byte_to_wide_char(65001, 0, LPCSTR::NULL, -1, LPWSTR::NULL, 0),
+                0
+            );
+        }
+    }
+
+    #[test]
+    fn multi_byte_to_wide_char_cb_multi_byte_zero_returns_zero() {
+        let bytes = b"hello\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        unsafe {
+            assert_eq!(
+                multi_byte_to_wide_char(65001, 0, lp_src, 0, LPWSTR::NULL, 0),
+                0
+            );
+        }
+    }
+
+    #[test]
+    fn multi_byte_to_wide_char_utf8_query_size() {
+        let bytes = b"hello\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        unsafe {
+            // Null-terminated: required includes terminator → 5 + 1 = 6
+            let needed = multi_byte_to_wide_char(65001, 0, lp_src, -1, LPWSTR::NULL, 0);
+            assert_eq!(needed, 6);
+        }
+    }
+
+    #[test]
+    fn multi_byte_to_wide_char_utf8_query_size_counted() {
+        let bytes = b"hello";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        unsafe {
+            // Explicit length (no auto-terminator) → 5
+            let needed = multi_byte_to_wide_char(65001, 0, lp_src, 5, LPWSTR::NULL, 0);
+            assert_eq!(needed, 5);
+        }
+    }
+
+    #[test]
+    fn multi_byte_to_wide_char_utf8_roundtrip() {
+        // "hello" followed by the UTF-8 encoding of U+2713 (✓)
+        let bytes = b"hello\xE2\x9C\x93\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        let mut wide_buf = [0u16; 16];
+        let lp_dst: LPWSTR = unsafe { std::mem::transmute(wide_buf.as_mut_ptr()) };
+        unsafe {
+            let written = multi_byte_to_wide_char(65001, 0, lp_src, -1, lp_dst, 16);
+            assert_eq!(written, 6); // "hello✓" → 6 UTF-16 code units
+            assert_eq!(
+                wide_buf[..7],
+                [
+                    'h' as u16, 'e' as u16, 'l' as u16, 'l' as u16, 'o' as u16, 0x2713, 0
+                ]
+            );
+        }
+    }
+
+    #[test]
+    fn multi_byte_to_wide_char_utf8_err_on_invalid_fails() {
+        // 0xFF is never valid UTF-8
+        let bytes = b"abc\xFF\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        unsafe {
+            let result =
+                multi_byte_to_wide_char(65001, MB_ERR_INVALID_CHARS, lp_src, -1, LPWSTR::NULL, 0);
+            assert_eq!(result, 0);
+        }
+    }
+
+    #[test]
+    fn multi_byte_to_wide_char_utf8_lossy_no_err_flag() {
+        // 0xFF is invalid, but without MB_ERR_INVALID_CHARS it should
+        // be replaced with U+FFFD.
+        let bytes = b"abc\xFF\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        let mut wide_buf = [0u16; 16];
+        let lp_dst: LPWSTR = unsafe { std::mem::transmute(wide_buf.as_mut_ptr()) };
+        unsafe {
+            let written = multi_byte_to_wide_char(65001, 0, lp_src, -1, lp_dst, 16);
+            assert_eq!(written, 4); // 'a', 'b', 'c', U+FFFD
+            assert_eq!(wide_buf[3], 0xFFFD);
+        }
+    }
+
+    #[test]
+    fn multi_byte_to_wide_char_insufficient_buffer() {
+        let bytes = b"hello\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        let mut wide_buf = [0u16; 2]; // too small
+        let lp_dst: LPWSTR = unsafe { std::mem::transmute(wide_buf.as_mut_ptr()) };
+        unsafe {
+            let result = multi_byte_to_wide_char(65001, 0, lp_src, -1, lp_dst, 2);
+            assert_eq!(result, 0);
+        }
+    }
+
+    #[test]
+    fn multi_byte_to_wide_char_unknown_flag_returns_zero() {
+        let bytes = b"hello\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        unsafe {
+            let result = multi_byte_to_wide_char(65001, 0x8000, lp_src, -1, LPWSTR::NULL, 0);
+            assert_eq!(result, 0);
+        }
+    }
+
+    #[test]
+    fn multi_byte_to_wide_char_ansi_pass_through() {
+        // ANSI code page: each byte maps to u16 with same value.
+        let bytes = b"hello\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        let mut wide_buf = [0u16; 16];
+        let lp_dst: LPWSTR = unsafe { std::mem::transmute(wide_buf.as_mut_ptr()) };
+        unsafe {
+            let written = multi_byte_to_wide_char(0, 0, lp_src, -1, lp_dst, 16);
+            assert_eq!(written, 5);
+            assert_eq!(
+                wide_buf[..6],
+                [
+                    b'h' as u16,
+                    b'e' as u16,
+                    b'l' as u16,
+                    b'l' as u16,
+                    b'o' as u16,
+                    0
+                ]
+            );
+        }
+    }
+
+    #[test]
+    fn multi_byte_to_wide_char_cch_wide_char_negative() {
+        let bytes = b"hello\0";
+        let lp_src: LPCSTR = unsafe { std::mem::transmute(bytes.as_ptr()) };
+        unsafe {
+            assert_eq!(
+                multi_byte_to_wide_char(65001, 0, lp_src, -1, LPWSTR::NULL, -1),
+                0
+            );
+        }
     }
 }

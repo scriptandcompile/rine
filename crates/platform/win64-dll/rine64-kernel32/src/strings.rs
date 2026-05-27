@@ -1,6 +1,6 @@
 use rine_common_kernel32::strings as common;
 use rine_types::errors::BOOL;
-use rine_types::strings::{LPCSTR, LPSTR};
+use rine_types::strings::{LPCSTR, LPSTR, LPWSTR};
 
 /// A safe wrapper around `strlen` that returns 0 for null pointers, matching the behavior of `lstrlenA` in the Windows API.
 ///
@@ -164,4 +164,61 @@ pub unsafe extern "win64" fn lstrcpynA(
 #[unsafe(no_mangle)]
 pub unsafe extern "win64" fn IsDBCSLeadByteEx(code_page: u32, test_char: u8) -> BOOL {
     common::is_dbcs_lead_byte_ex(code_page, test_char)
+}
+
+/// Convert a multi-byte (ANSI) string to its UTF-16LE (wide) representation.
+///
+/// # Arguments
+/// * `CodePage` - Code page used to interpret the source bytes.
+/// * `dwFlags` - Flags controlling the conversion behaviour
+///   (`MB_PRECOMPOSED`, `MB_COMPOSITE`, `MB_USEGLYPHCHARS`,
+///   `MB_ERR_INVALID_CHARS`).
+/// * `lpMultiByteStr` - Pointer to the source multi-byte string.
+/// * `cbMultiByte` - Size of the source buffer in bytes, or `-1` for
+///   null-terminated.
+/// * `lpWideCharStr` - Pointer to the destination wide-character buffer.
+///   May be `NULL` when `cchWideChar == 0`.
+/// * `cchWideChar` - Size of the destination buffer in wide characters.
+///   Use `0` to query the required size.
+///
+/// # Safety
+/// * `lpMultiByteStr` must be non-null and point to a readable buffer of at
+///   least `cbMultiByte` bytes (or a valid null-terminated string when
+///   `cbMultiByte` is `-1`).
+/// * When `cchWideChar > 0`, `lpWideCharStr` must be non-null and point to a
+///   writable buffer of at least `cchWideChar` `u16` elements.
+///
+/// # Returns
+/// * On success: the number of wide characters written (excluding the
+///   terminating null character).
+/// * When `cchWideChar == 0`: the required buffer size in wide characters
+///   (including the terminator when `cbMultiByte == -1`).
+/// * On failure: `0`.
+///
+/// # Notes
+/// **Partial implementation.**  Only `CP_UTF8` is fully supported.  All other
+/// code pages use a Latin‑1 pass‑through (each byte → `u16` with the same
+/// value), which is correct for ASCII but not for Windows‑1252, OEM, or DBCS
+/// encodings.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "win64" fn MultiByteToWideChar(
+    CodePage: u32,
+    dwFlags: u32,
+    lpMultiByteStr: LPCSTR,
+    cbMultiByte: i32,
+    lpWideCharStr: LPWSTR,
+    cchWideChar: i32,
+) -> i32 {
+    unsafe {
+        common::multi_byte_to_wide_char(
+            CodePage,
+            dwFlags,
+            lpMultiByteStr,
+            cbMultiByte,
+            lpWideCharStr,
+            cchWideChar,
+        )
+    }
 }
