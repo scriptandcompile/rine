@@ -2,6 +2,7 @@ use rine_types::errors::BOOL;
 use rine_types::handles::HINSTANCE;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::{HWND, LPARAM, LRESULT, WINDOW_MANAGER, WPARAM, window_message};
+use text::{write_ansi_truncating_nul, write_wide_truncating_nul};
 
 use tracing::warn;
 
@@ -24,35 +25,12 @@ fn set_window_title(hwnd: HWND, text: &str) -> bool {
 }
 
 unsafe fn write_ansi_text(buffer: *mut u8, max_text_length: i32, text: &str) -> u32 {
-    if buffer.is_null() || max_text_length <= 0 {
-        return 0;
-    }
-
-    let bytes = text.as_bytes();
-    let copy_len = bytes.len().min((max_text_length - 1) as usize);
-
-    unsafe {
-        std::ptr::copy_nonoverlapping(bytes.as_ptr(), buffer, copy_len);
-        *buffer.add(copy_len) = 0;
-    }
-
-    copy_len as u32
+    unsafe { write_ansi_truncating_nul(buffer, max_text_length as isize, text.as_bytes()) as u32 }
 }
 
 unsafe fn write_wide_text(buffer: *mut u16, max_text_length: i32, text: &str) -> u32 {
-    if buffer.is_null() || max_text_length <= 0 {
-        return 0;
-    }
-
     let wide: Vec<u16> = text.encode_utf16().collect();
-    let copy_len = wide.len().min((max_text_length - 1) as usize);
-
-    unsafe {
-        std::ptr::copy_nonoverlapping(wide.as_ptr(), buffer, copy_len);
-        *buffer.add(copy_len) = 0;
-    }
-
-    copy_len as u32
+    unsafe { write_wide_truncating_nul(buffer, max_text_length as isize, &wide) as u32 }
 }
 
 /// Sets the title or text of a control in a dialog box.

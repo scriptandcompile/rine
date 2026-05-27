@@ -1,6 +1,7 @@
 use rine_types::errors::BOOL;
 use rine_types::strings::{LPSTR, LPWSTR};
 use rine_types::windows::{DropFiles, HDROP, HWND, WINDOW_MANAGER, window_style_ex};
+use text::{write_ansi_truncating_nul, write_wide_truncating_nul};
 
 const DRAGQUERYFILE_COUNT: u32 = 0xFFFF_FFFF;
 
@@ -193,13 +194,8 @@ pub unsafe fn drag_query_file(hdrop: HDROP, i_file: u32, buffer: DragQueryFileBu
             };
 
             let needed_len = ansi.len() as u32;
-            if !lpsz_file.is_null() && cch > 0 {
-                let ptr = lpsz_file.as_mut_ptr();
-                let copy_len = usize::min(ansi.len(), cch.saturating_sub(1) as usize);
-                unsafe {
-                    std::ptr::copy_nonoverlapping(ansi.as_ptr(), ptr, copy_len);
-                    *ptr.add(copy_len) = 0;
-                }
+            unsafe {
+                write_ansi_truncating_nul(lpsz_file.as_mut_ptr(), cch as isize, &ansi);
             }
             needed_len
         }
@@ -212,13 +208,8 @@ pub unsafe fn drag_query_file(hdrop: HDROP, i_file: u32, buffer: DragQueryFileBu
             };
 
             let needed_len = wide.len() as u32;
-            if !lpsz_file.is_null() && cch > 0 {
-                let ptr = lpsz_file.as_mut_ptr();
-                let copy_len = usize::min(wide.len(), cch.saturating_sub(1) as usize);
-                unsafe {
-                    std::ptr::copy_nonoverlapping(wide.as_ptr(), ptr, copy_len);
-                    *ptr.add(copy_len) = 0;
-                }
+            unsafe {
+                write_wide_truncating_nul(lpsz_file.as_mut_ptr(), cch as isize, &wide);
             }
             needed_len
         }

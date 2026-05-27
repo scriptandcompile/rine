@@ -29,6 +29,7 @@ members = [
     "crates/platform/win-common/rine-common-shell32",
     "crates/platform/win-common/rine-common-gdi32",
     "crates/platform/win-common/shared/dbcs",
+    "crates/platform/win-common/shared/text",
     "crates/platform/win-common/rine-common-kernel32",
     "crates/platform/win-common/rine-common-ntdll",
     "crates/platform/win-common/rine-common-msvcrt",
@@ -94,6 +95,7 @@ rine-common-comdlg32 = { path = "crates/platform/win-common/rine-common-comdlg32
 rine-common-shell32 = { path = "crates/platform/win-common/rine-common-shell32" }
 rine-common-gdi32 = { path = "crates/platform/win-common/rine-common-gdi32" }
 dbcs = { path = "crates/platform/win-common/shared/dbcs" }
+text = { path = "crates/platform/win-common/shared/text" }
 rine-common-kernel32 = { path = "crates/platform/win-common/rine-common-kernel32" }
 rine-common-ntdll = { path = "crates/platform/win-common/rine-common-ntdll" }
 rine-common-msvcrt = { path = "crates/platform/win-common/rine-common-msvcrt" }

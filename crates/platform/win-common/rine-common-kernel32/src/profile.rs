@@ -12,50 +12,8 @@ use rine_types::{
     registry::{HKEY_CURRENT_USER, RegistryValue, registry_store, win_ini_section_to_reg_path},
     strings::{LPSTR, LPWSTR},
 };
+use text::{write_ansi_truncating_nul, write_wide_truncating_nul};
 use tracing::debug;
-
-// ---------------------------------------------------------------------------
-// Output buffer helpers (truncating — NOT the same as write_cstr/write_wstr)
-// ---------------------------------------------------------------------------
-
-/// Write `value` into a caller-supplied ANSI buffer, truncating to fit.
-///
-/// Returns the number of characters written excluding the null terminator, or
-/// 0 if `buf` is null or `buf_size` is 0.
-unsafe fn write_ansi_buf(buf: LPSTR, buf_size: u32, value: &str) -> u32 {
-    if buf.is_null() || buf_size == 0 {
-        return 0;
-    }
-    let ptr = buf.as_mut_ptr();
-    let capacity = (buf_size - 1) as usize;
-    let bytes = value.as_bytes();
-    let write_len = bytes.len().min(capacity);
-    unsafe {
-        core::ptr::copy_nonoverlapping(bytes.as_ptr(), ptr, write_len);
-        *ptr.add(write_len) = 0;
-    }
-    write_len as u32
-}
-
-/// Write `value` into a caller-supplied wide (UTF-16LE) buffer, truncating to
-/// fit.
-///
-/// Returns the number of WCHARs written excluding the null terminator, or 0 if
-/// `buf` is null or `buf_size` is 0.
-unsafe fn write_wide_buf(buf: LPWSTR, buf_size: u32, value: &str) -> u32 {
-    if buf.is_null() || buf_size == 0 {
-        return 0;
-    }
-    let ptr = buf.as_mut_ptr();
-    let encoded: Vec<u16> = value.encode_utf16().collect();
-    let capacity = (buf_size - 1) as usize;
-    let write_len = encoded.len().min(capacity);
-    unsafe {
-        core::ptr::copy_nonoverlapping(encoded.as_ptr(), ptr, write_len);
-        *ptr.add(write_len) = 0;
-    }
-    write_len as u32
-}
 
 // ---------------------------------------------------------------------------
 // Registry helpers
@@ -126,7 +84,7 @@ pub unsafe fn get_profile_string_a(
     debug!(section, key, reg_path, "GetProfileString");
     let value = registry_query_string(&reg_path, key);
     let s = value.as_deref().unwrap_or(default);
-    unsafe { write_ansi_buf(buf, buf_size, s) }
+    unsafe { write_ansi_truncating_nul(buf.as_mut_ptr(), buf_size as isize, s.as_bytes()) as u32 }
 }
 
 /// Reads a string value from the win.ini registry mapping (wide output).
@@ -162,7 +120,8 @@ pub unsafe fn get_profile_string_w(
     debug!(section, key, reg_path, "GetProfileStringW");
     let value = registry_query_string(&reg_path, key);
     let s = value.as_deref().unwrap_or(default);
-    unsafe { write_wide_buf(buf, buf_size, s) }
+    let wide: Vec<u16> = s.encode_utf16().collect();
+    unsafe { write_wide_truncating_nul(buf.as_mut_ptr(), buf_size as isize, &wide) as u32 }
 }
 
 /// Writes a string value to the win.ini registry mapping.
@@ -378,7 +337,7 @@ pub unsafe fn get_private_profile_string_a(
     let content = std::fs::read_to_string(&path).unwrap_or_default();
     let value = parse_ini_value(&content, section, key);
     let s = value.as_deref().unwrap_or(default);
-    unsafe { write_ansi_buf(buf, buf_size, s) }
+    unsafe { write_ansi_truncating_nul(buf.as_mut_ptr(), buf_size as isize, s.as_bytes()) as u32 }
 }
 
 /// Writes a string to a private profile INI file.
@@ -456,7 +415,8 @@ pub unsafe fn get_private_profile_string_w(
     let content = std::fs::read_to_string(&path).unwrap_or_default();
     let value = parse_ini_value(&content, section, key);
     let s = value.as_deref().unwrap_or(default);
-    unsafe { write_wide_buf(buf, buf_size, s) }
+    let wide: Vec<u16> = s.encode_utf16().collect();
+    unsafe { write_wide_truncating_nul(buf.as_mut_ptr(), buf_size as isize, &wide) as u32 }
 }
 
 // ---------------------------------------------------------------------------

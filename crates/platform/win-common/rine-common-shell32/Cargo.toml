@@ -7,5 +7,6 @@ description = "Shared architecture-neutral shell32 logic for rine"
 
 [dependencies]
 rine-types = { workspace = true }
+text = { workspace = true }
 tracing = { workspace = true }
 libc = { workspace = true }

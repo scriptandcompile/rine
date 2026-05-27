@@ -2,6 +2,7 @@
 
 use rine_types::errors::BOOL;
 use rine_types::windows::*;
+use text::{write_ansi_truncating_nul, write_wide_truncating_nul};
 
 use crate::backend::set_native_title;
 
@@ -27,24 +28,12 @@ pub fn set_window_text(hwnd: HWND, text: String) -> BOOL {
 /// # Safety
 /// `buffer` must point to at least `max_count` bytes of writable memory.
 pub unsafe fn get_window_text_a(hwnd: HWND, buffer: *mut u8, max_count: i32) -> i32 {
-    if buffer.is_null() || max_count <= 0 {
-        return 0;
-    }
-
     let title = match WINDOW_MANAGER.get_window(hwnd) {
         Some(state) => state.title,
         None => return 0,
     };
 
-    let bytes = title.as_bytes();
-    let copy_len = bytes.len().min((max_count - 1) as usize);
-
-    unsafe {
-        std::ptr::copy_nonoverlapping(bytes.as_ptr(), buffer, copy_len);
-        *buffer.add(copy_len) = 0;
-    }
-
-    copy_len as i32
+    unsafe { write_ansi_truncating_nul(buffer, max_count as isize, title.as_bytes()) as i32 }
 }
 
 /// GetWindowTextW — copy the window title into a UTF-16 buffer.
@@ -54,24 +43,13 @@ pub unsafe fn get_window_text_a(hwnd: HWND, buffer: *mut u8, max_count: i32) -> 
 /// # Safety
 /// `buffer` must point to at least `max_count` u16s of writable memory.
 pub unsafe fn get_window_text_w(hwnd: HWND, buffer: *mut u16, max_count: i32) -> i32 {
-    if buffer.is_null() || max_count <= 0 {
-        return 0;
-    }
-
     let title = match WINDOW_MANAGER.get_window(hwnd) {
         Some(state) => state.title,
         None => return 0,
     };
 
     let wide: Vec<u16> = title.encode_utf16().collect();
-    let copy_len = wide.len().min((max_count - 1) as usize);
-
-    unsafe {
-        std::ptr::copy_nonoverlapping(wide.as_ptr(), buffer, copy_len);
-        *buffer.add(copy_len) = 0;
-    }
-
-    copy_len as i32
+    unsafe { write_wide_truncating_nul(buffer, max_count as isize, &wide) as i32 }
 }
 
 /// GetWindowTextLength(A/W) — return the number of characters in the window title.

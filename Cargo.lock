@@ -3709,6 +3709,7 @@ dependencies = [
  "dbcs",
  "libc",
  "rine-types",
+ "text",
  "tracing",
 ]
 
@@ -3737,6 +3738,7 @@ version = "0.1.4"
 dependencies = [
  "libc",
  "rine-types",
+ "text",
  "tracing",
 ]
 
@@ -3750,6 +3752,7 @@ dependencies = [
  "rine-channel",
  "rine-types",
  "serial_test",
+ "text",
  "tracing",
  "winit 0.30.13",
  "x11rb",
@@ -5098,6 +5101,10 @@ dependencies = [
  "new_debug_unreachable",
  "utf-8",
 ]
+
+[[package]]
+name = "text"
+version = "0.1.4"
 
 [[package]]
 name = "thiserror"
