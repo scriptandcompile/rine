@@ -15,6 +15,7 @@ use rine_dev_bridge::{
 use rine_dlls::DllRegistry;
 #[cfg(feature = "dev")]
 use serde::Serialize;
+use rine_types::config::ConfigError;
 use tracing::info;
 
 use rine_runtime_core::loader::{entry, memory::LoadedImage, resolver};
@@ -23,7 +24,6 @@ use rine_runtime_core::pe::parser::{ParsedPe, PeError};
 
 use crate::cli::Cli;
 use crate::commands::window_host::{WINDOW_HOST_SOCKET_ENV, WindowHostSession};
-use crate::config::errors::ConfigError;
 use crate::config::manager::ConfigManager;
 use crate::pe::probe::{PeArchitecture, ProbeError, detect_architecture};
 use crate::subsys;
@@ -521,14 +521,6 @@ pub fn run(
         set_var_if_absent(
             "RINE_DIALOG_THEME",
             subsys::dialogs::dialog_theme_env(policy.theme),
-        );
-        // Backward compatibility for in-flight integrations.
-        set_var_if_absent(
-            "RINE_DIALOG_MODE",
-            match policy.theme {
-                rine_types::config::DialogTheme::Native => "native",
-                rine_types::config::DialogTheme::Windows => "emulated",
-            },
         );
         set_var_if_absent(
             "RINE_DIALOG_NATIVE_BACKEND",

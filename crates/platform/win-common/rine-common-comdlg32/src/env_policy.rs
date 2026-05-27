@@ -34,8 +34,6 @@ pub struct DialogPolicy {
 /// The resolution is based on the following environment variables:
 /// - `RINE_DIALOG_THEME`: Can be set to "windows" or "emulated" to use the Windows dialog theme,
 ///   or any other value (or unset) to use the native dialog theme.
-/// - `RINE_DIALOG_MODE`: (Backward compatibility) Can be set to "emulated" or "windows" to use the
-///   Windows dialog theme, or any other value (or unset) to use the native dialog theme.
 /// - `RINE_DIALOG_NATIVE_BACKEND`: Can be set to "gtk", "kde", or "portal" (or "auto") to specify
 ///   the native backend to use. Defaults to "portal" if unset or unrecognized.
 /// - `RINE_DIALOG_EMULATED_THEME`: Can be set to "xp", "win7", "win10", "win11", or "windows_version"
@@ -57,13 +55,7 @@ fn resolve_theme() -> DialogTheme {
         return DialogTheme::Native;
     }
 
-    // Backward compatibility for older env key.
-    match std::env::var("RINE_DIALOG_MODE") {
-        Ok(v) if v.eq_ignore_ascii_case("emulated") || v.eq_ignore_ascii_case("windows") => {
-            DialogTheme::Windows
-        }
-        _ => DialogTheme::Native,
-    }
+    DialogTheme::Native
 }
 
 fn resolve_native_backend() -> NativeBackend {
@@ -109,7 +101,6 @@ mod tests {
     #[serial]
     fn default_policy_is_native_portal_auto() {
         remove_env("RINE_DIALOG_THEME");
-        remove_env("RINE_DIALOG_MODE");
         remove_env("RINE_DIALOG_NATIVE_BACKEND");
         remove_env("RINE_DIALOG_EMULATED_THEME");
         let policy = resolve_dialog_policy();
@@ -124,7 +115,6 @@ mod tests {
     #[serial]
     fn theme_windows_via_primary_env() {
         set_env("RINE_DIALOG_THEME", "windows");
-        remove_env("RINE_DIALOG_MODE");
         assert_eq!(resolve_theme(), DialogTheme::Windows);
     }
 
@@ -132,7 +122,6 @@ mod tests {
     #[serial]
     fn theme_windows_via_primary_env_emulated_alias() {
         set_env("RINE_DIALOG_THEME", "emulated");
-        remove_env("RINE_DIALOG_MODE");
         assert_eq!(resolve_theme(), DialogTheme::Windows);
     }
 
@@ -140,7 +129,6 @@ mod tests {
     #[serial]
     fn theme_windows_is_case_insensitive() {
         set_env("RINE_DIALOG_THEME", "WINDOWS");
-        remove_env("RINE_DIALOG_MODE");
         assert_eq!(resolve_theme(), DialogTheme::Windows);
     }
 
@@ -148,39 +136,6 @@ mod tests {
     #[serial]
     fn theme_native_for_unrecognized_primary_value() {
         set_env("RINE_DIALOG_THEME", "other");
-        remove_env("RINE_DIALOG_MODE");
-        assert_eq!(resolve_theme(), DialogTheme::Native);
-    }
-
-    #[test]
-    #[serial]
-    fn theme_windows_via_backward_compat_env() {
-        remove_env("RINE_DIALOG_THEME");
-        set_env("RINE_DIALOG_MODE", "windows");
-        assert_eq!(resolve_theme(), DialogTheme::Windows);
-    }
-
-    #[test]
-    #[serial]
-    fn theme_windows_via_backward_compat_emulated() {
-        remove_env("RINE_DIALOG_THEME");
-        set_env("RINE_DIALOG_MODE", "emulated");
-        assert_eq!(resolve_theme(), DialogTheme::Windows);
-    }
-
-    #[test]
-    #[serial]
-    fn theme_native_when_only_backward_compat_is_unrecognized() {
-        remove_env("RINE_DIALOG_THEME");
-        set_env("RINE_DIALOG_MODE", "other");
-        assert_eq!(resolve_theme(), DialogTheme::Native);
-    }
-
-    #[test]
-    #[serial]
-    fn theme_primary_takes_precedence_over_backward_compat() {
-        set_env("RINE_DIALOG_THEME", "native");
-        set_env("RINE_DIALOG_MODE", "windows");
         assert_eq!(resolve_theme(), DialogTheme::Native);
     }
 
@@ -188,7 +143,6 @@ mod tests {
     #[serial]
     fn theme_native_when_no_env_set() {
         remove_env("RINE_DIALOG_THEME");
-        remove_env("RINE_DIALOG_MODE");
         assert_eq!(resolve_theme(), DialogTheme::Native);
     }
 

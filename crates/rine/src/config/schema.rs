@@ -1,10 +1,9 @@
 //! Per-app configuration schema.
 //!
-//! Types are defined in [`rine_types::config`] and re-exported here.
-//! This module adds rine-specific extensions (e.g. `to_translator()`).
+//! Types are defined in [`rine_types::config`]. This module only adds
+//! rine-specific extensions such as `to_translator()`.
 
-#[allow(unused_imports)]
-pub use rine_types::config::{AppConfig, DllConfig, FilesystemConfig, WindowsVersion};
+use rine_types::config::FilesystemConfig;
 
 #[allow(dead_code)]
 pub trait FilesystemConfigExt {
@@ -35,6 +34,7 @@ impl FilesystemConfigExt for FilesystemConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rine_types::config::AppConfig;
     use std::path::PathBuf;
 
     #[test]

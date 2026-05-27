@@ -1,9 +1,10 @@
 //! Windows version spoofing initialization.
 //!
-//! Translates the per-app [`WindowsVersion`] setting into the global
-//! [`VersionInfo`] used by `GetVersionEx`, `RtlGetVersion`, etc.
+//! Translates the per-app [`WindowsVersion`](rine_types::config::WindowsVersion)
+//! setting into the global [`VersionInfo`] used by `GetVersionEx`,
+//! `RtlGetVersion`, etc.
 
-use crate::config::schema::WindowsVersion;
+use rine_types::config::WindowsVersion;
 use rine_types::os::{VersionInfo, set_version};
 
 /// Populate the global version info from the per-app configuration.

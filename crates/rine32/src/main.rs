@@ -585,13 +585,6 @@ fn apply_dialog_policy_env(cfg: &AppConfig) {
 
     set_var_if_absent("RINE_DIALOG_THEME", dialog_theme_env(cfg.dialogs.theme));
     set_var_if_absent(
-        "RINE_DIALOG_MODE",
-        match cfg.dialogs.theme {
-            DialogTheme::Native => "native",
-            DialogTheme::Windows => "emulated",
-        },
-    );
-    set_var_if_absent(
         "RINE_DIALOG_NATIVE_BACKEND",
         native_backend_env(native_backend),
     );
