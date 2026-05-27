@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-27T17:13:37.621621+00:00",
+  "generatedAt": "2026-05-27T17:30:32.336965+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2049,7 +2049,7 @@
     },
     {
       "name": "msvcrt.dll",
-      "functionCount": 38,
+      "functionCount": 39,
       "functions": [
         {
           "name": "__C_specific_handler",
@@ -2062,6 +2062,19 @@
             "status": "stubbed",
             "symbol": "crt_support::__C_specific_handler",
             "source": "msvcrt - crt_support.rs"
+          }
+        },
+        {
+          "name": "___lc_codepage_func",
+          "x64": {
+            "status": "implemented",
+            "symbol": "locale::___lc_codepage_func",
+            "source": "msvcrt - locale.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "locale::___lc_codepage_func",
+            "source": "msvcrt - locale.rs"
           }
         },
         {
@@ -3906,15 +3919,15 @@
     }
   ],
   "totals": {
-    "functions": 296,
+    "functions": 297,
     "x64": {
-      "implemented": 104,
+      "implemented": 105,
       "partial": 153,
       "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 104,
+      "implemented": 105,
       "partial": 153,
       "stubbed": 39,
       "unimplemented": 0

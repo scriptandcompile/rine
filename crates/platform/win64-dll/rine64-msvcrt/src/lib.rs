@@ -1,5 +1,6 @@
 pub mod crt_init;
 pub mod crt_support;
+pub mod locale;
 pub mod math;
 pub mod memory;
 pub mod stdio;

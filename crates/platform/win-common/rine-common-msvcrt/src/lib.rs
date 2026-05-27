@@ -3,6 +3,7 @@ mod args;
 mod crt_support;
 mod data_cells;
 mod init;
+mod locale;
 mod math;
 mod memory;
 mod stdio;
@@ -17,6 +18,7 @@ pub use crt_support::{
 };
 pub use data_cells::{commode_ptr, fmode_ptr, initenv_ptr};
 pub use init::{run_initterm, run_initterm_e};
+pub use locale::___lc_codepage_func;
 pub use math::sqrt;
 pub use memory::{CRT_ALLOCATIONS, calloc, free, malloc, memcpy, memset, realloc};
 pub use stdio::{
