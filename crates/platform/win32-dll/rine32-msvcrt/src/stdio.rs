@@ -61,6 +61,32 @@ pub unsafe extern "C" fn fprintf(stream: *mut u8, format: *const c_char) -> c_in
     unsafe { common::write_format_to_stream(stream.cast(), format) }
 }
 
+/// Writes formatted wide-character output to the specified file stream.
+///
+/// # Arguments
+/// * `stream`: A pointer to a FILE stream where the output will be written.
+/// * `format`: A pointer to a null-terminated wide character string (UTF-16LE) that contains
+///   the format string.
+///
+/// # Safety
+/// * The caller must ensure that `stream` is a valid pointer to a FILE stream and that `format`
+///   is a valid null-terminated wide character string.
+///   Additionally, any variadic arguments must match the format specifiers in `format`.
+///
+/// # Returns
+/// * The number of wide characters written, or a negative value if an error occurs.
+///
+/// # Notes
+/// This function is a partial implementation. Currently, the wide format string is decoded
+/// from UTF-16LE to UTF-8 and written to the stream as-is without handling any format
+/// specifiers or variadic arguments. A full implementation would need to parse the wide
+/// format string, process format specifiers (e.g., %s, %d), and consume variadic arguments
+/// according to the Microsoft x86 calling convention.
+#[rine_dlls::partial]
+pub unsafe extern "C" fn fwprintf(stream: *mut u8, format: *const u16) -> c_int {
+    unsafe { common::write_wide_format_to_stream(stream.cast(), format) }
+}
+
 /// Writes formatted output to the specified file stream using a va_list of arguments.
 ///
 /// # Arguments

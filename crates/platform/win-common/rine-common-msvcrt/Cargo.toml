@@ -8,4 +8,5 @@ description = "Shared architecture-neutral msvcrt logic for rine"
 [dependencies]
 libc = { workspace = true }
 rine-types = { workspace = true }
+text = { workspace = true }
 tracing = { workspace = true }

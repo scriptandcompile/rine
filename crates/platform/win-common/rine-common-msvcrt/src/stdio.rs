@@ -150,6 +150,54 @@ pub unsafe fn write_format_to_stream(stream: *const c_void, format: *const c_cha
     if written < 0 { -1 } else { written as c_int }
 }
 
+/// Write a wide-character format string to a stream. This is a minimal partial implementation that
+/// converts the wide string to UTF-8 and writes it directly without handling any variadic arguments
+/// or format specifiers.
+///
+/// # Arguments
+/// - `stream` must be a valid pointer to a FILE-like struct (fake FILE in our case) that has a
+///   valid file descriptor in its first 4 bytes.
+/// - `format` must be a valid null-terminated wide character string (UTF-16LE).
+///   The function will convert this string to UTF-8 and write it directly to the file descriptor
+///   associated with the stream. It does not handle variadic arguments or actual formatting logic.
+///
+/// # Safety
+/// - `stream` must point to a valid FILE-like struct with a valid file descriptor in its first 4 bytes.
+/// - `format` must be a valid null-terminated wide character string (UTF-16LE).
+/// - The caller must ensure that the file descriptor is valid and that writing to it is safe.
+/// - This function does not perform any formatting and will write the decoded UTF-8 string as-is
+///   to the stream.
+///
+/// # Returns
+/// The number of characters written on success, or a negative value on error.
+/// Returns -1 if `stream` or `format` is null.
+///
+/// # Notes
+/// - This function is a simplified partial implementation meant to support basic fwprintf
+///   functionality without full formatting capabilities or variadic argument handling.
+///   It is primarily intended for use in the context of the MSVCRT plugin where the format
+///   string is often a simple wide string literal without format specifiers.
+///   It does not handle variadic arguments or any complex formatting logic.
+/// - The wide string is decoded from UTF-16LE to UTF-8 before being written to the stream.
+///   Characters that cannot be decoded are replaced with the Unicode replacement character
+///   U+FFFD via `from_utf16_lossy`.
+#[inline]
+pub unsafe fn write_wide_format_to_stream(stream: *const c_void, format: *const u16) -> c_int {
+    if format.is_null() || stream.is_null() {
+        return -1;
+    }
+    let decoded = unsafe { text::read_wstr(format) };
+    match decoded {
+        Some(s) => {
+            let bytes = s.as_bytes();
+            let fd = unsafe { *(stream as *const i32) };
+            let written = unsafe { libc::write(fd, bytes.as_ptr().cast(), bytes.len()) };
+            if written < 0 { -1 } else { written as c_int }
+        }
+        None => -1,
+    }
+}
+
 /// Write a buffer to a stream. This is a very minimal implementation that directly writes the buffer to the
 /// file descriptor associated with the stream, without any buffering or error handling.
 ///
@@ -194,6 +242,48 @@ pub unsafe fn write_buffer_to_stream(
         return 0;
     }
     (written as usize) / size.max(1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn write_wide_null_format_returns_negative() {
+        let fd = libc::STDOUT_FILENO;
+        let stream = &fd as *const i32 as *const c_void;
+        let result = unsafe { write_wide_format_to_stream(stream, core::ptr::null()) };
+        assert_eq!(result, -1);
+    }
+
+    #[test]
+    fn write_wide_null_stream_returns_negative() {
+        let wide: [u16; 2] = [b'a' as u16, 0];
+        let result = unsafe { write_wide_format_to_stream(core::ptr::null(), wide.as_ptr()) };
+        assert_eq!(result, -1);
+    }
+
+    #[test]
+    fn write_wide_format_to_dev_null() {
+        let fd = unsafe { libc::open("/dev/null\0".as_ptr().cast(), libc::O_WRONLY) };
+        assert!(fd >= 0);
+        let stream = &fd as *const i32 as *const c_void;
+        let wide: Vec<u16> = "hello\0".encode_utf16().collect();
+        let result = unsafe { write_wide_format_to_stream(stream, wide.as_ptr()) };
+        assert!(result >= 0);
+        unsafe { libc::close(fd) };
+    }
+
+    #[test]
+    fn write_wide_empty_string_returns_zero() {
+        let fd = unsafe { libc::open("/dev/null\0".as_ptr().cast(), libc::O_WRONLY) };
+        assert!(fd >= 0);
+        let stream = &fd as *const i32 as *const c_void;
+        let wide: Vec<u16> = "\0".encode_utf16().collect();
+        let result = unsafe { write_wide_format_to_stream(stream, wide.as_ptr()) };
+        assert!(result >= 0);
+        unsafe { libc::close(fd) };
+    }
 }
 
 /// Write a null-terminated string to stdout, followed by a newline. This is a simple wrapper around libc::puts

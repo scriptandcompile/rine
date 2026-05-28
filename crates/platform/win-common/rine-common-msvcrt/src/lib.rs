@@ -23,7 +23,7 @@ pub use math::sqrt;
 pub use memory::{CRT_ALLOCATIONS, calloc, free, malloc, memcpy, memset, realloc};
 pub use stdio::{
     printf_win64_thunk, printf_x86_thunk, puts_to_stdout, write_buffer_to_stream,
-    write_format_to_stream,
+    write_format_to_stream, write_wide_format_to_stream,
 };
 pub use stdlib::{_cexit, exit};
 pub use string::{strcmp, strlen, strncmp};
