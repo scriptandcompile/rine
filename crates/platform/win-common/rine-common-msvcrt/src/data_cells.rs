@@ -100,6 +100,11 @@ static WCMDLN_STRING: LazyLock<Vec<u16>> = LazyLock::new(|| {
     joined.encode_utf16().chain(std::iter::once(0)).collect()
 });
 
+static WCMDLN_PTR: LazyLock<SyncPtr<*mut usize>> = LazyLock::new(|| {
+    let ptr = wcmdln_str() as usize;
+    SyncPtr(leaked_usize(ptr))
+});
+
 /// Get a pointer to the wide-character command-line string.
 ///
 /// # Returns
@@ -115,6 +120,14 @@ static WCMDLN_STRING: LazyLock<Vec<u16>> = LazyLock::new(|| {
 /// Wildcard expansion is not performed.
 pub fn wcmdln_str() -> *const u16 {
     WCMDLN_STRING.as_ptr()
+}
+
+/// Get the address of the `_wcmdln` data cell.
+///
+/// `_wcmdln` in msvcrt is a data export with type `wchar_t*`, so importers
+/// expect the IAT slot to point at storage that contains a wide-string pointer.
+pub fn wcmdln_ptr() -> *mut usize {
+    WCMDLN_PTR.0
 }
 
 #[cfg(test)]

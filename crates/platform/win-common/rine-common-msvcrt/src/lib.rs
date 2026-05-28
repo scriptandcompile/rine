@@ -16,7 +16,7 @@ pub use crt_support::{
     _amsg_exit, abort_process, c_specific_handler_result, errno_location, fake_iob_32_ptr,
     fake_iob_64_ptr, lock, onexit, set_app_type, set_user_math_err, signal, unlock,
 };
-pub use data_cells::{commode_ptr, fmode_ptr, initenv_ptr, wcmdln_str, winitenv_ptr};
+pub use data_cells::{commode_ptr, fmode_ptr, initenv_ptr, wcmdln_ptr, wcmdln_str, winitenv_ptr};
 pub use init::{run_initterm, run_initterm_e};
 pub use locale::{___lc_codepage_func, ___mb_cur_max_func, localeconv};
 pub use math::sqrt;

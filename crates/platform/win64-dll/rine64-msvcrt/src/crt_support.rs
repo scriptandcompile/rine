@@ -436,8 +436,8 @@ pub unsafe extern "win64" fn __p__fmode() -> *mut i32 {
 /// is not performed.
 #[rine_dlls::implemented]
 #[rine_dlls::data_export]
-pub unsafe extern "win64" fn _wcmdln() -> *const u16 {
-    common::wcmdln_str()
+pub unsafe extern "win64" fn _wcmdln() -> *const *const u16 {
+    common::wcmdln_ptr() as *const *const u16
 }
 
 #[cfg(test)]

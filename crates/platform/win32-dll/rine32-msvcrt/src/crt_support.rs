@@ -459,6 +459,6 @@ pub unsafe extern "C" fn __p__commode() -> *mut i32 {
 /// is not performed.
 #[rine_dlls::implemented]
 #[cfg_attr(not(rust_analyzer), rine_dlls::data_export)]
-pub unsafe extern "C" fn _wcmdln() -> *const u16 {
-    common::wcmdln_str()
+pub unsafe extern "C" fn _wcmdln() -> *const *const u16 {
+    common::wcmdln_ptr() as *const *const u16
 }
