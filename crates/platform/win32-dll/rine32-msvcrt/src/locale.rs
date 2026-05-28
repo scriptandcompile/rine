@@ -1,6 +1,30 @@
-//! MSVCRT locale functions: `___lc_codepage_func`, `___mb_cur_max_func`.
+//! MSVCRT locale functions: `localeconv`, `___lc_codepage_func`, `___mb_cur_max_func`.
 
 use rine_common_msvcrt as common;
+
+/// Returns a pointer to the current locale's `lconv` structure describing
+/// numeric and monetary formatting conventions.
+///
+/// # Arguments
+/// None.
+///
+/// # Returns
+/// A pointer to a process-lifetime static `lconv`. The caller must not modify
+/// the returned structure or the strings it points to.
+///
+/// # Safety
+/// The returned pointer is valid for the lifetime of the process. Dereferencing
+/// it is safe, but writing to the structure or any pointed-to string induces
+/// undefined behavior in subsequent locale-dependent CRT functions.
+///
+/// # Notes
+/// This is a partial/stub implementation that always returns the C locale
+/// conventions. Monetary fields are `CHAR_MAX` or empty strings. Per-thread
+/// locale changes and system-locale queries are not yet implemented.
+#[rine_dlls::partial]
+pub unsafe extern "C" fn localeconv() -> *mut rine_types::locale::lconv {
+    common::localeconv()
+}
 
 /// Returns a pointer to the current locale's code page.
 ///

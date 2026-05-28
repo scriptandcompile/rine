@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T00:22:35.818695+00:00",
+  "generatedAt": "2026-05-28T00:32:06.148897+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2049,7 +2049,7 @@
     },
     {
       "name": "msvcrt.dll",
-      "functionCount": 42,
+      "functionCount": 43,
       "functions": [
         {
           "name": "__C_specific_handler",
@@ -2439,6 +2439,19 @@
             "status": "implemented",
             "symbol": "stdio::fwrite",
             "source": "msvcrt - stdio.rs"
+          }
+        },
+        {
+          "name": "localeconv",
+          "x64": {
+            "status": "partial",
+            "symbol": "locale::localeconv",
+            "source": "msvcrt - locale.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "locale::localeconv",
+            "source": "msvcrt - locale.rs"
           }
         },
         {
@@ -3958,16 +3971,16 @@
     }
   ],
   "totals": {
-    "functions": 300,
+    "functions": 301,
     "x64": {
       "implemented": 105,
-      "partial": 156,
+      "partial": 157,
       "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 105,
-      "partial": 156,
+      "partial": 157,
       "stubbed": 39,
       "unimplemented": 0
     }
