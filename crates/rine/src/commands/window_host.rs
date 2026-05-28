@@ -5,7 +5,7 @@ use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use rine_channel::{HostWindowCommand, HostWindowEvent, HostWindowReceiver, HostWindowSender};
+use rine_channel::{WindowHostCommand, WindowHostEvent, WindowHostReceiver, WindowHostSender};
 use rine_types::windows::Rect;
 use tracing::warn;
 use winit::dpi::{LogicalPosition, LogicalSize};
@@ -36,7 +36,7 @@ impl WindowHostSession {
 
         let transport_socket_path = socket_path.clone();
         let transport_thread = thread::spawn(move || {
-            let mut receiver = HostWindowReceiver::bind(&transport_socket_path)?;
+            let mut receiver = WindowHostReceiver::bind(&transport_socket_path)?;
             let mut event_sender = receiver.try_clone_sender()?;
             let writer = thread::spawn(move || {
                 while let Ok(event) = event_rx.recv() {
@@ -49,7 +49,7 @@ impl WindowHostSession {
             loop {
                 match receiver.recv_command() {
                     Ok(command) => {
-                        let should_stop = matches!(command, HostWindowCommand::ShutdownWindowHost);
+                        let should_stop = matches!(command, WindowHostCommand::ShutdownWindowHost);
                         if command_tx.send(command).is_err() {
                             break;
                         }
@@ -98,8 +98,8 @@ impl WindowHostSession {
     }
 
     fn request_shutdown(&self) {
-        if let Ok(mut sender) = HostWindowSender::connect(&self.socket_path) {
-            let _ = sender.send_command(&HostWindowCommand::ShutdownWindowHost);
+        if let Ok(mut sender) = WindowHostSender::connect(&self.socket_path) {
+            let _ = sender.send_command(&WindowHostCommand::ShutdownWindowHost);
         }
     }
 }
@@ -155,11 +155,11 @@ impl WindowHost {
 
     fn apply_command(
         &mut self,
-        command: HostWindowCommand,
-        event_tx: &Sender<HostWindowEvent>,
+        command: WindowHostCommand,
+        event_tx: &Sender<WindowHostEvent>,
     ) -> bool {
         match command {
-            HostWindowCommand::CreateWindow {
+            WindowHostCommand::CreateWindow {
                 runtime_hwnd,
                 title,
                 rect,
@@ -167,17 +167,17 @@ impl WindowHost {
                 ..
             } => {
                 let result = self.create_window(runtime_hwnd, &title, rect, visible);
-                let _ = event_tx.send(HostWindowEvent::Created {
+                let _ = event_tx.send(WindowHostEvent::Created {
                     runtime_hwnd,
                     success: result.is_ok(),
                     error: result.err(),
                 });
             }
-            HostWindowCommand::DestroyWindow { runtime_hwnd } => {
+            WindowHostCommand::DestroyWindow { runtime_hwnd } => {
                 self.destroy_window(runtime_hwnd);
-                let _ = event_tx.send(HostWindowEvent::Destroyed { runtime_hwnd });
+                let _ = event_tx.send(WindowHostEvent::Destroyed { runtime_hwnd });
             }
-            HostWindowCommand::SetTitle {
+            WindowHostCommand::SetTitle {
                 runtime_hwnd,
                 title,
             } => {
@@ -185,7 +185,7 @@ impl WindowHost {
                     window.set_title(&title);
                 }
             }
-            HostWindowCommand::SetVisible {
+            WindowHostCommand::SetVisible {
                 runtime_hwnd,
                 visible,
             } => {
@@ -193,7 +193,7 @@ impl WindowHost {
                     window.set_visible(visible);
                 }
             }
-            HostWindowCommand::SetRect { runtime_hwnd, rect } => {
+            WindowHostCommand::SetRect { runtime_hwnd, rect } => {
                 if let Some(window) = self.windows.get(&runtime_hwnd) {
                     window.set_outer_position(LogicalPosition::new(
                         rect.left as f64,
@@ -204,12 +204,12 @@ impl WindowHost {
                     window.set_inner_size(LogicalSize::new(width, height));
                 }
             }
-            HostWindowCommand::RequestRedraw { runtime_hwnd } => {
+            WindowHostCommand::RequestRedraw { runtime_hwnd } => {
                 if let Some(window) = self.windows.get(&runtime_hwnd) {
                     window.request_redraw();
                 }
             }
-            HostWindowCommand::ShutdownWindowHost => return false,
+            WindowHostCommand::ShutdownWindowHost => return false,
         }
 
         true
@@ -244,7 +244,7 @@ impl WindowHost {
         }
     }
 
-    fn pump_events(&mut self, event_tx: &Sender<HostWindowEvent>) {
+    fn pump_events(&mut self, event_tx: &Sender<WindowHostEvent>) {
         let reverse = &self.reverse;
         self.event_loop.run_return(|event, _target, control_flow| {
             *control_flow = ControlFlow::Poll;
@@ -257,20 +257,20 @@ impl WindowHost {
 
                     let host_event = match event {
                         WindowEvent::CloseRequested => {
-                            Some(HostWindowEvent::CloseRequested { runtime_hwnd })
+                            Some(WindowHostEvent::CloseRequested { runtime_hwnd })
                         }
-                        WindowEvent::Destroyed => Some(HostWindowEvent::Destroyed { runtime_hwnd }),
-                        WindowEvent::Resized(size) => Some(HostWindowEvent::Resized {
+                        WindowEvent::Destroyed => Some(WindowHostEvent::Destroyed { runtime_hwnd }),
+                        WindowEvent::Resized(size) => Some(WindowHostEvent::Resized {
                             runtime_hwnd,
                             width: size.width,
                             height: size.height,
                         }),
-                        WindowEvent::Moved(position) => Some(HostWindowEvent::Moved {
+                        WindowEvent::Moved(position) => Some(WindowHostEvent::Moved {
                             runtime_hwnd,
                             x: position.x,
                             y: position.y,
                         }),
-                        WindowEvent::Focused(focused) => Some(HostWindowEvent::Focused {
+                        WindowEvent::Focused(focused) => Some(WindowHostEvent::Focused {
                             runtime_hwnd,
                             focused,
                         }),
@@ -283,7 +283,7 @@ impl WindowHost {
                 }
                 Event::RedrawRequested(window_id) => {
                     if let Some(runtime_hwnd) = reverse.get(&window_id).copied() {
-                        let _ = event_tx.send(HostWindowEvent::RedrawRequested { runtime_hwnd });
+                        let _ = event_tx.send(WindowHostEvent::RedrawRequested { runtime_hwnd });
                     }
                 }
                 Event::MainEventsCleared | Event::RedrawEventsCleared => {
@@ -295,7 +295,7 @@ impl WindowHost {
     }
 }
 
-fn run_window_host(command_rx: Receiver<HostWindowCommand>, event_tx: Sender<HostWindowEvent>) {
+fn run_window_host(command_rx: Receiver<WindowHostCommand>, event_tx: Sender<WindowHostEvent>) {
     let mut host = WindowHost::new();
 
     loop {

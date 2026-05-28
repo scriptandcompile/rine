@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum HostWindowCommand {
+pub enum WindowHostCommand {
     CreateWindow {
         runtime_hwnd: u64,
         title: String,
@@ -40,7 +40,7 @@ pub enum HostWindowCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum HostWindowEvent {
+pub enum WindowHostEvent {
     Created {
         runtime_hwnd: u64,
         success: bool,
@@ -71,11 +71,11 @@ pub enum HostWindowEvent {
     },
 }
 
-pub struct HostWindowSender {
+pub struct WindowHostSender {
     stream: UnixStream,
 }
 
-impl HostWindowSender {
+impl WindowHostSender {
     pub fn connect(socket_path: &Path) -> io::Result<Self> {
         let mut delay = Duration::from_millis(50);
         let max_total = Duration::from_secs(2);
@@ -96,15 +96,15 @@ impl HostWindowSender {
         }
     }
 
-    pub fn send_command(&mut self, command: &HostWindowCommand) -> io::Result<()> {
+    pub fn send_command(&mut self, command: &WindowHostCommand) -> io::Result<()> {
         write_message(&mut self.stream, command)
     }
 
-    pub fn send_event(&mut self, event: &HostWindowEvent) -> io::Result<()> {
+    pub fn send_event(&mut self, event: &WindowHostEvent) -> io::Result<()> {
         write_message(&mut self.stream, event)
     }
 
-    pub fn recv_event(&mut self) -> io::Result<HostWindowEvent> {
+    pub fn recv_event(&mut self) -> io::Result<WindowHostEvent> {
         read_message(&mut self.stream)
     }
 
@@ -119,13 +119,13 @@ impl HostWindowSender {
     }
 }
 
-pub struct HostWindowReceiver {
+pub struct WindowHostReceiver {
     stream: UnixStream,
     _listener: UnixListener,
     _socket_path: PathBuf,
 }
 
-impl HostWindowReceiver {
+impl WindowHostReceiver {
     pub fn bind(socket_path: &Path) -> io::Result<Self> {
         let _ = std::fs::remove_file(socket_path);
         let listener = UnixListener::bind(socket_path)?;
@@ -137,22 +137,22 @@ impl HostWindowReceiver {
         })
     }
 
-    pub fn recv_command(&mut self) -> io::Result<HostWindowCommand> {
+    pub fn recv_command(&mut self) -> io::Result<WindowHostCommand> {
         read_message(&mut self.stream)
     }
 
-    pub fn send_event(&mut self, event: &HostWindowEvent) -> io::Result<()> {
+    pub fn send_event(&mut self, event: &WindowHostEvent) -> io::Result<()> {
         write_message(&mut self.stream, event)
     }
 
-    pub fn try_clone_sender(&self) -> io::Result<HostWindowSender> {
-        Ok(HostWindowSender {
+    pub fn try_clone_sender(&self) -> io::Result<WindowHostSender> {
+        Ok(WindowHostSender {
             stream: self.stream.try_clone()?,
         })
     }
 }
 
-impl Drop for HostWindowReceiver {
+impl Drop for WindowHostReceiver {
     fn drop(&mut self) {
         let _ = std::fs::remove_file(&self._socket_path);
     }
@@ -204,26 +204,26 @@ mod tests {
         let server_path = socket_path.clone();
 
         let server = std::thread::spawn(move || {
-            let mut receiver = HostWindowReceiver::bind(&server_path).expect("bind should work");
+            let mut receiver = WindowHostReceiver::bind(&server_path).expect("bind should work");
             let command = receiver.recv_command().expect("recv_command should work");
             assert_eq!(
                 command,
-                HostWindowCommand::SetVisible {
+                WindowHostCommand::SetVisible {
                     runtime_hwnd: 0x1234,
                     visible: true,
                 }
             );
             receiver
-                .send_event(&HostWindowEvent::Focused {
+                .send_event(&WindowHostEvent::Focused {
                     runtime_hwnd: 0x1234,
                     focused: true,
                 })
                 .expect("send_event should work");
         });
 
-        let mut sender = HostWindowSender::connect(&socket_path).expect("connect should work");
+        let mut sender = WindowHostSender::connect(&socket_path).expect("connect should work");
         sender
-            .send_command(&HostWindowCommand::SetVisible {
+            .send_command(&WindowHostCommand::SetVisible {
                 runtime_hwnd: 0x1234,
                 visible: true,
             })
@@ -233,7 +233,7 @@ mod tests {
 
         assert_eq!(
             event,
-            HostWindowEvent::Focused {
+            WindowHostEvent::Focused {
                 runtime_hwnd: 0x1234,
                 focused: true,
             }
