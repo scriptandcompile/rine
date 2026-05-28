@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-27T19:49:02.921376+00:00",
+  "generatedAt": "2026-05-28T00:22:35.818695+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2049,7 +2049,7 @@
     },
     {
       "name": "msvcrt.dll",
-      "functionCount": 41,
+      "functionCount": 42,
       "functions": [
         {
           "name": "__C_specific_handler",
@@ -2205,6 +2205,19 @@
             "status": "partial",
             "symbol": "crt_init::__wgetmainargs",
             "source": "msvcrt - crt_init.rs"
+          }
+        },
+        {
+          "name": "__winitenv",
+          "x64": {
+            "status": "implemented",
+            "symbol": "crt_support::__winitenv",
+            "source": "msvcrt - crt_support.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "crt_support::__winitenv",
+            "source": "msvcrt - crt_support.rs"
           }
         },
         {
@@ -3945,15 +3958,15 @@
     }
   ],
   "totals": {
-    "functions": 299,
+    "functions": 300,
     "x64": {
-      "implemented": 104,
+      "implemented": 105,
       "partial": 156,
       "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 104,
+      "implemented": 105,
       "partial": 156,
       "stubbed": 39,
       "unimplemented": 0

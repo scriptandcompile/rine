@@ -62,3 +62,24 @@ pub fn fmode_ptr() -> *mut i32 {
 pub fn initenv_ptr() -> *mut usize {
     INITENV_PTR.0
 }
+
+static WINITENV_PTR: LazyLock<SyncPtr<*mut usize>> = LazyLock::new(|| SyncPtr(leaked_usize(0)));
+
+/// Get a pointer to the wide-character environment variable array.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an array of
+/// wide C strings representing the environment variables.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access environment variables.
+///
+/// # Returns
+/// Returns a pointer to the wide-character environment variable array, which is an array of
+/// wide C strings (wchar_t*).
+///
+/// # Notes
+/// Called by the CRT to get the wide environment variables via `__winitenv`. We return a pointer to an
+/// empty environment since we provide the real wide environment via `__wgetmainargs`.
+/// This should return a pointer to the actual wide environment variables populated from `_wenviron`.
+pub fn winitenv_ptr() -> *mut usize {
+    WINITENV_PTR.0
+}

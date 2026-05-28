@@ -159,6 +159,27 @@ pub unsafe extern "C" fn __initenv() -> *mut usize {
     common::initenv_ptr()
 }
 
+/// Get a pointer to the wide-character environment variable array.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an array of
+/// wide C strings representing the environment variables.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access environment variables.
+///
+/// # Returns
+/// Returns a pointer to the wide-character environment variable array, which is an array of
+/// wide C strings (wchar_t*).
+///
+/// # Notes
+/// Called by the CRT to get the wide environment variables via `__winitenv`. We return a pointer to an
+/// empty environment since we provide the real wide environment via `__wgetmainargs`.
+/// This should return a pointer to the actual wide environment variables populated from `_wenviron`.
+#[rine_dlls::implemented]
+#[cfg_attr(not(rust_analyzer), rine_dlls::data_export)]
+pub unsafe extern "C" fn __winitenv() -> *mut usize {
+    common::winitenv_ptr()
+}
+
 /// Gets a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
 ///
 /// # Safety

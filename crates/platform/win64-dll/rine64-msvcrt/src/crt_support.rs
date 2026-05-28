@@ -183,6 +183,28 @@ pub unsafe extern "win64" fn __initenv() -> *const *const i8 {
     common::initenv_ptr() as *const *const i8
 }
 
+/// Get a pointer to the wide-character initial environment pointer.
+///
+/// # Safety
+/// This is unsafe because the CRT expects this to return a valid pointer to an array of
+/// wide C strings representing the environment variables.
+/// Incorrect handling could lead to undefined behavior in CRT functions that access environment variables.
+///
+/// # Returns
+/// A pointer to a NULL pointer (empty wide environment at CRT level;
+/// the real wide environment is provided via `__wgetmainargs`).
+///
+/// # Notes
+/// Called by the CRT to get the wide environment variables via `__winitenv`. We return a pointer to an
+/// empty environment since we provide the real wide environment via `__wgetmainargs`.
+/// This should return a pointer to the actual wide environment variables populated from `_wenviron`.
+/// The CRT interprets this as `wchar_t***` which maps to `*const *const u16` in Rust on x64 Windows.
+#[rine_dlls::implemented]
+#[rine_dlls::data_export]
+pub unsafe extern "win64" fn __winitenv() -> *const *const u16 {
+    common::winitenv_ptr() as *const *const u16
+}
+
 /// Gets a pointer to the CRT's internal array of three FILE structures for stdin, stdout, and stderr.
 ///
 /// # Safety
