@@ -233,14 +233,21 @@ pub unsafe fn send_message(
     }
 }
 
-/// DefWindowProc — default window procedure; returns 0 for all messages.
+/// DefWindowProc — default window procedure.
 ///
 /// # Notes
 /// Missing implementation features:
-/// - No default message handling is implemented (non-client, keyboard, mouse, sizing, system commands).
-/// - No message-specific return semantics are implemented; this stub always returns 0.
-pub fn def_window_proc(_hwnd: HWND, _msg: u32, _w_param: usize, _l_param: isize) -> isize {
-    0
+/// - Only a minimal subset of default behavior is implemented.
+/// - No non-client, keyboard, mouse, or system-command default handling yet.
+pub fn def_window_proc(_hwnd: HWND, msg: u32, _w_param: usize, _l_param: isize) -> isize {
+    match msg {
+        // Default proc reports background erased when app does not handle it.
+        window_message::WM_ERASEBKGND => 1,
+        // Default proc validates paint/update region in Win32; our queue-backed
+        // model does not track regions yet, so consuming the message is enough.
+        window_message::WM_PAINT => 0,
+        _ => 0,
+    }
 }
 
 /// Determines whether the specified message is intended for the dialog box and, if it is, processes the message.

@@ -211,6 +211,15 @@ pub fn update_window(hwnd: HWND) -> BOOL {
     THREAD_MESSAGE_QUEUE.with(|queue| {
         queue.post_message(Msg {
             hwnd,
+            message: window_message::WM_ERASEBKGND,
+            w_param: 0,
+            l_param: 0,
+            time: 0,
+            pt: Point::default(),
+        });
+
+        queue.post_message(Msg {
+            hwnd,
             message: window_message::WM_PAINT,
             w_param: 0,
             l_param: 0,
