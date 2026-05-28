@@ -26,7 +26,9 @@ static UNHANDLED_EXCEPTION_FILTER: AtomicUsize = AtomicUsize::new(0);
 static FAULT_HANDLER_GUARD: Mutex<()> = Mutex::new(());
 
 const UNHANDLED_EXCEPTION_FILTER_ENV: &[u8] = b"RINE_UNHANDLED_EXCEPTION_FILTER_PTR\0";
+const STARTF_USESHOWWINDOW: u32 = 0x0000_0001;
 const STARTF_USESTDHANDLES: u32 = 0x0000_0100;
+const SW_SHOWNORMAL: u16 = 1;
 
 const FATAL_SIGNALS: [i32; 5] = [
     libc::SIGSEGV,
@@ -96,6 +98,9 @@ pub unsafe fn get_startup_info_a(startup_info: *mut StartupInfoA) {
     unsafe {
         std::ptr::write_bytes(startup_info, 0, 1);
         (*startup_info).cb = std::mem::size_of::<StartupInfoA>() as u32;
+        // Give WinMain-compatible startup code a visible default nCmdShow.
+        (*startup_info).flags |= STARTF_USESHOWWINDOW;
+        (*startup_info).show_window = SW_SHOWNORMAL;
 
         if std_input.is_valid() && std_output.is_valid() && std_error.is_valid() {
             (*startup_info).flags |= STARTF_USESTDHANDLES;
@@ -137,6 +142,9 @@ pub unsafe fn get_startup_info_w(startup_info: *mut StartupInfoW) {
     unsafe {
         std::ptr::write_bytes(startup_info, 0, 1);
         (*startup_info).cb = std::mem::size_of::<StartupInfoW>() as u32;
+        // Give WinMain-compatible startup code a visible default nCmdShow.
+        (*startup_info).flags |= STARTF_USESHOWWINDOW;
+        (*startup_info).show_window = SW_SHOWNORMAL;
 
         if std_input.is_valid() && std_output.is_valid() && std_error.is_valid() {
             (*startup_info).flags |= STARTF_USESTDHANDLES;

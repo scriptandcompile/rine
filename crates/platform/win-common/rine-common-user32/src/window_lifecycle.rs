@@ -122,6 +122,14 @@ pub unsafe fn destroy_window(
 ///
 /// Returns `BOOL::TRUE` if the window was previously visible, `BOOL::FALSE` otherwise.
 pub fn show_window(hwnd: HWND, cmd_show: i32) -> BOOL {
+    if crate::message_queue::user32_debug_enabled() {
+        eprintln!(
+            "[user32/win] ShowWindow hwnd={:#x} cmd_show={} ",
+            hwnd.as_raw(),
+            cmd_show
+        );
+    }
+
     let was_visible = WINDOW_MANAGER
         .get_window(hwnd)
         .map(|state| state.visible)
@@ -194,6 +202,10 @@ pub fn is_iconic(hwnd: HWND) -> BOOL {
 /// # Returns
 /// `BOOL::TRUE` always (UpdateWindow is a notification, not a query).
 pub fn update_window(hwnd: HWND) -> BOOL {
+    if crate::message_queue::user32_debug_enabled() {
+        eprintln!("[user32/win] UpdateWindow hwnd={:#x}", hwnd.as_raw());
+    }
+
     request_native_redraw(hwnd);
 
     THREAD_MESSAGE_QUEUE.with(|queue| {

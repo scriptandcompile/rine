@@ -6,7 +6,7 @@
 
 use std::any::Any;
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
@@ -33,16 +33,6 @@ pub fn user32_debug_enabled() -> bool {
     })
 }
 
-fn native_backend_enabled() -> bool {
-    static ENABLED: OnceLock<bool> = OnceLock::new();
-    *ENABLED.get_or_init(|| {
-        if let Ok(v) = std::env::var("RINE_USER32_NATIVE_BACKEND") {
-            return v == "1" || v.eq_ignore_ascii_case("true") || v.eq_ignore_ascii_case("yes");
-        }
-        !user32_debug_enabled()
-    })
-}
-
 pub fn debug_log_backend(msg: impl AsRef<str>) {
     if user32_debug_enabled() {
         eprintln!("[user32/backend] {}", msg.as_ref());
@@ -62,6 +52,9 @@ struct WinitBackendState {
     windows: HashMap<HWND, Window>,
     reverse: HashMap<WindowId, HWND>,
     pending_windows: HashMap<HWND, PendingWindow>,
+    pending_paint_messages: HashSet<HWND>,
+    last_reported_size: HashMap<HWND, (u32, u32)>,
+    last_reported_pos: HashMap<HWND, (i32, i32)>,
     ready_for_windows: bool,
 }
 
@@ -89,7 +82,12 @@ impl WinitBackend {
                 windows: HashMap::new(),
                 reverse: HashMap::new(),
                 pending_windows: HashMap::new(),
-                ready_for_windows: false,
+                pending_paint_messages: HashSet::new(),
+                last_reported_size: HashMap::new(),
+                last_reported_pos: HashMap::new(),
+                // In pump mode, some platforms may not deliver `resumed()` before
+                // we first need to materialize queued windows.
+                ready_for_windows: true,
             },
         }
     }
@@ -107,15 +105,21 @@ impl WinitBackend {
 
     fn destroy_window(&mut self, hwnd: HWND) {
         self.state.pending_windows.remove(&hwnd);
+        self.state.pending_paint_messages.remove(&hwnd);
+        self.state.last_reported_size.remove(&hwnd);
+        self.state.last_reported_pos.remove(&hwnd);
         if let Some(window) = self.state.windows.remove(&hwnd) {
             self.state.reverse.remove(&window.id());
             debug_log_backend(format!("destroy_window hwnd={:#x}", hwnd.as_raw()));
         }
     }
 
-    fn set_visible(&self, hwnd: HWND, visible: bool) {
+    fn set_visible(&mut self, hwnd: HWND, visible: bool) {
         if let Some(window) = self.state.windows.get(&hwnd) {
             window.set_visible(visible);
+        }
+        if let Some(pending) = self.state.pending_windows.get_mut(&hwnd) {
+            pending.state.visible = visible;
         }
     }
 
@@ -130,6 +134,7 @@ impl WinitBackend {
 
     fn request_redraw(&mut self, hwnd: HWND) {
         if let Some(window) = self.state.windows.get(&hwnd) {
+            self.state.pending_paint_messages.insert(hwnd);
             window.request_redraw();
         }
         if let Some(pending) = self.state.pending_windows.get_mut(&hwnd) {
@@ -205,6 +210,7 @@ impl WinitBackendState {
                     if pending_window.redraw_requested
                         && let Some(window) = self.windows.get(&hwnd)
                     {
+                        self.pending_paint_messages.insert(hwnd);
                         window.request_redraw();
                     }
                 }
@@ -216,6 +222,10 @@ impl WinitBackendState {
                 }
             }
         }
+    }
+
+    fn take_pending_paint(&mut self, hwnd: HWND) -> bool {
+        self.pending_paint_messages.remove(&hwnd)
     }
 }
 
@@ -272,6 +282,12 @@ impl ApplicationHandler for WinitPumpApp<'_> {
                 pt: Point::default(),
             }),
             WindowEvent::Resized(size) => {
+                let dims = (size.width, size.height);
+                if self.state.last_reported_size.get(&hwnd) == Some(&dims) {
+                    return;
+                }
+                self.state.last_reported_size.insert(hwnd, dims);
+
                 let l_param = ((size.height as isize) << 16) | ((size.width as isize) & 0xFFFF);
                 self.out.push(Msg {
                     hwnd,
@@ -283,6 +299,12 @@ impl ApplicationHandler for WinitPumpApp<'_> {
                 });
             }
             WindowEvent::Moved(pos) => {
+                let coords = (pos.x, pos.y);
+                if self.state.last_reported_pos.get(&hwnd) == Some(&coords) {
+                    return;
+                }
+                self.state.last_reported_pos.insert(hwnd, coords);
+
                 let x = (pos.x as i16) as u16 as usize;
                 let y = (pos.y as i16) as u16 as usize;
                 self.out.push(Msg {
@@ -348,14 +370,23 @@ impl ApplicationHandler for WinitPumpApp<'_> {
                     pt: Point::default(),
                 });
             }
-            WindowEvent::RedrawRequested => self.out.push(Msg {
-                hwnd,
-                message: window_message::WM_PAINT,
-                w_param: 0,
-                l_param: 0,
-                time: 0,
-                pt: Point::default(),
-            }),
+            WindowEvent::RedrawRequested => {
+                if self.state.take_pending_paint(hwnd) {
+                    self.out.push(Msg {
+                        hwnd,
+                        message: window_message::WM_PAINT,
+                        w_param: 0,
+                        l_param: 0,
+                        time: 0,
+                        pt: Point::default(),
+                    });
+                } else if user32_debug_enabled() {
+                    debug_log_backend(format!(
+                        "ignoring unsolicited redraw hwnd={:#x}",
+                        hwnd.as_raw()
+                    ));
+                }
+            }
             _ => {}
         }
     }
@@ -643,12 +674,6 @@ fn with_backend<R>(f: impl FnOnce(&mut Backend) -> R) -> Option<R> {
             }
 
             if matches!(*backend, BackendState::Uninitialized) {
-                if !native_backend_enabled() {
-                    debug_log_backend("native backend disabled; using emulated user32 only");
-                    *backend = BackendState::Failed;
-                    return None;
-                }
-
                 match std::panic::catch_unwind(WinitBackend::new) {
                     Ok(created) => {
                         *backend = BackendState::Available(Backend::Local(created));
