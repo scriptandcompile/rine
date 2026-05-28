@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T00:43:23.190687+00:00",
+  "generatedAt": "2026-05-28T00:50:15.642515+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2049,7 +2049,7 @@
     },
     {
       "name": "msvcrt.dll",
-      "functionCount": 45,
+      "functionCount": 46,
       "functions": [
         {
           "name": "__C_specific_handler",
@@ -2425,6 +2425,19 @@
           "x86": {
             "status": "partial",
             "symbol": "stdio::fprintf",
+            "source": "msvcrt - stdio.rs"
+          }
+        },
+        {
+          "name": "fputwc",
+          "x64": {
+            "status": "partial",
+            "symbol": "stdio::fputwc",
+            "source": "msvcrt - stdio.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "stdio::fputwc",
             "source": "msvcrt - stdio.rs"
           }
         },
@@ -3997,16 +4010,16 @@
     }
   ],
   "totals": {
-    "functions": 303,
+    "functions": 304,
     "x64": {
       "implemented": 106,
-      "partial": 158,
+      "partial": 159,
       "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 106,
-      "partial": 158,
+      "partial": 159,
       "stubbed": 39,
       "unimplemented": 0
     }

@@ -244,9 +244,95 @@ pub unsafe fn write_buffer_to_stream(
     (written as usize) / size.max(1)
 }
 
+/// Write a wide character to a stream. This is a minimal partial implementation that
+/// converts the wide character to UTF-8 and writes it directly to the file descriptor
+/// associated with the stream, without any buffering or locale-aware transcoding.
+///
+/// # Arguments
+/// - `c` is the wide character (UTF-16 code unit) to write.
+/// - `stream` must be a valid pointer to a FILE-like struct (fake FILE in our case) that has a
+///   valid file descriptor in its first 4 bytes.
+///
+/// # Safety
+/// - `stream` must point to a valid FILE-like struct with a valid file descriptor in its first 4 bytes.
+/// - The caller must ensure that the file descriptor is valid and that writing to it is safe.
+///
+/// # Returns
+/// - On success, returns the wide character cast to `wint_t` (u32).
+/// - If `stream` is null, returns WEOF (`u32::MAX`).
+/// - If an error occurs during writing, returns WEOF (`u32::MAX`).
+///
+/// # Notes
+/// - This function is a simplified partial implementation meant to support basic fputwc
+///   functionality without full buffering or locale-aware transcoding.
+///   It is primarily intended for use in the context of the MSVCRT plugin where fputwc
+///   is used in a straightforward manner.
+/// - The wide character is encoded to UTF-8 before being written to the stream.
+///   Characters that cannot be encoded (e.g., unpaired surrogates) are replaced with
+///   the Unicode replacement character U+FFFD.
+/// - A full implementation would need to handle file buffering, text vs binary mode,
+///   and locale-dependent encoding (e.g., writing the raw UTF-16LE bytes on Windows).
+#[inline]
+pub unsafe fn fputwc_to_stream(c: u16, stream: *const c_void) -> u32 {
+    if stream.is_null() {
+        return u32::MAX; // WEOF
+    }
+
+    let ch = char::from_u32(c as u32).unwrap_or(char::REPLACEMENT_CHARACTER);
+    let mut buf = [0u8; 4];
+    let encoded = ch.encode_utf8(&mut buf);
+
+    let fd = unsafe { *(stream as *const i32) };
+    let written = unsafe { libc::write(fd, encoded.as_ptr().cast(), encoded.len()) };
+    if written < 0 || written as usize != encoded.len() {
+        return u32::MAX; // WEOF
+    }
+    c as u32
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fputwc_null_stream_returns_weof() {
+        let result = unsafe { fputwc_to_stream(b'a' as u16, core::ptr::null()) };
+        assert_eq!(result, u32::MAX);
+    }
+
+    #[test]
+    fn fputwc_ascii_to_dev_null() {
+        let fd = unsafe { libc::open("/dev/null\0".as_ptr().cast(), libc::O_WRONLY) };
+        assert!(fd >= 0);
+        let stream = &fd as *const i32 as *const c_void;
+        let result = unsafe { fputwc_to_stream(b'x' as u16, stream) };
+        assert_eq!(result, b'x' as u32);
+        unsafe { libc::close(fd) };
+    }
+
+    #[test]
+    fn fputwc_non_ascii_to_dev_null() {
+        let fd = unsafe { libc::open("/dev/null\0".as_ptr().cast(), libc::O_WRONLY) };
+        assert!(fd >= 0);
+        let stream = &fd as *const i32 as *const c_void;
+        // U+00E9 LATIN SMALL LETTER E WITH ACUTE (é)
+        let result = unsafe { fputwc_to_stream(0x00E9, stream) };
+        assert_eq!(result, 0x00E9);
+        unsafe { libc::close(fd) };
+    }
+
+    #[test]
+    fn fputwc_surrogate_replaced() {
+        let fd = unsafe { libc::open("/dev/null\0".as_ptr().cast(), libc::O_WRONLY) };
+        assert!(fd >= 0);
+        let stream = &fd as *const i32 as *const c_void;
+        // Unpaired surrogate 0xD800 is not a valid Unicode scalar value
+        let result = unsafe { fputwc_to_stream(0xD800, stream) };
+        // The surrogate is not a valid character, but the write should still succeed
+        // (replacement char U+FFFD is written), so the return is the original c.
+        assert_eq!(result, 0xD800);
+        unsafe { libc::close(fd) };
+    }
 
     #[test]
     fn write_wide_null_format_returns_negative() {

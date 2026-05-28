@@ -109,6 +109,30 @@ pub unsafe extern "C" fn vfprintf(stream: *mut u8, format: *const c_char, _args:
     unsafe { common::write_format_to_stream(stream.cast(), format) }
 }
 
+/// Writes a wide character to the specified file stream.
+///
+/// # Arguments
+/// * `c`: The wide character (UTF-16 code unit) to write.
+/// * `stream`: A pointer to a FILE stream where the character will be written.
+///
+/// # Safety
+/// * The caller must ensure that `stream` is a valid pointer to a FILE stream.
+///
+/// # Returns
+/// * On success, returns the wide character cast to `wint_t`.
+/// * On error, returns WEOF (`u32::MAX`).
+///
+/// # Notes
+/// This function is a partial implementation. Currently, the wide character is
+/// encoded to UTF-8 and written directly to the file descriptor, without any
+/// buffering or locale-aware transcoding. A full implementation would need to
+/// handle file stream buffering, text vs binary mode, and locale-dependent
+/// encoding (raw UTF-16LE bytes on Windows).
+#[rine_dlls::partial]
+pub unsafe extern "C" fn fputwc(c: u16, stream: *mut u8) -> u32 {
+    unsafe { common::fputwc_to_stream(c, stream.cast()) }
+}
+
 /// Writes data from a buffer to the specified file stream.
 ///
 /// # Arguments
