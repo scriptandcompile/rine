@@ -60,3 +60,21 @@ pub unsafe extern "C" fn strncmp(s1: *const c_char, s2: *const c_char, n: usize)
 pub unsafe extern "C" fn strcmp(s1: *const c_char, s2: *const c_char) -> i32 {
     unsafe { common::strcmp(s1, s2) }
 }
+
+/// Get the length of a null-terminated wide string.
+///
+/// # Arguments
+/// - `s`: A pointer to a null-terminated wide (UTF-16) string. May be null, in which case this function returns 0.
+///
+/// # Safety
+/// - The caller must ensure that `s` is either null or points to a valid null-terminated wide string.
+///   If `s` is non-null and not properly null-terminated, this function may read out of bounds,
+///   leading to undefined behavior.
+///
+/// # Returns
+/// - The length of the wide string pointed to by `s`, excluding the null terminator,
+///   measured in wide characters (u16 code units).
+#[rine_dlls::implemented]
+pub unsafe extern "C" fn wcslen(s: *const u16) -> usize {
+    unsafe { common::wcslen(s) }
+}

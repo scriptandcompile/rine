@@ -26,4 +26,4 @@ pub use stdio::{
     write_format_to_stream, write_wide_format_to_stream,
 };
 pub use stdlib::{_cexit, exit};
-pub use string::{strcmp, strlen, strncmp};
+pub use string::{strcmp, strlen, strncmp, wcslen};

@@ -36,6 +36,32 @@ pub unsafe fn strncmp(s1: *const c_char, s2: *const c_char, n: usize) -> i32 {
     unsafe { libc::strncmp(s1, s2, n) }
 }
 
+/// Get the length of a null-terminated wide string.
+///
+/// # Arguments
+/// - `s`: A pointer to a null-terminated wide (UTF-16) string. May be null, in which case this function returns 0.
+///
+/// # Safety
+/// - The caller must ensure that `s` is either null or points to a valid null-terminated wide string.
+///   If `s` is non-null and not properly null-terminated, this function may read out of bounds,
+///   leading to undefined behavior.
+///
+/// # Returns
+/// - The length of the wide string pointed to by `s`, excluding the null terminator,
+///   measured in wide characters (u16 code units).
+pub unsafe fn wcslen(s: *const u16) -> usize {
+    if s.is_null() {
+        return 0;
+    }
+    let mut len = 0usize;
+    unsafe {
+        while *s.add(len) != 0 {
+            len += 1;
+        }
+    }
+    len
+}
+
 /// Compare two null-terminated strings.
 ///
 /// # Arguments
@@ -130,5 +156,26 @@ mod tests {
         let b = b"banana\0";
         let result = unsafe { strcmp(a.as_ptr() as *const c_char, b.as_ptr() as *const c_char) };
         assert!(result > 0);
+    }
+
+    #[test]
+    fn wcslen_normal() {
+        let wide = [
+            b'h' as u16,
+            b'e' as u16,
+            b'l' as u16,
+            b'l' as u16,
+            b'o' as u16,
+            0,
+        ];
+        let len = unsafe { wcslen(wide.as_ptr()) };
+        assert_eq!(len, 5);
+    }
+
+    #[test]
+    fn wcslen_empty() {
+        let wide = [0u16];
+        let len = unsafe { wcslen(wide.as_ptr()) };
+        assert_eq!(len, 0);
     }
 }
