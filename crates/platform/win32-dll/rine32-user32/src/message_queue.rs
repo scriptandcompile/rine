@@ -506,7 +506,7 @@ pub unsafe extern "stdcall" fn SendMessageW(
 /// Missing implementation features:
 /// - This is a stub that does not perform default processing for system and non-client messages.
 /// - Message-specific return semantics are not implemented; the function always returns `0`.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn DefWindowProcA(
@@ -515,6 +515,11 @@ pub unsafe extern "stdcall" fn DefWindowProcA(
     w_param: usize,
     l_param: isize,
 ) -> isize {
+    if msg == window_message::WM_CLOSE {
+        let _ = unsafe { crate::window_lifecycle::DestroyWindow(hwnd) };
+        return 0;
+    }
+
     common::def_window_proc(hwnd, msg, w_param, l_param)
 }
 
@@ -546,7 +551,7 @@ pub unsafe extern "stdcall" fn DefWindowProcA(
 /// Missing implementation features:
 /// - This is a stub that does not perform default processing for system and non-client messages.
 /// - Message-specific return semantics are not implemented; the function always returns `0`.
-#[rine_dlls::stubbed]
+#[rine_dlls::partial]
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn DefWindowProcW(
@@ -555,6 +560,11 @@ pub unsafe extern "stdcall" fn DefWindowProcW(
     w_param: usize,
     l_param: isize,
 ) -> isize {
+    if msg == window_message::WM_CLOSE {
+        let _ = unsafe { crate::window_lifecycle::DestroyWindow(hwnd) };
+        return 0;
+    }
+
     common::def_window_proc(hwnd, msg, w_param, l_param)
 }
 
