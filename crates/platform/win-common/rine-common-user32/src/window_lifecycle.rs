@@ -65,16 +65,8 @@ pub fn create_window(
     );
     rine_types::dev_notify!(on_handle_created(hwnd.as_raw() as i64, "Window", &detail));
 
-    THREAD_MESSAGE_QUEUE.with(|queue| {
-        queue.post_message(Msg {
-            hwnd,
-            message: window_message::WM_CREATE,
-            w_param: 0,
-            l_param: 0,
-            time: 0,
-            pt: Point::default(),
-        });
-    });
+    // WM_CREATE is dispatched by the architecture-specific CreateWindowEx*
+    // wrappers so they can provide a correctly laid out CREATESTRUCT* in lParam.
 
     hwnd
 }

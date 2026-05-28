@@ -4,6 +4,38 @@ use rine_types::handles::HMENU;
 use rine_types::strings::{LPCSTR, LPCWSTR};
 use rine_types::windows::*;
 
+#[repr(C)]
+struct CreateStructA {
+    lp_create_params: *mut u8,
+    h_instance: usize,
+    h_menu: isize,
+    hwnd_parent: usize,
+    cy: i32,
+    cx: i32,
+    y: i32,
+    x: i32,
+    style: i32,
+    lpsz_name: *const u8,
+    lpsz_class: *const u8,
+    ex_style: u32,
+}
+
+#[repr(C)]
+struct CreateStructW {
+    lp_create_params: *mut u8,
+    h_instance: usize,
+    h_menu: isize,
+    hwnd_parent: usize,
+    cy: i32,
+    cx: i32,
+    y: i32,
+    x: i32,
+    style: i32,
+    lpsz_name: *const u16,
+    lpsz_class: *const u16,
+    ex_style: u32,
+}
+
 /// Create a new window.
 ///
 /// # Arguments
@@ -48,9 +80,9 @@ pub unsafe extern "win64" fn CreateWindowExA(
     width: i32,
     height: i32,
     parent: HWND,
-    _menu: HMENU,
-    _instance: usize,
-    _param: *mut u8,
+    menu: HMENU,
+    instance: usize,
+    param: *mut u8,
 ) -> HWND {
     let hwnd = common::create_window(
         ex_style,
@@ -67,7 +99,39 @@ pub unsafe extern "win64" fn CreateWindowExA(
     );
 
     if !hwnd.is_null() && (style & window_style::WS_CHILD) != 0 {
-        let _ = common::set_window_control_id(hwnd, _menu.as_raw() as i32);
+        let _ = common::set_window_control_id(hwnd, menu.as_raw() as i32);
+    }
+
+    if !hwnd.is_null() {
+        let create = CreateStructA {
+            lp_create_params: param,
+            h_instance: instance,
+            h_menu: menu.as_raw(),
+            hwnd_parent: parent.as_raw(),
+            cy: height,
+            cx: width,
+            y,
+            x,
+            style: style as i32,
+            lpsz_name: window_name.as_ptr(),
+            lpsz_class: class_name.as_ptr(),
+            ex_style,
+        };
+
+        let l_param = (&create as *const CreateStructA) as isize;
+        let _ = unsafe {
+            common::send_message(
+                hwnd,
+                window_message::WM_CREATE,
+                0,
+                l_param,
+                |proc_fn, h, msg, wp, lp| {
+                    let f: extern "win64" fn(HWND, u32, usize, isize) -> isize =
+                        std::mem::transmute(proc_fn);
+                    f(h, msg, wp, lp)
+                },
+            )
+        };
     }
 
     hwnd
@@ -117,9 +181,9 @@ pub unsafe extern "win64" fn CreateWindowExW(
     width: i32,
     height: i32,
     parent: HWND,
-    _menu: HMENU,
-    _instance: usize,
-    _param: *mut u8,
+    menu: HMENU,
+    instance: usize,
+    param: *mut u8,
 ) -> HWND {
     let hwnd = common::create_window(
         ex_style,
@@ -136,7 +200,39 @@ pub unsafe extern "win64" fn CreateWindowExW(
     );
 
     if !hwnd.is_null() && (style & window_style::WS_CHILD) != 0 {
-        let _ = common::set_window_control_id(hwnd, _menu.as_raw() as i32);
+        let _ = common::set_window_control_id(hwnd, menu.as_raw() as i32);
+    }
+
+    if !hwnd.is_null() {
+        let create = CreateStructW {
+            lp_create_params: param,
+            h_instance: instance,
+            h_menu: menu.as_raw(),
+            hwnd_parent: parent.as_raw(),
+            cy: height,
+            cx: width,
+            y,
+            x,
+            style: style as i32,
+            lpsz_name: window_name.as_ptr(),
+            lpsz_class: class_name.as_ptr(),
+            ex_style,
+        };
+
+        let l_param = (&create as *const CreateStructW) as isize;
+        let _ = unsafe {
+            common::send_message(
+                hwnd,
+                window_message::WM_CREATE,
+                0,
+                l_param,
+                |proc_fn, h, msg, wp, lp| {
+                    let f: extern "win64" fn(HWND, u32, usize, isize) -> isize =
+                        std::mem::transmute(proc_fn);
+                    f(h, msg, wp, lp)
+                },
+            )
+        };
     }
 
     hwnd
