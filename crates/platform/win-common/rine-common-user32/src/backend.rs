@@ -20,7 +20,14 @@ use winit::event::{ElementState, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::platform::pump_events::EventLoopExtPumpEvents;
+#[cfg(target_os = "linux")]
+use winit::raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use winit::window::{Window, WindowId};
+
+#[cfg(target_os = "linux")]
+use x11rb::connection::Connection;
+#[cfg(target_os = "linux")]
+use x11rb::protocol::xproto::{ChangeWindowAttributesAux, ConnectionExt as XprotoConnectionExt};
 
 use crate::accelerator;
 
@@ -53,9 +60,16 @@ struct WinitBackendState {
     reverse: HashMap<WindowId, HWND>,
     pending_windows: HashMap<HWND, PendingWindow>,
     pending_paint_messages: HashSet<HWND>,
+    class_backgrounds: HashMap<HWND, ClassBackground>,
+    last_unsolicited_clear: HashMap<HWND, std::time::Instant>,
     last_reported_size: HashMap<HWND, (u32, u32)>,
     last_reported_pos: HashMap<HWND, (i32, i32)>,
     ready_for_windows: bool,
+}
+
+#[derive(Clone, Copy)]
+enum ClassBackground {
+    Window,
 }
 
 struct PendingWindow {
@@ -83,6 +97,8 @@ impl WinitBackend {
                 reverse: HashMap::new(),
                 pending_windows: HashMap::new(),
                 pending_paint_messages: HashSet::new(),
+                class_backgrounds: HashMap::new(),
+                last_unsolicited_clear: HashMap::new(),
                 last_reported_size: HashMap::new(),
                 last_reported_pos: HashMap::new(),
                 // In pump mode, some platforms may not deliver `resumed()` before
@@ -106,6 +122,8 @@ impl WinitBackend {
     fn destroy_window(&mut self, hwnd: HWND) {
         self.state.pending_windows.remove(&hwnd);
         self.state.pending_paint_messages.remove(&hwnd);
+        self.state.class_backgrounds.remove(&hwnd);
+        self.state.last_unsolicited_clear.remove(&hwnd);
         self.state.last_reported_size.remove(&hwnd);
         self.state.last_reported_pos.remove(&hwnd);
         if let Some(window) = self.state.windows.remove(&hwnd) {
@@ -189,6 +207,11 @@ impl WinitBackendState {
         let id = window.id();
         self.reverse.insert(id, hwnd);
         self.windows.insert(hwnd, window);
+
+        if let Some(background) = class_background_for_name(&state.class_name) {
+            self.class_backgrounds.insert(hwnd, background);
+        }
+
         debug_log_backend(format!(
             "create_window hwnd={:#x} title=\"{}\" visible={}",
             hwnd.as_raw(),
@@ -372,6 +395,12 @@ impl ApplicationHandler for WinitPumpApp<'_> {
             }
             WindowEvent::RedrawRequested => {
                 if self.state.take_pending_paint(hwnd) {
+                    if let Some(background) = self.state.class_backgrounds.get(&hwnd).copied()
+                        && let Some(window) = self.state.windows.get(&hwnd)
+                    {
+                        paint_native_background(window, background);
+                    }
+
                     self.out.push(Msg {
                         hwnd,
                         message: window_message::WM_PAINT,
@@ -380,11 +409,36 @@ impl ApplicationHandler for WinitPumpApp<'_> {
                         time: 0,
                         pt: Point::default(),
                     });
-                } else if user32_debug_enabled() {
-                    debug_log_backend(format!(
-                        "ignoring unsolicited redraw hwnd={:#x}",
-                        hwnd.as_raw()
-                    ));
+                } else {
+                    let should_clear = {
+                        let now = std::time::Instant::now();
+                        let interval = Duration::from_millis(30);
+                        let allowed = self
+                            .state
+                            .last_unsolicited_clear
+                            .get(&hwnd)
+                            .map(|last| now.duration_since(*last) >= interval)
+                            .unwrap_or(true);
+                        if allowed {
+                            self.state.last_unsolicited_clear.insert(hwnd, now);
+                        }
+                        allowed
+                    };
+
+                    if should_clear
+                        && let Some(background) = self.state.class_backgrounds.get(&hwnd).copied()
+                        && let Some(window) = self.state.windows.get(&hwnd)
+                    {
+                        paint_native_background(window, background);
+                    }
+
+                    if user32_debug_enabled() {
+                        debug_log_backend(format!(
+                            "unsolicited redraw hwnd={:#x} -> native background clear only (throttled={})",
+                            hwnd.as_raw(),
+                            !should_clear
+                        ));
+                    }
                 }
             }
             _ => {}
@@ -467,6 +521,59 @@ fn key_code_to_virtual_key(code: KeyCode) -> Option<u16> {
 
     Some(vk)
 }
+
+fn class_background_for_name(class_name: &str) -> Option<ClassBackground> {
+    let class = WINDOW_CLASS_REGISTRY.get(class_name)?;
+    let sys_color_index = class.background.checked_sub(1)?;
+
+    match sys_color_index {
+        // COLOR_WINDOW
+        5 => Some(ClassBackground::Window),
+        _ => None,
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn paint_native_background(window: &Window, background: ClassBackground) {
+    let Ok(window_handle) = window.window_handle() else {
+        return;
+    };
+
+    let x11_window = match window_handle.as_raw() {
+        RawWindowHandle::Xlib(handle) => handle.window as u32,
+        RawWindowHandle::Xcb(handle) => handle.window.get(),
+        _ => return,
+    };
+
+    if x11_window == 0 {
+        return;
+    }
+
+    let Ok((conn, screen_num)) = x11rb::connect(None) else {
+        return;
+    };
+
+    let screen = &conn.setup().roots[screen_num];
+    let pixel = match background {
+        ClassBackground::Window => screen.white_pixel,
+    };
+
+    if user32_debug_enabled() {
+        debug_log_backend(format!(
+            "native background clear via X11 pixel={:#x}",
+            pixel
+        ));
+    }
+
+    let attributes = ChangeWindowAttributesAux::new().background_pixel(pixel);
+
+    let _ = conn.change_window_attributes(x11_window, &attributes);
+    let _ = conn.clear_area(false, x11_window, 0, 0, 0, 0);
+    let _ = conn.flush();
+}
+
+#[cfg(not(target_os = "linux"))]
+fn paint_native_background(_window: &Window, _background: ClassBackground) {}
 
 impl HostedBackend {
     fn connect(socket_path: &str) -> Result<Self, String> {
