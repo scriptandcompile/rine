@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T00:37:18.841028+00:00",
+  "generatedAt": "2026-05-28T00:43:23.190687+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2049,7 +2049,7 @@
     },
     {
       "name": "msvcrt.dll",
-      "functionCount": 44,
+      "functionCount": 45,
       "functions": [
         {
           "name": "__C_specific_handler",
@@ -2360,6 +2360,19 @@
           "x86": {
             "status": "implemented",
             "symbol": "crt_support::_unlock",
+            "source": "msvcrt - crt_support.rs"
+          }
+        },
+        {
+          "name": "_wcmdln",
+          "x64": {
+            "status": "implemented",
+            "symbol": "crt_support::_wcmdln",
+            "source": "msvcrt - crt_support.rs"
+          },
+          "x86": {
+            "status": "implemented",
+            "symbol": "crt_support::_wcmdln",
             "source": "msvcrt - crt_support.rs"
           }
         },
@@ -3984,15 +3997,15 @@
     }
   ],
   "totals": {
-    "functions": 302,
+    "functions": 303,
     "x64": {
-      "implemented": 105,
+      "implemented": 106,
       "partial": 158,
       "stubbed": 39,
       "unimplemented": 0
     },
     "x86": {
-      "implemented": 105,
+      "implemented": 106,
       "partial": 158,
       "stubbed": 39,
       "unimplemented": 0

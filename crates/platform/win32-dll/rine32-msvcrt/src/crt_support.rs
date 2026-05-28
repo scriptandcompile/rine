@@ -437,3 +437,28 @@ pub unsafe extern "C" fn __p__commode() -> *mut i32 {
     tracing::trace!("msvcrt::__p__commode");
     common::commode_ptr()
 }
+
+/// Get a pointer to the wide-character command-line string (`_wcmdln`).
+///
+/// Exported as a data symbol (`wchar_t* _wcmdln`) from msvcrt.dll.
+/// The CRT startup code uses this value to access the raw command line
+/// before `main()` is called.
+///
+/// # Returns
+/// A null-terminated UTF-16LE command-line string. The pointer is stable
+/// for the lifetime of the process.
+///
+/// # Safety
+/// The returned pointer must not be written through; doing so will corrupt
+/// the cached command-line string and may cause undefined behavior in CRT
+/// functions that depend on it.
+///
+/// # Notes
+/// The command line is reconstructed from `std::env::args()` and may not
+/// exactly match the original OS-provided command line. Wildcard expansion
+/// is not performed.
+#[rine_dlls::implemented]
+#[cfg_attr(not(rust_analyzer), rine_dlls::data_export)]
+pub unsafe extern "C" fn _wcmdln() -> *const u16 {
+    common::wcmdln_str()
+}

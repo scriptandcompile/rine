@@ -83,3 +83,60 @@ static WINITENV_PTR: LazyLock<SyncPtr<*mut usize>> = LazyLock::new(|| SyncPtr(le
 pub fn winitenv_ptr() -> *mut usize {
     WINITENV_PTR.0
 }
+
+static WCMDLN_STRING: LazyLock<Vec<u16>> = LazyLock::new(|| {
+    let args: Vec<String> = std::env::args().collect();
+    let joined = args
+        .iter()
+        .map(|a| {
+            if a.contains(' ') {
+                format!("\"{a}\"")
+            } else {
+                a.clone()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+    joined.encode_utf16().chain(std::iter::once(0)).collect()
+});
+
+/// Get a pointer to the wide-character command-line string.
+///
+/// # Returns
+/// A pointer to a null-terminated UTF-16LE command line string,
+/// reconstructed from `std::env::args()` with space-containing arguments
+/// quoted. The returned pointer is valid for the lifetime of the process.
+///
+/// # Notes
+/// This provides the backing data for the `_wcmdln` export in msvcrt.dll.
+/// The command line is built once on first access and cached.
+/// The reconstruction from argv may differ from the original command line
+/// provided by the OS (e.g., quoting, whitespace normalization).
+/// Wildcard expansion is not performed.
+pub fn wcmdln_str() -> *const u16 {
+    WCMDLN_STRING.as_ptr()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn wcmdln_str_returns_non_null() {
+        let ptr = wcmdln_str();
+        assert!(!ptr.is_null());
+    }
+
+    #[test]
+    fn wcmdln_str_is_null_terminated() {
+        let ptr = wcmdln_str();
+        assert!(!ptr.is_null());
+        unsafe {
+            let mut len = 0;
+            while *ptr.add(len) != 0 {
+                len += 1;
+            }
+            assert!(len > 0, "command line should not be empty");
+        }
+    }
+}
