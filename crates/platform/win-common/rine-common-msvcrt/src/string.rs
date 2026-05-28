@@ -1,4 +1,9 @@
 use core::ffi::c_char;
+use std::cell::UnsafeCell;
+
+thread_local! {
+    static STRERROR_BUF: UnsafeCell<[u8; 1024]> = const { UnsafeCell::new([0u8; 1024]) };
+}
 
 /// Get the length of a null-terminated string.
 ///
@@ -60,6 +65,46 @@ pub unsafe fn wcslen(s: *const u16) -> usize {
         }
     }
     len
+}
+
+/// Return a string describing the error code.
+///
+/// # Arguments
+/// - `errnum`: The error number to describe. Standard errno values (e.g., `EINVAL`, `ENOENT`) are
+///   recognized and will be mapped to a corresponding human-readable message. Unknown values produce
+///   a fallback string containing the numeric code.
+///
+/// # Returns
+/// - A pointer to a thread-local null-terminated C string containing a human-readable error message.
+///   The pointer remains valid until the next call to `strerror` in the same thread.
+///   The caller should copy the string if it needs to persist across subsequent calls.
+///
+/// # Safety
+/// - The returned pointer points to a thread-local buffer that is overwritten on each call to
+///   `strerror` in the same thread. The caller must copy the string if it needs to outlive the
+///   next call. The pointer is also invalidated when the thread exits.
+///
+/// # Notes
+/// - This implementation uses the host system's `libc::strerror_r` to obtain error messages.
+///   The messages are those of the host C library, not MSVC-specific messages. MSVC-compatible
+///   error strings (e.g., "No error", "Permission denied", etc.) are not yet implemented.
+/// - If the error code is not recognized, a generic `"Unknown error N"` message is returned.
+/// - A secure, bounds-checked variant `strerror_s` is not yet implemented.
+pub unsafe fn strerror(errnum: i32) -> *mut c_char {
+    STRERROR_BUF.with(|buf| {
+        let ptr = buf.get() as *mut c_char;
+        unsafe {
+            let result = libc::strerror_r(errnum, ptr, 1024);
+            if result != 0 {
+                let msg = format!("Unknown error {}\0", errnum);
+                let bytes = msg.as_bytes();
+                let len = bytes.len().min(1023);
+                std::ptr::copy_nonoverlapping(bytes.as_ptr(), ptr as *mut u8, len);
+                *ptr.add(len) = 0;
+            }
+        }
+        ptr
+    })
 }
 
 /// Compare two null-terminated strings.
@@ -177,5 +222,65 @@ mod tests {
         let wide = [0u16];
         let len = unsafe { wcslen(wide.as_ptr()) };
         assert_eq!(len, 0);
+    }
+
+    #[test]
+    fn strerror_known_errno() {
+        unsafe {
+            let msg = strerror(libc::ENOENT);
+            let s = std::ffi::CStr::from_ptr(msg).to_string_lossy();
+            assert!(
+                !s.is_empty(),
+                "strerror(ENOENT) should return a non-empty message"
+            );
+        }
+    }
+
+    #[test]
+    fn strerror_zero_is_success() {
+        unsafe {
+            let msg = strerror(0);
+            let s = std::ffi::CStr::from_ptr(msg).to_string_lossy();
+            assert!(
+                !s.is_empty(),
+                "strerror(0) should return a non-empty message"
+            );
+        }
+    }
+
+    #[test]
+    fn strerror_unknown_errno_contains_number() {
+        unsafe {
+            let msg = strerror(999999);
+            let s = std::ffi::CStr::from_ptr(msg).to_string_lossy();
+            // The string should indicate the errno is unknown, or at least contain the number
+            assert!(
+                s.contains("999999") || s.to_lowercase().contains("unknown"),
+                "strerror(999999) should indicate an unknown error, got: {s}"
+            );
+        }
+    }
+
+    #[test]
+    fn strerror_return_is_stable_until_next_call() {
+        unsafe {
+            let msg1 = strerror(libc::ENOENT);
+            let s1 = std::ffi::CStr::from_ptr(msg1).to_string_lossy().to_string();
+
+            let msg2 = strerror(libc::EINVAL);
+            let s2 = std::ffi::CStr::from_ptr(msg2).to_string_lossy().to_string();
+
+            // s1 should no longer be valid descriptor error (buffer was overwritten)
+            assert!(
+                !s2.is_empty(),
+                "strerror(EINVAL) should return a non-empty message"
+            );
+
+            // The messages should differ since they describe different errno values
+            assert_ne!(
+                s1, s2,
+                "different errno values should yield different messages"
+            );
+        }
     }
 }

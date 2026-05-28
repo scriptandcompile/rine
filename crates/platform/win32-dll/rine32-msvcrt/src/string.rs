@@ -61,6 +61,33 @@ pub unsafe extern "C" fn strcmp(s1: *const c_char, s2: *const c_char) -> i32 {
     unsafe { common::strcmp(s1, s2) }
 }
 
+/// Return a string describing the error code.
+///
+/// # Arguments
+/// - `errnum`: The error number to describe. Standard errno values (e.g., `EINVAL`, `ENOENT`) are
+///   recognized and will be mapped to a corresponding human-readable message. Unknown values produce
+///   a fallback string containing the numeric code.
+///
+/// # Returns
+/// - A pointer to a thread-local null-terminated C string containing a human-readable error message.
+///   The pointer remains valid until the next call to `strerror` in the same thread.
+///   The caller should copy the string if it needs to persist across subsequent calls.
+///
+/// # Safety
+/// - The returned pointer points to a thread-local buffer that is overwritten on each call to
+///   `strerror` in the same thread. The caller must copy the string if it needs to outlive the
+///   next call. The pointer is also invalidated when the thread exits.
+///
+/// # Notes
+/// - This implementation uses the host system's `libc::strerror_r` to obtain error messages.
+///   The messages are those of the host C library, not MSVC-specific messages. MSVC-compatible
+///   error strings are not yet implemented.
+/// - A secure, bounds-checked variant `strerror_s` is not yet implemented.
+#[rine_dlls::partial]
+pub unsafe extern "C" fn strerror(errnum: i32) -> *mut c_char {
+    unsafe { common::strerror(errnum) }
+}
+
 /// Get the length of a null-terminated wide string.
 ///
 /// # Arguments
