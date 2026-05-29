@@ -21,6 +21,8 @@ tracing = { workspace = true }
 goblin = { workspace = true }
 rfd = { workspace = true }
 tiny-skia = { workspace = true }
+fontdb = { workspace = true }
+fontdue = { workspace = true }
 x11rb = { version = "0.13", default-features = false }
 
 [dev-dependencies]

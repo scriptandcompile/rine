@@ -1,3 +1,7 @@
+use std::sync::OnceLock;
+
+use fontdb::{Database, Family, Query, Stretch, Style, Weight};
+use fontdue::{Font, FontSettings};
 use rine_types::windows::{HWND, WINDOW_MANAGER, WindowState};
 use tiny_skia::{Color, Paint, Pixmap, PremultipliedColorU8, Rect};
 
@@ -63,9 +67,21 @@ fn draw_control(pixmap: &mut Pixmap, child: &WindowState) {
 
     if !child.title.is_empty() {
         let text_x = x.saturating_add(6);
-        let text_y_offset = i32::try_from((h.saturating_sub(14)) / 2).unwrap_or(0);
-        let text_y = y.saturating_add(text_y_offset);
-        draw_text_5x7(pixmap, text_x, text_y, &child.title, Color::BLACK, 2);
+        let text_y = y.saturating_add(4);
+        let text_width = w.saturating_sub(12);
+        let text_height = h.saturating_sub(8);
+        if !draw_text_with_font(
+            pixmap,
+            text_x,
+            text_y,
+            text_width,
+            text_height,
+            &child.title,
+            Color::BLACK,
+            13.0,
+        ) {
+            draw_text_5x7(pixmap, text_x, text_y, &child.title, Color::BLACK, 2);
+        }
     }
 }
 
@@ -88,6 +104,152 @@ fn draw_rect_border(pixmap: &mut Pixmap, x: i32, y: i32, w: u32, h: u32, color: 
     fill_rect(pixmap, x, y + (h as i32) - 1, w, 1, color);
     fill_rect(pixmap, x, y + 1, 1, h - 2, color);
     fill_rect(pixmap, x + (w as i32) - 1, y + 1, 1, h - 2, color);
+}
+
+fn default_ui_font() -> Option<&'static Font> {
+    static FONT: OnceLock<Option<Font>> = OnceLock::new();
+    FONT.get_or_init(load_default_ui_font).as_ref()
+}
+
+fn load_default_ui_font() -> Option<Font> {
+    let mut db = Database::new();
+    db.load_system_fonts();
+
+    let query = Query {
+        families: &[
+            Family::Name("Segoe UI"),
+            Family::Name("Noto Sans"),
+            Family::SansSerif,
+        ],
+        weight: Weight::NORMAL,
+        stretch: Stretch::Normal,
+        style: Style::Normal,
+    };
+
+    let id = db
+        .query(&query)
+        .or_else(|| db.faces().next().map(|face| face.id))?;
+    db.with_face_data(id, |data, face_index| {
+        Font::from_bytes(
+            data,
+            FontSettings {
+                collection_index: face_index,
+                ..FontSettings::default()
+            },
+        )
+        .ok()
+    })?
+}
+
+#[allow(clippy::too_many_arguments)]
+fn draw_text_with_font(
+    pixmap: &mut Pixmap,
+    x: i32,
+    y: i32,
+    max_width: u32,
+    max_height: u32,
+    text: &str,
+    color: Color,
+    font_size: f32,
+) -> bool {
+    let Some(font) = default_ui_font() else {
+        return false;
+    };
+
+    if max_width == 0 || max_height == 0 {
+        return true;
+    }
+
+    let line_metrics = font.horizontal_line_metrics(font_size);
+    let ascent = line_metrics.map(|m| m.ascent).unwrap_or(font_size * 0.8);
+    let descent = line_metrics
+        .map(|m| m.descent)
+        .unwrap_or(-(font_size * 0.2));
+    let line_height = (ascent - descent).max(font_size);
+    let baseline = y as f32 + ((max_height as f32 - line_height) * 0.5).max(0.0) + ascent;
+
+    let min_x = x;
+    let min_y = y;
+    let max_x = x.saturating_add(max_width as i32);
+    let max_y = y.saturating_add(max_height as i32);
+
+    let mut pen_x = x as f32;
+    let mut prev = None;
+
+    for ch in text.chars() {
+        if ch == '\n' || pen_x >= max_x as f32 {
+            break;
+        }
+
+        if let Some(prev_ch) = prev {
+            pen_x += font.horizontal_kern(prev_ch, ch, font_size).unwrap_or(0.0);
+        }
+
+        let (metrics, bitmap) = font.rasterize(ch, font_size);
+        let glyph_x = pen_x + metrics.xmin as f32;
+        let glyph_y = baseline + metrics.ymin as f32;
+
+        draw_alpha_bitmap(
+            pixmap,
+            glyph_x as i32,
+            glyph_y as i32,
+            metrics.width,
+            metrics.height,
+            &bitmap,
+            color,
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        );
+
+        pen_x += metrics.advance_width;
+        prev = Some(ch);
+    }
+
+    true
+}
+
+#[allow(clippy::too_many_arguments)]
+fn draw_alpha_bitmap(
+    pixmap: &mut Pixmap,
+    x: i32,
+    y: i32,
+    width: usize,
+    height: usize,
+    alpha_bitmap: &[u8],
+    color: Color,
+    clip_min_x: i32,
+    clip_min_y: i32,
+    clip_max_x: i32,
+    clip_max_y: i32,
+) {
+    if width == 0 || height == 0 {
+        return;
+    }
+
+    let r = (color.red() * 255.0).round() as u8;
+    let g = (color.green() * 255.0).round() as u8;
+    let b = (color.blue() * 255.0).round() as u8;
+    let base_alpha = (color.alpha() * 255.0).round() as u8;
+
+    for row in 0..height {
+        for col in 0..width {
+            let coverage = alpha_bitmap[row * width + col];
+            if coverage == 0 {
+                continue;
+            }
+
+            let px = x.saturating_add(col as i32);
+            let py = y.saturating_add(row as i32);
+            if px < clip_min_x || py < clip_min_y || px >= clip_max_x || py >= clip_max_y {
+                continue;
+            }
+
+            let alpha = ((u16::from(base_alpha) * u16::from(coverage)) / 255) as u8;
+            fill_rect(pixmap, px, py, 1, 1, Color::from_rgba8(r, g, b, alpha));
+        }
+    }
 }
 
 fn draw_text_5x7(pixmap: &mut Pixmap, x: i32, y: i32, text: &str, color: Color, scale: u32) {
