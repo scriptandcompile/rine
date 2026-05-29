@@ -4,7 +4,7 @@ use std::time::Duration;
 use rine_types::windows::*;
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalPosition, LogicalSize};
-use winit::event::{ElementState, WindowEvent};
+use winit::event::{ElementState, MouseButton, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::platform::pump_events::EventLoopExtPumpEvents;
@@ -35,6 +35,8 @@ struct WinitBackendState {
     reverse: HashMap<WindowId, HWND>,
     pending_windows: HashMap<HWND, PendingWindow>,
     pending_paint_messages: HashSet<HWND>,
+    last_cursor_pos: HashMap<HWND, Point>,
+    pressed_child: HashMap<HWND, HWND>,
     class_backgrounds: HashMap<HWND, ClassBackground>,
     last_unsolicited_clear: HashMap<HWND, std::time::Instant>,
     last_reported_size: HashMap<HWND, (u32, u32)>,
@@ -61,6 +63,8 @@ impl NativeBackend {
                 reverse: HashMap::new(),
                 pending_windows: HashMap::new(),
                 pending_paint_messages: HashSet::new(),
+                last_cursor_pos: HashMap::new(),
+                pressed_child: HashMap::new(),
                 class_backgrounds: HashMap::new(),
                 last_unsolicited_clear: HashMap::new(),
                 last_reported_size: HashMap::new(),
@@ -94,6 +98,8 @@ impl NativeBackend {
     pub(super) fn destroy_window(&mut self, hwnd: HWND) {
         self.state.pending_windows.remove(&hwnd);
         self.state.pending_paint_messages.remove(&hwnd);
+        self.state.last_cursor_pos.remove(&hwnd);
+        self.state.pressed_child.remove(&hwnd);
         self.state.class_backgrounds.remove(&hwnd);
         self.state.last_unsolicited_clear.remove(&hwnd);
         self.state.last_reported_size.remove(&hwnd);
@@ -327,6 +333,15 @@ impl ApplicationHandler for WinitPumpApp<'_> {
                 }
                 self.state.last_reported_size.insert(hwnd, dims);
 
+                let width = i32::try_from(size.width).unwrap_or(i32::MAX);
+                let height = i32::try_from(size.height).unwrap_or(i32::MAX);
+                let _ = WINDOW_MANAGER.update_window(hwnd, |state| {
+                    state.rect.right = state.rect.left.saturating_add(width);
+                    state.rect.bottom = state.rect.top.saturating_add(height);
+                    state.client_rect.right = width;
+                    state.client_rect.bottom = height;
+                });
+
                 let l_param = ((size.height as isize) << 16) | ((size.width as isize) & 0xFFFF);
                 self.out.push(Msg {
                     hwnd,
@@ -343,6 +358,15 @@ impl ApplicationHandler for WinitPumpApp<'_> {
                     return;
                 }
                 self.state.last_reported_pos.insert(hwnd, coords);
+
+                let _ = WINDOW_MANAGER.update_window(hwnd, |state| {
+                    let width = state.rect.right.saturating_sub(state.rect.left);
+                    let height = state.rect.bottom.saturating_sub(state.rect.top);
+                    state.rect.left = pos.x;
+                    state.rect.top = pos.y;
+                    state.rect.right = pos.x.saturating_add(width);
+                    state.rect.bottom = pos.y.saturating_add(height);
+                });
 
                 let x = (pos.x as i16) as u16 as usize;
                 let y = (pos.y as i16) as u16 as usize;
@@ -409,6 +433,61 @@ impl ApplicationHandler for WinitPumpApp<'_> {
                     pt: Point::default(),
                 });
             }
+            WindowEvent::CursorMoved { position, .. } => {
+                self.state.last_cursor_pos.insert(
+                    hwnd,
+                    Point {
+                        x: position.x as i32,
+                        y: position.y as i32,
+                    },
+                );
+            }
+            WindowEvent::MouseInput { state, button, .. } => {
+                if button != MouseButton::Left {
+                    return;
+                }
+
+                let cursor_pt = self
+                    .state
+                    .last_cursor_pos
+                    .get(&hwnd)
+                    .copied()
+                    .unwrap_or_default();
+                let hit_child = logical_child_at_point(hwnd, cursor_pt);
+
+                match state {
+                    ElementState::Pressed => {
+                        if let Some(child) = hit_child {
+                            self.state.pressed_child.insert(hwnd, child);
+                            queue_mouse_message_for_child(
+                                self.out,
+                                child,
+                                window_message::WM_LBUTTONDOWN,
+                                cursor_pt,
+                            );
+                        }
+                    }
+                    ElementState::Released => {
+                        let pressed_child = self.state.pressed_child.remove(&hwnd);
+
+                        if let Some(child) = pressed_child.or(hit_child) {
+                            queue_mouse_message_for_child(
+                                self.out,
+                                child,
+                                window_message::WM_LBUTTONUP,
+                                cursor_pt,
+                            );
+                        }
+
+                        if let (Some(pressed), Some(hit)) = (pressed_child, hit_child)
+                            && pressed == hit
+                            && is_button_control(pressed)
+                        {
+                            queue_button_clicked_command(self.out, pressed, cursor_pt);
+                        }
+                    }
+                }
+            }
             WindowEvent::RedrawRequested => {
                 if self.state.take_pending_paint(hwnd) {
                     if let Some(background) = self.state.class_backgrounds.get(&hwnd).copied()
@@ -462,6 +541,78 @@ impl ApplicationHandler for WinitPumpApp<'_> {
             _ => {}
         }
     }
+}
+
+const BN_CLICKED: u16 = 0;
+
+fn logical_child_at_point(parent: HWND, pt: Point) -> Option<HWND> {
+    let hit = WINDOW_MANAGER.child_window_from_point(parent, pt);
+    if hit.is_null() || hit == parent {
+        None
+    } else {
+        Some(hit)
+    }
+}
+
+fn child_relative_point(child: HWND, point_in_parent: Point) -> Option<Point> {
+    let state = WINDOW_MANAGER.get_window(child)?;
+    Some(Point {
+        x: point_in_parent.x.saturating_sub(state.rect.left),
+        y: point_in_parent.y.saturating_sub(state.rect.top),
+    })
+}
+
+fn queue_mouse_message_for_child(out: &mut Vec<Msg>, child: HWND, msg: u32, cursor_pt: Point) {
+    let child_pt = child_relative_point(child, cursor_pt).unwrap_or_default();
+
+    out.push(Msg {
+        hwnd: child,
+        message: msg,
+        w_param: 0,
+        l_param: pack_mouse_lparam(child_pt.x, child_pt.y),
+        time: 0,
+        pt: cursor_pt,
+    });
+}
+
+fn is_button_control(hwnd: HWND) -> bool {
+    WINDOW_MANAGER
+        .get_window(hwnd)
+        .map(|state| state.class_name.eq_ignore_ascii_case("BUTTON"))
+        .unwrap_or(false)
+}
+
+fn queue_button_clicked_command(out: &mut Vec<Msg>, child: HWND, cursor_pt: Point) {
+    let Some(state) = WINDOW_MANAGER.get_window(child) else {
+        return;
+    };
+
+    let parent = state.parent;
+    if parent.is_null() {
+        return;
+    }
+
+    let control_id = WINDOW_MANAGER.get_control_id(child).unwrap_or(0);
+    out.push(Msg {
+        hwnd: parent,
+        message: window_message::WM_COMMAND,
+        w_param: pack_command_wparam(control_id, BN_CLICKED),
+        l_param: child.as_raw() as isize,
+        time: 0,
+        pt: cursor_pt,
+    });
+}
+
+fn pack_mouse_lparam(x: i32, y: i32) -> isize {
+    let x = ((x as i16) as u16) as usize;
+    let y = ((y as i16) as u16) as usize;
+    ((y << 16) | x) as isize
+}
+
+fn pack_command_wparam(control_id: i32, notification_code: u16) -> usize {
+    let low = (control_id as u16) as usize;
+    let high = (notification_code as usize) << 16;
+    high | low
 }
 
 fn key_code_to_virtual_key(code: KeyCode) -> Option<u16> {
