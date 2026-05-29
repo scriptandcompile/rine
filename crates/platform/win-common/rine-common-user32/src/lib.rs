@@ -13,6 +13,7 @@ pub mod backend;
 pub mod char_navigation;
 pub mod class_registration;
 pub mod clipboard;
+pub mod controls;
 pub mod cursor;
 pub mod device_context;
 pub mod dialogs;

@@ -5,11 +5,16 @@ use rine_types::windows::*;
 use text::{write_ansi_truncating_nul, write_wide_truncating_nul};
 
 use crate::backend::set_native_title;
+use crate::window_lifecycle::invalidate_rect;
 
 /// SetWindowText — set the title bar text for a window.
 ///
 /// Returns `BOOL::TRUE` on success, `BOOL::FALSE` if the HWND is not found.
 pub fn set_window_text(hwnd: HWND, text: String) -> BOOL {
+    if WINDOW_MANAGER.get_window(hwnd).is_none() {
+        return BOOL::FALSE;
+    }
+
     let backend_title = text.clone();
 
     WINDOW_MANAGER.update_window(hwnd, |state| {
@@ -17,6 +22,7 @@ pub fn set_window_text(hwnd: HWND, text: String) -> BOOL {
     });
 
     set_native_title(hwnd, &backend_title);
+    let _ = invalidate_rect(hwnd, None, BOOL::FALSE);
 
     BOOL::TRUE
 }

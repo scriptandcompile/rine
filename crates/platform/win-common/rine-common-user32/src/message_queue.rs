@@ -255,7 +255,13 @@ pub unsafe fn send_message(
 /// Missing implementation features:
 /// - Only a minimal subset of default behavior is implemented.
 /// - No non-client, keyboard, mouse, or system-command default handling yet.
-pub fn def_window_proc(_hwnd: HWND, msg: u32, _w_param: usize, _l_param: isize) -> isize {
+pub fn def_window_proc(hwnd: HWND, msg: u32, w_param: usize, l_param: isize) -> isize {
+    if let Some(result) =
+        crate::controls::dispatch_default_control_proc(hwnd, msg, w_param, l_param)
+    {
+        return result;
+    }
+
     match msg {
         // Default proc reports background erased when app does not handle it.
         window_message::WM_ERASEBKGND => 1,
