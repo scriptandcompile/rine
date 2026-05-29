@@ -9,6 +9,8 @@ These examples are separate from integration fixture sources.
 
 - `basic_window_c_app`
 - `modal_dialog_c_app`
+- `all_controls_c_app`
+- `all_controls_dialog_c_app`
 
 ## Build both examples
 
@@ -22,3 +24,5 @@ Output binaries:
 
 - `tests/fixtures/examples/bin/basic_window_c_app.exe`
 - `tests/fixtures/examples/bin/modal_dialog_c_app.exe`
+- `tests/fixtures/examples/bin/all_controls_c_app.exe`
+- `tests/fixtures/examples/bin/all_controls_dialog_c_app.exe`

@@ -41,6 +41,26 @@ build_modal_dialog_example() {
     "$CC_X64" -municode -O1 -o "$out_exe" "$src_dir/main.c" "$res_obj" -luser32
 }
 
+build_all_controls_example() {
+    local src_dir="$EXAMPLES_DIR/all_controls_c_app"
+    local out_exe="$OUT_DIR/all_controls_c_app.exe"
+
+    echo "  CC  all_controls_c_app -> $out_exe"
+    "$CC_X64" -municode -O1 -o "$out_exe" "$src_dir/main.c" -lgdi32 -lcomctl32
+}
+
+build_all_controls_dialog_example() {
+    local src_dir="$EXAMPLES_DIR/all_controls_dialog_c_app"
+    local res_obj="$OUT_DIR/all_controls_dialog_c_app.res.o"
+    local out_exe="$OUT_DIR/all_controls_dialog_c_app.exe"
+
+    echo "  RC  all_controls_dialog_c_app/dialog.rc -> $res_obj"
+    "$WINDRES_X64" -I"$src_dir" -o "$res_obj" "$src_dir/dialog.rc"
+
+    echo "  CC  all_controls_dialog_c_app -> $out_exe"
+    "$CC_X64" -municode -O1 -o "$out_exe" "$src_dir/main.c" "$res_obj" -luser32 -lcomctl32 -lgdi32
+}
+
 echo "==> Building fixture examples (x64)"
 require_tool "$CC_X64" "apt install gcc-mingw-w64-x86-64"
 require_tool "$WINDRES_X64" "apt install binutils-mingw-w64-x86-64"
@@ -48,7 +68,11 @@ require_tool "$WINDRES_X64" "apt install binutils-mingw-w64-x86-64"
 mkdir -p "$OUT_DIR"
 build_basic_window_example
 build_modal_dialog_example
+build_all_controls_example
+build_all_controls_dialog_example
 
 echo "Build completed successfully."
 echo "  outputs: $OUT_DIR/basic_window_c_app.exe"
 echo "           $OUT_DIR/modal_dialog_c_app.exe"
+echo "           $OUT_DIR/all_controls_c_app.exe"
+echo "           $OUT_DIR/all_controls_dialog_c_app.exe"
