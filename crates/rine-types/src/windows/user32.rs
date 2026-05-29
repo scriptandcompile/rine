@@ -6,7 +6,7 @@
 use core::fmt;
 use std::collections::HashMap;
 use std::sync::LazyLock;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
 
 use crate::handles::HMENU;
 
@@ -930,67 +930,83 @@ impl Default for WindowManager {
 // Message Queue
 // ---------------------------------------------------------------------------
 
-/// A message queue for a single thread.
+/// A message queue helper for a single thread.
+///
+/// Runtime queue ownership lives in the shared user32 layer
+/// (`rine-common-user32`), which provides the canonical thread queue used by
+/// GetMessage/PeekMessage flows.
 #[derive(Debug)]
 pub struct MessageQueue {
-    messages: Mutex<Vec<Msg>>,
-    quit: Mutex<bool>,
-    quit_code: Mutex<i32>,
+    state: Mutex<MessageQueueState>,
+    wake: Condvar,
+}
+
+#[derive(Debug, Default)]
+struct MessageQueueState {
+    messages: Vec<Msg>,
+    quit: bool,
+    quit_code: i32,
 }
 
 impl MessageQueue {
     pub fn new() -> Self {
         Self {
-            messages: Mutex::new(Vec::new()),
-            quit: Mutex::new(false),
-            quit_code: Mutex::new(0),
+            state: Mutex::new(MessageQueueState::default()),
+            wake: Condvar::new(),
         }
     }
 
     pub fn post_message(&self, msg: Msg) {
-        let mut messages = self.messages.lock().unwrap();
-        messages.push(msg);
+        {
+            let mut state = self.state.lock().unwrap();
+            state.messages.push(msg);
+        }
+        self.wake.notify_one();
     }
 
     pub fn post_quit(&self, exit_code: i32) {
-        *self.quit.lock().unwrap() = true;
-        *self.quit_code.lock().unwrap() = exit_code;
+        {
+            let mut state = self.state.lock().unwrap();
+            state.quit = true;
+            state.quit_code = exit_code;
+        }
+        self.wake.notify_all();
     }
 
     pub fn get_message(&self, msg: &mut Msg) -> bool {
+        let mut state = self.state.lock().unwrap();
         loop {
-            if *self.quit.lock().unwrap() {
+            if state.quit {
                 msg.message = window_message::WM_QUIT;
-                msg.w_param = *self.quit_code.lock().unwrap() as usize;
+                msg.w_param = state.quit_code as usize;
                 return false;
             }
 
-            let mut messages = self.messages.lock().unwrap();
-            if !messages.is_empty() {
-                *msg = messages.remove(0);
+            if !state.messages.is_empty() {
+                *msg = state.messages.remove(0);
                 return true;
             }
 
-            drop(messages);
-            std::thread::yield_now();
+            state = self.wake.wait(state).unwrap();
         }
     }
 
     pub fn peek_message(&self, msg: &mut Msg, remove: bool) -> bool {
-        if *self.quit.lock().unwrap() {
+        let mut state = self.state.lock().unwrap();
+
+        if state.quit {
             msg.message = window_message::WM_QUIT;
-            msg.w_param = *self.quit_code.lock().unwrap() as usize;
+            msg.w_param = state.quit_code as usize;
             return true;
         }
 
-        let mut messages = self.messages.lock().unwrap();
-        if messages.is_empty() {
+        if state.messages.is_empty() {
             return false;
         }
 
-        *msg = messages[0];
+        *msg = state.messages[0];
         if remove {
-            messages.remove(0);
+            state.messages.remove(0);
         }
         true
     }
@@ -1011,10 +1027,6 @@ pub static WINDOW_CLASS_REGISTRY: LazyLock<Arc<WindowClassRegistry>> =
 
 pub static WINDOW_MANAGER: LazyLock<Arc<WindowManager>> =
     LazyLock::new(|| Arc::new(WindowManager::new()));
-
-thread_local! {
-    pub static THREAD_MESSAGE_QUEUE: MessageQueue = MessageQueue::new();
-}
 
 // ---------------------------------------------------------------------------
 // Unit Tests
