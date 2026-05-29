@@ -1,5 +1,28 @@
 use super::*;
 
+#[derive(Debug, Clone)]
+pub struct LogicalFontInfo {
+    pub height: i32,
+    pub width: i32,
+    pub weight: i32,
+    pub italic: bool,
+    pub face_name: Option<String>,
+}
+
+pub fn get_logical_font_info(font_handle: usize) -> Option<LogicalFontInfo> {
+    let state = gdi_state().lock().unwrap();
+    match state.objects.get(&font_handle) {
+        Some(GdiObject::Font(font)) => Some(LogicalFontInfo {
+            height: font.height,
+            width: font.width,
+            weight: font.weight,
+            italic: font.italic != 0,
+            face_name: font.face_name.clone(),
+        }),
+        _ => None,
+    }
+}
+
 /// Retrieves a handle to one of the predefined stock pens or brushes.
 ///
 /// # Arguments

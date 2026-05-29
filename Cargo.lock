@@ -3803,6 +3803,7 @@ dependencies = [
  "registry-runtime",
  "rfd",
  "rine-channel",
+ "rine-common-gdi32",
  "rine-types",
  "serial_test",
  "text",

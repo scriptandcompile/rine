@@ -23,7 +23,7 @@ use constants::{is_valid_bk_mode, is_valid_map_mode, stock_object_for_index};
 pub use drawing::bit_blt;
 pub use object_ops::{
     create_compatible_bitmap, create_compatible_dc, create_font_a, create_font_w, create_pen,
-    create_solid_brush, delete_dc, delete_object, get_stock_object, select_object, set_bk_mode,
-    set_map_mode,
+    create_solid_brush, delete_dc, delete_object, get_logical_font_info, get_stock_object,
+    select_object, set_bk_mode, set_map_mode,
 };
 pub use text::{get_text_extent_point_a, text_out};

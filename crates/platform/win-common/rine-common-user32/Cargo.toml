@@ -16,6 +16,7 @@ dbcs = { workspace = true }
 text = { workspace = true }
 registry-runtime = { workspace = true }
 rine-types = { workspace = true }
+rine-common-gdi32 = { workspace = true }
 winit = { workspace = true, optional = true }
 tracing = { workspace = true }
 goblin = { workspace = true }

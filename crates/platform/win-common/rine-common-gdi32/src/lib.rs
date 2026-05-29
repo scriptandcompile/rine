@@ -11,6 +11,6 @@ pub use ops::{
     MM_ANISOTROPIC, MM_HIENGLISH, MM_HIMETRIC, MM_ISOTROPIC, MM_LOENGLISH, MM_LOMETRIC, MM_TEXT,
     MM_TWIPS, NULL_BRUSH, NULL_PEN, OPAQUE, SRCCOPY, TRANSPARENT, WHITE_BRUSH, WHITE_PEN, bit_blt,
     create_compatible_bitmap, create_compatible_dc, create_font_a, create_font_w, create_pen,
-    create_solid_brush, delete_dc, delete_object, get_stock_object, get_text_extent_point_a,
-    select_object, set_bk_mode, set_map_mode, text_out,
+    create_solid_brush, delete_dc, delete_object, get_logical_font_info, get_stock_object,
+    get_text_extent_point_a, select_object, set_bk_mode, set_map_mode, text_out,
 };
