@@ -7,6 +7,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use rine_types::errors::BOOL;
 use rine_types::windows::*;
 
+use crate::backend::present_native_window;
+
 // ---------------------------------------------------------------------------
 // Global window-DC state
 // ---------------------------------------------------------------------------
@@ -24,6 +26,13 @@ struct WindowDcState {
     dc_to_window: HashMap<HDC, HWND>,
     /// Reverse lookup — every HDC currently acquired for a given window.
     window_dcs: HashMap<HWND, Vec<HDC>>,
+    /// Active BeginPaint sessions keyed by the paint HDC.
+    paint_sessions: HashMap<HDC, PaintSession>,
+}
+
+#[derive(Clone, Copy)]
+struct PaintSession {
+    hwnd: HWND,
 }
 
 impl WindowDcState {
@@ -31,6 +40,7 @@ impl WindowDcState {
         Self {
             dc_to_window: HashMap::new(),
             window_dcs: HashMap::new(),
+            paint_sessions: HashMap::new(),
         }
     }
 
@@ -64,6 +74,39 @@ impl WindowDcState {
 
         rine_types::dev_notify!(on_handle_closed(hdc.as_raw() as i64));
         BOOL::TRUE
+    }
+
+    fn begin_paint(&mut self, hwnd: HWND) -> Option<(HDC, Rect)> {
+        let window = WINDOW_MANAGER.get_window(hwnd)?;
+        let hdc = self.allocate(hwnd);
+        self.paint_sessions.insert(hdc, PaintSession { hwnd });
+        Some((hdc, window.client_rect))
+    }
+
+    fn end_paint(&mut self, hwnd: HWND, hdc: HDC) -> BOOL {
+        let Some(session) = self.paint_sessions.remove(&hdc) else {
+            return BOOL::FALSE;
+        };
+
+        if session.hwnd != hwnd {
+            self.paint_sessions.insert(hdc, session);
+            return BOOL::FALSE;
+        }
+
+        self.release(hwnd, hdc)
+    }
+}
+
+fn top_level_host_hwnd(hwnd: HWND) -> Option<HWND> {
+    let mut current = hwnd;
+
+    loop {
+        let state = WINDOW_MANAGER.get_window(current)?;
+        if (state.style & window_style::WS_CHILD) == 0 || state.parent.is_null() {
+            return Some(current);
+        }
+
+        current = state.parent;
     }
 }
 
@@ -173,6 +216,65 @@ pub fn release_dc(hwnd: HWND, hdc: HDC) -> i32 {
     } else {
         0
     }
+}
+
+/// BeginPaint — prepares a window for painting and returns a paint HDC.
+///
+/// # Safety
+/// * `paint` must be a valid mutable pointer to a `PaintStruct`.
+///
+/// # Return
+/// Returns a non-null paint `HDC` on success, `HDC::NULL` on failure.
+pub unsafe fn begin_paint(hwnd: HWND, paint: *mut PaintStruct) -> HDC {
+    if hwnd.is_null() || paint.is_null() {
+        return HDC::NULL;
+    }
+
+    let mut state = window_dc_state().lock().unwrap();
+    let Some((hdc, paint_rect)) = state.begin_paint(hwnd) else {
+        return HDC::NULL;
+    };
+
+    *paint = PaintStruct {
+        hdc,
+        f_erase: BOOL::TRUE,
+        rc_paint: paint_rect,
+        f_restore: BOOL::FALSE,
+        f_inc_update: BOOL::FALSE,
+        rgb_reserved: [0; 32],
+    };
+
+    hdc
+}
+
+/// EndPaint — completes a paint session and presents the target top-level.
+///
+/// # Safety
+/// * `paint` must be a valid pointer to a `PaintStruct` produced by `BeginPaint`.
+///
+/// # Return
+/// Returns `BOOL::TRUE` on success, `BOOL::FALSE` on failure.
+pub unsafe fn end_paint(hwnd: HWND, paint: *const PaintStruct) -> BOOL {
+    if hwnd.is_null() || paint.is_null() {
+        return BOOL::FALSE;
+    }
+
+    let hdc = (*paint).hdc;
+    if hdc.is_null() {
+        return BOOL::FALSE;
+    }
+
+    let mut state = window_dc_state().lock().unwrap();
+    let released = state.end_paint(hwnd, hdc);
+    drop(state);
+
+    if released.is_true()
+        && let Some(top_level) = top_level_host_hwnd(hwnd)
+    {
+        present_native_window(top_level);
+    }
+
+    released
 }
 
 // ---------------------------------------------------------------------------
@@ -303,5 +405,57 @@ mod tests {
     #[test]
     fn get_window_dc_returns_null_for_invalid_hwnd() {
         assert_eq!(get_window_dc(HWND::from_raw(0xDEAD)), HDC::NULL);
+    }
+
+    #[test]
+    fn begin_paint_and_end_paint_roundtrip() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let hwnd = WINDOW_MANAGER.create_window(test_window_state());
+
+        let mut ps = PaintStruct {
+            hdc: HDC::NULL,
+            f_erase: BOOL::FALSE,
+            rc_paint: Rect::default(),
+            f_restore: BOOL::FALSE,
+            f_inc_update: BOOL::FALSE,
+            rgb_reserved: [0; 32],
+        };
+
+        let hdc = unsafe { begin_paint(hwnd, &mut ps) };
+        assert!(!hdc.is_null());
+        assert_eq!(ps.hdc, hdc);
+
+        let ended = unsafe { end_paint(hwnd, &ps) };
+        assert_eq!(ended, BOOL::TRUE);
+
+        WINDOW_MANAGER.destroy_window(hwnd);
+    }
+
+    #[test]
+    fn end_paint_rejects_wrong_hwnd() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let hwnd_a = WINDOW_MANAGER.create_window(test_window_state());
+        let hwnd_b = WINDOW_MANAGER.create_window(test_window_state());
+
+        let mut ps = PaintStruct {
+            hdc: HDC::NULL,
+            f_erase: BOOL::FALSE,
+            rc_paint: Rect::default(),
+            f_restore: BOOL::FALSE,
+            f_inc_update: BOOL::FALSE,
+            rgb_reserved: [0; 32],
+        };
+
+        let hdc = unsafe { begin_paint(hwnd_a, &mut ps) };
+        assert!(!hdc.is_null());
+
+        let wrong = unsafe { end_paint(hwnd_b, &ps) };
+        assert_eq!(wrong, BOOL::FALSE);
+
+        let correct = unsafe { end_paint(hwnd_a, &ps) };
+        assert_eq!(correct, BOOL::TRUE);
+
+        WINDOW_MANAGER.destroy_window(hwnd_a);
+        WINDOW_MANAGER.destroy_window(hwnd_b);
     }
 }

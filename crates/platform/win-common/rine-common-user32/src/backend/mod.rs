@@ -45,6 +45,10 @@ pub fn request_native_redraw(hwnd: HWND) {
     let _ = with_backend(|backend| backend.request_redraw(hwnd));
 }
 
+pub fn present_native_window(hwnd: HWND) {
+    let _ = with_backend(|backend| backend.present_window(hwnd));
+}
+
 pub fn set_native_window_rect(hwnd: HWND, x: i32, y: i32, width: i32, height: i32) {
     let _ = with_backend(|backend| backend.set_window_rect(hwnd, x, y, width, height));
 }

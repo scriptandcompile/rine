@@ -93,6 +93,10 @@ impl EmulatedBackend {
         });
     }
 
+    pub(super) fn present_window(&self, _hwnd: HWND) {
+        // Emulated mode intentionally avoids host presentation side effects.
+    }
+
     pub(super) fn set_window_rect(&self, hwnd: HWND, x: i32, y: i32, width: i32, height: i32) {
         self.send(WindowHostCommand::SetRect {
             runtime_hwnd: hwnd.as_raw() as u64,
@@ -198,6 +202,10 @@ impl WindowBackend for EmulatedBackend {
 
     fn request_redraw(&mut self, hwnd: HWND) {
         EmulatedBackend::request_redraw(self, hwnd);
+    }
+
+    fn present_window(&mut self, hwnd: HWND) {
+        EmulatedBackend::present_window(self, hwnd);
     }
 
     fn set_window_rect(&mut self, hwnd: HWND, x: i32, y: i32, width: i32, height: i32) {

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T08:34:08.401835+00:00",
+  "generatedAt": "2026-05-29T21:29:51.954924+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -2899,8 +2899,21 @@
     },
     {
       "name": "user32.dll",
-      "functionCount": 87,
+      "functionCount": 89,
       "functions": [
+        {
+          "name": "BeginPaint",
+          "x64": {
+            "status": "partial",
+            "symbol": "device_context::BeginPaint",
+            "source": "user32 - device_context.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "device_context::BeginPaint",
+            "source": "user32 - device_context.rs"
+          }
+        },
         {
           "name": "CharNextA",
           "x64": {
@@ -3120,6 +3133,19 @@
             "status": "stubbed",
             "symbol": "dialogs::EndDialog",
             "source": "user32 - dialogs.rs"
+          }
+        },
+        {
+          "name": "EndPaint",
+          "x64": {
+            "status": "partial",
+            "symbol": "device_context::EndPaint",
+            "source": "user32 - device_context.rs"
+          },
+          "x86": {
+            "status": "partial",
+            "symbol": "device_context::EndPaint",
+            "source": "user32 - device_context.rs"
           }
         },
         {
@@ -4036,16 +4062,16 @@
     }
   ],
   "totals": {
-    "functions": 306,
+    "functions": 308,
     "x64": {
       "implemented": 107,
-      "partial": 162,
+      "partial": 164,
       "stubbed": 37,
       "unimplemented": 0
     },
     "x86": {
       "implemented": 107,
-      "partial": 162,
+      "partial": 164,
       "stubbed": 37,
       "unimplemented": 0
     }

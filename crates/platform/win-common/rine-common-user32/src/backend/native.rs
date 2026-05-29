@@ -128,6 +128,12 @@ impl NativeBackend {
         }
     }
 
+    pub(super) fn present_window(&mut self, hwnd: HWND) {
+        // Milestone 3 present hook: while software composition is being
+        // introduced, presenting maps to the existing redraw path.
+        self.request_redraw(hwnd);
+    }
+
     pub(super) fn set_window_rect(&self, hwnd: HWND, x: i32, y: i32, width: i32, height: i32) {
         if let Some(window) = self.state.windows.get(&hwnd) {
             window.set_outer_position(LogicalPosition::new(x as f64, y as f64));
@@ -172,6 +178,10 @@ impl WindowBackend for NativeBackend {
 
     fn request_redraw(&mut self, hwnd: HWND) {
         NativeBackend::request_redraw(self, hwnd);
+    }
+
+    fn present_window(&mut self, hwnd: HWND) {
+        NativeBackend::present_window(self, hwnd);
     }
 
     fn set_window_rect(&mut self, hwnd: HWND, x: i32, y: i32, width: i32, height: i32) {

@@ -1,4 +1,5 @@
 use rine_common_user32 as common;
+use rine_types::errors::BOOL;
 use rine_types::windows::*;
 
 /// GetDC — retrieves a device context for the client area of the specified
@@ -90,4 +91,26 @@ pub unsafe extern "stdcall" fn GetWindowDC(hwnd: HWND) -> HDC {
 #[unsafe(no_mangle)]
 pub unsafe extern "stdcall" fn ReleaseDC(hwnd: HWND, hdc: HDC) -> i32 {
     common::release_dc(hwnd, hdc)
+}
+
+/// BeginPaint — prepares the specified window for painting and returns a paint DC.
+///
+/// # Safety
+/// The caller must pass a valid pointer to a writable `PaintStruct`.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn BeginPaint(hwnd: HWND, paint: *mut PaintStruct) -> HDC {
+    common::begin_paint(hwnd, paint)
+}
+
+/// EndPaint — ends a paint session started by `BeginPaint`.
+///
+/// # Safety
+/// The caller must pass a valid pointer to the `PaintStruct` received from `BeginPaint`.
+#[rine_dlls::partial]
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
+pub unsafe extern "stdcall" fn EndPaint(hwnd: HWND, paint: *const PaintStruct) -> BOOL {
+    common::end_paint(hwnd, paint)
 }

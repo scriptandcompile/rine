@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 use std::sync::{Arc, Condvar, Mutex};
 
+use crate::errors::BOOL;
 use crate::handles::HMENU;
 
 mod constants;
@@ -137,6 +138,18 @@ pub struct WndClassExW {
     pub lpsz_menu_name: *const u16,
     pub lpsz_class_name: *const u16,
     pub h_icon_sm: usize,
+}
+
+/// The Windows `PAINTSTRUCT` structure used by `BeginPaint` / `EndPaint`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct PaintStruct {
+    pub hdc: crate::windows::HDC,
+    pub f_erase: BOOL,
+    pub rc_paint: crate::windows::Rect,
+    pub f_restore: BOOL,
+    pub f_inc_update: BOOL,
+    pub rgb_reserved: [u8; 32],
 }
 
 pub static WINDOW_CLASS_REGISTRY: LazyLock<Arc<WindowClassRegistry>> =
