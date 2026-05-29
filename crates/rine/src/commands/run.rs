@@ -478,21 +478,6 @@ pub fn run(
         stubbed = report.total_stubbed,
         "imports resolved"
     );
-    for dll in &report.dll_summaries {
-        let non_implemented = dll
-            .imports
-            .iter()
-            .filter(|entry| !matches!(entry.kind, resolver::ImportResolutionKind::Implemented))
-            .map(|entry| format!("{}:{:?}", entry.name, entry.kind))
-            .collect::<Vec<_>>();
-        if !non_implemented.is_empty() {
-            tracing::warn!(
-                dll = dll.dll_name,
-                imports = ?non_implemented,
-                "non-implemented imports"
-            );
-        }
-    }
 
     dev_emit!(_dev_channel, imports_resolved_event(&report));
     emit_registry_metrics(&registry);

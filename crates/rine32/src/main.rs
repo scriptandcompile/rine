@@ -19,7 +19,7 @@ use rine_types::config::{
 };
 use rine_types::os::{VersionInfo, set_version};
 use thiserror::Error;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 fn emit_registry_metrics(registry: &DllRegistry) {
     let metrics = registry.metrics();
@@ -366,21 +366,6 @@ fn run(exe_path: &Path, exe_args: &[String]) -> Result<i32, Run32Error> {
         stubbed = report.total_stubbed,
         "imports resolved"
     );
-    for dll in &report.dll_summaries {
-        let non_implemented = dll
-            .imports
-            .iter()
-            .filter(|entry| !matches!(entry.kind, resolver::ImportResolutionKind::Implemented))
-            .map(|entry| format!("{}:{:?}", entry.name, entry.kind))
-            .collect::<Vec<_>>();
-        if !non_implemented.is_empty() {
-            warn!(
-                dll = dll.dll_name,
-                imports = ?non_implemented,
-                "non-implemented imports"
-            );
-        }
-    }
 
     dev_emit!(dev_bridge, imports_resolved_event(&report));
     emit_registry_metrics(&registry);
