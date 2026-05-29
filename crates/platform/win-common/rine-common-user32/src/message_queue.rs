@@ -282,3 +282,139 @@ pub unsafe fn is_dialog_message(hdlg: HWND, msg: *const Msg) -> BOOL {
     ));
     BOOL::FALSE
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use serial_test::serial;
+    use std::sync::{LazyLock, Mutex};
+
+    use crate::queue_core::THREAD_MESSAGE_QUEUE;
+
+    static TEST_MUTEX: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+
+    fn empty_msg() -> Msg {
+        Msg {
+            hwnd: HWND::NULL,
+            message: 0,
+            w_param: 0,
+            l_param: 0,
+            time: 0,
+            pt: Point::default(),
+        }
+    }
+
+    fn drain_message_queue() {
+        THREAD_MESSAGE_QUEUE.with(|queue| {
+            let mut msg = empty_msg();
+            while queue.peek_message(&mut msg, true) {
+                if msg.message == window_message::WM_QUIT {
+                    break;
+                }
+                msg = empty_msg();
+            }
+        });
+    }
+
+    #[test]
+    #[serial]
+    fn post_message_returns_one() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        drain_message_queue();
+
+        let rc = post_message(HWND::from_raw(0x1000), 0x1234, 11, 22);
+        assert_eq!(rc, 1);
+
+        drain_message_queue();
+    }
+
+    #[test]
+    #[serial]
+    fn peek_message_pm_noremove_then_remove() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        drain_message_queue();
+
+        let hwnd = HWND::from_raw(0x2000);
+        let message = 0x4321;
+        let w_param = 0xAA;
+        let l_param = 0xBB;
+        post_message(hwnd, message, w_param, l_param);
+
+        let mut msg = empty_msg();
+        let found = unsafe { peek_message(&mut msg, HWND::NULL, 0, 0, 0) };
+        assert_eq!(found, 1);
+        assert_eq!(msg.hwnd, hwnd);
+        assert_eq!(msg.message, message);
+        assert_eq!(msg.w_param, w_param);
+        assert_eq!(msg.l_param, l_param);
+
+        let mut removed = empty_msg();
+        let found_removed = unsafe { peek_message(&mut removed, HWND::NULL, 0, 0, 1) };
+        assert_eq!(found_removed, 1);
+        assert_eq!(removed.hwnd, hwnd);
+        assert_eq!(removed.message, message);
+        assert_eq!(removed.w_param, w_param);
+        assert_eq!(removed.l_param, l_param);
+
+        let mut empty = empty_msg();
+        let empty_found = unsafe { peek_message(&mut empty, HWND::NULL, 0, 0, 0) };
+        assert_eq!(empty_found, 0);
+    }
+
+    #[test]
+    #[serial]
+    fn get_message_returns_one_for_non_quit_message() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        drain_message_queue();
+
+        let hwnd = HWND::from_raw(0x3000);
+        let message = 0x9876;
+        let w_param = 3;
+        let l_param = 9;
+        post_message(hwnd, message, w_param, l_param);
+
+        let mut msg = empty_msg();
+        let rc = unsafe { get_message(&mut msg, HWND::NULL, 0, 0) };
+        assert_eq!(rc, 1);
+        assert_eq!(msg.hwnd, hwnd);
+        assert_eq!(msg.message, message);
+        assert_eq!(msg.w_param, w_param);
+        assert_eq!(msg.l_param, l_param);
+
+        let mut empty = empty_msg();
+        let found = unsafe { peek_message(&mut empty, HWND::NULL, 0, 0, 0) };
+        assert_eq!(found, 0);
+    }
+
+    #[test]
+    #[serial]
+    fn get_message_null_ptr_returns_minus_one() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let rc = unsafe { get_message(std::ptr::null_mut(), HWND::NULL, 0, 0) };
+        assert_eq!(rc, -1);
+    }
+
+    #[test]
+    #[serial]
+    fn peek_message_null_ptr_returns_zero() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let rc = unsafe { peek_message(std::ptr::null_mut(), HWND::NULL, 0, 0, 0) };
+        assert_eq!(rc, 0);
+    }
+
+    #[test]
+    fn post_quit_message_causes_get_message_to_return_zero_and_wm_quit() {
+        std::thread::spawn(|| {
+            post_quit_message(42);
+
+            let mut msg = empty_msg();
+            let rc = unsafe { get_message(&mut msg, HWND::NULL, 0, 0) };
+            assert_eq!(rc, 0);
+            assert_eq!(msg.message, window_message::WM_QUIT);
+            assert_eq!(msg.w_param, 42);
+        })
+        .join()
+        .unwrap();
+    }
+}
