@@ -22,6 +22,7 @@ pub mod icon;
 pub mod menu;
 pub mod message_queue;
 pub mod message_registration;
+pub(crate) mod queue_core;
 pub mod sound;
 pub mod string_resource;
 pub mod system_metrics;

@@ -8,6 +8,7 @@ use crate::backend::{
     create_native_window, destroy_native_window, request_native_redraw, set_native_visibility,
     set_native_window_rect,
 };
+use crate::queue_core::THREAD_MESSAGE_QUEUE;
 
 /// Create a new window from pre-parsed Rust string arguments.
 ///

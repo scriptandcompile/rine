@@ -3,6 +3,8 @@
 use rine_types::errors::BOOL;
 use rine_types::windows::*;
 
+use crate::queue_core::THREAD_MESSAGE_QUEUE;
+
 /// GetFocus — retrieves the handle of the window with keyboard focus.
 ///
 /// Returns the HWND of the focused window, or HWND::NULL if no window

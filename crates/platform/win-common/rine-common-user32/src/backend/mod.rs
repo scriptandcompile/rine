@@ -23,6 +23,8 @@ use contracts::WindowBackend;
 use logging::{debug_log_backend, user32_debug_enabled};
 use runtime::with_backend;
 
+use crate::queue_core::THREAD_MESSAGE_QUEUE;
+
 pub fn create_native_window(hwnd: HWND, state: &WindowState) {
     let _ = with_backend(|backend| backend.create_window(hwnd, state));
 }

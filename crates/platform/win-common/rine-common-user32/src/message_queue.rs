@@ -1,11 +1,13 @@
 //! Message queue — shared logic for Get/PeekMessage, Dispatch/Post/SendMessage, etc.
 
 use std::sync::OnceLock;
+use std::time::Duration;
 
 use rine_types::errors::BOOL;
 use rine_types::windows::*;
 
 use crate::backend::pump_backend_messages;
+use crate::queue_core::THREAD_MESSAGE_QUEUE;
 
 pub fn user32_debug_enabled() -> bool {
     static ENABLED: OnceLock<bool> = OnceLock::new();
@@ -21,6 +23,11 @@ fn debug_log(msg: impl AsRef<str>) {
         eprintln!("[user32/msg] {}", msg.as_ref());
     }
 }
+
+// Backend events are still surfaced via explicit pump calls, so GetMessage
+// uses a bounded sleep to keep idle CPU low while maintaining responsive
+// close/input delivery.
+const BACKEND_POLL_INTERVAL: Duration = Duration::from_millis(16);
 
 /// Block until a non-WM_QUIT message is available then get it from the calling thread's message queue.
 ///
@@ -78,7 +85,7 @@ pub unsafe fn get_message(
             return 1;
         }
 
-        std::thread::yield_now();
+        THREAD_MESSAGE_QUEUE.with(|queue| queue.wait_for_wake(BACKEND_POLL_INTERVAL));
     }
 }
 
