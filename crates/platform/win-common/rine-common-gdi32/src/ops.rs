@@ -552,35 +552,18 @@ pub unsafe fn create_font_w(
 pub unsafe fn select_object(hdc: usize, object: usize) -> usize {
     let mut state = gdi_state().lock().unwrap();
 
+    enum SelectedObjectKind {
+        Bitmap,
+        Brush,
+        Pen,
+        Font,
+    }
+
     let object_kind = match state.objects.get(&object) {
-        Some(GdiObject::Bitmap(_)) => 0_u8,
-        Some(GdiObject::Brush(brush)) => {
-            let _ = brush.color;
-            1_u8
-        }
-        Some(GdiObject::Pen(pen)) => {
-            let _ = pen.color;
-            2_u8
-        }
-        Some(GdiObject::Font(font)) => {
-            let _ = (
-                font.height,
-                font.width,
-                font.escapement,
-                font.orientation,
-                font.weight,
-                font.italic,
-                font.underline,
-                font.strike_out,
-                font.char_set,
-                font.out_precision,
-                font.clip_precision,
-                font.quality,
-                font.pitch_and_family,
-                font.face_name.as_deref(),
-            );
-            3_u8
-        }
+        Some(GdiObject::Bitmap(_)) => SelectedObjectKind::Bitmap,
+        Some(GdiObject::Brush(_)) => SelectedObjectKind::Brush,
+        Some(GdiObject::Pen(_)) => SelectedObjectKind::Pen,
+        Some(GdiObject::Font(_)) => SelectedObjectKind::Font,
         None => return 0,
     };
 
@@ -589,26 +572,10 @@ pub unsafe fn select_object(hdc: usize, object: usize) -> usize {
     };
 
     match object_kind {
-        0 => {
-            let old = dc.selected_bitmap.unwrap_or(0);
-            dc.selected_bitmap = Some(object);
-            old
-        }
-        1 => {
-            let old = dc.selected_brush.unwrap_or(0);
-            dc.selected_brush = Some(object);
-            old
-        }
-        2 => {
-            let old = dc.selected_pen.unwrap_or(0);
-            dc.selected_pen = Some(object);
-            old
-        }
-        _ => {
-            let old = dc.selected_font.unwrap_or(0);
-            dc.selected_font = Some(object);
-            old
-        }
+        SelectedObjectKind::Bitmap => dc.selected_bitmap.replace(object).unwrap_or(0),
+        SelectedObjectKind::Brush => dc.selected_brush.replace(object).unwrap_or(0),
+        SelectedObjectKind::Pen => dc.selected_pen.replace(object).unwrap_or(0),
+        SelectedObjectKind::Font => dc.selected_font.replace(object).unwrap_or(0),
     }
 }
 
