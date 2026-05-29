@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T07:16:33.115058+00:00",
+  "generatedAt": "2026-05-29T08:34:08.401835+00:00",
   "generator": "scripts/generate-dll-support.py",
   "statusOrder": [
     "implemented",
@@ -1087,8 +1087,8 @@
           "name": "GetProcessHeap",
           "x64": {
             "status": "implemented",
-            "symbol": "memory::GetProcessHeap",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::heap::GetProcessHeap",
+            "source": "kernel32 - memory/heap.rs"
           },
           "x86": {
             "status": "implemented",
@@ -1217,8 +1217,8 @@
           "name": "GlobalAlloc",
           "x64": {
             "status": "partial",
-            "symbol": "memory::GlobalAlloc",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::global::GlobalAlloc",
+            "source": "kernel32 - memory/global.rs"
           },
           "x86": {
             "status": "partial",
@@ -1230,8 +1230,8 @@
           "name": "GlobalFree",
           "x64": {
             "status": "partial",
-            "symbol": "memory::GlobalFree",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::global::GlobalFree",
+            "source": "kernel32 - memory/global.rs"
           },
           "x86": {
             "status": "partial",
@@ -1243,8 +1243,8 @@
           "name": "GlobalLock",
           "x64": {
             "status": "partial",
-            "symbol": "memory::GlobalLock",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::global::GlobalLock",
+            "source": "kernel32 - memory/global.rs"
           },
           "x86": {
             "status": "partial",
@@ -1256,8 +1256,8 @@
           "name": "GlobalReAlloc",
           "x64": {
             "status": "partial",
-            "symbol": "memory::GlobalReAlloc",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::global::GlobalReAlloc",
+            "source": "kernel32 - memory/global.rs"
           },
           "x86": {
             "status": "partial",
@@ -1269,8 +1269,8 @@
           "name": "GlobalUnlock",
           "x64": {
             "status": "stubbed",
-            "symbol": "memory::GlobalUnlock",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::global::GlobalUnlock",
+            "source": "kernel32 - memory/global.rs"
           },
           "x86": {
             "status": "stubbed",
@@ -1282,8 +1282,8 @@
           "name": "HeapAlloc",
           "x64": {
             "status": "partial",
-            "symbol": "memory::HeapAlloc",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::heap::HeapAlloc",
+            "source": "kernel32 - memory/heap.rs"
           },
           "x86": {
             "status": "partial",
@@ -1295,8 +1295,8 @@
           "name": "HeapCreate",
           "x64": {
             "status": "partial",
-            "symbol": "memory::HeapCreate",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::heap::HeapCreate",
+            "source": "kernel32 - memory/heap.rs"
           },
           "x86": {
             "status": "partial",
@@ -1308,8 +1308,8 @@
           "name": "HeapDestroy",
           "x64": {
             "status": "implemented",
-            "symbol": "memory::HeapDestroy",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::heap::HeapDestroy",
+            "source": "kernel32 - memory/heap.rs"
           },
           "x86": {
             "status": "implemented",
@@ -1321,8 +1321,8 @@
           "name": "HeapFree",
           "x64": {
             "status": "partial",
-            "symbol": "memory::HeapFree",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::heap::HeapFree",
+            "source": "kernel32 - memory/heap.rs"
           },
           "x86": {
             "status": "partial",
@@ -1334,8 +1334,8 @@
           "name": "HeapReAlloc",
           "x64": {
             "status": "partial",
-            "symbol": "memory::HeapReAlloc",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::heap::HeapReAlloc",
+            "source": "kernel32 - memory/heap.rs"
           },
           "x86": {
             "status": "partial",
@@ -1347,8 +1347,8 @@
           "name": "HeapSize",
           "x64": {
             "status": "partial",
-            "symbol": "memory::HeapSize",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::heap::HeapSize",
+            "source": "kernel32 - memory/heap.rs"
           },
           "x86": {
             "status": "partial",
@@ -1438,8 +1438,8 @@
           "name": "LocalAlloc",
           "x64": {
             "status": "partial",
-            "symbol": "memory::LocalAlloc",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::local::LocalAlloc",
+            "source": "kernel32 - memory/local.rs"
           },
           "x86": {
             "status": "partial",
@@ -1451,8 +1451,8 @@
           "name": "LocalFree",
           "x64": {
             "status": "partial",
-            "symbol": "memory::LocalFree",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::local::LocalFree",
+            "source": "kernel32 - memory/local.rs"
           },
           "x86": {
             "status": "partial",
@@ -1464,8 +1464,8 @@
           "name": "LocalLock",
           "x64": {
             "status": "partial",
-            "symbol": "memory::LocalLock",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::local::LocalLock",
+            "source": "kernel32 - memory/local.rs"
           },
           "x86": {
             "status": "partial",
@@ -1477,8 +1477,8 @@
           "name": "LocalReAlloc",
           "x64": {
             "status": "partial",
-            "symbol": "memory::LocalReAlloc",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::local::LocalReAlloc",
+            "source": "kernel32 - memory/local.rs"
           },
           "x86": {
             "status": "partial",
@@ -1490,8 +1490,8 @@
           "name": "LocalUnlock",
           "x64": {
             "status": "stubbed",
-            "symbol": "memory::LocalUnlock",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::local::LocalUnlock",
+            "source": "kernel32 - memory/local.rs"
           },
           "x86": {
             "status": "stubbed",
@@ -1724,8 +1724,8 @@
           "name": "VirtualAlloc",
           "x64": {
             "status": "partial",
-            "symbol": "memory::VirtualAlloc",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::virtual_memory::VirtualAlloc",
+            "source": "kernel32 - memory/virtual_memory.rs"
           },
           "x86": {
             "status": "partial",
@@ -1737,8 +1737,8 @@
           "name": "VirtualFree",
           "x64": {
             "status": "partial",
-            "symbol": "memory::VirtualFree",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::virtual_memory::VirtualFree",
+            "source": "kernel32 - memory/virtual_memory.rs"
           },
           "x86": {
             "status": "partial",
@@ -1750,8 +1750,8 @@
           "name": "VirtualProtect",
           "x64": {
             "status": "partial",
-            "symbol": "memory::VirtualProtect",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::virtual_memory::VirtualProtect",
+            "source": "kernel32 - memory/virtual_memory.rs"
           },
           "x86": {
             "status": "partial",
@@ -1763,8 +1763,8 @@
           "name": "VirtualQuery",
           "x64": {
             "status": "stubbed",
-            "symbol": "memory::VirtualQuery",
-            "source": "kernel32 - memory.rs"
+            "symbol": "memory::virtual_memory::VirtualQuery",
+            "source": "kernel32 - memory/virtual_memory.rs"
           },
           "x86": {
             "status": "stubbed",
