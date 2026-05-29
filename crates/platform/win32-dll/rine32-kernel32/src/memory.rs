@@ -41,10 +41,10 @@ pub unsafe extern "stdcall" fn HeapCreate(
     options: u32,
     _initial_size: usize,
     _maximum_size: usize,
-) -> isize {
+) -> HANDLE {
     match unsafe { common::memory::heap_create(options) } {
-        Some(handle) => handle.as_raw(),
-        None => 0,
+        Some(handle) => handle,
+        None => HANDLE::NULL,
     }
 }
 
@@ -671,4 +671,22 @@ pub unsafe extern "stdcall" fn GlobalReAlloc(
     _flags: u32,
 ) -> HGLOBAL {
     unsafe { common::memory::global_realloc(_hmem, _new_size, _flags) }
+}
+
+// ===========================================================================
+// Tests
+// ===========================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn heap_create_returns_handle_or_null() {
+        let heap = unsafe { HeapCreate(0, 0, 0) };
+        assert_ne!(heap, HANDLE::NULL);
+
+        let destroyed = unsafe { HeapDestroy(heap) };
+        assert!(destroyed.is_true());
+    }
 }
