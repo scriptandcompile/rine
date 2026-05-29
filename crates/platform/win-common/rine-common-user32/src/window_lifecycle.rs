@@ -11,6 +11,25 @@ use crate::backend::{
 use crate::class_registration::{ensure_builtin_classes_registered, is_internal_default_wnd_proc};
 use crate::queue_core::THREAD_MESSAGE_QUEUE;
 
+fn top_level_host_hwnd(hwnd: HWND) -> Option<HWND> {
+    let mut current = hwnd;
+
+    loop {
+        let state = WINDOW_MANAGER.get_window(current)?;
+        if (state.style & window_style::WS_CHILD) == 0 || state.parent.is_null() {
+            return Some(current);
+        }
+
+        current = state.parent;
+    }
+}
+
+fn request_top_level_redraw(hwnd: HWND) {
+    if let Some(top_level) = top_level_host_hwnd(hwnd) {
+        request_native_redraw(top_level);
+    }
+}
+
 /// Create a new window from pre-parsed Rust string arguments.
 ///
 /// Returns the raw HWND on success, 0 if the class name is unregistered.
@@ -56,7 +75,9 @@ pub fn create_window(
 
     let hwnd = WINDOW_MANAGER.create_window(state);
 
-    if let Some(state) = WINDOW_MANAGER.get_window(hwnd) {
+    if let Some(state) = WINDOW_MANAGER.get_window(hwnd)
+        && (state.style & window_style::WS_CHILD) == 0
+    {
         create_native_window(hwnd, &state);
     }
 
@@ -167,8 +188,10 @@ pub fn show_window(hwnd: HWND, cmd_show: i32) -> BOOL {
     });
 
     if let Some(state) = WINDOW_MANAGER.get_window(hwnd) {
-        set_native_visibility(hwnd, state.visible);
-        request_native_redraw(hwnd);
+        if (state.style & window_style::WS_CHILD) == 0 {
+            set_native_visibility(hwnd, state.visible);
+        }
+        request_top_level_redraw(hwnd);
     }
 
     THREAD_MESSAGE_QUEUE.with(|queue| {
@@ -214,7 +237,7 @@ pub fn update_window(hwnd: HWND) -> BOOL {
         eprintln!("[user32/win] UpdateWindow hwnd={:#x}", hwnd.as_raw());
     }
 
-    request_native_redraw(hwnd);
+    request_top_level_redraw(hwnd);
 
     THREAD_MESSAGE_QUEUE.with(|queue| {
         queue.post_message(Msg {
@@ -249,7 +272,7 @@ pub fn invalidate_rect(hwnd: HWND, _rect: Option<&Rect>, erase: BOOL) -> BOOL {
         return BOOL::FALSE;
     }
 
-    request_native_redraw(hwnd);
+    request_top_level_redraw(hwnd);
 
     THREAD_MESSAGE_QUEUE.with(|queue| {
         if erase == BOOL::TRUE {
@@ -397,7 +420,11 @@ pub fn move_window(hwnd: HWND, x: i32, y: i32, width: i32, height: i32, repaint:
         return BOOL::FALSE;
     }
 
-    set_native_window_rect(hwnd, x, y, width, height);
+    if let Some(state) = WINDOW_MANAGER.get_window(hwnd)
+        && (state.style & window_style::WS_CHILD) == 0
+    {
+        set_native_window_rect(hwnd, x, y, width, height);
+    }
 
     THREAD_MESSAGE_QUEUE.with(|queue| {
         let lparam_move = ((y as i16 as u16 as usize) << 16) | (x as i16 as u16 as usize);

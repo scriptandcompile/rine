@@ -69,6 +69,14 @@ impl NativeBackend {
     }
 
     pub(super) fn create_window(&mut self, hwnd: HWND, state: &WindowState) -> Result<(), String> {
+        if !should_create_native_host_window(state) {
+            debug_log_backend(format!(
+                "skip native host window for child hwnd={:#x}",
+                hwnd.as_raw()
+            ));
+            return Ok(());
+        }
+
         self.state.pending_windows.insert(
             hwnd,
             PendingWindow {
@@ -139,6 +147,10 @@ impl NativeBackend {
 
         out
     }
+}
+
+fn should_create_native_host_window(state: &WindowState) -> bool {
+    (state.style & window_style::WS_CHILD) == 0
 }
 
 impl WindowBackend for NativeBackend {
@@ -568,7 +580,49 @@ fn paint_native_background(_window: &Window, _background: ClassBackground) {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rine_types::windows::{Rect, WindowState, window_style};
     use winit::keyboard::KeyCode;
+
+    fn test_window_state(style: u32) -> WindowState {
+        WindowState {
+            hwnd: HWND::NULL,
+            class_name: "test".to_owned(),
+            title: "test".to_owned(),
+            style,
+            ex_style: 0,
+            rect: Rect {
+                left: 0,
+                top: 0,
+                right: 100,
+                bottom: 100,
+            },
+            client_rect: Rect {
+                left: 0,
+                top: 0,
+                right: 100,
+                bottom: 100,
+            },
+            parent: HWND::NULL,
+            visible: true,
+            enabled: true,
+            wnd_proc: 0,
+            user_data: 0,
+            menu: None,
+            system_menu: None,
+        }
+    }
+
+    #[test]
+    fn child_windows_do_not_create_native_host_windows() {
+        let state = test_window_state(window_style::WS_CHILD);
+        assert!(!should_create_native_host_window(&state));
+    }
+
+    #[test]
+    fn top_level_windows_create_native_host_windows() {
+        let state = test_window_state(window_style::WS_OVERLAPPEDWINDOW);
+        assert!(should_create_native_host_window(&state));
+    }
 
     #[test]
     fn maps_backspace() {
