@@ -8,6 +8,8 @@ use rine_types::windows::{
     Accel, HWND, Msg, WINDOW_MANAGER, accel_flags, virtual_key, window_message,
 };
 
+use crate::class_registration::is_internal_default_wnd_proc;
+
 const RT_ACCELERATOR: u32 = 9;
 const RES_DIR_SIZE: usize = 16;
 const RES_ENTRY_SIZE: usize = 8;
@@ -163,13 +165,17 @@ pub unsafe fn translate_accelerator(
             };
 
             let w_param = (entry.cmd as usize) | (1usize << 16);
-            let _ = call_wnd_proc(
-                target_state.wnd_proc,
-                hwnd,
-                window_message::WM_COMMAND,
-                w_param,
-                0,
-            );
+            let _ = if is_internal_default_wnd_proc(target_state.wnd_proc) {
+                crate::message_queue::def_window_proc(hwnd, window_message::WM_COMMAND, w_param, 0)
+            } else {
+                call_wnd_proc(
+                    target_state.wnd_proc,
+                    hwnd,
+                    window_message::WM_COMMAND,
+                    w_param,
+                    0,
+                )
+            };
             return 1;
         }
     }

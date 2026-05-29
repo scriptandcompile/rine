@@ -7,6 +7,7 @@ use rine_types::errors::BOOL;
 use rine_types::windows::*;
 
 use crate::backend::pump_backend_messages;
+use crate::class_registration::is_internal_default_wnd_proc;
 use crate::queue_core::THREAD_MESSAGE_QUEUE;
 
 pub fn user32_debug_enabled() -> bool {
@@ -174,13 +175,17 @@ pub unsafe fn dispatch_message(
     ));
 
     if let Some(state) = WINDOW_MANAGER.get_window(msg.hwnd) {
-        let result = call_wnd_proc(
-            state.wnd_proc,
-            msg.hwnd,
-            msg.message,
-            msg.w_param,
-            msg.l_param,
-        );
+        let result = if is_internal_default_wnd_proc(state.wnd_proc) {
+            def_window_proc(msg.hwnd, msg.message, msg.w_param, msg.l_param)
+        } else {
+            call_wnd_proc(
+                state.wnd_proc,
+                msg.hwnd,
+                msg.message,
+                msg.w_param,
+                msg.l_param,
+            )
+        };
         debug_log(format!(
             "DispatchMessage result msg={:#06x} -> {}",
             msg.message, result
@@ -234,7 +239,11 @@ pub unsafe fn send_message(
     call_wnd_proc: impl Fn(usize, HWND, u32, usize, isize) -> isize,
 ) -> isize {
     if let Some(state) = WINDOW_MANAGER.get_window(hwnd) {
-        call_wnd_proc(state.wnd_proc, hwnd, msg, w_param, l_param)
+        if is_internal_default_wnd_proc(state.wnd_proc) {
+            def_window_proc(hwnd, msg, w_param, l_param)
+        } else {
+            call_wnd_proc(state.wnd_proc, hwnd, msg, w_param, l_param)
+        }
     } else {
         0
     }

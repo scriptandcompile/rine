@@ -8,6 +8,7 @@ use crate::backend::{
     create_native_window, destroy_native_window, request_native_redraw, set_native_visibility,
     set_native_window_rect,
 };
+use crate::class_registration::{ensure_builtin_classes_registered, is_internal_default_wnd_proc};
 use crate::queue_core::THREAD_MESSAGE_QUEUE;
 
 /// Create a new window from pre-parsed Rust string arguments.
@@ -21,6 +22,8 @@ pub fn create_window(
     rect: Rect,
     parent: HWND,
 ) -> HWND {
+    ensure_builtin_classes_registered();
+
     let escaped_class_name = json_escape(&class_name);
     let escaped_title = json_escape(&title);
 
@@ -107,7 +110,11 @@ pub unsafe fn destroy_window(
 
     // Deliver WM_DESTROY synchronously while the window state is still valid.
     // Apps commonly call PostQuitMessage from this handler.
-    let _ = call_wnd_proc(state.wnd_proc, hwnd, window_message::WM_DESTROY, 0, 0);
+    let _ = if is_internal_default_wnd_proc(state.wnd_proc) {
+        crate::message_queue::def_window_proc(hwnd, window_message::WM_DESTROY, 0, 0)
+    } else {
+        call_wnd_proc(state.wnd_proc, hwnd, window_message::WM_DESTROY, 0, 0)
+    };
 
     destroy_native_window(hwnd);
 

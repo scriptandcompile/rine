@@ -1,8 +1,46 @@
 //! Window class registration — shared logic for RegisterClass(Ex)A/W.
 
+use std::sync::Once;
+
 use rine_types::errors::BOOL;
 use rine_types::windows::*;
 use text::{read_cstr, read_wstr};
+
+pub(crate) const INTERNAL_DEFAULT_WND_PROC: usize = usize::MAX;
+
+const BUILTIN_CONTROL_CLASS_ALIASES: &[&str] = &[
+    "STATIC", "static", "Static", "BUTTON", "button", "Button", "EDIT", "edit", "Edit",
+];
+
+pub(crate) fn is_internal_default_wnd_proc(proc_fn: usize) -> bool {
+    proc_fn == INTERNAL_DEFAULT_WND_PROC
+}
+
+pub(crate) fn ensure_builtin_classes_registered() {
+    static INIT: Once = Once::new();
+    INIT.call_once(register_builtin_control_classes);
+}
+
+fn register_builtin_control_classes() {
+    for &alias in BUILTIN_CONTROL_CLASS_ALIASES {
+        WINDOW_CLASS_REGISTRY.register(
+            alias.to_string(),
+            WindowClass {
+                name: alias.to_string(),
+                style: 0,
+                wnd_proc: INTERNAL_DEFAULT_WND_PROC,
+                cls_extra: 0,
+                wnd_extra: 0,
+                instance: 0,
+                icon: 0,
+                cursor: 0,
+                background: 0,
+                menu_name: None,
+                icon_sm: 0,
+            },
+        );
+    }
+}
 
 /// Window class registration
 ///
@@ -24,6 +62,8 @@ use text::{read_cstr, read_wstr};
 /// - No Win32-accurate `GetLastError` mapping is provided on failure.
 /// - Instance/namespace semantics are simplified compared with Windows.
 pub unsafe fn register_class_a(wc: *const WndClassA) -> ATOM {
+    ensure_builtin_classes_registered();
+
     if wc.is_null() {
         return 0;
     }
@@ -68,6 +108,8 @@ pub unsafe fn register_class_a(wc: *const WndClassA) -> ATOM {
 /// - No Win32-accurate `GetLastError` mapping is provided on failure.
 /// - Instance/namespace semantics are simplified compared with Windows.
 pub unsafe fn register_class_w(wc: *const WndClassW) -> ATOM {
+    ensure_builtin_classes_registered();
+
     if wc.is_null() {
         return 0;
     }
@@ -112,6 +154,8 @@ pub unsafe fn register_class_w(wc: *const WndClassW) -> ATOM {
 /// - No Win32-accurate `GetLastError` mapping is provided on failure.
 /// - Instance/namespace semantics are simplified compared with Windows.
 pub unsafe fn register_class_ex_a(wc: *const WndClassExA) -> ATOM {
+    ensure_builtin_classes_registered();
+
     if wc.is_null() {
         return 0;
     }
@@ -156,6 +200,8 @@ pub unsafe fn register_class_ex_a(wc: *const WndClassExA) -> ATOM {
 /// - No Win32-accurate `GetLastError` mapping is provided on failure.
 /// - Instance/namespace semantics are simplified compared with Windows.
 pub unsafe fn register_class_ex_w(wc: *const WndClassExW) -> ATOM {
+    ensure_builtin_classes_registered();
+
     if wc.is_null() {
         return 0;
     }
@@ -203,5 +249,24 @@ pub fn unregister_class(name: &str) -> BOOL {
         BOOL::TRUE
     } else {
         BOOL::FALSE
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn builtin_control_classes_are_registered() {
+        ensure_builtin_classes_registered();
+
+        assert!(WINDOW_CLASS_REGISTRY.get("STATIC").is_some());
+        assert!(WINDOW_CLASS_REGISTRY.get("BUTTON").is_some());
+        assert!(WINDOW_CLASS_REGISTRY.get("EDIT").is_some());
+
+        let static_class = WINDOW_CLASS_REGISTRY
+            .get("STATIC")
+            .expect("STATIC class should exist");
+        assert!(is_internal_default_wnd_proc(static_class.wnd_proc));
     }
 }
