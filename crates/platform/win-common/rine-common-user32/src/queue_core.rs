@@ -1,5 +1,6 @@
 //! Internal thread message queue core shared by user32 operations.
 
+use std::collections::VecDeque;
 use std::sync::{Condvar, Mutex};
 use std::time::Duration;
 
@@ -14,7 +15,7 @@ pub(crate) struct MessageQueue {
 
 #[derive(Debug, Default)]
 struct MessageQueueState {
-    messages: Vec<Msg>,
+    messages: VecDeque<Msg>,
     quit: bool,
     quit_code: i32,
 }
@@ -30,7 +31,7 @@ impl MessageQueue {
     pub(crate) fn post_message(&self, msg: Msg) {
         {
             let mut state = self.state.lock().unwrap();
-            state.messages.push(msg);
+            state.messages.push_back(msg);
         }
         self.wake.notify_one();
     }
@@ -57,9 +58,14 @@ impl MessageQueue {
             return false;
         }
 
-        *msg = state.messages[0];
         if remove {
-            state.messages.remove(0);
+            if let Some(front) = state.messages.pop_front() {
+                *msg = front;
+            } else {
+                return false;
+            }
+        } else if let Some(front) = state.messages.front() {
+            *msg = *front;
         }
         true
     }
