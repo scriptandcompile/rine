@@ -1,4 +1,5 @@
-use std::sync::OnceLock;
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 
 use fontdb::{Database, Family, Query, Stretch, Style, Weight};
 use fontdue::{Font, FontSettings};
@@ -176,6 +177,42 @@ fn default_ui_font() -> Option<&'static Font> {
     FONT.get_or_init(load_default_ui_font).as_ref()
 }
 
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct TextStyleCacheKey {
+    face_name: Option<String>,
+    bold: bool,
+    italic: bool,
+}
+
+impl TextStyleCacheKey {
+    fn from_style(style: &TextStyle) -> Self {
+        Self {
+            face_name: style.face_name.clone(),
+            bold: style.weight == Weight::BOLD,
+            italic: style.style == Style::Italic,
+        }
+    }
+}
+
+fn cached_font_for_text_style(style: &TextStyle) -> Option<Font> {
+    static CACHE: OnceLock<Mutex<HashMap<TextStyleCacheKey, Option<Font>>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+
+    let key = TextStyleCacheKey::from_style(style);
+    {
+        let cache_guard = cache.lock().unwrap();
+        if let Some(cached_font) = cache_guard.get(&key) {
+            return cached_font.clone();
+        }
+    }
+
+    let loaded = load_font_for_text_style(style);
+
+    let mut cache_guard = cache.lock().unwrap();
+    cache_guard.insert(key, loaded.clone());
+    loaded
+}
+
 fn load_default_ui_font() -> Option<Font> {
     load_font_for_text_style(&TextStyle::default())
 }
@@ -225,7 +262,7 @@ fn draw_text_with_font(
     color: Color,
     style: &TextStyle,
 ) -> bool {
-    let loaded_font = load_font_for_text_style(style);
+    let loaded_font = cached_font_for_text_style(style);
     let fallback_font = default_ui_font().cloned();
     let Some(font) = loaded_font.or(fallback_font) else {
         return false;
