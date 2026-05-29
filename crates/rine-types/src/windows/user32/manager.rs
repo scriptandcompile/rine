@@ -191,6 +191,19 @@ impl WindowManager {
 
         if found.is_null() { parent } else { found }
     }
+
+    pub fn child_windows(&self, parent: HWND) -> Vec<WindowState> {
+        let windows = self.windows.lock().unwrap();
+        let mut out = Vec::new();
+
+        for state in windows.values() {
+            if state.parent == parent {
+                out.push(state.clone());
+            }
+        }
+
+        out
+    }
 }
 
 impl Default for WindowManager {
@@ -279,5 +292,17 @@ mod tests {
 
         let miss = manager.child_window_from_point(parent, crate::windows::Point { x: 90, y: 90 });
         assert_eq!(miss, parent);
+    }
+
+    #[test]
+    fn window_manager_child_windows_returns_immediate_children() {
+        let manager = WindowManager::new();
+        let parent = manager.create_window(sample_window_state("Parent", HWND::NULL));
+        let child = manager.create_window(sample_window_state("Child", parent));
+        let _other_parent_child = manager.create_window(sample_window_state("Other", HWND::NULL));
+
+        let children = manager.child_windows(parent);
+        assert_eq!(children.len(), 1);
+        assert_eq!(children[0].hwnd, child);
     }
 }

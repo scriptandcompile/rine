@@ -15,9 +15,13 @@ use winit::window::{Window, WindowId};
 #[cfg(target_os = "linux")]
 use x11rb::connection::Connection;
 #[cfg(target_os = "linux")]
-use x11rb::protocol::xproto::{ChangeWindowAttributesAux, ConnectionExt as XprotoConnectionExt};
+use x11rb::protocol::xproto::{
+    ChangeWindowAttributesAux, ConnectionExt as XprotoConnectionExt, CreateGCAux, ImageFormat,
+};
 
 use crate::accelerator;
+#[cfg(target_os = "linux")]
+use crate::composition::compose_top_level_frame;
 
 use super::{WindowBackend, debug_log_backend, user32_debug_enabled};
 
@@ -409,6 +413,7 @@ impl ApplicationHandler for WinitPumpApp<'_> {
                 if self.state.take_pending_paint(hwnd) {
                     if let Some(background) = self.state.class_backgrounds.get(&hwnd).copied()
                         && let Some(window) = self.state.windows.get(&hwnd)
+                        && !present_composed_frame(hwnd, window)
                     {
                         paint_native_background(window, background);
                     }
@@ -440,6 +445,7 @@ impl ApplicationHandler for WinitPumpApp<'_> {
                     if should_clear
                         && let Some(background) = self.state.class_backgrounds.get(&hwnd).copied()
                         && let Some(window) = self.state.windows.get(&hwnd)
+                        && !present_composed_frame(hwnd, window)
                     {
                         paint_native_background(window, background);
                     }
@@ -584,8 +590,80 @@ fn paint_native_background(window: &Window, background: ClassBackground) {
     let _ = conn.flush();
 }
 
+#[cfg(target_os = "linux")]
+fn present_composed_frame(parent: HWND, window: &Window) -> bool {
+    let Some(frame) = compose_top_level_frame(parent) else {
+        return false;
+    };
+
+    let Ok(window_handle) = window.window_handle() else {
+        return false;
+    };
+
+    let x11_window = match window_handle.as_raw() {
+        RawWindowHandle::Xlib(handle) => handle.window as u32,
+        RawWindowHandle::Xcb(handle) => handle.window.get(),
+        _ => return false,
+    };
+
+    if x11_window == 0 {
+        return false;
+    }
+
+    let Ok((conn, screen_num)) = x11rb::connect(None) else {
+        return false;
+    };
+
+    let screen = &conn.setup().roots[screen_num];
+    let Ok(width) = u16::try_from(frame.width) else {
+        return false;
+    };
+    let Ok(height) = u16::try_from(frame.height) else {
+        return false;
+    };
+
+    let Ok(gc) = conn.generate_id() else {
+        return false;
+    };
+
+    let _ = conn.create_gc(gc, x11_window, &CreateGCAux::new());
+
+    let mut image = Vec::with_capacity(frame.pixels_argb.len() * 4);
+    for pixel in frame.pixels_argb {
+        let a = ((pixel >> 24) & 0xFF) as u8;
+        let r = ((pixel >> 16) & 0xFF) as u8;
+        let g = ((pixel >> 8) & 0xFF) as u8;
+        let b = (pixel & 0xFF) as u8;
+        image.extend_from_slice(&[b, g, r, a]);
+    }
+
+    let put_ok = conn
+        .put_image(
+            ImageFormat::Z_PIXMAP,
+            x11_window,
+            gc,
+            width,
+            height,
+            0,
+            0,
+            0,
+            screen.root_depth,
+            &image,
+        )
+        .is_ok();
+
+    let _ = conn.free_gc(gc);
+    let _ = conn.flush();
+    put_ok
+}
+
 #[cfg(not(target_os = "linux"))]
 fn paint_native_background(_window: &Window, _background: ClassBackground) {}
+
+#[cfg(not(target_os = "linux"))]
+fn present_composed_frame(_parent: HWND, _window: &Window) -> bool {
+    false
+}
 
 #[cfg(test)]
 mod tests {
