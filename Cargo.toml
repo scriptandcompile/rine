@@ -107,7 +107,7 @@ threading-runtime = { path = "crates/platform/win-common/shared/threading-runtim
 rine-common-kernel32 = { path = "crates/platform/win-common/rine-common-kernel32" }
 rine-common-ntdll = { path = "crates/platform/win-common/rine-common-ntdll" }
 rine-common-msvcrt = { path = "crates/platform/win-common/rine-common-msvcrt" }
-rine-common-user32 = { path = "crates/platform/win-common/rine-common-user32" }
+rine-common-user32 = { path = "crates/platform/win-common/rine-common-user32", default-features = false }
 rine-common-ws2_32 = { path = "crates/platform/win-common/rine-common-ws2_32" }
 rine32-advapi32 = { path = "crates/platform/win32-dll/rine32-advapi32" }
 rine32-kernel32 = { path = "crates/platform/win32-dll/rine32-kernel32" }

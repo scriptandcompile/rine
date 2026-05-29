@@ -9,6 +9,11 @@ build = "build.rs"
 [lib]
 crate-type = ["rlib", "cdylib"]
 
+[features]
+default = ["backend-native"]
+backend-native = ["rine-common-user32/backend-native"]
+backend-emulated = ["rine-common-user32/backend-emulated"]
+
 [dependencies]
 rine-dlls = { workspace = true }
 rine-types = { workspace = true }
