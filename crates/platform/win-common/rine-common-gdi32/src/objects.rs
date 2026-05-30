@@ -38,16 +38,19 @@ impl Bitmap {
 }
 
 #[derive(Clone, Copy)]
+#[allow(dead_code)]
 pub(crate) struct Brush {
     pub(crate) color: u32,
 }
 
 #[derive(Clone, Copy)]
+#[allow(dead_code)]
 pub(crate) struct Pen {
     pub(crate) color: u32,
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub(crate) struct Font {
     pub(crate) height: i32,
     pub(crate) width: i32,
@@ -65,6 +68,7 @@ pub(crate) struct Font {
     pub(crate) face_name: Option<String>,
 }
 
+#[allow(dead_code)]
 pub(crate) enum GdiObject {
     Bitmap(Bitmap),
     Brush(Brush),
