@@ -146,16 +146,22 @@ pub struct LaunchOutput {
 }
 
 #[tauri::command]
-pub fn launch_exe(exe_path: String) -> Result<LaunchOutput, String> {
+pub async fn launch_exe(exe_path: String) -> Result<LaunchOutput, String> {
     let rine_bin = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|d| d.join("rine")))
         .unwrap_or_else(|| PathBuf::from("rine"));
 
-    let output = std::process::Command::new(&rine_bin)
-        .arg(&exe_path)
-        .output()
-        .map_err(|e| format!("Failed to launch rine: {e}"))?;
+    // Run on a blocking thread so GUI apps (which never exit on their own)
+    // do not stall the async runtime and freeze the config UI.
+    let output = tauri::async_runtime::spawn_blocking(move || {
+        std::process::Command::new(&rine_bin)
+            .arg(&exe_path)
+            .output()
+            .map_err(|e| format!("Failed to launch rine: {e}"))
+    })
+    .await
+    .map_err(|e| format!("task join error: {e}"))??;
 
     Ok(LaunchOutput {
         stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
